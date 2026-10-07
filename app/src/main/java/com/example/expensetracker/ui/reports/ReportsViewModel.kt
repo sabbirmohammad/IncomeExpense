@@ -10,9 +10,10 @@ import com.example.expensetracker.data.model.FinancialSummary
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
-import com.example.expensetracker.data.model.toFinancialSummary
 import com.example.expensetracker.data.repository.ExpenseRepository
+import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.StatementExportHelper
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,18 +25,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
-import java.util.Locale
-
-enum class ReportPeriod(val titleEn: String, val titleBn: String) {
-    THIS_MONTH("This Month", "চলতি মাস"),
-    LAST_MONTH("Last Month", "গত মাস"),
-    LAST_3_MONTHS("Last 3 Months", "গত ৩ মাস"),
-    THIS_YEAR("This Year", "চলতি বছর"),
-    ALL_TIME("All Time", "সব সময়"),
-    CUSTOM("Custom Range", "কাস্টম সময়সীমা");
-
-    fun getDisplayName(isBangla: Boolean): String = if (isBangla) titleBn else titleEn
-}
 
 class ReportsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -54,7 +43,7 @@ class ReportsViewModel(application: Application) : AndroidViewModel(application)
     private val _selectedType = MutableStateFlow<TransactionType?>(null)
     val selectedType: StateFlow<TransactionType?> = _selectedType.asStateFlow()
 
-    private val _customStartMillis = MutableStateFlow<Long>(getStartOfMonth(0))
+    private val _customStartMillis = MutableStateFlow<Long>(ReportsDataComputer.getStartOfMonth(0))
     val customStartMillis: StateFlow<Long> = _customStartMillis.asStateFlow()
 
     private val _customEndMillis = MutableStateFlow<Long>(System.currentTimeMillis())
@@ -97,12 +86,12 @@ class ReportsViewModel(application: Application) : AndroidViewModel(application)
             ReportFilterCriteria(period, accId, type, customStart, customEnd)
         }
 
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.Default) {
             combine(
                 repository.transactions,
                 filterCriteriaFlow
             ) { allTxs, criteria ->
-                computeReportData(
+                ReportsDataComputer.computeReportData(
                     allTxs,
                     criteria.period,
                     criteria.accountId,
@@ -147,7 +136,7 @@ class ReportsViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun getPeriodTitle(isBangla: Boolean): String {
-        val locale = com.example.expensetracker.ui.components.DateTimeHelper.getLocale(isBangla)
+        val locale = DateTimeHelper.getLocale(isBangla)
         val df = SimpleDateFormat("dd MMM yyyy", locale)
         val raw = when (_selectedPeriod.value) {
             ReportPeriod.THIS_MONTH -> {
@@ -166,7 +155,7 @@ class ReportsViewModel(application: Application) : AndroidViewModel(application)
             ReportPeriod.ALL_TIME -> if (isBangla) "সর্বমোট হিসাব" else "All Time"
             ReportPeriod.CUSTOM -> "${df.format(Date(_customStartMillis.value))} - ${df.format(Date(_customEndMillis.value))}"
         }
-        return if (isBangla) com.example.expensetracker.ui.components.convertToBengaliDigits(raw) else raw
+        return if (isBangla) convertToBengaliDigits(raw) else raw
     }
 
     fun exportAndSharePdf(context: Context, isBangla: Boolean) {
@@ -243,96 +232,5 @@ class ReportsViewModel(application: Application) : AndroidViewModel(application)
                 _exportMessage.value = if (isBangla) "CSV তৈরি করা সম্ভব হয়নি" else "Failed to generate CSV"
             }
         }
-    }
-
-    private fun computeReportData(
-        allTxs: List<Transaction>,
-        period: ReportPeriod,
-        accId: Long?,
-        type: TransactionType?,
-        customStart: Long,
-        customEnd: Long
-    ): Triple<List<Transaction>, FinancialSummary, List<CategorySpend>> {
-        val (startMillis, endMillis) = when (period) {
-            ReportPeriod.THIS_MONTH -> Pair(getStartOfMonth(0), getEndOfMonth(0))
-            ReportPeriod.LAST_MONTH -> Pair(getStartOfMonth(-1), getEndOfMonth(-1))
-            ReportPeriod.LAST_3_MONTHS -> Pair(getStartOfMonth(-2), getEndOfMonth(0))
-            ReportPeriod.THIS_YEAR -> Pair(getStartOfYear(), getEndOfYear())
-            ReportPeriod.ALL_TIME -> Pair(0L, Long.MAX_VALUE)
-            ReportPeriod.CUSTOM -> Pair(customStart, customEnd)
-        }
-
-        val filtered = allTxs.filter { tx ->
-            val inDateRange = tx.dateMillis in startMillis..endMillis
-            val inAccount = accId == null || tx.accountId == accId
-            val inType = type == null || tx.type == type
-            inDateRange && inAccount && inType
-        }.sortedByDescending { it.dateMillis }
-
-        val summary = filtered.toFinancialSummary()
-        val totalExp = summary.totalExpense
-
-        // Category breakdown for expenses
-        val expenseTxs = filtered.filter { it.type == TransactionType.EXPENSE && !it.isAccountTransfer() }
-        val categorySpends = if (totalExp > 0.0) {
-            expenseTxs.groupBy { it.categoryId }
-                .map { (_, list) ->
-                    val sample = list.first()
-                    val catAmount = list.sumOf { it.amount }
-                    CategorySpend(
-                        categoryId = sample.categoryId,
-                        categoryName = sample.categoryName,
-                        categoryIcon = sample.categoryIcon,
-                        categoryColor = sample.categoryColor,
-                        totalAmount = catAmount,
-                        percentage = (catAmount / totalExp).toFloat().coerceIn(0f, 1f),
-                        transactionCount = list.size
-                    )
-                }.sortedByDescending { it.totalAmount }
-        } else emptyList()
-
-        return Triple(filtered, summary, categorySpends)
-    }
-
-    private fun getStartOfMonth(monthOffset: Int): Long {
-        val cal = Calendar.getInstance()
-        cal.add(Calendar.MONTH, monthOffset)
-        cal.set(Calendar.DAY_OF_MONTH, 1)
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        return cal.timeInMillis
-    }
-
-    private fun getEndOfMonth(monthOffset: Int): Long {
-        val cal = Calendar.getInstance()
-        cal.add(Calendar.MONTH, monthOffset)
-        cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
-        cal.set(Calendar.HOUR_OF_DAY, 23)
-        cal.set(Calendar.MINUTE, 59)
-        cal.set(Calendar.SECOND, 59)
-        cal.set(Calendar.MILLISECOND, 999)
-        return cal.timeInMillis
-    }
-
-    private fun getStartOfYear(): Long {
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.DAY_OF_YEAR, 1)
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        return cal.timeInMillis
-    }
-
-    private fun getEndOfYear(): Long {
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.DAY_OF_YEAR, cal.getActualMaximum(Calendar.DAY_OF_YEAR))
-        cal.set(Calendar.HOUR_OF_DAY, 23)
-        cal.set(Calendar.MINUTE, 59)
-        cal.set(Calendar.SECOND, 59)
-        cal.set(Calendar.MILLISECOND, 999)
-        return cal.timeInMillis
     }
 }
