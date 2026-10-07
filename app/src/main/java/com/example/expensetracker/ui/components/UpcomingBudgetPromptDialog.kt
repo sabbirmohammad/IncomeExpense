@@ -38,11 +38,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
@@ -100,76 +95,31 @@ fun UpcomingBudgetPromptDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Title
                 Text(
                     text = strings.upcomingBudgetPromptTitle,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold),
                     color = appColors.textPrimary,
                     textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Description
                 Text(
                     text = strings.upcomingBudgetPromptDesc,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 14.sp,
-                        lineHeight = 20.sp
-                    ),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
                     color = appColors.textSecondary,
                     textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Current Month Budget Preview Card
                 if (currentBudgetAmount > 0) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = appColors.background,
-                        border = BorderStroke(1.dp, appColors.border)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            Text(
-                                text = strings.currentMonthBudgetLabel,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = appColors.textSecondary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Bottom
-                            ) {
-                                Text(
-                                    text = formatCurrency(currentBudgetAmount, currencySymbol, isBangla),
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = ColorAccent
-                                )
-
-                                if (categoryBudgetCount > 0) {
-                                    Text(
-                                        text = "${DateTimeHelper.formatCounter(categoryBudgetCount, isBangla)} ${strings.categoriesConfiguredCount}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = appColors.textSecondary
-                                    )
-                                }
-                            }
-                        }
-                    }
-
+                    BudgetPromptPreviewCard(
+                        amount = currentBudgetAmount,
+                        categoryCount = categoryBudgetCount,
+                        currencySymbol = currencySymbol,
+                        isBangla = isBangla
+                    )
                     Spacer(modifier = Modifier.height(20.dp))
                 }
 
@@ -183,23 +133,13 @@ fun UpcomingBudgetPromptDialog(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = ColorAccent,
-                        contentColor = Color.White
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = ColorAccent, contentColor = Color.White)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = strings.keepPreviousBudget,
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     )
                 }
 
@@ -216,22 +156,13 @@ fun UpcomingBudgetPromptDialog(
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, ColorAccent),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = ColorAccent
-                    )
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorAccent)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Edit,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = strings.setNewBudget,
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     )
                 }
 
@@ -244,11 +175,51 @@ fun UpcomingBudgetPromptDialog(
                         onDismiss()
                     }
                 ) {
+                    Text(text = strings.notNow, style = MaterialTheme.typography.bodyMedium.copy(color = appColors.textSecondary))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BudgetPromptPreviewCard(
+    amount: Double,
+    categoryCount: Int,
+    currencySymbol: String,
+    isBangla: Boolean
+) {
+    val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = appColors.background,
+        border = BorderStroke(1.dp, appColors.border)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(text = strings.currentMonthBudgetLabel, style = MaterialTheme.typography.labelMedium, color = appColors.textSecondary)
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = formatCurrency(amount, currencySymbol, isBangla),
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
+                    color = ColorAccent
+                )
+                if (categoryCount > 0) {
                     Text(
-                        text = strings.notNow,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = appColors.textSecondary
-                        )
+                        text = "${DateTimeHelper.formatCounter(categoryCount, isBangla)} ${strings.categoriesConfiguredCount}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = appColors.textSecondary
                     )
                 }
             }

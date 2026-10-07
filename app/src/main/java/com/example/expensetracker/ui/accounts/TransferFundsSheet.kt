@@ -1,8 +1,5 @@
 package com.example.expensetracker.ui.accounts
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -109,81 +105,36 @@ fun TransferFundsSheet(
             // Source Account (From)
             Text(strings.fromAccount, fontSize = 12.sp, color = colors.textSecondary)
             Spacer(modifier = Modifier.height(6.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                accounts.forEach { acc ->
-                    val isSelected = fromAccountId == acc.id
-                    Surface(
-                        shape = RoundedCornerShape(SmallElementRadius),
-                        color = if (isSelected) ColorAccent else colors.surfaceVariant,
-                        border = if (isSelected) null else BorderStroke(1.dp, colors.border),
-                        modifier = Modifier.clickable {
-                            haptics.lightTick()
-                            fromAccountId = acc.id
-                            if (toAccountId == acc.id) {
-                                toAccountId = accounts.firstOrNull { it.id != acc.id }?.id ?: 0L
-                            }
-                        }
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                            Text(
-                                text = acc.getLocalizedName(strings.isBangla),
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else colors.textPrimary
-                            )
-                            Text(
-                                text = formatCurrency(acc.currentBalance, currencySymbol),
-                                fontSize = 10.sp,
-                                color = if (isSelected) Color.White.copy(alpha = 0.8f) else colors.textMuted
-                            )
-                        }
+            TransferAccountPickerRow(
+                accounts = accounts,
+                selectedAccountId = fromAccountId,
+                onAccountSelected = { id ->
+                    fromAccountId = id
+                    if (toAccountId == id) {
+                        toAccountId = accounts.firstOrNull { it.id != id }?.id ?: 0L
                     }
-                }
-            }
+                },
+                currencySymbol = currencySymbol,
+                isBangla = strings.isBangla,
+                haptics = haptics,
+                selectedColor = ColorAccent
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
             // Destination Account (To)
             Text(strings.toAccount, fontSize = 12.sp, color = colors.textSecondary)
             Spacer(modifier = Modifier.height(6.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                accounts.filter { it.id != fromAccountId }.forEach { acc ->
-                    val isSelected = toAccountId == acc.id
-                    Surface(
-                        shape = RoundedCornerShape(SmallElementRadius),
-                        color = if (isSelected) Color(0xFF3DDC97) else colors.surfaceVariant,
-                        border = if (isSelected) null else BorderStroke(1.dp, colors.border),
-                        modifier = Modifier.clickable {
-                            haptics.lightTick()
-                            toAccountId = acc.id
-                        }
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                            Text(
-                                text = acc.getLocalizedName(strings.isBangla),
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else colors.textPrimary
-                            )
-                            Text(
-                                text = formatCurrency(acc.currentBalance, currencySymbol),
-                                fontSize = 10.sp,
-                                color = if (isSelected) Color.White.copy(alpha = 0.8f) else colors.textMuted
-                            )
-                        }
-                    }
-                }
-            }
+
+            TransferAccountPickerRow(
+                accounts = accounts.filter { it.id != fromAccountId },
+                selectedAccountId = toAccountId,
+                onAccountSelected = { id -> toAccountId = id },
+                currencySymbol = currencySymbol,
+                isBangla = strings.isBangla,
+                haptics = haptics,
+                selectedColor = Color(0xFF3DDC97)
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -278,20 +229,11 @@ fun TransferFundsSheet(
                     haptics.successFeedback()
                     onTransfer(fromAccountId, toAccountId, amount, note)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(SmallElementRadius),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isAmountValid) ColorAccent else ColorAccent.copy(alpha = 0.55f)
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = if (isAmountValid) ColorAccent else ColorAccent.copy(alpha = 0.55f))
             ) {
-                Text(
-                    text = strings.confirmTransfer,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
+                Text(text = strings.confirmTransfer, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
