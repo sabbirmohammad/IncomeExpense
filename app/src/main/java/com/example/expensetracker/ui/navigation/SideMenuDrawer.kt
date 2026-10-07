@@ -1,0 +1,348 @@
+package com.example.expensetracker.ui.navigation
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import com.example.expensetracker.common.AppConstants
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.expensetracker.data.model.UserProfile
+import com.example.expensetracker.theme.ColorAccent
+import com.example.expensetracker.theme.ColorBorder
+import com.example.expensetracker.theme.ColorSurface
+import com.example.expensetracker.theme.ColorTextMuted
+import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.ProfileAvatarButton
+import com.example.expensetracker.ui.components.Strings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
+import com.example.expensetracker.ui.components.formatCurrency
+
+/**
+ * Modern Dribbble-style 3D Drawer Side Panel
+ * Renders behind the scaled/shifted main screen surface.
+ */
+@Composable
+fun SideMenuDrawer(
+    selectedItem: NavigationItem,
+    onItemSelected: (NavigationItem) -> Unit,
+    userProfile: UserProfile,
+    totalBalance: Double,
+    modifier: Modifier = Modifier,
+    onAddTransactionClick: () -> Unit = {}
+) {
+    val strings = LocalAppStrings.current
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFF090C14))
+    ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .fillMaxWidth(0.75f)
+                .widthIn(max = 320.dp)
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Top Section: Profile & Balance
+            Column {
+                // User Profile Header
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { onItemSelected(NavigationItem.SETTINGS) }
+                        .padding(vertical = 6.dp)
+                ) {
+                    ProfileAvatarButton(
+                        onClick = { onItemSelected(NavigationItem.SETTINGS) },
+                        avatarIndex = userProfile.avatarIndex,
+                        initials = userProfile.initials
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${strings.greeting}, ${userProfile.effectiveFirstName}",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = ColorTextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = userProfile.googleAccountEmail ?: if (strings.isBangla) "লোকাল অ্যাকাউন্ট" else "Local Workspace",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal
+                            ),
+                            color = ColorTextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Quick Balance Status Card
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = ColorSurface,
+                    border = BorderStroke(1.dp, ColorBorder)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = strings.totalBalance,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = ColorTextMuted
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = formatCurrency(totalBalance, userProfile.currencySymbol),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (totalBalance >= 0) ColorTextPrimary else Color(0xFFF0716B)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(ColorAccent.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.TrendingUp,
+                                contentDescription = null,
+                                tint = ColorAccent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Section Title: Navigation
+                Text(
+                    text = if (strings.isBangla) "মেনু ও নেভিগেশন" else "NAVIGATION",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorTextMuted,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+                )
+
+                // Menu Items List
+                NavigationItem.entries.forEach { item ->
+                    val isSelected = selectedItem == item
+                    DrawerMenuItemRow(
+                        item = item,
+                        isSelected = isSelected,
+                        strings = strings,
+                        onClick = { onItemSelected(item) }
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+
+            // Bottom Section: Footer / App Info
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
+
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = ColorBorder
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // App Info, Version & Developer
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = strings.appName,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ColorTextSecondary
+                        )
+                        Text(
+                            text = if (strings.isBangla) "ভার্সন ${convertToBengaliDigits(AppConstants.APP_VERSION.removePrefix("v"))}" else AppConstants.APP_VERSION,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = ColorTextMuted
+                        )
+                    }
+                    Text(
+                        text = if (strings.isBangla) "নির্মাতা: AWFI ENTERPRISE" else "Developed by AWFI ENTERPRISE",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = ColorAccent.copy(alpha = 0.85f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Individual Drawer Menu Item Row
+ */
+@Composable
+private fun DrawerMenuItemRow(
+    item: NavigationItem,
+    isSelected: Boolean,
+    strings: Strings,
+    onClick: () -> Unit
+) {
+    val bgColor by animateColorAsState(
+        targetValue = if (isSelected) ColorAccent.copy(alpha = 0.16f) else Color.Transparent,
+        animationSpec = tween(180),
+        label = "drawerItemBg"
+    )
+
+    val textColor by animateColorAsState(
+        targetValue = if (isSelected) ColorTextPrimary else ColorTextSecondary,
+        animationSpec = tween(180),
+        label = "drawerItemText"
+    )
+
+    val iconColor by animateColorAsState(
+        targetValue = if (isSelected) ColorAccent else ColorTextSecondary,
+        animationSpec = tween(180),
+        label = "drawerItemIcon"
+    )
+
+    val localizedTitle = item.getLocalizedTitle(strings)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(46.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .then(
+                if (isSelected) {
+                    Modifier.border(1.dp, ColorAccent.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                } else Modifier
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Active left accent indicator line
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .height(18.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(ColorAccent)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+            }
+
+            Icon(
+                imageVector = if (isSelected) item.activeIcon else item.inactiveIcon,
+                contentDescription = localizedTitle,
+                tint = iconColor,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Text(
+                text = localizedTitle,
+                fontSize = 14.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
