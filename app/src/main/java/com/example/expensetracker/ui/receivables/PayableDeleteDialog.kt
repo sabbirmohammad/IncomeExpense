@@ -1,0 +1,62 @@
+package com.example.expensetracker.ui.receivables
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.example.expensetracker.data.model.Payable
+import com.example.expensetracker.theme.CardCornerRadius
+import com.example.expensetracker.theme.ColorDangerExpense
+import com.example.expensetracker.theme.ColorSurface
+import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.ui.components.LocalAppStrings
+
+@Composable
+fun PayableDeleteDialog(
+    payable: Payable,
+    onDismiss: () -> Unit,
+    onConfirmDelete: (Payable) -> Unit
+) {
+    val strings = LocalAppStrings.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(CardCornerRadius),
+        containerColor = ColorSurface,
+        title = {
+            Text(
+                text = "${if (strings.isBangla) "দেনা মুছুন" else "Delete Payable"} (${payable.personName})",
+                color = ColorTextPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            Text(
+                text = if (strings.isBangla) "আপনি কি নিশ্চিত যে এই দেনার হিসাবটি মুছে ফেলতে চান?" else "Are you sure you want to delete this payable entry?",
+                color = ColorTextSecondary,
+                fontSize = 13.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirmDelete(payable) },
+                colors = ButtonDefaults.buttonColors(containerColor = ColorDangerExpense)
+            ) {
+                Text(strings.delete, color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(strings.cancel, color = ColorTextSecondary)
+            }
+        }
+    )
+}
