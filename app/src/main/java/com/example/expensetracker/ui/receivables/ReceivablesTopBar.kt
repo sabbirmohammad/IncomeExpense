@@ -31,13 +31,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ReceivablesTopBar(
@@ -49,6 +47,7 @@ fun ReceivablesTopBar(
     onNavigateBack: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
 
@@ -71,7 +70,7 @@ fun ReceivablesTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = "Back",
-                        tint = ColorTextPrimary
+                        tint = appColors.textPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
@@ -83,7 +82,7 @@ fun ReceivablesTopBar(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
@@ -103,7 +102,7 @@ fun ReceivablesTopBar(
                 Icon(
                     imageVector = if (isPrivacyMode) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                     contentDescription = "Toggle Privacy",
-                    tint = if (isPrivacyMode) ColorAccent else ColorTextSecondary,
+                    tint = if (isPrivacyMode) appColors.accent else appColors.textSecondary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -112,7 +111,7 @@ fun ReceivablesTopBar(
             if (selectedTab == DebtLedgerTab.RECEIVABLES) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = ColorAccent.copy(alpha = 0.15f),
+                    color = appColors.accent.copy(alpha = 0.15f),
                     modifier = Modifier.clickable {
                         haptics.mediumClick()
                         onSplitBillClick()
@@ -125,7 +124,7 @@ fun ReceivablesTopBar(
                         Icon(
                             imageVector = Icons.Filled.Group,
                             contentDescription = null,
-                            tint = ColorAccent,
+                            tint = appColors.accent,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -133,7 +132,7 @@ fun ReceivablesTopBar(
                             text = strings.actionSplitBill,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ColorAccent,
+                            color = appColors.accent,
                             maxLines = 1
                         )
                     }
@@ -153,13 +152,13 @@ fun ReceivablesTopBar(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(ColorAccent.copy(alpha = 0.15f)),
+                        .background(appColors.accent.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = if (selectedTab == DebtLedgerTab.RECEIVABLES) strings.addReceivable else strings.addPayable,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(20.dp)
                     )
                 }

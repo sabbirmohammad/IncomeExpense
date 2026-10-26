@@ -5,10 +5,11 @@ import com.example.expensetracker.data.model.BackupPayload
 internal class DatabaseBackupHelper(private val dbHelper: ExpenseDatabaseHelper) {
 
     fun createBackupPayload(): BackupPayload {
+        val profile = dbHelper.getUserProfile()
         return BackupPayload(
             version = 4,
             exportDateMillis = System.currentTimeMillis(),
-            profile = dbHelper.getUserProfile(),
+            profile = profile,
             categories = dbHelper.getAllCategories(),
             transactions = dbHelper.getAllTransactions(),
             budgets = dbHelper.getAllBudgets(),

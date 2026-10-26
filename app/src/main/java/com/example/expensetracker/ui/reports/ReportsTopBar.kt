@@ -20,12 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ReportsTopBar(
@@ -37,6 +35,7 @@ fun ReportsTopBar(
     onMenuClick: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
     Row(
@@ -57,7 +56,7 @@ fun ReportsTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = "Back",
-                        tint = ColorTextPrimary
+                        tint = appColors.textPrimary
                     )
                 }
             }
@@ -69,7 +68,7 @@ fun ReportsTopBar(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Text(
                     text = periodTitle,
@@ -77,7 +76,7 @@ fun ReportsTopBar(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorAccent
+                    color = appColors.accent
                 )
             }
         }
@@ -91,7 +90,7 @@ fun ReportsTopBar(
             Icon(
                 imageVector = if (isPrivacyMode) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                 contentDescription = if (isPrivacyMode) strings.showBalance else strings.hideBalance,
-                tint = if (isPrivacyMode) ColorAccent else ColorTextMuted,
+                tint = if (isPrivacyMode) appColors.accent else appColors.textMuted,
                 modifier = Modifier.size(22.dp)
             )
         }

@@ -26,14 +26,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.DebtBookSummary
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextSecondary
-import com.example.expensetracker.theme.ColorWarningBills
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun DashboardDebtsLedgerWidget(
@@ -43,6 +40,7 @@ fun DashboardDebtsLedgerWidget(
     onNavigateToReceivables: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     AppCard(
         modifier = modifier
@@ -64,13 +62,13 @@ fun DashboardDebtsLedgerWidget(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(ColorWarningBills.copy(alpha = 0.15f)),
+                        .background(appColors.warning.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.AssignmentReturn,
                         contentDescription = null,
-                        tint = ColorWarningBills,
+                        tint = appColors.warning,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -82,7 +80,7 @@ fun DashboardDebtsLedgerWidget(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -92,7 +90,7 @@ fun DashboardDebtsLedgerWidget(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (debtBookSummary.netBalance >= 0) ColorSuccessIncome else ColorDangerExpense
+                        color = if (debtBookSummary.netBalance >= 0) appColors.income else appColors.expense
                     )
                     val subtitleText = if (strings.isBangla) {
                         "পাওনা: ${if (isPrivacyMode) "••••" else formatCurrency(debtBookSummary.totalReceivable, currencySymbol)} · দেনা: ${if (isPrivacyMode) "••••" else formatCurrency(debtBookSummary.totalPayable, currencySymbol)}"
@@ -102,7 +100,7 @@ fun DashboardDebtsLedgerWidget(
                     Text(
                         text = subtitleText,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
             }
@@ -110,7 +108,7 @@ fun DashboardDebtsLedgerWidget(
             Icon(
                 imageVector = Icons.Outlined.ChevronRight,
                 contentDescription = null,
-                tint = ColorTextSecondary,
+                tint = appColors.textSecondary,
                 modifier = Modifier.size(20.dp)
             )
         }

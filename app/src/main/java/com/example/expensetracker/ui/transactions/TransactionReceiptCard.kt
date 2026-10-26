@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,9 +31,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 
@@ -44,10 +41,12 @@ fun TransactionReceiptCard(
     onViewReceipt: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
+
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = LocalAppColors.current.surfaceVariant),
-        border = BorderStroke(1.dp, LocalAppColors.current.border),
+        colors = CardDefaults.cardColors(containerColor = appColors.surfaceVariant),
+        border = BorderStroke(1.dp, appColors.border),
         modifier = modifier
             .fillMaxWidth()
             .clickable { onViewReceipt() }
@@ -72,13 +71,13 @@ fun TransactionReceiptCard(
                     modifier = Modifier
                         .size(52.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(ColorAccent.copy(alpha = 0.12f)),
+                        .background(appColors.accent.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.ReceiptLong,
+                        imageVector = Icons.AutoMirrored.Outlined.ReceiptLong,
                         contentDescription = null,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -93,21 +92,14 @@ fun TransactionReceiptCard(
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = ColorTextPrimary
-                )
-                Text(
-                    text = strings.tapToViewReceipt,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 11.5.sp
-                    ),
-                    color = ColorTextSecondary
+                    color = appColors.textPrimary
                 )
             }
 
             Icon(
                 imageVector = Icons.Outlined.Visibility,
                 contentDescription = strings.viewReceipt,
-                tint = ColorAccent,
+                tint = appColors.accent,
                 modifier = Modifier.size(20.dp)
             )
         }

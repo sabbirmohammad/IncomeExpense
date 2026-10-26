@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,11 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.ProfileAvatarButton
@@ -58,6 +55,7 @@ fun BudgetHeaderTabs(
 ) {
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
+    val appColors = LocalAppColors.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -79,7 +77,7 @@ fun BudgetHeaderTabs(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Back",
-                            tint = ColorTextPrimary
+                            tint = appColors.textPrimary
                         )
                     }
                 }
@@ -89,7 +87,7 @@ fun BudgetHeaderTabs(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = ColorTextPrimary,
+                    color = appColors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -105,7 +103,7 @@ fun BudgetHeaderTabs(
                     Icon(
                         imageVector = if (isPrivacyMode) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         contentDescription = "Toggle Privacy",
-                        tint = if (isPrivacyMode) ColorAccent else ColorTextSecondary,
+                        tint = if (isPrivacyMode) appColors.accent else appColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -122,8 +120,8 @@ fun BudgetHeaderTabs(
         // Segmented Tabs: Budgets vs Savings Goals
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = ColorSurface,
-            border = BorderStroke(1.dp, ColorBorder),
+            color = appColors.surface,
+            border = BorderStroke(1.dp, appColors.border),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -136,9 +134,10 @@ fun BudgetHeaderTabs(
                 val isBudgetsSelected = selectedTab == BudgetScreenTab.BUDGETS
                 Surface(
                     shape = RoundedCornerShape(9.dp),
-                    color = if (isBudgetsSelected) ColorAccent else Color.Transparent,
+                    color = if (isBudgetsSelected) appColors.accent else Color.Transparent,
                     modifier = Modifier
                         .weight(1f)
+                        .minimumInteractiveComponentSize()
                         .clickable {
                             haptics.lightTick()
                             onTabSelected(BudgetScreenTab.BUDGETS)
@@ -153,7 +152,7 @@ fun BudgetHeaderTabs(
                             text = strings.budgetTitle,
                             fontSize = 13.sp,
                             fontWeight = if (isBudgetsSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isBudgetsSelected) Color.White else ColorTextSecondary
+                            color = if (isBudgetsSelected) Color.White else appColors.textSecondary
                         )
                     }
                 }
@@ -162,9 +161,10 @@ fun BudgetHeaderTabs(
                 val isSavingsSelected = selectedTab == BudgetScreenTab.SAVINGS_GOALS
                 Surface(
                     shape = RoundedCornerShape(9.dp),
-                    color = if (isSavingsSelected) ColorAccent else Color.Transparent,
+                    color = if (isSavingsSelected) appColors.accent else Color.Transparent,
                     modifier = Modifier
                         .weight(1f)
+                        .minimumInteractiveComponentSize()
                         .clickable {
                             haptics.lightTick()
                             onTabSelected(BudgetScreenTab.SAVINGS_GOALS)
@@ -179,21 +179,21 @@ fun BudgetHeaderTabs(
                             text = strings.savingsGoalsTitle,
                             fontSize = 13.sp,
                             fontWeight = if (isSavingsSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSavingsSelected) Color.White else ColorTextSecondary
+                            color = if (isSavingsSelected) Color.White else appColors.textSecondary
                         )
                         if (savingsGoalsCount > 0) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(if (isSavingsSelected) Color.White.copy(alpha = 0.25f) else ColorAccent.copy(alpha = 0.15f))
+                                    .background(if (isSavingsSelected) Color.White.copy(alpha = 0.25f) else appColors.accent.copy(alpha = 0.15f))
                                     .padding(horizontal = 6.dp, vertical = 1.dp)
                             ) {
                                 Text(
                                     text = if (strings.isBangla) convertToBengaliDigits(savingsGoalsCount.toString()) else savingsGoalsCount.toString(),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSavingsSelected) Color.White else ColorAccent
+                                    color = if (isSavingsSelected) Color.White else appColors.accent
                                 )
                             }
                         }

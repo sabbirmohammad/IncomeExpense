@@ -24,11 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.FinancialSummary
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
 
@@ -39,6 +35,7 @@ fun ReportSummaryKpiSection(
     isPrivacyMode: Boolean,
     strings: Strings
 ) {
+    val appColors = LocalAppColors.current
     val savingsRate = if (summary.totalIncome > 0) {
         ((summary.netBalance / summary.totalIncome) * 100).toInt().coerceIn(-999, 100)
     } else 0
@@ -53,7 +50,7 @@ fun ReportSummaryKpiSection(
                 amount = summary.totalIncome,
                 currencySymbol = currencySymbol,
                 isPrivacyMode = isPrivacyMode,
-                accentColor = ColorSuccessIncome,
+                accentColor = appColors.income,
                 icon = Icons.Outlined.ArrowUpward,
                 modifier = Modifier.weight(1f)
             )
@@ -63,7 +60,7 @@ fun ReportSummaryKpiSection(
                 amount = summary.totalExpense,
                 currencySymbol = currencySymbol,
                 isPrivacyMode = isPrivacyMode,
-                accentColor = ColorDangerExpense,
+                accentColor = appColors.expense,
                 icon = Icons.Outlined.ArrowDownward,
                 modifier = Modifier.weight(1f)
             )
@@ -78,7 +75,7 @@ fun ReportSummaryKpiSection(
                 amount = summary.netBalance,
                 currencySymbol = currencySymbol,
                 isPrivacyMode = isPrivacyMode,
-                accentColor = if (summary.netBalance >= 0) Color(0xFF3B82F6) else ColorDangerExpense,
+                accentColor = if (summary.netBalance >= 0) appColors.accent else appColors.expense,
                 icon = if (summary.netBalance >= 0) Icons.Outlined.ArrowUpward else Icons.Outlined.ArrowDownward,
                 modifier = Modifier.weight(1f)
             )
@@ -86,8 +83,8 @@ fun ReportSummaryKpiSection(
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
-                color = ColorSurface,
-                border = BorderStroke(1.dp, ColorBorder)
+                color = appColors.surface,
+                border = BorderStroke(1.dp, appColors.border)
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -97,13 +94,13 @@ fun ReportSummaryKpiSection(
                         text = strings.savingsRateLabel,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = ColorTextMuted
+                        color = appColors.textMuted
                     )
                     Text(
                         text = if (isPrivacyMode) "••%" else "$savingsRate%",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (savingsRate >= 0) ColorSuccessIncome else ColorDangerExpense
+                        color = if (savingsRate >= 0) appColors.income else appColors.expense
                     )
                 }
             }
@@ -121,11 +118,12 @@ fun ReportKpiCard(
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        color = ColorSurface,
-        border = BorderStroke(1.dp, ColorBorder)
+        color = appColors.surface,
+        border = BorderStroke(1.dp, appColors.border)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -145,7 +143,7 @@ fun ReportKpiCard(
                     text = title,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = ColorTextMuted,
+                    color = appColors.textMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

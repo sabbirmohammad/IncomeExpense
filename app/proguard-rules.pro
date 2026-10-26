@@ -26,13 +26,7 @@
 -dontwarn kotlinx.serialization.**
 
 # ------------------------------------------------------------------------------
-# 3. Google Generative AI SDK (Gemini)
-# ------------------------------------------------------------------------------
--keep class com.google.ai.client.generativeai.** { *; }
--dontwarn com.google.ai.client.generativeai.**
-
-# ------------------------------------------------------------------------------
-# 4. Google Drive API Client & OAuth
+# 3. Google Drive API Client & OAuth
 # ------------------------------------------------------------------------------
 -keep class com.google.api.client.** { *; }
 -keep interface com.google.api.client.** { *; }
@@ -47,7 +41,7 @@
 -dontwarn javax.annotation.**
 
 # ------------------------------------------------------------------------------
-# 5. AndroidX WorkManager, Room & App Startup
+# 4. AndroidX WorkManager, Room & App Startup
 # ------------------------------------------------------------------------------
 -keep class * extends androidx.work.Worker {
     public <init>(android.content.Context, androidx.work.WorkerParameters);
@@ -76,14 +70,12 @@
 }
 
 # ------------------------------------------------------------------------------
-# 6. Database, Security & Android KeyStore
+# 5. Database & Local Storage
 # ------------------------------------------------------------------------------
 -keep class com.example.expensetracker.data.local.** { *; }
--keep class android.security.keystore.** { *; }
--dontwarn android.security.keystore.**
 
 # ------------------------------------------------------------------------------
-# 7. Jetpack Compose & Material 3
+# 6. Jetpack Compose & Material 3
 # ------------------------------------------------------------------------------
 -keepclassmembers class * {
     @androidx.compose.runtime.Composable *;
@@ -91,7 +83,7 @@
 -keep class androidx.compose.material.icons.** { *; }
 
 # ------------------------------------------------------------------------------
-# 8. Android Architecture Components & ViewModels
+# 7. Android Architecture Components & ViewModels
 # ------------------------------------------------------------------------------
 -keepclassmembers class * extends androidx.lifecycle.ViewModel {
     public <init>(...);
@@ -103,11 +95,10 @@
 -keep class com.example.expensetracker.ui.**.*ViewModel* { *; }
 
 # ------------------------------------------------------------------------------
-# 9. App Core, Repository, Services & UI
+# 8. App Core, Repository, Services & UI
 # ------------------------------------------------------------------------------
 -keep class com.example.expensetracker.data.repository.** { *; }
 -keep class com.example.expensetracker.data.drive.** { *; }
--keep class com.example.expensetracker.data.ai.** { *; }
 -keep class com.example.expensetracker.ui.** { *; }
 -keep class com.example.expensetracker.theme.** { *; }
 -keep class com.example.expensetracker.common.** { *; }

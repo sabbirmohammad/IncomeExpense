@@ -37,14 +37,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.BrandIdentityHelper
-import com.example.expensetracker.ui.components.formatCurrency
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.formatCurrency
 
 @Composable
 fun AccountCardItem(
@@ -56,6 +52,7 @@ fun AccountCardItem(
     onReconcile: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val brandStyle = BrandIdentityHelper.getBrandStyle(account)
     var showMenu by remember { mutableStateOf(false) }
 
@@ -65,8 +62,8 @@ fun AccountCardItem(
             .clip(RoundedCornerShape(18.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFF131728),
-        border = BorderStroke(1.dp, brandStyle.primaryColor.copy(alpha = 0.28f))
+        color = appColors.surface,
+        border = BorderStroke(1.dp, brandStyle.primaryColor.copy(alpha = if (appColors.isDark) 0.28f else 0.20f))
     ) {
         Box(
             modifier = Modifier
@@ -74,9 +71,9 @@ fun AccountCardItem(
                 .background(
                     Brush.horizontalGradient(
                         listOf(
-                            brandStyle.primaryColor.copy(alpha = 0.12f),
-                            Color(0xFF131728).copy(alpha = 0.90f),
-                            Color(0xFF0F1220)
+                            brandStyle.primaryColor.copy(alpha = if (appColors.isDark) 0.12f else 0.08f),
+                            appColors.surface.copy(alpha = 0.90f),
+                            if (appColors.isDark) Color(0xFF0F1220) else appColors.surfaceVariant
                         )
                     )
                 )
@@ -118,7 +115,7 @@ fun AccountCardItem(
                                         fontSize = 15.5.sp,
                                         fontWeight = FontWeight.SemiBold
                                     ),
-                                    color = ColorTextPrimary,
+                                    color = appColors.textPrimary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -126,13 +123,13 @@ fun AccountCardItem(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
                                         shape = RoundedCornerShape(4.dp),
-                                        color = ColorAccent.copy(alpha = 0.2f)
+                                        color = appColors.accent.copy(alpha = 0.2f)
                                     ) {
                                         Text(
                                             text = "DEFAULT",
                                             fontSize = 8.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = ColorAccent,
+                                            color = appColors.accent,
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                         )
                                     }
@@ -150,7 +147,7 @@ fun AccountCardItem(
                                     else -> account.type.getDisplayName(strings.isBangla)
                                 },
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                                color = ColorTextSecondary,
+                                color = appColors.textSecondary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -165,24 +162,23 @@ fun AccountCardItem(
                             Text(
                                 text = formatCurrency(account.currentBalance, currencySymbol),
                                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-                                color = if (account.currentBalance >= 0) ColorTextPrimary else ColorDangerExpense
+                                color = if (account.currentBalance >= 0) appColors.textPrimary else appColors.dangerExpense
                             )
                             Text(
                                 text = if (strings.isBangla) "ব্যালেন্স" else "Balance",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                color = ColorTextMuted
+                                color = appColors.textMuted
                             )
                         }
 
                         Box {
                             IconButton(
-                                onClick = { showMenu = true },
-                                modifier = Modifier.size(44.dp)
+                                onClick = { showMenu = true }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
                                     contentDescription = "Options",
-                                    tint = ColorTextMuted,
+                                    tint = appColors.textMuted,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }

@@ -35,8 +35,6 @@ import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.PaymentMethod
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.getLocalizedAccountName
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.DateTimeHelper
@@ -65,6 +63,8 @@ fun TransactionViewModeContent(
     onViewReceipt: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -82,8 +82,8 @@ fun TransactionViewModeContent(
         // Transaction Details Card
         Card(
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = LocalAppColors.current.surfaceVariant),
-            border = BorderStroke(1.dp, LocalAppColors.current.border),
+            colors = CardDefaults.cardColors(containerColor = appColors.surfaceVariant),
+            border = BorderStroke(1.dp, appColors.border),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -108,19 +108,19 @@ fun TransactionViewModeContent(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Text(
                             text = selectedCategory?.getLocalizedName(strings.isBangla) ?: transaction.categoryName,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 12.sp
                             ),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
 
-                HorizontalDivider(color = LocalAppColors.current.border.copy(alpha = 0.7f), thickness = 0.8.dp)
+                HorizontalDivider(color = appColors.border.copy(alpha = 0.7f), thickness = 0.8.dp)
 
                 val rawDate = dateOnlyFormat.format(Date(dateMillis))
                 val dateDisp = if (strings.isBangla) convertToBengaliDigits(rawDate) else rawDate
@@ -150,8 +150,8 @@ fun TransactionViewModeContent(
         if (notes.isNotBlank()) {
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = LocalAppColors.current.surfaceVariant),
-                border = BorderStroke(1.dp, LocalAppColors.current.border),
+                colors = CardDefaults.cardColors(containerColor = appColors.surfaceVariant),
+                border = BorderStroke(1.dp, appColors.border),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -166,7 +166,7 @@ fun TransactionViewModeContent(
                         Icon(
                             imageVector = Icons.Outlined.Description,
                             contentDescription = null,
-                            tint = ColorTextSecondary,
+                            tint = appColors.textSecondary,
                             modifier = Modifier.size(15.dp)
                         )
                         Text(
@@ -175,7 +175,7 @@ fun TransactionViewModeContent(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -185,7 +185,7 @@ fun TransactionViewModeContent(
                             fontSize = 13.5.sp,
                             lineHeight = 19.sp
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
             }

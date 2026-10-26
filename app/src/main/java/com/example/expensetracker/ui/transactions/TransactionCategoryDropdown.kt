@@ -34,8 +34,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.CategoryIconHelper
 import com.example.expensetracker.ui.components.Strings
@@ -52,6 +50,7 @@ fun TransactionCategoryDropdown(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val catColor = selectedCategory?.let { CategoryIconHelper.parseColor(it.colorHex) } ?: typeAccentColor
 
@@ -60,7 +59,7 @@ fun TransactionCategoryDropdown(
             Text(
                 text = strings.category,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
             Spacer(modifier = Modifier.height(6.dp))
             Surface(
@@ -105,7 +104,7 @@ fun TransactionCategoryDropdown(
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorTextPrimary,
+                            color = appColors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -113,7 +112,7 @@ fun TransactionCategoryDropdown(
                     Icon(
                         imageVector = Icons.Filled.ArrowDropDown,
                         contentDescription = "Select Category",
-                        tint = ColorTextSecondary,
+                        tint = appColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -152,7 +151,7 @@ fun TransactionCategoryDropdown(
                                 fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             ),
-                            color = ColorTextPrimary,
+                            color = appColors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

@@ -15,7 +15,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,14 +42,17 @@ fun TransactionsScreen(
     onMenuClick: (() -> Unit)? = null
 ) {
     val strings = LocalAppStrings.current
-    val transactions by viewModel.filteredTransactions.collectAsState()
-    val userProfile by viewModel.userProfile.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val selectedType by viewModel.selectedType.collectAsState()
-    val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
-    val selectedTimeFilter by viewModel.selectedTimeFilter.collectAsState()
-    val isMarketTripsView by viewModel.isMarketTripsView.collectAsState()
-    val marketLists by viewModel.marketLists.collectAsState()
+    val transactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
+    val selectedCategoryId by viewModel.selectedCategoryId.collectAsStateWithLifecycle()
+    val selectedAccountId by viewModel.selectedAccountId.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val selectedTimeFilter by viewModel.selectedTimeFilter.collectAsStateWithLifecycle()
+    val isMarketTripsView by viewModel.isMarketTripsView.collectAsStateWithLifecycle()
+    val marketLists by viewModel.marketLists.collectAsStateWithLifecycle()
+    val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
 
     val groupedTransactions = remember(transactions, strings.today, strings.yesterday, strings.isBangla, userProfile.useBengaliNumerals) {
         groupTransactionsByDate(
@@ -61,8 +64,10 @@ fun TransactionsScreen(
         )
     }
 
-    val activeFilterCount = (if (selectedType != null) 1 else 0) +
-        (if (selectedTimeFilter != TimeFilter.ALL) 1 else 0) +
+    val activeFilterCount = (if (selectedType != null || isMarketTripsView) 1 else 0) +
+        (if (selectedCategoryId != null) 1 else 0) +
+        (if (selectedAccountId != null) 1 else 0) +
+        (if (selectedTimeFilter != TimeFilter.THIS_MONTH) 1 else 0) +
         (if (searchQuery.isNotBlank()) 1 else 0)
 
     var showShareSheet by remember { mutableStateOf(false) }
@@ -102,12 +107,16 @@ fun TransactionsScreen(
                 onMarketTripsViewChanged = { viewModel.setMarketTripsView(it) },
                 selectedTimeFilter = selectedTimeFilter,
                 onTimeFilterChanged = { viewModel.setTimeFilter(it) },
+                accounts = accounts,
+                selectedAccountId = selectedAccountId,
+                onAccountFilterChanged = { viewModel.setAccountFilter(it) },
                 onOpenCustomDateRange = { showCustomDateRangeDialog = true },
                 onResetFilters = {
                     viewModel.onSearchQueryChanged("")
                     viewModel.setTypeFilter(null)
                     viewModel.setCategoryFilter(null)
-                    viewModel.setTimeFilter(TimeFilter.ALL)
+                    viewModel.setAccountFilter(null)
+                    viewModel.setTimeFilter(TimeFilter.THIS_MONTH)
                     viewModel.setMarketTripsView(false)
                     isSearchActive = false
                 },
@@ -134,19 +143,43 @@ fun TransactionsScreen(
                         .padding(horizontal = 16.dp, vertical = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    val hasActiveFilters = activeFilterCount > 0
+                    val hasAnyTransactions = allTransactions.isNotEmpty()
                     EmptyStateCard(
                         icon = Icons.Outlined.ReceiptLong,
-                        headline = strings.noTransactionsFound,
-                        explanation = if (searchQuery.isNotEmpty() || selectedType != null || selectedCategoryId != null) {
-                            strings.noTransactionsAdjustFilter
-                        } else {
-                            strings.startTrackingSubtitle
+                        headline = when {
+                            hasActiveFilters -> strings.noTransactionsFound
+                            hasAnyTransactions -> if (strings.isBangla) "চলতি মাসে কোনো লেনদেন নেই" else "No transactions this month"
+                            else -> strings.noTransactionsFound
                         },
-                        buttonText = strings.clearFilters,
+                        explanation = when {
+                            hasActiveFilters -> strings.noTransactionsAdjustFilter
+                            hasAnyTransactions -> if (strings.isBangla) "পূর্ববর্তী লেনদেন দেখতে সব সময়ের ফিল্টার নির্বাচন করুন অথবা নতুন লেনদেন যোগ করুন।" else "Select all time to view past records or add a new transaction."
+                            else -> strings.startTrackingSubtitle
+                        },
+                        buttonText = when {
+                            hasActiveFilters -> strings.clearFilters
+                            hasAnyTransactions -> if (strings.isBangla) "সব লেনদেন দেখুন" else "View All Transactions"
+                            else -> strings.addTransaction
+                        },
                         onButtonClick = {
-                            viewModel.onSearchQueryChanged("")
-                            viewModel.setTypeFilter(null)
-                            viewModel.setCategoryFilter(null)
+                            when {
+                                hasActiveFilters -> {
+                                    viewModel.onSearchQueryChanged("")
+                                    viewModel.setTypeFilter(null)
+                                    viewModel.setCategoryFilter(null)
+                                    viewModel.setAccountFilter(null)
+                                    viewModel.setTimeFilter(TimeFilter.THIS_MONTH)
+                                    viewModel.setMarketTripsView(false)
+                                    isSearchActive = false
+                                }
+                                hasAnyTransactions -> {
+                                    viewModel.setTimeFilter(TimeFilter.ALL)
+                                }
+                                else -> {
+                                    onAddTransactionForDate?.invoke(System.currentTimeMillis())
+                                }
+                            }
                         }
                     )
                 }

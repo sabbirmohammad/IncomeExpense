@@ -66,9 +66,10 @@ suspend fun ExpenseRepository.getFilteredTransactions(
     timeFilter: TimeFilter,
     type: TransactionType?,
     categoryId: Long?,
-    query: String?
+    query: String?,
+    accountId: Long? = null
 ): List<Transaction> = withContext(Dispatchers.IO) {
-    dbHelper.getFilteredTransactions(timeFilter, type, categoryId, query)
+    dbHelper.getFilteredTransactions(timeFilter, type, categoryId, query, accountId)
 }
 
 suspend fun ExpenseRepository.getTransactionsBetween(
@@ -76,9 +77,10 @@ suspend fun ExpenseRepository.getTransactionsBetween(
     endMillis: Long,
     type: TransactionType? = null,
     categoryId: Long? = null,
-    query: String? = null
+    query: String? = null,
+    accountId: Long? = null
 ): List<Transaction> = withContext(Dispatchers.IO) {
-    dbHelper.getTransactionsBetween(startMillis, endMillis, type, categoryId, query)
+    dbHelper.getTransactionsBetween(startMillis, endMillis, type, categoryId, query, accountId)
 }
 
 suspend fun ExpenseRepository.getSummaryForTransactions(txs: List<Transaction>): FinancialSummary = withContext(Dispatchers.Default) {

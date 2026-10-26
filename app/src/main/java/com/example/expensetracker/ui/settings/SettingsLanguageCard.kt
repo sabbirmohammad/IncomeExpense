@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,11 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -47,6 +44,7 @@ fun SettingsLanguageCard(
 ) {
     val context = LocalContext.current
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val isBangla = currentLanguage == "bn"
 
     AppCard(modifier = modifier) {
@@ -64,31 +62,24 @@ fun SettingsLanguageCard(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(ColorAccent.copy(alpha = 0.12f)),
+                            .background(appColors.accent.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Language,
                             contentDescription = null,
-                            tint = ColorAccent,
+                            tint = appColors.accent,
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    Column {
-                        Text(
-                            text = strings.languageSection,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = ColorTextPrimary
-                        )
-                        Text(
-                            text = if (isBangla) "বর্তমান: বাংলা" else "Current: English",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = ColorTextSecondary
-                        )
-                    }
+                    Text(
+                        text = strings.languageSection,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = appColors.textPrimary
+                    )
                 }
             }
 
@@ -98,17 +89,18 @@ fun SettingsLanguageCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(ColorSurface)
-                    .border(1.dp, ColorBorder.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
+                    .background(appColors.surfaceVariant)
+                    .border(1.dp, appColors.border.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Bangla button
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = if (isBangla) ColorAccent else Color.Transparent,
+                    color = if (isBangla) appColors.accent else Color.Transparent,
                     modifier = Modifier
                         .weight(1f)
+                        .minimumInteractiveComponentSize()
                         .clickable {
                             if (!isBangla) {
                                 onLanguageChange("bn")
@@ -136,7 +128,7 @@ fun SettingsLanguageCard(
                                 fontSize = 13.5.sp,
                                 fontWeight = if (isBangla) FontWeight.Bold else FontWeight.Normal
                             ),
-                            color = if (isBangla) Color.White else ColorTextSecondary
+                            color = if (isBangla) Color.White else appColors.textSecondary
                         )
                     }
                 }
@@ -144,9 +136,10 @@ fun SettingsLanguageCard(
                 // English button
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = if (!isBangla) ColorAccent else Color.Transparent,
+                    color = if (!isBangla) appColors.accent else Color.Transparent,
                     modifier = Modifier
                         .weight(1f)
+                        .minimumInteractiveComponentSize()
                         .clickable {
                             if (isBangla) {
                                 onLanguageChange("en")
@@ -174,7 +167,7 @@ fun SettingsLanguageCard(
                                 fontSize = 13.5.sp,
                                 fontWeight = if (!isBangla) FontWeight.Bold else FontWeight.Normal
                             ),
-                            color = if (!isBangla) Color.White else ColorTextSecondary
+                            color = if (!isBangla) Color.White else appColors.textSecondary
                         )
                     }
                 }

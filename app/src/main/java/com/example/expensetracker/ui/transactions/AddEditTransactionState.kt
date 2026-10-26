@@ -2,15 +2,10 @@ package com.example.expensetracker.ui.transactions
 
 import android.content.Context
 import android.graphics.Bitmap
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.platform.LocalContext
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.PaymentMethod
@@ -18,11 +13,9 @@ import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.components.Strings
-import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
 import com.example.expensetracker.utils.ReceiptImageHelper
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class AddEditTransactionState(
@@ -31,7 +24,6 @@ class AddEditTransactionState(
     val initialDateMillis: Long?,
     val categories: List<Category>,
     val accounts: List<Account>,
-    val geminiApiKey: String?,
     val strings: Strings,
     val haptics: AppHaptics,
     val context: Context,
@@ -43,17 +35,10 @@ class AddEditTransactionState(
     var amountText by mutableStateOf(existingTransaction?.amount?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: "")
     var title by mutableStateOf(existingTransaction?.title ?: "")
     var notes by mutableStateOf(existingTransaction?.notes ?: "")
-    var showCalculatorBar by mutableStateOf(false)
 
     var receiptImagePath by mutableStateOf(existingTransaction?.receiptImagePath)
     var receiptBitmap by mutableStateOf<Bitmap?>(null)
-    var isScanningReceipt by mutableStateOf(false)
-    var scanStatusMessage by mutableStateOf<String?>(null)
     var showFullReceiptPreview by mutableStateOf(false)
-
-    var showAiMagicFill by mutableStateOf(false)
-    var aiMagicInputText by mutableStateOf("")
-    var isAiMagicParsing by mutableStateOf(false)
 
     var selectedAccountId by mutableStateOf(existingTransaction?.accountId ?: accounts.find { it.isDefault }?.id ?: accounts.firstOrNull()?.id)
     val availableCategories: List<Category> get() = categories.filter { it.type == selectedType }
@@ -75,36 +60,61 @@ class AddEditTransactionState(
     var showDiscardDialog by mutableStateOf(false)
     var pendingDismissAfterDiscard by mutableStateOf(false)
 
-    val isExpense: Boolean get() = selectedType == TransactionType.EXPENSE
+    var isSaving by mutableStateOf(false)
 
-    val isDirty: Boolean get() {
-        return if (existingTransaction != null) {
-            val orig = existingTransaction.amount.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() }
-            amountText.trim() != orig || title.trim() != existingTransaction.title.trim() ||
-                    notes.trim() != existingTransaction.notes.trim() || selectedCategory?.id != existingTransaction.categoryId ||
-                    receiptImagePath != existingTransaction.receiptImagePath || selectedType != existingTransaction.type ||
-                    selectedAccountId != existingTransaction.accountId || selectedPaymentMethod != existingTransaction.paymentMethod ||
-                    dateMillis != existingTransaction.dateMillis
-        } else {
-            amountText.isNotBlank() || title.isNotBlank() || notes.isNotBlank() || receiptImagePath != null
+    val isExpense: Boolean get() = selectedType == TransactionType.EXPENSE
+    val isFormValid: Boolean get() = (amountText.toParsedAmountOrNull() ?: 0.0) > 0.0 && selectedCategory != null
+
+    val isDirty: Boolean
+        get() {
+            if (existingTransaction == null) {
+                return amountText.isNotBlank() || title.isNotBlank() || notes.isNotBlank() || receiptImagePath != null
+            }
+            val initialAmt = existingTransaction.amount.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() }
+            val initialCategory = categories.find { it.id == existingTransaction.categoryId && it.type == existingTransaction.type }
+                ?: categories.firstOrNull { it.type == existingTransaction.type }
+            val initialAccountId = existingTransaction.accountId ?: accounts.find { it.isDefault }?.id ?: accounts.firstOrNull()?.id
+            val initialNotes = existingTransaction.notes
+            return amountText != initialAmt ||
+                    title != existingTransaction.title ||
+                    notes != initialNotes ||
+                    selectedType != existingTransaction.type ||
+                    selectedCategory?.id != initialCategory?.id ||
+                    selectedAccountId != initialAccountId ||
+                    selectedPaymentMethod != existingTransaction.paymentMethod ||
+                    dateMillis != existingTransaction.dateMillis ||
+                    receiptImagePath != existingTransaction.receiptImagePath
         }
-    }
 
     fun resetToOriginal() {
         if (existingTransaction != null) {
-            selectedType = existingTransaction.type
-            amountText = existingTransaction.amount.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() }
+            val amt = existingTransaction.amount
+            amountText = if (amt % 1.0 == 0.0) amt.toLong().toString() else amt.toString()
             title = existingTransaction.title
             notes = existingTransaction.notes
-            receiptImagePath = existingTransaction.receiptImagePath
-            selectedAccountId = existingTransaction.accountId ?: accounts.find { it.isDefault }?.id ?: accounts.firstOrNull()?.id
-            selectedCategory = categories.find { it.id == existingTransaction.categoryId && it.type == existingTransaction.type }
+            selectedType = existingTransaction.type
+            selectedCategory = categories.find { it.id == existingTransaction.categoryId }
                 ?: categories.firstOrNull { it.type == existingTransaction.type }
+            selectedAccountId = existingTransaction.accountId ?: accounts.firstOrNull()?.id
             selectedPaymentMethod = existingTransaction.paymentMethod
             dateMillis = existingTransaction.dateMillis
+            receiptImagePath = existingTransaction.receiptImagePath
             errorMessage = null
-            showCalculatorBar = false
         }
+    }
+
+    fun handleTypeSelected(type: TransactionType) {
+        if (selectedType != type) {
+            haptics.lightTick()
+            selectedType = type
+            selectedCategory = categories.firstOrNull { it.type == type }
+        }
+    }
+
+    fun handleAmountChange(newVal: String) {
+        val filtered = newVal.filter { c -> c.isDigit() || c == '.' }
+        amountText = filtered
+        if (errorMessage != null) errorMessage = null
     }
 
     fun attemptDismiss() {
@@ -119,6 +129,7 @@ class AddEditTransactionState(
     }
 
     fun saveCurrentTransaction() {
+        if (isSaving) return
         val evaluated = amountText.toParsedAmountOrNull()
         if (evaluated == null || evaluated <= 0.0) {
             errorMessage = strings.amountGreaterThanZero
@@ -133,6 +144,15 @@ class AddEditTransactionState(
         }
         val effAccId = selectedAccountId ?: accounts.find { it.isDefault }?.id ?: accounts.firstOrNull()?.id
         val matchedAcc = accounts.find { it.id == effAccId }
+
+        // Clean up replaced old receipt file from disk if existing transaction had one that changed
+        if (existingTransaction != null &&
+            !existingTransaction.receiptImagePath.isNullOrBlank() &&
+            existingTransaction.receiptImagePath != receiptImagePath
+        ) {
+            ReceiptImageHelper.deleteReceiptImage(context, existingTransaction.receiptImagePath)
+        }
+
         val tx = Transaction(
             id = existingTransaction?.id ?: 0L,
             title = title.ifBlank { cat.getLocalizedName(strings.isBangla) },
@@ -149,57 +169,8 @@ class AddEditTransactionState(
             notes = notes,
             receiptImagePath = receiptImagePath
         )
+        isSaving = true
         haptics.successFeedback()
         onSave(tx)
-    }
-
-    fun parseAiMagic() {
-        if (aiMagicInputText.isBlank()) return
-        haptics.mediumClick()
-        scope.launch {
-            isAiMagicParsing = true
-            val res = TransactionAiScanHelper.parseMagicFill(aiMagicInputText, categories, accounts, strings.isBangla, geminiApiKey)
-            isAiMagicParsing = false
-            if (res != null) {
-                haptics.successFeedback()
-                res.title?.let { title = it }
-                res.amount?.let { amt -> amountText = if (amt % 1.0 == 0.0) amt.toLong().toString() else amt.toString() }
-                selectedType = res.type
-                res.category?.let { selectedCategory = it }
-                res.accountId?.let { selectedAccountId = it }
-                res.notes?.let { n -> notes = if (notes.isBlank()) n else "$notes • $n" }
-                aiMagicInputText = ""
-                showAiMagicFill = false
-            }
-        }
-    }
-
-    fun scanReceipt() {
-        val bmp = receiptBitmap ?: return
-        if (geminiApiKey.isNullOrBlank()) {
-            scanStatusMessage = if (strings.isBangla) "সেটিংস থেকে Gemini API Key দিন" else "Please set Gemini API Key in Settings"
-            haptics.warningFeedback()
-            return
-        }
-        isScanningReceipt = true
-        scanStatusMessage = strings.scanningReceipt
-        haptics.mediumClick()
-        scope.launch {
-            val scanRes = TransactionAiScanHelper.parseReceiptScan(geminiApiKey, bmp, categories)
-            isScanningReceipt = false
-            if (scanRes != null) {
-                haptics.successFeedback()
-                scanStatusMessage = strings.receiptScanSuccess
-                scanRes.amount?.let { amt -> amountText = if (amt % 1.0 == 0.0) amt.toLong().toString() else amt.toString() }
-                scanRes.title?.let { title = it }
-                scanRes.category?.let { selectedCategory = it; selectedType = it.type }
-                scanRes.dateMillis?.let { dateMillis = it }
-                scanRes.notes?.let { n -> notes = if (notes.isBlank()) n else "$notes • $n" }
-                scanRes.paymentMethod?.let { selectedPaymentMethod = it }
-            } else {
-                haptics.warningFeedback()
-                scanStatusMessage = strings.receiptScanFailed
-            }
-        }
     }
 }

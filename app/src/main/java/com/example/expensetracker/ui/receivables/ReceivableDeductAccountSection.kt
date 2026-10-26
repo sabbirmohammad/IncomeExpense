@@ -24,13 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -45,10 +39,11 @@ fun ReceivableDeductAccountSection(
     onAccountSelected: (Long) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     Surface(
         shape = RoundedCornerShape(SmallElementRadius),
-        color = ColorBackground,
-        border = BorderStroke(1.dp, ColorBorder),
+        color = appColors.surfaceVariant,
+        border = BorderStroke(1.dp, appColors.border),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -58,23 +53,23 @@ fun ReceivableDeductAccountSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(strings.deductFromAccount, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ColorTextPrimary)
+                    Text(strings.deductFromAccount, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = appColors.textPrimary)
                     Text(
                         if (strings.isBangla) "ওয়ালেট থেকে ব্যয়ের হিসাব হিসেবে যুক্ত করুন" else "Log as an expense from one of your accounts",
                         fontSize = 11.sp,
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
                 Switch(
                     checked = deductFromAccount,
                     onCheckedChange = onDeductToggle,
-                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = ColorAccent)
+                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = appColors.accent)
                 )
             }
 
             if (deductFromAccount) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Text("${strings.fromAccount}:", fontSize = 11.sp, color = ColorTextMuted)
+                Text("${strings.fromAccount}:", fontSize = 11.sp, color = appColors.textMuted)
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier
@@ -86,14 +81,14 @@ fun ReceivableDeductAccountSection(
                         val isSelected = selectedAccountId == acc.id
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) ColorAccent else ColorSurface,
-                            border = BorderStroke(1.dp, if (isSelected) ColorAccent else ColorBorder),
+                            color = if (isSelected) appColors.accent else appColors.surface,
+                            border = BorderStroke(1.dp, if (isSelected) appColors.accent else appColors.border),
                             modifier = Modifier.clickable { onAccountSelected(acc.id) }
                         ) {
                             Text(
                                 text = "${acc.name} (${formatCurrency(acc.currentBalance, currencySymbol)})",
                                 fontSize = 11.sp,
-                                color = if (isSelected) Color.White else ColorTextPrimary,
+                                color = if (isSelected) Color.White else appColors.textPrimary,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                             )
                         }

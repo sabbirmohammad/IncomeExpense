@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.MarketListParser
 import com.example.expensetracker.data.model.MarketItem
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.rememberAppHaptics
@@ -43,6 +42,7 @@ fun MarketBulkPasteSection(
     onListImported: (title: String, items: List<MarketItem>) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     var bulkInputText by remember { mutableStateOf("") }
 
@@ -58,7 +58,7 @@ fun MarketBulkPasteSection(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             ),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -76,7 +76,7 @@ fun MarketBulkPasteSection(
                     else
                         "e.g.\nPotato 2kg\nOnion 1 kg\nSoybean oil 2L\nEggs 12 pcs\nSoap 2 pcs\nChicken 1.5 kg",
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                    color = ColorTextSecondary.copy(alpha = 0.6f)
+                    color = appColors.textSecondary.copy(alpha = 0.6f)
                 )
             },
             colors = OutlinedTextFieldDefaults.colors(

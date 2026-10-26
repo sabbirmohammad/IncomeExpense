@@ -33,9 +33,6 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -115,9 +112,9 @@ fun ReconcileBalanceDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = appColors.textPrimary,
                         unfocusedTextColor = appColors.textPrimary,
-                        focusedBorderColor = ColorAccent,
+                        focusedBorderColor = appColors.accent,
                         unfocusedBorderColor = appColors.border,
-                        focusedLabelColor = ColorAccent,
+                        focusedLabelColor = appColors.accent,
                         unfocusedLabelColor = appColors.textMuted
                     ),
                     modifier = Modifier.fillMaxWidth()
@@ -129,8 +126,8 @@ fun ReconcileBalanceDialog(
                     val isGain = diff > 0
                     val isLoss = diff < 0
                     val diffColor = when {
-                        isGain -> ColorSuccessIncome
-                        isLoss -> ColorDangerExpense
+                        isGain -> appColors.income
+                        isLoss -> appColors.expense
                         else -> appColors.textMuted
                     }
                     val diffText = when {
@@ -192,9 +189,9 @@ fun ReconcileBalanceDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = appColors.textPrimary,
                         unfocusedTextColor = appColors.textPrimary,
-                        focusedBorderColor = ColorAccent,
+                        focusedBorderColor = appColors.accent,
                         unfocusedBorderColor = appColors.border,
-                        focusedLabelColor = ColorAccent,
+                        focusedLabelColor = appColors.accent,
                         unfocusedLabelColor = appColors.textMuted
                     ),
                     modifier = Modifier.fillMaxWidth()
@@ -209,7 +206,7 @@ fun ReconcileBalanceDialog(
                     }
                 },
                 enabled = parsedNewBal != null && kotlin.math.abs(parsedNewBal - currentBal) > 0.001,
-                colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
             ) {
                 Text(strings.confirm, color = Color.White)
             }

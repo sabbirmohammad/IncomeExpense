@@ -50,11 +50,3 @@ data class MarketCompletionResult(
     val purchasedCount: Int = 0,
     val transactionId: Long? = null
 )
-
-@Serializable
-data class MarketCostEstimationResult(
-    val estimatedTotalMin: Double = 0.0,
-    val estimatedTotalMax: Double = 0.0,
-    val itemPrices: Map<String, Double> = emptyMap(),
-    val advice: String = ""
-)

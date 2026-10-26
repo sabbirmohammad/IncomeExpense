@@ -27,14 +27,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.BillFrequency
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillFrequencySelector(
@@ -42,6 +38,7 @@ fun BillFrequencySelector(
     onFrequencyChange: (BillFrequency) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
 
@@ -49,7 +46,7 @@ fun BillFrequencySelector(
         Text(
             text = strings.frequency,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -57,8 +54,8 @@ fun BillFrequencySelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(SmallElementRadius))
-                .background(Color(0xFF0F131D))
-                .border(1.dp, ColorBorder, RoundedCornerShape(SmallElementRadius))
+                .background(appColors.surfaceVariant)
+                .border(1.dp, appColors.border, RoundedCornerShape(SmallElementRadius))
                 .padding(3.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -69,7 +66,7 @@ fun BillFrequencySelector(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(SmallElementRadius - 2.dp))
-                        .background(if (isSelected) ColorAccent else Color.Transparent)
+                        .background(if (isSelected) appColors.accent else Color.Transparent)
                         .clickable {
                             haptics.lightTick()
                             onFrequencyChange(freq)
@@ -83,7 +80,7 @@ fun BillFrequencySelector(
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                         ),
-                        color = if (isSelected) Color.White else ColorTextSecondary
+                        color = if (isSelected) Color.White else appColors.textSecondary
                     )
                 }
             }
@@ -97,13 +94,14 @@ fun BillDueDayInput(
     onDueDayChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "${strings.dueDay} (1 - 31)",
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(6.dp))
         OutlinedTextField(
@@ -113,18 +111,18 @@ fun BillDueDayInput(
                     onDueDayChange(it.filter { c -> c.isDigit() })
                 }
             },
-            placeholder = { Text(if (strings.isBangla) "৫" else "5", color = ColorTextMuted, fontSize = 13.sp) },
+            placeholder = { Text(if (strings.isBangla) "৫" else "5", color = appColors.textMuted, fontSize = 13.sp) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(SmallElementRadius),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ColorAccent,
-                unfocusedBorderColor = ColorBorder,
-                focusedTextColor = ColorTextPrimary,
-                unfocusedTextColor = ColorTextPrimary,
-                focusedContainerColor = Color(0xFF0F131D),
-                unfocusedContainerColor = Color(0xFF0F131D)
+                focusedBorderColor = appColors.accent,
+                unfocusedBorderColor = appColors.border,
+                focusedTextColor = appColors.textPrimary,
+                unfocusedTextColor = appColors.textPrimary,
+                focusedContainerColor = appColors.surfaceVariant,
+                unfocusedContainerColor = appColors.surfaceVariant
             ),
             textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
         )

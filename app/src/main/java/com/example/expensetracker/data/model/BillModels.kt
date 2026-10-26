@@ -131,16 +131,3 @@ data class BillSplitData(
     val friends: List<BillSplitFriend>,
     val note: String = ""
 )
-
-@Serializable
-data class BillCashFlowAiForecast(
-    val isBufferSafe: Boolean = true,
-    val upcomingTotal: Double = 0.0,
-    val availableLiquid: Double = 0.0,
-    val alertMessage: String = "",
-    val hasShortfall: Boolean = false,
-    val shortfallAmount: Double = 0.0,
-    val warningMessage: String = "",
-    val suggestedTransfers: List<String> = emptyList(),
-    val safetyTips: List<String> = emptyList()
-)

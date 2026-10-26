@@ -26,10 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Receivable
 import com.example.expensetracker.data.model.ReceivablesSummary
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.Strings
 
@@ -43,8 +40,7 @@ fun LazyListScope.receivablesTabContent(
     onAddReceivable: () -> Unit,
     onRecordPayment: (Receivable) -> Unit,
     onEdit: (Receivable) -> Unit,
-    onDelete: (Receivable) -> Unit,
-    onGenerateReminder: (Receivable) -> Unit
+    onDelete: (Receivable) -> Unit
 ) {
     item {
         Spacer(modifier = Modifier.height(4.dp))
@@ -56,6 +52,7 @@ fun LazyListScope.receivablesTabContent(
     }
 
     item {
+        val appColors = LocalAppColors.current
         Spacer(modifier = Modifier.height(14.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -66,14 +63,14 @@ fun LazyListScope.receivablesTabContent(
                 text = "${strings.pendingDebtors} (${receivables.size})",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = ColorTextMuted,
+                color = appColors.textMuted,
                 letterSpacing = 0.8.sp
             )
             Text(
                 text = "+ ${strings.addReceivable}",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = ColorAccent,
+                color = appColors.accent,
                 modifier = Modifier.clickable { onAddReceivable() }
             )
         }
@@ -82,6 +79,7 @@ fun LazyListScope.receivablesTabContent(
 
     if (receivables.isEmpty()) {
         item {
+            val appColors = LocalAppColors.current
             AppCard(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 padding = 24.dp
@@ -90,10 +88,10 @@ fun LazyListScope.receivablesTabContent(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Outlined.Handshake, null, tint = ColorTextMuted, modifier = Modifier.size(36.dp))
+                    Icon(Icons.Outlined.Handshake, null, tint = appColors.textMuted, modifier = Modifier.size(36.dp))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(strings.noReceivablesFound, style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp), color = ColorTextPrimary)
-                    Text(strings.noReceivablesHint, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), color = ColorTextSecondary)
+                    Text(strings.noReceivablesFound, style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp), color = appColors.textPrimary)
+                    Text(strings.noReceivablesHint, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), color = appColors.textSecondary)
                 }
             }
         }
@@ -110,8 +108,7 @@ fun LazyListScope.receivablesTabContent(
                         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${rec.phoneNumber}"))
                         context.startActivity(intent)
                     }
-                },
-                onGenerateReminder = { onGenerateReminder(rec) }
+                }
             )
         }
     }

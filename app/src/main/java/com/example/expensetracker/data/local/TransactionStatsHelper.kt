@@ -9,6 +9,21 @@ import com.example.expensetracker.data.model.TransactionType
 
 internal class TransactionStatsHelper(private val dbHelper: ExpenseDatabaseHelper) {
 
+    companion object {
+        const val EXCLUDED_CATEGORIES_SQL = """
+            $COL_TX_CAT_NAME NOT IN (
+                'Transfer', 'Account Transfer', 'অ্যাকাউন্ট স্থানান্তর', 'স্থানান্তর',
+                'Loan & Debt Given', 'ঋণ বা ধার প্রদান', 'Debt Recovery', 'পাওনা টাকা আদায়',
+                'Loan & Debt Borrowed', 'ধার বা ঋণ গ্রহণ', 'Debt Repayment', 'দেনা বা ঋণ পরিশোধ',
+                'Adjustment', 'Balance Adjustment', 'সমন্বয়', 'ব্যালেন্স সমন্বয়'
+            )
+            AND $COL_TX_NOTES NOT LIKE '[Transfer]%'
+            AND $COL_TX_NOTES NOT LIKE '[Reconciliation]%'
+            AND $COL_TX_TITLE NOT LIKE 'Transfer to %'
+            AND $COL_TX_TITLE NOT LIKE 'Transfer from %'
+        """
+    }
+
     fun getAggregatedCategorySpends(
         startMillis: Long,
         endMillis: Long,
@@ -26,10 +41,7 @@ internal class TransactionStatsHelper(private val dbHelper: ExpenseDatabaseHelpe
             FROM $TABLE_TRANSACTIONS
             WHERE $COL_TX_DATE >= ? AND $COL_TX_DATE <= ?
               AND $COL_TX_TYPE = ?
-              AND $COL_TX_CAT_NAME NOT IN ('Transfer', 'Account Transfer', 'অ্যাকাউন্ট স্থানান্তর', 'Loan & Debt Given', 'ঋণ বা ধার প্রদান', 'Debt Recovery', 'পাওনা টাকা আদায়')
-              AND $COL_TX_NOTES NOT LIKE '[Transfer]%'
-              AND $COL_TX_TITLE NOT LIKE 'Transfer to %'
-              AND $COL_TX_TITLE NOT LIKE 'Transfer from %'
+              AND $EXCLUDED_CATEGORIES_SQL
             GROUP BY $COL_TX_CAT_ID, $COL_TX_CAT_NAME, $COL_TX_CAT_ICON, $COL_TX_CAT_COLOR
             ORDER BY total_amount DESC
         """.trimIndent()
@@ -81,10 +93,7 @@ internal class TransactionStatsHelper(private val dbHelper: ExpenseDatabaseHelpe
                 SUM(CASE WHEN $COL_TX_TYPE = 'EXPENSE' THEN $COL_TX_AMOUNT ELSE 0 END) AS total_expense
             FROM $TABLE_TRANSACTIONS
             WHERE $COL_TX_DATE >= ? AND $COL_TX_DATE <= ?
-              AND $COL_TX_CAT_NAME NOT IN ('Transfer', 'Account Transfer', 'অ্যাকাউন্ট স্থানান্তর', 'Loan & Debt Given', 'ঋণ বা ধার প্রদান', 'Debt Recovery', 'পাওনা টাকা আদায়')
-              AND $COL_TX_NOTES NOT LIKE '[Transfer]%'
-              AND $COL_TX_TITLE NOT LIKE 'Transfer to %'
-              AND $COL_TX_TITLE NOT LIKE 'Transfer from %'
+              AND $EXCLUDED_CATEGORIES_SQL
         """.trimIndent()
 
         var totalIncome = 0.0
@@ -133,10 +142,7 @@ internal class TransactionStatsHelper(private val dbHelper: ExpenseDatabaseHelpe
             FROM $TABLE_TRANSACTIONS
             WHERE $COL_TX_DATE >= ? AND $COL_TX_DATE <= ?
               AND $COL_TX_TYPE = ?
-              AND $COL_TX_CAT_NAME NOT IN ('Transfer', 'Account Transfer', 'অ্যাকাউন্ট স্থানান্তর', 'Loan & Debt Given', 'ঋণ বা ধার প্রদান', 'Debt Recovery', 'পাওনা টাকা আদায়')
-              AND $COL_TX_NOTES NOT LIKE '[Transfer]%'
-              AND $COL_TX_TITLE NOT LIKE 'Transfer to %'
-              AND $COL_TX_TITLE NOT LIKE 'Transfer from %'
+              AND $EXCLUDED_CATEGORIES_SQL
             GROUP BY $COL_TX_PAYMENT_METHOD
             ORDER BY total_amount DESC
         """.trimIndent()

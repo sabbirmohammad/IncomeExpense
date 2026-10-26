@@ -8,6 +8,7 @@ import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.RecurringBill
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.repository.*
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -29,20 +30,24 @@ class BillsViewModel(application: Application) : AndroidViewModel(application) {
     val userProfile: StateFlow<UserProfile> = repository.userProfile
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserProfile())
 
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        android.util.Log.e("BillsViewModel", "Unhandled coroutine error", throwable)
+    }
+
     fun addBill(bill: RecurringBill) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.addRecurringBill(bill)
         }
     }
 
     fun updateBill(bill: RecurringBill) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.updateRecurringBill(bill)
         }
     }
 
     fun deleteBill(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.deleteRecurringBill(id)
         }
     }
@@ -53,7 +58,7 @@ class BillsViewModel(application: Application) : AndroidViewModel(application) {
         accountName: String?,
         onSuccess: () -> Unit
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             val txId = repository.payRecurringBill(billId, accountId, accountName)
             if (txId > 0) {
                 onSuccess()

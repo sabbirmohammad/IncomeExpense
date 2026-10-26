@@ -34,12 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import java.text.DecimalFormat
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ConfirmationFeedbackCard(
@@ -54,6 +50,7 @@ fun ConfirmationFeedbackCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         modifier = modifier
             .fillMaxWidth(0.85f)
@@ -66,7 +63,7 @@ fun ConfirmationFeedbackCard(
                 onDismiss()
             },
         shape = RoundedCornerShape(26.dp),
-        color = Color(0xFF131724),
+        color = appColors.surface,
         border = BorderStroke(1.5.dp, tintColor.copy(alpha = 0.5f)),
         shadowElevation = 24.dp
     ) {
@@ -130,7 +127,7 @@ fun ConfirmationFeedbackCard(
                     fontSize = 17.sp,
                     letterSpacing = 0.15.sp
                 ),
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 textAlign = TextAlign.Center
             )
 
@@ -149,9 +146,9 @@ fun ConfirmationFeedbackCard(
                 }
 
                 val amountColor = when (data.type) {
-                    FeedbackVisualType.INCOME -> ColorSuccessIncome
-                    FeedbackVisualType.EXPENSE -> ColorDangerExpense
-                    else -> ColorTextPrimary
+                    FeedbackVisualType.INCOME -> appColors.income
+                    FeedbackVisualType.EXPENSE -> appColors.expense
+                    else -> appColors.textPrimary
                 }
 
                 Text(
@@ -171,8 +168,8 @@ fun ConfirmationFeedbackCard(
                 Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF1C2234),
-                    border = BorderStroke(1.dp, Color(0xFF2B344D))
+                    color = appColors.surfaceVariant,
+                    border = BorderStroke(1.dp, appColors.border)
                 ) {
                     Text(
                         text = data.subtitle,
@@ -180,7 +177,7 @@ fun ConfirmationFeedbackCard(
                             fontWeight = FontWeight.Medium,
                             fontSize = 12.sp
                         ),
-                        color = ColorTextSecondary,
+                        color = appColors.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -194,7 +191,7 @@ fun ConfirmationFeedbackCard(
                 Text(
                     text = data.extraDetails,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = ColorTextMuted,
+                    color = appColors.textMuted,
                     textAlign = TextAlign.Center
                 )
             }
@@ -227,7 +224,7 @@ fun ConfirmationFeedbackCard(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Normal
                 ),
-                color = ColorTextMuted
+                color = appColors.textMuted
             )
         }
     }

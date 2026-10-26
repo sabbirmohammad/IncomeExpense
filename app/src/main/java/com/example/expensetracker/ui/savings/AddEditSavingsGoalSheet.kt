@@ -39,14 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.SavingsGoal
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
@@ -63,6 +56,7 @@ fun AddEditSavingsGoalSheet(
     onSave: (String, Double, Double, Long?, String, String, String) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var title by remember { mutableStateOf(goal?.title ?: "") }
     var targetAmountText by remember {
         mutableStateOf(goal?.targetAmount?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: "")
@@ -79,7 +73,7 @@ fun AddEditSavingsGoalSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -103,31 +97,31 @@ fun AddEditSavingsGoalSheet(
                     else
                         strings.addSavingsGoal,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, null, tint = ColorTextSecondary)
+                    Icon(Icons.Outlined.Close, null, tint = appColors.textSecondary)
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
             // Goal Title
-            Text(strings.goalTitle, fontSize = 12.sp, color = ColorTextSecondary)
+            Text(strings.goalTitle, fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                placeholder = { Text(if (strings.isBangla) "যেমন: নতুন বাইক, জরুরি তহবিল, হজ্ব" else "e.g. New Bike, Emergency Fund, Laptop", color = ColorTextMuted) },
+                placeholder = { Text(if (strings.isBangla) "যেমন: নতুন বাইক, জরুরি তহবিল, হজ্ব" else "e.g. New Bike, Emergency Fund, Laptop", color = appColors.textMuted) },
                 singleLine = true,
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ColorBackground,
-                    unfocusedContainerColor = ColorBackground,
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant,
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -145,22 +139,22 @@ fun AddEditSavingsGoalSheet(
 
             // Initial Saved Amount (Optional)
             if (goal == null) {
-                Text("${strings.savedAmount} (${strings.optional})", fontSize = 12.sp, color = ColorTextSecondary)
+                Text("${strings.savedAmount} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = initialSavedText,
                     onValueChange = { initialSavedText = it.filter { c -> c.isDigit() || c == '.' } },
-                    placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = ColorTextMuted) },
+                    placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = appColors.textMuted) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(SmallElementRadius),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = ColorBackground,
-                        unfocusedContainerColor = ColorBackground,
-                        focusedBorderColor = ColorAccent,
-                        unfocusedBorderColor = ColorBorder,
-                        focusedTextColor = ColorTextPrimary,
-                        unfocusedTextColor = ColorTextPrimary
+                        focusedContainerColor = appColors.surfaceVariant,
+                        unfocusedContainerColor = appColors.surfaceVariant,
+                        focusedBorderColor = appColors.accent,
+                        unfocusedBorderColor = appColors.border,
+                        focusedTextColor = appColors.textPrimary,
+                        unfocusedTextColor = appColors.textPrimary
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -177,7 +171,7 @@ fun AddEditSavingsGoalSheet(
             Spacer(modifier = Modifier.height(14.dp))
 
             // Icon Picker
-            Text(if (strings.isBangla) "আইকন নির্বাচন করুন" else "Select Icon", fontSize = 12.sp, color = ColorTextSecondary)
+            Text(if (strings.isBangla) "আইকন নির্বাচন করুন" else "Select Icon", fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(8.dp))
             GoalIconPickerRow(
                 selectedIcon = selectedIcon,
@@ -188,7 +182,7 @@ fun AddEditSavingsGoalSheet(
             Spacer(modifier = Modifier.height(14.dp))
 
             // Color Picker
-            Text(if (strings.isBangla) "রং নির্বাচন করুন" else "Select Color", fontSize = 12.sp, color = ColorTextSecondary)
+            Text(if (strings.isBangla) "রং নির্বাচন করুন" else "Select Color", fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(8.dp))
             GoalColorPickerRow(
                 selectedColorHex = selectedColorHex,

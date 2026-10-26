@@ -19,6 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -28,10 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Payable
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -39,6 +36,7 @@ import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import java.text.SimpleDateFormat
 import java.util.Date
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun PayableItemBottomBar(
@@ -46,6 +44,7 @@ fun PayableItemBottomBar(
     onRecordPayment: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val context = LocalContext.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
@@ -64,7 +63,7 @@ fun PayableItemBottomBar(
                 Icon(
                     imageVector = Icons.Outlined.CalendarToday,
                     contentDescription = null,
-                    tint = if (isOverdue) ColorDangerExpense else ColorTextSecondary,
+                    tint = if (isOverdue) appColors.expense else appColors.textSecondary,
                     modifier = Modifier.size(13.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -73,7 +72,7 @@ fun PayableItemBottomBar(
                 Text(
                     text = "${strings.dueDate}: $displayDueDate",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = if (isOverdue) ColorDangerExpense else ColorTextSecondary,
+                    color = if (isOverdue) appColors.expense else appColors.textSecondary,
                     fontWeight = if (isOverdue) FontWeight.SemiBold else FontWeight.Normal
                 )
             }
@@ -90,13 +89,12 @@ fun PayableItemBottomBar(
                             val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${payable.phoneNumber}"))
                             context.startActivity(intent)
                         } catch (_: Exception) {}
-                    },
-                    modifier = Modifier.size(32.dp)
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Call,
                         contentDescription = strings.callPerson,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -106,17 +104,19 @@ fun PayableItemBottomBar(
             if (!payable.isSettled) {
                 Surface(
                     shape = RoundedCornerShape(SmallElementRadius),
-                    color = ColorSuccessIncome.copy(alpha = 0.15f),
-                    modifier = Modifier.clickable {
-                        haptics.mediumClick()
-                        onRecordPayment()
-                    }
+                    color = appColors.income.copy(alpha = 0.15f),
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable {
+                            haptics.mediumClick()
+                            onRecordPayment()
+                        }
                 ) {
                     Text(
                         text = strings.recordPayablePayment,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorSuccessIncome,
+                        color = appColors.income,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                 }

@@ -28,10 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.Strings
@@ -52,25 +48,15 @@ fun TransactionDateTimeSection(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = strings.dateTimeLabel,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = ColorTextSecondary
-            )
-            Text(
-                text = strings.tapToChange,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                color = ColorTextMuted
-            )
-        }
+        Text(
+            text = strings.dateTimeLabel,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+            color = appColors.textSecondary
+        )
         Spacer(modifier = Modifier.height(4.dp))
 
         Row(
@@ -105,17 +91,17 @@ fun TransactionDateTimeSection(
                     Text(
                         text = dateOnlyFormat.format(Date(dateMillis)),
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Medium),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                     Text(
                         text = dayOfWeekFormat.format(Date(dateMillis)),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
             }
 
-            Box(modifier = Modifier.height(26.dp).width(1.dp).background(ColorBorder))
+            Box(modifier = Modifier.height(26.dp).width(1.dp).background(appColors.border))
 
             Row(
                 modifier = Modifier
@@ -132,14 +118,14 @@ fun TransactionDateTimeSection(
                 Icon(
                     imageVector = Icons.Outlined.Schedule,
                     contentDescription = "Pick time",
-                    tint = ColorTextSecondary,
+                    tint = appColors.textSecondary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = timeOnlyFormat.format(Date(dateMillis)),
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Normal),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
             }
         }

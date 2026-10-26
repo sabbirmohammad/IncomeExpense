@@ -15,10 +15,7 @@ import com.example.expensetracker.data.model.Budget
 import com.example.expensetracker.data.model.SavingsGoal
 import com.example.expensetracker.data.model.getLocalizedCategoryName
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -29,13 +26,14 @@ fun DeleteBudgetConfirmDialog(
     onConfirmDelete: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
-        titleContentColor = ColorTextPrimary,
-        textContentColor = ColorTextSecondary,
+        containerColor = appColors.surface,
+        titleContentColor = appColors.textPrimary,
+        textContentColor = appColors.textSecondary,
         title = {
             Text(
                 text = if (strings.isBangla) "বাজেট মুছে ফেলবেন?" else "Delete budget?",
@@ -57,7 +55,7 @@ fun DeleteBudgetConfirmDialog(
         confirmButton = {
             Button(
                 onClick = onConfirmDelete,
-                colors = ButtonDefaults.buttonColors(containerColor = ColorDangerExpense),
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.dangerExpense),
                 shape = RoundedCornerShape(SmallElementRadius)
             ) {
                 Text(strings.delete, color = Color.White)
@@ -65,7 +63,7 @@ fun DeleteBudgetConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )
@@ -78,13 +76,14 @@ fun DeleteGoalConfirmDialog(
     onConfirmDelete: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
-        titleContentColor = ColorTextPrimary,
-        textContentColor = ColorTextSecondary,
+        containerColor = appColors.surface,
+        titleContentColor = appColors.textPrimary,
+        textContentColor = appColors.textSecondary,
         title = {
             Text(
                 text = "${strings.deleteGoalConfirm} (${targetGoal.title})",
@@ -103,7 +102,7 @@ fun DeleteGoalConfirmDialog(
         confirmButton = {
             Button(
                 onClick = onConfirmDelete,
-                colors = ButtonDefaults.buttonColors(containerColor = ColorDangerExpense),
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.dangerExpense),
                 shape = RoundedCornerShape(SmallElementRadius)
             ) {
                 Text(strings.delete, color = Color.White)
@@ -111,7 +110,7 @@ fun DeleteGoalConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )

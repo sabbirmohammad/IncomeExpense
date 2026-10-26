@@ -32,8 +32,8 @@ import com.example.expensetracker.common.AppConstants
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,12 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.UserProfile
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.ProfileAvatarButton
 import com.example.expensetracker.ui.components.Strings
@@ -79,11 +74,12 @@ fun SideMenuDrawer(
     onAddTransactionClick: () -> Unit = {}
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF090C14))
+            .background(appColors.surface)
     ) {
         Column(
             modifier = Modifier
@@ -123,7 +119,7 @@ fun SideMenuDrawer(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorTextPrimary,
+                            color = appColors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -133,7 +129,7 @@ fun SideMenuDrawer(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Normal
                             ),
-                            color = ColorTextSecondary,
+                            color = appColors.textSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -146,8 +142,8 @@ fun SideMenuDrawer(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = ColorSurface,
-                    border = BorderStroke(1.dp, ColorBorder)
+                    color = appColors.surfaceVariant,
+                    border = BorderStroke(1.dp, appColors.border)
                 ) {
                     Row(
                         modifier = Modifier
@@ -161,14 +157,14 @@ fun SideMenuDrawer(
                                 text = strings.totalBalance,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = ColorTextMuted
+                                color = appColors.textMuted
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = formatCurrency(totalBalance, userProfile.currencySymbol),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (totalBalance >= 0) ColorTextPrimary else Color(0xFFF0716B)
+                                color = if (totalBalance >= 0) appColors.textPrimary else appColors.expense
                             )
                         }
 
@@ -176,13 +172,13 @@ fun SideMenuDrawer(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(CircleShape)
-                                .background(ColorAccent.copy(alpha = 0.15f)),
+                                .background(appColors.accent.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.TrendingUp,
+                                imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
                                 contentDescription = null,
-                                tint = ColorAccent,
+                                tint = appColors.accent,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -196,13 +192,21 @@ fun SideMenuDrawer(
                     text = if (strings.isBangla) "মেনু ও নেভিগেশন" else "NAVIGATION",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = ColorTextMuted,
+                    color = appColors.textMuted,
                     letterSpacing = 1.sp,
                     modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
                 )
 
                 // Menu Items List
-                NavigationItem.entries.forEach { item ->
+                val drawerMenuItems = listOf(
+                    NavigationItem.ACCOUNTS,
+                    NavigationItem.BILLS,
+                    NavigationItem.RECEIVABLES,
+                    NavigationItem.BUDGETS,
+                    NavigationItem.REPORTS,
+                    NavigationItem.SETTINGS
+                )
+                drawerMenuItems.forEach { item ->
                     val isSelected = selectedItem == item
                     DrawerMenuItemRow(
                         item = item,

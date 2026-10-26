@@ -14,8 +14,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun TransactionDetailInfoRow(
@@ -24,6 +23,7 @@ fun TransactionDetailInfoRow(
     value: String,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -36,7 +36,7 @@ fun TransactionDetailInfoRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = ColorTextSecondary,
+                tint = appColors.textSecondary,
                 modifier = Modifier.size(16.dp)
             )
             Text(
@@ -44,7 +44,7 @@ fun TransactionDetailInfoRow(
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = 12.5.sp
                 ),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
         }
         Text(
@@ -53,7 +53,7 @@ fun TransactionDetailInfoRow(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             ),
-            color = ColorTextPrimary
+            color = appColors.textPrimary
         )
     }
 }

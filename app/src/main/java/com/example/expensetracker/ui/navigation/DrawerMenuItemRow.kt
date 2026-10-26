@@ -26,9 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 
 @Composable
@@ -39,20 +37,21 @@ fun DrawerMenuItemRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val bgColor by animateColorAsState(
-        targetValue = if (isSelected) ColorAccent.copy(alpha = 0.16f) else Color.Transparent,
+        targetValue = if (isSelected) appColors.accent.copy(alpha = if (appColors.isDark) 0.16f else 0.12f) else Color.Transparent,
         animationSpec = tween(180),
         label = "drawerItemBg"
     )
 
     val textColor by animateColorAsState(
-        targetValue = if (isSelected) ColorTextPrimary else ColorTextSecondary,
+        targetValue = if (isSelected) appColors.textPrimary else appColors.textSecondary,
         animationSpec = tween(180),
         label = "drawerItemText"
     )
 
     val iconColor by animateColorAsState(
-        targetValue = if (isSelected) ColorAccent else ColorTextSecondary,
+        targetValue = if (isSelected) appColors.accent else appColors.textSecondary,
         animationSpec = tween(180),
         label = "drawerItemIcon"
     )
@@ -67,7 +66,7 @@ fun DrawerMenuItemRow(
             .background(bgColor)
             .then(
                 if (isSelected) {
-                    Modifier.border(1.dp, ColorAccent.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                    Modifier.border(1.dp, appColors.accent.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
                 } else Modifier
             )
             .clickable { onClick() }
@@ -85,7 +84,7 @@ fun DrawerMenuItemRow(
                         .width(3.dp)
                         .height(18.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(ColorAccent)
+                        .background(appColors.accent)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
             }

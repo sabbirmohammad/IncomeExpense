@@ -65,9 +65,12 @@ internal object DatabaseSchema {
                 $COL_BUDGET_CAT_NAME TEXT NOT NULL,
                 $COL_BUDGET_AMOUNT REAL NOT NULL,
                 $COL_BUDGET_MONTH INTEGER NOT NULL,
-                $COL_BUDGET_YEAR INTEGER NOT NULL
+                $COL_BUDGET_YEAR INTEGER NOT NULL,
+                UNIQUE($COL_BUDGET_CAT_ID, $COL_BUDGET_MONTH, $COL_BUDGET_YEAR) ON CONFLICT REPLACE
             )
         """.trimIndent())
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_budgets_month_year ON $TABLE_BUDGETS ($COL_BUDGET_MONTH, $COL_BUDGET_YEAR)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_budgets_cat_month_year ON $TABLE_BUDGETS ($COL_BUDGET_CAT_ID, $COL_BUDGET_MONTH, $COL_BUDGET_YEAR)")
     }
 
     private fun createProfile(db: SQLiteDatabase) {
@@ -84,8 +87,6 @@ internal object DatabaseSchema {
                 $COL_PROFILE_AUTO_SYNC INTEGER NOT NULL,
                 $COL_PROFILE_LAST_SYNC INTEGER NOT NULL,
                 $COL_PROFILE_LANGUAGE TEXT NOT NULL DEFAULT 'bn',
-                $COL_PROFILE_GEMINI_KEY TEXT,
-                $COL_PROFILE_AI_INSIGHTS_ENABLED INTEGER NOT NULL DEFAULT 1,
                 $COL_PROFILE_THEME TEXT NOT NULL DEFAULT 'dark',
                 $COL_PROFILE_BENGALI_NUMERALS INTEGER NOT NULL DEFAULT 1
             )
@@ -124,6 +125,7 @@ internal object DatabaseSchema {
             )
         """.trimIndent())
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_rec_status_date ON $TABLE_RECEIVABLES ($COL_REC_STATUS, $COL_REC_CREATED_DATE)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_rec_due_date ON $TABLE_RECEIVABLES ($COL_REC_DUE_DATE)")
     }
 
     private fun createRecurringBills(db: SQLiteDatabase) {
@@ -147,6 +149,7 @@ internal object DatabaseSchema {
             )
         """.trimIndent())
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_bills_due_active ON $TABLE_RECURRING_BILLS ($COL_BILL_IS_ACTIVE, $COL_BILL_NEXT_DUE)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_bills_due_day ON $TABLE_RECURRING_BILLS ($COL_BILL_DUE_DAY)")
     }
 
     private fun createPayables(db: SQLiteDatabase) {
@@ -164,6 +167,7 @@ internal object DatabaseSchema {
             )
         """.trimIndent())
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_pay_status_date ON $TABLE_PAYABLES ($COL_PAY_STATUS, $COL_PAY_CREATED_DATE)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_pay_due_date ON $TABLE_PAYABLES ($COL_PAY_DUE_DATE)")
     }
 
     private fun createSavingsGoals(db: SQLiteDatabase) {

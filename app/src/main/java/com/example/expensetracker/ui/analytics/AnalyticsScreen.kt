@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.TimeFilter
 import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -40,17 +39,18 @@ fun AnalyticsScreen(
     onNavigateBack: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
-    val categorySpends by viewModel.categorySpends.collectAsState()
-    val paymentMethodSpends by viewModel.paymentMethodSpends.collectAsState()
-    val dailySpends by viewModel.dailySpends.collectAsState()
-    val summary by viewModel.summary.collectAsState()
-    val overview by viewModel.overview.collectAsState()
-    val breakdownMode by viewModel.breakdownMode.collectAsState()
-    val timeFilter by viewModel.timeFilter.collectAsState()
-    val transactionType by viewModel.transactionType.collectAsState()
-    val userProfile by viewModel.userProfile.collectAsState()
+    val categorySpends by viewModel.categorySpends.collectAsStateWithLifecycle()
+    val paymentMethodSpends by viewModel.paymentMethodSpends.collectAsStateWithLifecycle()
+    val dailySpends by viewModel.dailySpends.collectAsStateWithLifecycle()
+    val summary by viewModel.summary.collectAsStateWithLifecycle()
+    val overview by viewModel.overview.collectAsStateWithLifecycle()
+    val breakdownMode by viewModel.breakdownMode.collectAsStateWithLifecycle()
+    val timeFilter by viewModel.timeFilter.collectAsStateWithLifecycle()
+    val transactionType by viewModel.transactionType.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     val totalAmount = if (transactionType == TransactionType.EXPENSE) summary.totalExpense else summary.totalIncome
 
@@ -155,7 +155,7 @@ fun AnalyticsScreen(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                         SpendingBarChart(

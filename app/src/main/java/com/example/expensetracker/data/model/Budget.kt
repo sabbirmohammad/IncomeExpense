@@ -11,11 +11,3 @@ data class Budget(
     val month: Int,
     val year: Int
 )
-
-@Serializable
-data class AiBudgetRecommendation(
-    val categoryName: String,
-    val recommendedAmount: Double,
-    val currentSpend: Double = 0.0,
-    val reason: String = ""
-)

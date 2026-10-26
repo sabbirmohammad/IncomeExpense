@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,18 +30,16 @@ fun ReceivablesScreen(
     onNavigateBack: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null
 ) {
-    val receivables by viewModel.receivables.collectAsState()
-    val summary by viewModel.receivablesSummary.collectAsState()
-    val payables by viewModel.payables.collectAsState()
-    val payablesSummary by viewModel.payablesSummary.collectAsState()
-    val debtBookSummary by viewModel.debtBookSummary.collectAsState()
-    val selectedTab by viewModel.selectedTab.collectAsState()
-    val isPrivacyMode by viewModel.isPrivacyMode.collectAsState()
-    val accounts by viewModel.accounts.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val userProfile by viewModel.userProfile.collectAsState()
-    val generatedReminder by viewModel.generatedReminder.collectAsState()
-    val isGeneratingReminder by viewModel.isGeneratingReminder.collectAsState()
+    val receivables by viewModel.receivables.collectAsStateWithLifecycle()
+    val summary by viewModel.receivablesSummary.collectAsStateWithLifecycle()
+    val payables by viewModel.payables.collectAsStateWithLifecycle()
+    val payablesSummary by viewModel.payablesSummary.collectAsStateWithLifecycle()
+    val debtBookSummary by viewModel.debtBookSummary.collectAsStateWithLifecycle()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val isPrivacyMode by viewModel.isPrivacyMode.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
     val context = LocalContext.current
 
@@ -55,7 +53,6 @@ fun ReceivablesScreen(
     var payableToEdit by remember { mutableStateOf<Payable?>(null) }
     var payableForPayment by remember { mutableStateOf<Payable?>(null) }
     var payableToDelete by remember { mutableStateOf<Payable?>(null) }
-    var selectedReceivableForReminder by remember { mutableStateOf<Receivable?>(null) }
 
     Column(
         modifier = Modifier
@@ -112,11 +109,7 @@ fun ReceivablesScreen(
                         receivableToEdit = it
                         showAddEditSheet = true
                     },
-                    onDelete = { receivableToDelete = it },
-                    onGenerateReminder = {
-                        selectedReceivableForReminder = it
-                        viewModel.generatePoliteReminder(it)
-                    }
+                    onDelete = { receivableToDelete = it }
                 )
             } else {
                 payablesTabContent(
@@ -166,13 +159,6 @@ fun ReceivablesScreen(
         onDismissPayablePayment = { payableForPayment = null },
         payableToDelete = payableToDelete,
         onDismissDeletePayable = { payableToDelete = null },
-        selectedReceivableForReminder = selectedReceivableForReminder,
-        onDismissReminder = {
-            selectedReceivableForReminder = null
-            viewModel.clearGeneratedReminder()
-        },
-        generatedReminder = generatedReminder,
-        isGeneratingReminder = isGeneratingReminder,
         showConfetti = showConfetti,
         onTriggerConfetti = { showConfetti = true },
         onConfettiEnd = { showConfetti = false }

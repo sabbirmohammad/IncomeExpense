@@ -25,10 +25,6 @@ import com.example.expensetracker.data.model.CategorySpend
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.model.getLocalizedCategoryName
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.AppProgressBar
 import com.example.expensetracker.ui.components.CategoryIconBadge
@@ -37,6 +33,7 @@ import com.example.expensetracker.ui.components.DonutChart
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun CategoryDonutChartCard(
@@ -48,6 +45,7 @@ fun CategoryDonutChartCard(
     onCategoryClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     AppCard(modifier = modifier) {
         Column {
             Text(
@@ -60,7 +58,7 @@ fun CategoryDonutChartCard(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -88,6 +86,7 @@ fun CategoryRankingCard(
     onCategoryClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     AppCard(modifier = modifier) {
         Column {
             Row(
@@ -101,12 +100,12 @@ fun CategoryRankingCard(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Text(
                     text = "${categorySpends.size} ${if (strings.isBangla) "টি ক্যাটাগরি" else "categories"}",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
             }
 
@@ -143,14 +142,14 @@ fun CategoryRankingCard(
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Medium
                                         ),
-                                        color = ColorTextPrimary
+                                        color = appColors.textPrimary
                                     )
                                     if (index == 0) {
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(4.dp))
-                                                .background(ColorAccent.copy(alpha = 0.15f))
+                                                .background(appColors.accent.copy(alpha = 0.15f))
                                                 .padding(horizontal = 5.dp, vertical = 1.dp)
                                         ) {
                                             Text(
@@ -163,7 +162,7 @@ fun CategoryRankingCard(
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold
                                                 ),
-                                                color = ColorAccent
+                                                color = appColors.accent
                                             )
                                         }
                                     }
@@ -171,7 +170,7 @@ fun CategoryRankingCard(
                                 Text(
                                     text = "${spend.transactionCount} ${if (strings.isBangla) "টি লেনদেন" else "transactions"}",
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = ColorTextMuted
+                                    color = appColors.textMuted
                                 )
                             }
                         }
@@ -183,12 +182,12 @@ fun CategoryRankingCard(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
-                                color = ColorTextPrimary
+                                color = appColors.textPrimary
                             )
                             Text(
                                 text = "${(spend.percentage * 100).toInt()}%",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = ColorTextSecondary
+                                color = appColors.textSecondary
                             )
                         }
                     }

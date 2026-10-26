@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,13 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.BillPaymentStatus
 import com.example.expensetracker.data.model.RecurringBill
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextSecondary
-import com.example.expensetracker.theme.ColorWarningBills
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillPaymentStatusRow(
@@ -44,6 +41,7 @@ fun BillPaymentStatusRow(
     onPayNow: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val paymentStatus = bill.getPaymentStatus()
     val daysUntilDue = bill.getDaysUntilDue()
@@ -58,22 +56,22 @@ fun BillPaymentStatusRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         val (statusText, statusBg, statusColor) = when {
-            isOverdue -> Triple(strings.overdueBadgeText, ColorDangerExpense.copy(alpha = 0.15f), ColorDangerExpense)
+            isOverdue -> Triple(strings.overdueBadgeText, appColors.expense.copy(alpha = 0.15f), appColors.expense)
             isDueSoon -> Triple(
                 if (daysUntilDue == 0) (if (strings.isBangla) "আজই প্রদেয়" else "Due Today")
                 else (if (strings.isBangla) "$daysUntilDue দিনের মধ্যে প্রদেয়" else "Due in $daysUntilDue days"),
-                ColorWarningBills.copy(alpha = 0.15f),
-                ColorWarningBills
+                appColors.warning.copy(alpha = 0.15f),
+                appColors.warning
             )
             isPaidRecently -> Triple(
                 strings.paidThisMonth,
-                ColorSuccessIncome.copy(alpha = 0.15f),
-                ColorSuccessIncome
+                appColors.income.copy(alpha = 0.15f),
+                appColors.income
             )
             else -> Triple(
                 if (strings.isBangla) "আসন্ন (${bill.dueDay} তারিখ)" else "Upcoming (Day ${bill.dueDay})",
-                ColorBorder.copy(alpha = 0.4f),
-                ColorTextSecondary
+                appColors.border.copy(alpha = 0.4f),
+                appColors.textSecondary
             )
         }
 
@@ -101,8 +99,8 @@ fun BillPaymentStatusRow(
         if (isPaidRecently) {
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = ColorSuccessIncome.copy(alpha = 0.12f),
-                border = BorderStroke(1.dp, ColorSuccessIncome.copy(alpha = 0.25f))
+                color = appColors.income.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.25f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -112,14 +110,14 @@ fun BillPaymentStatusRow(
                     Icon(
                         imageVector = Icons.Filled.Check,
                         contentDescription = null,
-                        tint = ColorSuccessIncome,
+                        tint = appColors.income,
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
                         text = if (strings.isBangla) "পরিশোধিত" else "Paid",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorSuccessIncome
+                        color = appColors.income
                     )
                 }
             }
@@ -127,11 +125,13 @@ fun BillPaymentStatusRow(
             Button(
                 onClick = onPayNow,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isOverdue) ColorDangerExpense else if (isDueSoon) ColorWarningBills else ColorAccent
+                    containerColor = if (isOverdue) appColors.expense else if (isDueSoon) appColors.warning else appColors.accent
                 ),
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                modifier = Modifier.height(34.dp)
+                modifier = Modifier
+                    .defaultMinSize(minHeight = 36.dp)
+                    .minimumInteractiveComponentSize()
             ) {
                 Icon(
                     imageVector = Icons.Filled.Payment,

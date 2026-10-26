@@ -34,10 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.CategorySpend
 import com.example.expensetracker.data.model.getLocalizedCategoryName
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Donut chart per spec:
@@ -55,6 +52,7 @@ fun DonutChart(
     onCategoryClick: ((Long) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val chartDiameter = 160.dp
     val strokeWidthDp = 22.dp
@@ -68,13 +66,13 @@ fun DonutChart(
             contentAlignment = Alignment.Center
         ) {
             if (categorySpends.isEmpty() || totalAmount <= 0.0) {
-                // Muted placeholder ring in border color #232838
+                val emptyBorderColor = appColors.border
                 Canvas(modifier = Modifier.size(chartDiameter - 10.dp)) {
                     val stroke = strokeWidthDp.toPx()
                     val radius = (size.minDimension - stroke) / 2
                     val topLeft = Offset((size.width - 2 * radius) / 2, (size.height - 2 * radius) / 2)
                     drawArc(
-                        color = ColorBorder,
+                        color = emptyBorderColor,
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,
@@ -91,7 +89,7 @@ fun DonutChart(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Normal
                     ),
-                    color = ColorTextMuted
+                    color = appColors.textMuted
                 )
             } else {
                 // Animated donut ring
@@ -133,7 +131,7 @@ fun DonutChart(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Normal
                         ),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -142,7 +140,7 @@ fun DonutChart(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
             }
@@ -190,7 +188,7 @@ fun DonutChart(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Normal
                                 ),
-                                color = ColorTextPrimary,
+                                color = appColors.textPrimary,
                                 maxLines = 1
                             )
                         }
@@ -202,7 +200,7 @@ fun DonutChart(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
-                                color = ColorTextPrimary
+                                color = appColors.textPrimary
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
@@ -211,7 +209,7 @@ fun DonutChart(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Normal
                                 ),
-                                color = ColorTextSecondary,
+                                color = appColors.textSecondary,
                                 modifier = Modifier.width(36.dp),
                                 textAlign = androidx.compose.ui.text.style.TextAlign.End
                             )

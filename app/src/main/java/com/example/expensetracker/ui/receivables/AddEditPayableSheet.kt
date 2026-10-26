@@ -40,12 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Payable
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
@@ -62,6 +57,7 @@ fun AddEditPayableSheet(
     onSave: (personName: String, phoneNumber: String, amount: Double, dueDateMillis: Long?, notes: String, depositToAccountId: Long?) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val isEdit = payable != null
 
     var personName by remember { mutableStateOf(payable?.personName ?: "") }
@@ -79,7 +75,7 @@ fun AddEditPayableSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(
@@ -101,10 +97,10 @@ fun AddEditPayableSheet(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = ColorTextSecondary)
+                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = appColors.textSecondary)
                 }
             }
 
@@ -117,12 +113,12 @@ fun AddEditPayableSheet(
                     errorMessage = null
                 },
                 label = { Text(strings.lenderName) },
-                leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = ColorAccent) },
+                leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = appColors.accent) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border
                 )
             )
 
@@ -132,13 +128,13 @@ fun AddEditPayableSheet(
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it },
                 label = { Text(strings.phoneNumber) },
-                leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = ColorTextSecondary) },
+                leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = appColors.textSecondary) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border
                 )
             )
 
@@ -164,16 +160,16 @@ fun AddEditPayableSheet(
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(strings.dueDate) },
-                leadingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = ColorAccent) },
+                leadingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = appColors.accent) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { showDatePicker = true },
                 enabled = false,
                 colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = ColorTextPrimary,
-                    disabledBorderColor = ColorBorder,
-                    disabledLabelColor = ColorTextSecondary,
-                    disabledLeadingIconColor = ColorAccent
+                    disabledTextColor = appColors.textPrimary,
+                    disabledBorderColor = appColors.border,
+                    disabledLabelColor = appColors.textSecondary,
+                    disabledLeadingIconColor = appColors.accent
                 )
             )
 
@@ -187,8 +183,8 @@ fun AddEditPayableSheet(
                 maxLines = 3,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border
                 )
             )
 
@@ -205,7 +201,7 @@ fun AddEditPayableSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = errorMessage!!,
-                    color = ColorDangerExpense,
+                    color = appColors.expense,
                     fontSize = 12.sp
                 )
             }

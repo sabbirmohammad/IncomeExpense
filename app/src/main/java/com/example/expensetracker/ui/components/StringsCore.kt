@@ -6,6 +6,7 @@ open class StringsCore(
     val appName: String get() = if (isBangla) "হিসাব খাতা" else "Expense Tracker"
     val cancel: String get() = if (isBangla) "বাতিল" else "Cancel"
     val save: String get() = if (isBangla) "সংরক্ষণ" else "Save"
+    val saving: String get() = if (isBangla) "সংরক্ষণ হচ্ছে..." else "Saving..."
     val confirm: String get() = if (isBangla) "নিশ্চিত করুন" else "Confirm"
     val delete: String get() = if (isBangla) "মুছে ফেলুন" else "Delete"
     val close: String get() = if (isBangla) "বন্ধ করুন" else "Close"
@@ -155,7 +156,7 @@ open class StringsCore(
     val addShort: String get() = if (isBangla) "+ যোগ করুন" else "+ Add"
     val manage: String get() = if (isBangla) "ম্যানেজ করুন →" else "Manage →"
     val payNowArrow: String get() = if (isBangla) "পরিশোধ করুন →" else "Pay →"
-    val billsDueAlertSubtitle: String get() = if (isBangla) "টি বিল পরিশোধের সময় হয়েছে • পরিশোধ করতে ট্যাপ করুন" else "bill(s) due soon • Tap to pay"
+    val billsDueAlertSubtitle: String get() = if (isBangla) "টি বিল পরিশোধের সময় হয়েছে" else "bill(s) due soon"
 
     // Bills Extra
     val totalMonthlyCommitment: String get() = if (isBangla) "মোট মাসিক প্রতিশ্রুতি" else "TOTAL MONTHLY COMMITMENT"

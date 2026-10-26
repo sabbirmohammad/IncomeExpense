@@ -16,9 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun AccountStatMiniCard(
@@ -27,11 +25,12 @@ fun AccountStatMiniCard(
     amount: String,
     color: Color
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        color = ColorBackground,
-        border = BorderStroke(1.dp, ColorBorder.copy(alpha = 0.6f))
+        color = appColors.surfaceVariant,
+        border = BorderStroke(1.dp, appColors.border.copy(alpha = 0.6f))
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
@@ -40,7 +39,7 @@ fun AccountStatMiniCard(
             Text(
                 text = label,
                 fontSize = 10.sp,
-                color = ColorTextMuted,
+                color = appColors.textMuted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

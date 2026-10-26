@@ -16,13 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -36,30 +30,31 @@ fun GoalNotesAndSaveSection(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text("${strings.note} (${strings.optional})", fontSize = 12.sp, color = ColorTextSecondary)
+        Text("${strings.note} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
         Spacer(modifier = Modifier.height(4.dp))
         OutlinedTextField(
             value = notes,
             onValueChange = onNotesChanged,
-            placeholder = { Text(if (strings.isBangla) "লক্ষ্য সম্পর্কিত বিবরণ..." else "Notes or motivation...", color = ColorTextMuted) },
+            placeholder = { Text(if (strings.isBangla) "লক্ষ্য সম্পর্কিত বিবরণ..." else "Notes or motivation...", color = appColors.textMuted) },
             maxLines = 2,
             shape = RoundedCornerShape(SmallElementRadius),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = ColorBackground,
-                unfocusedContainerColor = ColorBackground,
-                focusedBorderColor = ColorAccent,
-                unfocusedBorderColor = ColorBorder,
-                focusedTextColor = ColorTextPrimary,
-                unfocusedTextColor = ColorTextPrimary
+                focusedContainerColor = appColors.surfaceVariant,
+                unfocusedContainerColor = appColors.surfaceVariant,
+                focusedBorderColor = appColors.accent,
+                unfocusedBorderColor = appColors.border,
+                focusedTextColor = appColors.textPrimary,
+                unfocusedTextColor = appColors.textPrimary
             ),
             modifier = Modifier.fillMaxWidth()
         )
 
         if (errorMessage != null) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(errorMessage, color = ColorDangerExpense, fontSize = 12.sp)
+            Text(errorMessage, color = appColors.expense, fontSize = 12.sp)
         }
 
         Spacer(modifier = Modifier.height(20.dp))

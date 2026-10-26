@@ -24,7 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,13 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -52,17 +46,18 @@ fun ReportsScreen(
 ) {
     val strings = LocalAppStrings.current
     val context = LocalContext.current
+    val appColors = LocalAppColors.current
 
-    val userProfile by viewModel.userProfile.collectAsState()
-    val accounts by viewModel.accounts.collectAsState()
-    val selectedPeriod by viewModel.selectedPeriod.collectAsState()
-    val selectedAccountId by viewModel.selectedAccountId.collectAsState()
-    val selectedType by viewModel.selectedType.collectAsState()
-    val filteredTransactions by viewModel.filteredTransactions.collectAsState()
-    val summary by viewModel.summary.collectAsState()
-    val categorySpends by viewModel.categorySpends.collectAsState()
-    val isPrivacyMode by viewModel.isPrivacyMode.collectAsState()
-    val isExporting by viewModel.isExporting.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
+    val selectedAccountId by viewModel.selectedAccountId.collectAsStateWithLifecycle()
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
+    val filteredTransactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
+    val summary by viewModel.summary.collectAsStateWithLifecycle()
+    val categorySpends by viewModel.categorySpends.collectAsStateWithLifecycle()
+    val isPrivacyMode by viewModel.isPrivacyMode.collectAsStateWithLifecycle()
+    val isExporting by viewModel.isExporting.collectAsStateWithLifecycle()
 
     val periodTitle = viewModel.getPeriodTitle(strings.isBangla)
 
@@ -148,19 +143,19 @@ fun ReportsScreen(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
 
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = ColorSurface,
-                        border = BorderStroke(1.dp, ColorBorder)
+                        color = appColors.surfaceVariant,
+                        border = BorderStroke(1.dp, appColors.border)
                     ) {
                         Text(
                             text = "${filteredTransactions.size} ${if (strings.isBangla) "টি লেনদেন" else "items"}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = ColorTextMuted,
+                            color = appColors.textMuted,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
@@ -172,8 +167,8 @@ fun ReportsScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        color = ColorSurface,
-                        border = BorderStroke(1.dp, ColorBorder)
+                        color = appColors.surface,
+                        border = BorderStroke(1.dp, appColors.border)
                     ) {
                         Column(
                             modifier = Modifier
@@ -185,13 +180,13 @@ fun ReportsScreen(
                                 modifier = Modifier
                                     .size(54.dp)
                                     .clip(CircleShape)
-                                    .background(ColorAccent.copy(alpha = 0.12f)),
+                                    .background(appColors.accent.copy(alpha = 0.12f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.ReceiptLong,
                                     contentDescription = null,
-                                    tint = ColorAccent,
+                                    tint = appColors.accent,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
@@ -200,7 +195,7 @@ fun ReportsScreen(
                                 text = strings.noTransactionsForPeriod,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = ColorTextSecondary,
+                                color = appColors.textSecondary,
                                 textAlign = TextAlign.Center
                             )
                         }

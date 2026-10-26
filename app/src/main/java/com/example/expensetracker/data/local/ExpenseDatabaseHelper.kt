@@ -33,7 +33,6 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
         const val DATABASE_NAME = com.example.expensetracker.data.local.DATABASE_NAME
         const val DATABASE_VERSION = com.example.expensetracker.data.local.DATABASE_VERSION
         const val PREFS_NAME = com.example.expensetracker.data.local.PREFS_NAME
-        const val PREF_KEY_GEMINI_API_KEY = com.example.expensetracker.data.local.PREF_KEY_GEMINI_API_KEY
         const val PREF_KEY_PRIVACY_MODE = com.example.expensetracker.data.local.PREF_KEY_PRIVACY_MODE
         const val PREF_KEY_LAST_BUDGET_PROMPT = com.example.expensetracker.data.local.PREF_KEY_LAST_BUDGET_PROMPT
         const val PREF_KEY_LAST_BUDGET_NOTIFIED = com.example.expensetracker.data.local.PREF_KEY_LAST_BUDGET_NOTIFIED
@@ -70,6 +69,7 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
         db.enableWriteAheadLogging()
+        db.setForeignKeyConstraintsEnabled(true)
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -95,8 +95,6 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     internal fun cursorToTransaction(c: Cursor): Transaction = transactionHelper.cursorToTransaction(c)
 
     // --- Preferences Operations ---
-    internal fun getPersistedApiKey(): String? = prefsHelper.getPersistedApiKey()
-    internal fun persistApiKey(key: String?) = prefsHelper.persistApiKey(key)
     fun isPrivacyModeEnabled(): Boolean = prefsHelper.isPrivacyModeEnabled()
     fun setPrivacyModeEnabled(enabled: Boolean) = prefsHelper.setPrivacyModeEnabled(enabled)
     fun getLastBudgetPromptKey(): String? = prefsHelper.getLastBudgetPromptKey()
@@ -110,10 +108,10 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun deleteTransaction(id: Long): Int = transactionHelper.deleteTransaction(id)
     fun getAllTransactions(): List<Transaction> = transactionHelper.getAllTransactions()
     fun getTransactionsForAccount(accountId: Long): List<Transaction> = transactionHelper.getTransactionsForAccount(accountId)
-    fun getFilteredTransactions(timeFilter: TimeFilter = TimeFilter.ALL, type: TransactionType? = null, categoryId: Long? = null, query: String? = null): List<Transaction> =
-        transactionQueryHelper.getFilteredTransactions(timeFilter, type, categoryId, query)
-    fun getTransactionsBetween(startMillis: Long, endMillis: Long, type: TransactionType? = null, categoryId: Long? = null, query: String? = null): List<Transaction> =
-        transactionQueryHelper.getTransactionsBetween(startMillis, endMillis, type, categoryId, query)
+    fun getFilteredTransactions(timeFilter: TimeFilter = TimeFilter.ALL, type: TransactionType? = null, categoryId: Long? = null, query: String? = null, accountId: Long? = null): List<Transaction> =
+        transactionQueryHelper.getFilteredTransactions(timeFilter, type, categoryId, query, accountId)
+    fun getTransactionsBetween(startMillis: Long, endMillis: Long, type: TransactionType? = null, categoryId: Long? = null, query: String? = null, accountId: Long? = null): List<Transaction> =
+        transactionQueryHelper.getTransactionsBetween(startMillis, endMillis, type, categoryId, query, accountId)
     fun getTimeRange(filter: TimeFilter): Pair<Long, Long> = transactionQueryHelper.getTimeRange(filter)
 
     // --- Transaction Stats Operations ---
@@ -150,8 +148,6 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun getUserProfile(): UserProfile = userProfileHelper.getUserProfile()
     fun updateUserProfile(profile: UserProfile): Int = userProfileHelper.updateUserProfile(profile)
     fun updateProfileLanguage(languageCode: String): Int = userProfileHelper.updateProfileLanguage(languageCode)
-    fun updateGeminiApiKey(key: String?): Int = userProfileHelper.updateGeminiApiKey(key)
-    fun updateAiInsightsEnabled(enabled: Boolean): Int = userProfileHelper.updateAiInsightsEnabled(enabled)
     fun updateProfileTheme(theme: String): Int = userProfileHelper.updateProfileTheme(theme)
     fun updateProfileBengaliNumerals(enabled: Boolean): Int = userProfileHelper.updateProfileBengaliNumerals(enabled)
 
@@ -223,4 +219,5 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
         marketHelper.updateMarketItemPurchased(itemId, isPurchased, amount, transactionId)
     fun completeMarketList(listId: Long): Boolean = marketHelper.completeMarketList(listId)
     fun deleteMarketList(listId: Long): Boolean = marketHelper.deleteMarketList(listId)
+    fun getLastPurchasedRates(): Map<String, Pair<Double, String>> = marketHelper.getLastPurchasedRates()
 }

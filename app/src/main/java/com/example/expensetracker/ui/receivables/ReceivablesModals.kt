@@ -35,10 +35,6 @@ fun ReceivablesModals(
     onDismissPayablePayment: () -> Unit,
     payableToDelete: Payable?,
     onDismissDeletePayable: () -> Unit,
-    selectedReceivableForReminder: Receivable?,
-    onDismissReminder: () -> Unit,
-    generatedReminder: String?,
-    isGeneratingReminder: Boolean,
     showConfetti: Boolean,
     onTriggerConfetti: () -> Unit,
     onConfettiEnd: () -> Unit
@@ -211,16 +207,6 @@ fun ReceivablesModals(
                     )
                 )
             }
-        )
-    }
-
-    if (selectedReceivableForReminder != null) {
-        DebtReminderAiDialog(
-            target = selectedReceivableForReminder,
-            generatedReminder = generatedReminder,
-            isGeneratingReminder = isGeneratingReminder,
-            currencySymbol = userProfile.currencySymbol,
-            onDismiss = onDismissReminder
         )
     }
 

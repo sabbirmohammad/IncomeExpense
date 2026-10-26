@@ -26,6 +26,7 @@ captures/
 # Keystore & Signing files
 *.jks
 *.keystore
+!app/debug.keystore
 signing.properties
 secrets.properties
 
@@ -41,3 +42,6 @@ GoogleService-Info.plist
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Agent teamwork logs
+.agents/

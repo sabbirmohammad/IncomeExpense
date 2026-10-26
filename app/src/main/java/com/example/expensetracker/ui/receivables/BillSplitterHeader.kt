@@ -27,12 +27,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillSplitterHeader(
@@ -41,6 +39,7 @@ fun BillSplitterHeader(
     closeDesc: String,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -51,13 +50,13 @@ fun BillSplitterHeader(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(ColorAccent.copy(alpha = 0.15f)),
+                    .background(appColors.accent.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Filled.Group,
                     contentDescription = null,
-                    tint = ColorAccent,
+                    tint = appColors.accent,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -68,11 +67,11 @@ fun BillSplitterHeader(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         }
         IconButton(onClick = onClose) {
-            Icon(Icons.Filled.Close, contentDescription = closeDesc, tint = ColorTextMuted)
+            Icon(Icons.Filled.Close, contentDescription = closeDesc, tint = appColors.textMuted)
         }
     }
 }
@@ -85,6 +84,7 @@ fun BillSplitterFriendsSectionHeader(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -94,12 +94,12 @@ fun BillSplitterFriendsSectionHeader(
             text = if (isBangla) "বিল শেয়ারকারী বন্ধুরা" else "FRIENDS SHARING BILL",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = ColorTextMuted,
+            color = appColors.textMuted,
             letterSpacing = 1.sp
         )
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = ColorAccent.copy(alpha = 0.2f),
+            color = appColors.accent.copy(alpha = 0.2f),
             modifier = Modifier.clickable {
                 haptics.lightTick()
                 onAddFriend()
@@ -112,13 +112,13 @@ fun BillSplitterFriendsSectionHeader(
                 Icon(
                     Icons.Filled.Add,
                     contentDescription = null,
-                    tint = ColorAccent,
+                    tint = appColors.accent,
                     modifier = Modifier.size(14.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = addFriendLabel,
-                    color = ColorAccent,
+                    color = appColors.accent,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )

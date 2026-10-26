@@ -32,11 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.SavingsGoal
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.AppCard
@@ -53,6 +49,7 @@ fun DashboardSavingsGoalsWidget(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val totalSavedGoals = remember(savingsGoals) { savingsGoals.sumOf { it.savedAmount } }
     val totalTargetGoals = remember(savingsGoals) { savingsGoals.sumOf { it.targetAmount } }
     val overallGoalProgress = if (totalTargetGoals > 0) ((totalSavedGoals / totalTargetGoals) * 100).toFloat().coerceIn(0f, 100f) else 0f
@@ -79,13 +76,13 @@ fun DashboardSavingsGoalsWidget(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(ColorAccent.copy(alpha = 0.15f)),
+                            .background(appColors.accent.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Savings,
                             contentDescription = null,
-                            tint = ColorAccent,
+                            tint = appColors.accent,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -97,7 +94,7 @@ fun DashboardSavingsGoalsWidget(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium
                             ),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -107,7 +104,7 @@ fun DashboardSavingsGoalsWidget(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = ColorSuccessIncome
+                            color = appColors.income
                         )
                         Text(
                             text = if (strings.isBangla) {
@@ -116,7 +113,7 @@ fun DashboardSavingsGoalsWidget(
                                 "$completedGoalsCount reached · ${savingsGoals.size} total goal(s)"
                             },
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -124,7 +121,7 @@ fun DashboardSavingsGoalsWidget(
                 Icon(
                     imageVector = Icons.Outlined.ChevronRight,
                     contentDescription = null,
-                    tint = ColorTextSecondary,
+                    tint = appColors.textSecondary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -137,8 +134,8 @@ fun DashboardSavingsGoalsWidget(
                     .fillMaxWidth()
                     .height(5.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = ColorSuccessIncome,
-                trackColor = ColorBorder
+                color = appColors.income,
+                trackColor = appColors.border
             )
         }
     }
@@ -152,6 +149,7 @@ fun HomeInsightCard(
     sentence: String,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     AppCard(
         modifier = modifier,
         padding = 14.dp
@@ -184,13 +182,13 @@ fun HomeInsightCard(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = sentence,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary,
+                    color = appColors.textSecondary,
                     lineHeight = 16.sp
                 )
             }

@@ -21,27 +21,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.SavingsGoal
 import com.example.expensetracker.theme.CardGap
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.EmptyStateCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.savings.SavingsGoalCard
 import com.example.expensetracker.ui.savings.SavingsSummaryCard
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun SavingsGoalsTabContent(
     savingsGoals: List<SavingsGoal>,
     currencySymbol: String,
     isPrivacyMode: Boolean,
-    geminiApiKey: String?,
     onAddGoalClick: () -> Unit,
     onAddContribution: (SavingsGoal) -> Unit,
     onEditGoal: (SavingsGoal) -> Unit,
     onDeleteGoal: (SavingsGoal) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
     LazyColumn(
@@ -82,14 +81,14 @@ fun SavingsGoalsTabContent(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = ColorTextSecondary,
+                        color = appColors.textSecondary,
                         letterSpacing = 0.8.sp
                     )
                     Text(
                         text = "+ ${strings.addSavingsGoal}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = ColorAccent,
+                        color = appColors.accent,
                         modifier = Modifier.clickable { onAddGoalClick() }
                     )
                 }
@@ -100,7 +99,6 @@ fun SavingsGoalsTabContent(
                     goal = goal,
                     currencySymbol = currencySymbol,
                     isPrivacyMode = isPrivacyMode,
-                    geminiApiKey = geminiApiKey,
                     onAddContribution = { onAddContribution(goal) },
                     onEdit = { onEditGoal(goal) },
                     onDelete = { onDeleteGoal(goal) }

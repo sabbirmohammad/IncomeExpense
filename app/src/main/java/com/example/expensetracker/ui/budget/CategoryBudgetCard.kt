@@ -23,16 +23,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.getLocalizedCategoryName
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
-import com.example.expensetracker.theme.ColorWarningBills
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.AppProgressBar
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun CategoryBudgetCard(
@@ -43,12 +39,13 @@ fun CategoryBudgetCard(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val catColor = category?.colorHex ?: "#3b6ef5"
     val barFillColor = when {
-        item.isOverBudget -> ColorDangerExpense
-        item.progressPercent > 0.8f -> ColorWarningBills
-        else -> ColorSuccessIncome
+        item.isOverBudget -> appColors.expense
+        item.progressPercent > 0.8f -> appColors.warning
+        else -> appColors.income
     }
 
     AppCard(modifier = modifier) {
@@ -74,7 +71,7 @@ fun CategoryBudgetCard(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Text(
                             text = if (strings.isBangla)
@@ -82,7 +79,7 @@ fun CategoryBudgetCard(
                             else
                                 "${formatCurrency(item.spentAmount, currencySymbol)} of ${formatCurrency(item.budget.amount, currencySymbol)}",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -92,7 +89,7 @@ fun CategoryBudgetCard(
                         Icon(
                             imageVector = Icons.Outlined.Edit,
                             contentDescription = "Edit",
-                            tint = ColorTextSecondary,
+                            tint = appColors.textSecondary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -100,7 +97,7 @@ fun CategoryBudgetCard(
                         Icon(
                             imageVector = Icons.Outlined.Delete,
                             contentDescription = "Delete",
-                            tint = ColorDangerExpense,
+                            tint = appColors.expense,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -135,7 +132,7 @@ fun CategoryBudgetCard(
                     else
                         (if (strings.isBangla) "${formatCurrency(item.remainingAmount, currencySymbol)} বাকি" else "${formatCurrency(item.remainingAmount, currencySymbol)} remaining"),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = if (item.isOverBudget) ColorDangerExpense else ColorTextSecondary
+                    color = if (item.isOverBudget) appColors.expense else appColors.textSecondary
                 )
             }
         }

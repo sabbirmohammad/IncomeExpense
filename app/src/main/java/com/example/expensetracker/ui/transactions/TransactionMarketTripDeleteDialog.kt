@@ -8,10 +8,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun TransactionMarketTripDeleteDialog(
@@ -19,13 +16,15 @@ fun TransactionMarketTripDeleteDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
                 text = if (isBangla) "বাজার রেকর্ড মুছে ফেলবেন?" else "Delete Market Record?",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         },
         text = {
@@ -33,14 +32,14 @@ fun TransactionMarketTripDeleteDialog(
                 text = if (isBangla) "এই বাজার ফর্দটি এবং এর সমস্ত বিবরণ লেনদেন থেকে মুছে যাবে।"
                 else "This market trip record and all its items will be removed from transactions.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
                     text = if (isBangla) "মুছে ফেলুন" else "Delete",
-                    color = ColorDangerExpense,
+                    color = appColors.expense,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -49,11 +48,11 @@ fun TransactionMarketTripDeleteDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     text = if (isBangla) "বাতিল" else "Cancel",
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
             }
         },
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(16.dp)
     )
 }

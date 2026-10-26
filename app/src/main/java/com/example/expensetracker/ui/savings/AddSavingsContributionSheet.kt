@@ -42,19 +42,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.Calculate
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.SavingsGoal
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
-import com.example.expensetracker.ui.components.CalculatorKeypadBar
 import com.example.expensetracker.ui.components.CalculatorPreviewBadge
+import com.example.expensetracker.ui.components.ExpandableCalculatorKeypadBar
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
@@ -73,15 +68,20 @@ fun AddSavingsContributionSheet(
     onConfirm: (Double, Long?) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var amountText by remember { mutableStateOf("") }
     var deductFromAccount by remember { mutableStateOf(false) }
     var selectedAccountId by remember { mutableStateOf(accounts.firstOrNull()?.id) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showCalculator by remember { mutableStateOf(false) }
+    val hasOperators = remember(amountText) {
+        amountText.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }
+    }
     val goalColor = remember(goal.colorHex) { parseGoalColor(goal.colorHex) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -102,10 +102,10 @@ fun AddSavingsContributionSheet(
                 Text(
                     text = strings.addSavingsContribution,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, null, tint = ColorTextSecondary)
+                    Icon(Icons.Outlined.Close, null, tint = appColors.textSecondary)
                 }
             }
 
@@ -115,13 +115,13 @@ fun AddSavingsContributionSheet(
             Text(
                 text = "${goal.title} • ${if (strings.isBangla) "বাকি" else "Remaining"}: ${formatCurrency(goal.remainingAmount, currencySymbol)}",
                 fontSize = 12.sp,
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
 
             Spacer(modifier = Modifier.height(14.dp))
 
             // Amount Field
-            Text("${strings.amount} ($currencySymbol)", fontSize = 12.sp, color = ColorTextSecondary)
+            Text("${strings.amount} ($currencySymbol)", fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = amountText,
@@ -129,17 +129,26 @@ fun AddSavingsContributionSheet(
                     amountText = it.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/* " }
                     if (errorMessage != null) errorMessage = null
                 },
-                placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = ColorTextMuted) },
+                placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = appColors.textMuted) },
+                trailingIcon = {
+                    IconButton(onClick = { showCalculator = !showCalculator }) {
+                        Icon(
+                            imageVector = Icons.Filled.Calculate,
+                            contentDescription = "Calculator",
+                            tint = if (showCalculator || hasOperators) goalColor else appColors.textSecondary
+                        )
+                    }
+                },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ColorBackground,
-                    unfocusedContainerColor = ColorBackground,
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant,
                     focusedBorderColor = goalColor,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -149,12 +158,12 @@ fun AddSavingsContributionSheet(
                 currencySymbol = currencySymbol,
                 onApply = { evaluated ->
                     targetEvaluated(evaluated, onUpdate = { amountText = it })
+                    showCalculator = false
                 }
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            CalculatorKeypadBar(
+            ExpandableCalculatorKeypadBar(
+                expanded = showCalculator,
                 currentExpression = amountText,
                 onExpressionChanged = {
                     amountText = it
@@ -162,7 +171,9 @@ fun AddSavingsContributionSheet(
                 },
                 onApplyResult = { evaluated ->
                     targetEvaluated(evaluated, onUpdate = { amountText = it })
-                }
+                    showCalculator = false
+                },
+                accentColor = goalColor
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -190,7 +201,7 @@ fun AddSavingsContributionSheet(
 
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(errorMessage!!, color = ColorDangerExpense, fontSize = 12.sp)
+                Text(errorMessage!!, color = appColors.expense, fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(20.dp))

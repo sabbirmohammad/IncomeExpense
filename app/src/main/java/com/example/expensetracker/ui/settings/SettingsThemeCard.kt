@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +31,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.AppThemeMode
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -60,31 +60,24 @@ fun SettingsThemeCard(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(ColorAccent.copy(alpha = 0.12f)),
+                            .background(appColors.accent.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Palette,
                             contentDescription = null,
-                            tint = ColorAccent,
+                            tint = appColors.accent,
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    Column {
-                        Text(
-                            text = strings.themeSettingTitle,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = appColors.textPrimary
-                        )
-                        Text(
-                            text = strings.themeSettingSubtitle,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = appColors.textSecondary
-                        )
-                    }
+                    Text(
+                        text = strings.themeSettingTitle,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = appColors.textPrimary
+                    )
                 }
             }
 
@@ -110,9 +103,10 @@ fun SettingsThemeCard(
                     val isSelected = currentTheme == mode
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) ColorAccent else Color.Transparent,
+                        color = if (isSelected) appColors.accent else Color.Transparent,
                         modifier = Modifier
                             .weight(1f)
+                            .minimumInteractiveComponentSize()
                             .clickable {
                                 if (!isSelected) {
                                     onThemeChange(mode.key)

@@ -36,13 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.CategoryColorHelper
 import com.example.expensetracker.ui.components.CategoryIconBadge
@@ -58,6 +52,7 @@ fun AddEditCategoryDialog(
     onSave: (name: String, type: TransactionType, icon: String, colorHex: String) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val isEditing = category != null
 
@@ -73,9 +68,9 @@ fun AddEditCategoryDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
-        titleContentColor = ColorTextPrimary,
-        textContentColor = ColorTextSecondary,
+        containerColor = appColors.surface,
+        titleContentColor = appColors.textPrimary,
+        textContentColor = appColors.textSecondary,
         title = {
             Text(
                 text = if (isEditing) (if (strings.isBangla) "ক্যাটাগরি সম্পাদনা" else "Edit category")
@@ -93,8 +88,8 @@ fun AddEditCategoryDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(SmallElementRadius))
-                        .background(ColorBackground)
-                        .border(1.dp, ColorBorder, RoundedCornerShape(SmallElementRadius))
+                        .background(appColors.surfaceVariant)
+                        .border(1.dp, appColors.border, RoundedCornerShape(SmallElementRadius))
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -108,13 +103,13 @@ fun AddEditCategoryDialog(
                         Text(
                             text = if (catName.isBlank()) (if (strings.isBangla) "ক্যাটাগরি প্রিভিউ" else "Category preview") else catName,
                             style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Text(
                             text = if (strings.isBangla) (if (catType == TransactionType.INCOME) "আয় ক্যাটাগরি" else "ব্যয় ক্যাটাগরি")
                             else "${catType.name.lowercase().replaceFirstChar { it.uppercase() }} Category",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -124,21 +119,21 @@ fun AddEditCategoryDialog(
                 Text(
                     text = if (strings.isBangla) "ক্যাটাগরির নাম" else "Category name",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = catName,
                     onValueChange = { catName = it },
-                    placeholder = { Text(if (strings.isBangla) "যেমন: বাজার, জিম, রেস্তোরাঁ" else "e.g. Groceries, Gym, Dining", color = ColorTextMuted) },
+                    placeholder = { Text(if (strings.isBangla) "যেমন: বাজার, জিম, রেস্তোরাঁ" else "e.g. Groceries, Gym, Dining", color = appColors.textMuted) },
                     shape = RoundedCornerShape(SmallElementRadius),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = ColorSurface,
-                        unfocusedContainerColor = ColorSurface,
-                        focusedBorderColor = ColorAccent,
-                        unfocusedBorderColor = ColorBorder,
-                        focusedTextColor = ColorTextPrimary,
-                        unfocusedTextColor = ColorTextPrimary
+                        focusedContainerColor = appColors.surfaceVariant,
+                        unfocusedContainerColor = appColors.surfaceVariant,
+                        focusedBorderColor = appColors.accent,
+                        unfocusedBorderColor = appColors.border,
+                        focusedTextColor = appColors.textPrimary,
+                        unfocusedTextColor = appColors.textPrimary
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -149,7 +144,7 @@ fun AddEditCategoryDialog(
                 Text(
                     text = if (strings.isBangla) "ক্যাটাগরির ধরন" else "Category type",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -198,7 +193,7 @@ fun AddEditCategoryDialog(
                         onSave(catName.trim(), catType, catIcon, catColor)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = ColorAccent),
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent),
                 shape = RoundedCornerShape(SmallElementRadius)
             ) {
                 Text(strings.save, color = Color.White)
@@ -206,7 +201,7 @@ fun AddEditCategoryDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )

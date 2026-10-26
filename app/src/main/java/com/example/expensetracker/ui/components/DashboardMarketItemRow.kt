@@ -39,10 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.MarketListParser
 import com.example.expensetracker.data.model.MarketItem
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
@@ -54,6 +50,7 @@ fun DashboardMarketItemRow(
     onUnmarkPurchased: () -> Unit,
     onRowClick: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     var inlineAmountText by remember(item.amount) {
         mutableStateOf(item.amount?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "")
@@ -61,10 +58,10 @@ fun DashboardMarketItemRow(
 
     Surface(
         shape = RoundedCornerShape(8.dp),
-        color = if (item.isPurchased) ColorSuccessIncome.copy(alpha = 0.05f) else LocalAppColors.current.background,
+        color = if (item.isPurchased) appColors.income.copy(alpha = 0.05f) else LocalAppColors.current.background,
         border = BorderStroke(
             1.dp,
-            if (item.isPurchased) ColorSuccessIncome.copy(alpha = 0.25f) else LocalAppColors.current.border
+            if (item.isPurchased) appColors.income.copy(alpha = 0.25f) else LocalAppColors.current.border
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -84,11 +81,11 @@ fun DashboardMarketItemRow(
                         .size(26.dp)
                         .clip(CircleShape)
                         .background(
-                            if (item.isPurchased) ColorSuccessIncome else LocalAppColors.current.surface
+                            if (item.isPurchased) appColors.income else LocalAppColors.current.surface
                         )
                         .border(
                             width = 1.dp,
-                            color = if (item.isPurchased) ColorSuccessIncome else LocalAppColors.current.border,
+                            color = if (item.isPurchased) appColors.income else LocalAppColors.current.border,
                             shape = CircleShape
                         )
                         .clickable {
@@ -126,7 +123,7 @@ fun DashboardMarketItemRow(
                         fontWeight = if (item.isPurchased) FontWeight.Normal else FontWeight.SemiBold,
                         textDecoration = if (item.isPurchased) TextDecoration.LineThrough else TextDecoration.None
                     ),
-                    color = if (item.isPurchased) ColorTextSecondary else ColorTextPrimary,
+                    color = if (item.isPurchased) appColors.textSecondary else appColors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -134,7 +131,7 @@ fun DashboardMarketItemRow(
                 // Qty badge
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = if (item.isPurchased) LocalAppColors.current.surface else ColorAccent.copy(alpha = 0.1f)
+                    color = if (item.isPurchased) LocalAppColors.current.surface else appColors.accent.copy(alpha = 0.1f)
                 ) {
                     Text(
                         text = item.formatQuantity(),
@@ -142,7 +139,7 @@ fun DashboardMarketItemRow(
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (item.isPurchased) ColorTextSecondary else ColorAccent,
+                        color = if (item.isPurchased) appColors.textSecondary else appColors.accent,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
@@ -156,7 +153,7 @@ fun DashboardMarketItemRow(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = ColorSuccessIncome
+                    color = appColors.income
                 )
             } else {
                 OutlinedTextField(
@@ -167,7 +164,7 @@ fun DashboardMarketItemRow(
                         val amt = cleanNum.toDoubleOrNull()
                         onAmountChanged(amt)
                     },
-                    placeholder = { Text(currencySymbol, fontSize = 11.sp, color = ColorTextSecondary) },
+                    placeholder = { Text(currencySymbol, fontSize = 11.sp, color = appColors.textSecondary) },
                     modifier = Modifier.width(72.dp),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -176,7 +173,7 @@ fun DashboardMarketItemRow(
                         fontWeight = FontWeight.Bold
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ColorAccent,
+                        focusedBorderColor = appColors.accent,
                         unfocusedBorderColor = LocalAppColors.current.border,
                         focusedContainerColor = LocalAppColors.current.surface,
                         unfocusedContainerColor = LocalAppColors.current.surface

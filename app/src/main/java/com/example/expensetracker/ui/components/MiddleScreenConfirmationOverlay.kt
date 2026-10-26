@@ -38,15 +38,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun MiddleScreenConfirmationOverlay(
     controller: TransactionFeedbackController,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val feedbackData = controller.currentFeedback
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
@@ -150,14 +149,14 @@ fun MiddleScreenConfirmationOverlay(
             val data = lastData ?: return@AnimatedVisibility
 
             val (tintColor, badgeBgColor, icon) = when (data.type) {
-                FeedbackVisualType.INCOME -> Triple(ColorSuccessIncome, Color(0xFF0F3820), Icons.Outlined.ArrowUpward)
-                FeedbackVisualType.EXPENSE -> Triple(ColorDangerExpense, Color(0xFF381219), Icons.Outlined.ArrowDownward)
-                FeedbackVisualType.TRANSFER -> Triple(ColorAccent, Color(0xFF0D253A), Icons.Outlined.SwapHoriz)
+                FeedbackVisualType.INCOME -> Triple(appColors.income, Color(0xFF0F3820), Icons.Outlined.ArrowUpward)
+                FeedbackVisualType.EXPENSE -> Triple(appColors.expense, Color(0xFF381219), Icons.Outlined.ArrowDownward)
+                FeedbackVisualType.TRANSFER -> Triple(appColors.accent, Color(0xFF0D253A), Icons.Outlined.SwapHoriz)
                 FeedbackVisualType.BILL_PAID -> Triple(Color(0xFFFFB300), Color(0xFF36280B), Icons.Outlined.ReceiptLong)
                 FeedbackVisualType.BILL_SPLIT -> Triple(Color(0xFFB388FF), Color(0xFF26153B), Icons.Outlined.CallSplit)
                 FeedbackVisualType.DEBT_PAYMENT -> Triple(Color(0xFF26A69A), Color(0xFF0E2E2A), Icons.Outlined.AccountBalanceWallet)
                 FeedbackVisualType.TRANSACTION_DELETED, FeedbackVisualType.ITEM_DELETED -> Triple(Color(0xFFFF3366), Color(0xFF3B101C), Icons.Outlined.DeleteOutline)
-                FeedbackVisualType.GENERIC_SUCCESS -> Triple(ColorSuccessIncome, Color(0xFF0F3820), Icons.Filled.Check)
+                FeedbackVisualType.GENERIC_SUCCESS -> Triple(appColors.income, Color(0xFF0F3820), Icons.Filled.Check)
             }
 
             ConfirmationFeedbackCard(

@@ -17,11 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.ui.components.AppHaptics
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillSplitterAccountPicker(
@@ -32,6 +30,7 @@ fun BillSplitterAccountPicker(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     LazyRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -41,7 +40,7 @@ fun BillSplitterAccountPicker(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (isSelected) ColorAccent else ColorBorder.copy(alpha = 0.3f))
+                    .background(if (isSelected) appColors.accent else appColors.border.copy(alpha = 0.3f))
                     .clickable {
                         haptics.lightTick()
                         onAccountSelect(acc)
@@ -52,7 +51,7 @@ fun BillSplitterAccountPicker(
                     text = "${acc.name} ($currencySymbol ${String.format(Locale.US, "%,.0f", acc.currentBalance)})",
                     fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Color.White else ColorTextPrimary
+                    color = if (isSelected) Color.White else appColors.textPrimary
                 )
             }
         }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,9 +31,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 
 fun getAvatarIcon(index: Int): ImageVector {
@@ -52,19 +51,26 @@ fun DrawerMenuButton(
 ) {
     Box(
         modifier = modifier
-            .size(38.dp)
-            .clip(CircleShape)
-            .background(LocalAppColors.current.surface)
-            .border(1.dp, LocalAppColors.current.border, CircleShape)
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .minimumInteractiveComponentSize()
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Filled.Menu,
-            contentDescription = "Open side menu",
-            tint = LocalAppColors.current.textPrimary,
-            modifier = Modifier.size(20.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(LocalAppColors.current.surface)
+                .border(1.dp, LocalAppColors.current.border, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Menu,
+                contentDescription = "Open side menu",
+                tint = LocalAppColors.current.textPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
 
@@ -77,6 +83,7 @@ fun OneUiHeader(
     initials: String = "",
     onMenuClick: (() -> Unit)? = null
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -99,7 +106,7 @@ fun OneUiHeader(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Text(
                     text = dateText,
@@ -107,7 +114,7 @@ fun OneUiHeader(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal
                     ),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
             }
         }
@@ -127,31 +134,39 @@ fun ProfileAvatarButton(
     avatarIndex: Int = 0,
     initials: String = ""
 ) {
+    val appColors = LocalAppColors.current
     Box(
         modifier = modifier
-            .size(38.dp)
-            .clip(CircleShape)
-            .background(ColorAccent.copy(alpha = 0.15f))
-            .border(1.dp, ColorAccent.copy(alpha = 0.5f), CircleShape)
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .minimumInteractiveComponentSize()
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        if (avatarIndex == 0 && initials.isNotBlank()) {
-            Text(
-                text = initials.take(2),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = ColorAccent
-            )
-        } else {
-            Icon(
-                imageVector = getAvatarIcon(avatarIndex),
-                contentDescription = "Profile and Settings",
-                tint = ColorAccent,
-                modifier = Modifier.size(20.dp)
-            )
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(appColors.accent.copy(alpha = 0.15f))
+                .border(1.dp, appColors.accent.copy(alpha = 0.5f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (avatarIndex == 0 && initials.isNotBlank()) {
+                Text(
+                    text = initials.take(2),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = appColors.accent
+                )
+            } else {
+                Icon(
+                    imageVector = getAvatarIcon(avatarIndex),
+                    contentDescription = "Profile and Settings",
+                    tint = appColors.accent,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

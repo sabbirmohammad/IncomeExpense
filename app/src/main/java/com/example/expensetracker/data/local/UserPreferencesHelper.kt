@@ -4,16 +4,6 @@ import android.content.Context
 
 internal class UserPreferencesHelper(private val context: Context) {
 
-    private val secureStorageHelper by lazy { SecureStorageHelper(context) }
-
-    fun getPersistedApiKey(): String? {
-        return secureStorageHelper.getGeminiApiKey()
-    }
-
-    fun persistApiKey(key: String?) {
-        secureStorageHelper.saveGeminiApiKey(key)
-    }
-
     fun isPrivacyModeEnabled(): Boolean {
         return try {
             val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

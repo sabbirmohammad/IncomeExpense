@@ -21,14 +21,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.PayablesSummary
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Summary Hero Card for Payables (দেনা টাকা)
@@ -40,6 +36,7 @@ fun PayablesSummaryCard(
     isPrivacyMode: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val progress = if (summary.totalBorrowed > 0) {
         (summary.totalRepaid / summary.totalBorrowed).toFloat().coerceIn(0f, 1f)
@@ -58,17 +55,17 @@ fun PayablesSummaryCard(
                 Text(
                     text = strings.remainingToPay,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Surface(
                     shape = CircleShape,
-                    color = ColorDangerExpense.copy(alpha = 0.15f)
+                    color = appColors.expense.copy(alpha = 0.15f)
                 ) {
                     Text(
                         text = if (strings.isBangla) "${summary.pendingCount} জন পাওনাদার" else "${summary.pendingCount} Creditors",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = ColorDangerExpense,
+                        color = appColors.expense,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
@@ -82,7 +79,7 @@ fun PayablesSummaryCard(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = ColorDangerExpense
+                color = appColors.expense
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -94,8 +91,8 @@ fun PayablesSummaryCard(
                     .fillMaxWidth()
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = ColorSuccessIncome,
-                trackColor = ColorBorder
+                color = appColors.income,
+                trackColor = appColors.border
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -108,7 +105,7 @@ fun PayablesSummaryCard(
                     Text(
                         text = strings.totalBorrowed,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -117,7 +114,7 @@ fun PayablesSummaryCard(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
 
@@ -125,7 +122,7 @@ fun PayablesSummaryCard(
                     Text(
                         text = strings.totalRepaid,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -134,7 +131,7 @@ fun PayablesSummaryCard(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = ColorSuccessIncome
+                        color = appColors.income
                     )
                 }
             }

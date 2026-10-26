@@ -39,15 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.model.toFinancialSummary
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
-import com.example.expensetracker.ui.components.DateTimeHelper
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.StatementExportHelper
 import kotlinx.coroutines.CoroutineScope
@@ -64,15 +56,16 @@ fun TransactionExportDialog(
     onOpenShareSlip: () -> Unit
 ) {
     val context = LocalContext.current
+    val appColors = LocalAppColors.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         title = {
             Text(
                 text = if (strings.isBangla) "স্টেটমেন্ট এক্সপোর্ট" else "Export Statement",
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         },
         text = {
@@ -80,23 +73,10 @@ fun TransactionExportDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                val txCount = DateTimeHelper.formatCounter(transactions.size, strings.isBangla, userProfile.useBengaliNumerals || strings.isBangla)
-                val exportSubtitleText = if (strings.isBangla) {
-                    "আপনার $txCount টি লেনদেনের অফিসিয়াল রেকর্ড ডাউনলোড ও শেয়ার করুন।"
-                } else {
-                    "Download and share official records for your ${transactions.size} transactions."
-                }
-                Text(
-                    text = exportSubtitleText,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary
-                )
-
                 ExportOptionItem(
                     icon = Icons.Outlined.PictureAsPdf,
-                    iconTint = ColorDangerExpense,
+                    iconTint = appColors.expense,
                     title = if (strings.isBangla) "PDF আর্থিক স্টেটমেন্ট" else "PDF Financial Statement",
-                    subtitle = if (strings.isBangla) "ব্র্যান্ডেড লেআউট, মেট্রিক্স ও লেজার সহ A4 ফরম্যাট" else "A4 format with branded layout, metrics & ledger",
                     onClick = {
                         scope.launch(Dispatchers.IO) {
                             val summary = transactions.toFinancialSummary()
@@ -114,9 +94,8 @@ fun TransactionExportDialog(
 
                 ExportOptionItem(
                     icon = Icons.Outlined.TableChart,
-                    iconTint = ColorSuccessIncome,
+                    iconTint = appColors.income,
                     title = if (strings.isBangla) "এক্সেল স্প্রেডশীট (CSV)" else "Excel Spreadsheet (CSV)",
-                    subtitle = if (strings.isBangla) "Excel ও Google Sheets এর জন্য UTF-8 BOM সমর্থিত" else "UTF-8 BOM encoded for Excel & Google Sheets",
                     onClick = {
                         scope.launch(Dispatchers.IO) {
                             StatementExportHelper.exportAndShareCsv(
@@ -132,9 +111,8 @@ fun TransactionExportDialog(
 
                 ExportOptionItem(
                     icon = Icons.Outlined.Image,
-                    iconTint = ColorAccent,
+                    iconTint = appColors.accent,
                     title = if (strings.isBangla) "ইমেজ স্লিপ ও সারাংশ" else "Image Slip & Summary",
-                    subtitle = if (strings.isBangla) "লাইভ প্রিভিউ ও ছবি শেয়ারিং সুবিধা" else "Visual receipt card with live preview & image sharing",
                     onClick = {
                         onDismiss()
                         onOpenShareSlip()
@@ -145,7 +123,7 @@ fun TransactionExportDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.close, color = ColorTextSecondary)
+                Text(strings.close, color = appColors.textSecondary)
             }
         }
     )
@@ -156,13 +134,15 @@ private fun ExportOptionItem(
     icon: ImageVector,
     iconTint: Color,
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     onClick: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
+
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = ColorBackground,
-        border = BorderStroke(1.dp, ColorBorder),
+        color = appColors.surfaceVariant,
+        border = BorderStroke(1.dp, appColors.border),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -190,13 +170,15 @@ private fun ExportOptionItem(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = ColorTextSecondary
-                )
+                if (!subtitle.isNullOrBlank()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = appColors.textSecondary
+                    )
+                }
             }
         }
     }

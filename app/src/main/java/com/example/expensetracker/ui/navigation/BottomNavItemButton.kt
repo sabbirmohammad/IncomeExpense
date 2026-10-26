@@ -34,7 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
@@ -46,6 +45,7 @@ fun RowScope.BottomNavItemButton(
     inactiveIcon: ImageVector,
     onClick: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val animatedScale by animateFloatAsState(
         targetValue = if (selected) 1.06f else 1.0f,
@@ -53,12 +53,12 @@ fun RowScope.BottomNavItemButton(
         label = "navItemScale"
     )
     val iconTint by animateColorAsState(
-        targetValue = if (selected) ColorAccent else LocalAppColors.current.navInactive,
+        targetValue = if (selected) appColors.accent else LocalAppColors.current.navInactive,
         animationSpec = tween(180),
         label = "navIconTint"
     )
     val textTint by animateColorAsState(
-        targetValue = if (selected) ColorAccent else LocalAppColors.current.navInactive,
+        targetValue = if (selected) appColors.accent else LocalAppColors.current.navInactive,
         animationSpec = tween(180),
         label = "navTextTint"
     )
@@ -85,7 +85,7 @@ fun RowScope.BottomNavItemButton(
                     scaleY = animatedScale
                 }
                 .clip(RoundedCornerShape(14.dp))
-                .background(if (selected) ColorAccent.copy(alpha = 0.15f) else Color.Transparent)
+                .background(if (selected) appColors.accent.copy(alpha = 0.15f) else Color.Transparent)
                 .padding(horizontal = 14.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {

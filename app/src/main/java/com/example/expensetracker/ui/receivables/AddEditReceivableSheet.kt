@@ -41,14 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Receivable
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -73,10 +66,11 @@ fun AddEditReceivableSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -97,54 +91,54 @@ fun AddEditReceivableSheet(
                 Text(
                     text = if (receivable != null) (if (strings.isBangla) "পাওনা হিসাব পরিবর্তন" else "Edit Receivable") else strings.addReceivable,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, null, tint = ColorTextSecondary)
+                    Icon(Icons.Outlined.Close, null, tint = appColors.textSecondary)
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Text(strings.personName, fontSize = 12.sp, color = ColorTextSecondary)
+            Text(strings.personName, fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = personName,
                 onValueChange = { personName = it },
-                placeholder = { Text(if (strings.isBangla) "যেমন: করিম আহমেদ, বন্ধু তানভীর" else "e.g. Karim Ahmed, Friend Tanvir", color = ColorTextMuted) },
+                placeholder = { Text(if (strings.isBangla) "যেমন: করিম আহমেদ, বন্ধু তানভীর" else "e.g. Karim Ahmed, Friend Tanvir", color = appColors.textMuted) },
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Outlined.Person, null, tint = ColorTextSecondary, modifier = Modifier.size(18.dp)) },
+                leadingIcon = { Icon(Icons.Outlined.Person, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp)) },
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ColorBackground,
-                    unfocusedContainerColor = ColorBackground,
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant,
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text("${strings.phoneNumber} (${strings.optional})", fontSize = 12.sp, color = ColorTextSecondary)
+            Text("${strings.phoneNumber} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it },
-                placeholder = { Text("017XXXXXXXX", color = ColorTextMuted) },
+                placeholder = { Text("017XXXXXXXX", color = appColors.textMuted) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                leadingIcon = { Icon(Icons.Outlined.Phone, null, tint = ColorTextSecondary, modifier = Modifier.size(18.dp)) },
+                leadingIcon = { Icon(Icons.Outlined.Phone, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp)) },
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ColorBackground,
-                    unfocusedContainerColor = ColorBackground,
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant,
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -168,21 +162,21 @@ fun AddEditReceivableSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text("${strings.note} (${strings.optional})", fontSize = 12.sp, color = ColorTextSecondary)
+            Text("${strings.note} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                placeholder = { Text(if (strings.isBangla) "যেমন: প্রোজেক্টের অগ্রিম, জরুরি ধার" else "e.g. Project advance, Emergency loan", color = ColorTextMuted) },
+                placeholder = { Text(if (strings.isBangla) "যেমন: প্রোজেক্টের অগ্রিম, জরুরি ধার" else "e.g. Project advance, Emergency loan", color = appColors.textMuted) },
                 maxLines = 2,
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ColorBackground,
-                    unfocusedContainerColor = ColorBackground,
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant,
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -201,7 +195,7 @@ fun AddEditReceivableSheet(
 
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(errorMessage!!, color = ColorDangerExpense, fontSize = 12.sp)
+                Text(errorMessage!!, color = appColors.expense, fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(20.dp))

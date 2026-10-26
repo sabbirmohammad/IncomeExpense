@@ -11,6 +11,7 @@ import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.model.getLocalizedCategoryName
 import com.example.expensetracker.data.repository.*
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -113,22 +114,26 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        android.util.Log.e("BudgetViewModel", "Unhandled coroutine error", throwable)
+    }
+
     fun saveBudget(budget: Budget) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.saveBudget(budget)
             loadBudgets()
         }
     }
 
     fun deleteBudget(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.deleteBudget(id)
             loadBudgets()
         }
     }
 
     fun addSavingsGoal(title: String, targetAmount: Double, initialSaved: Double, targetDateMillis: Long?, icon: String, colorHex: String, notes: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.addSavingsGoal(
                 SavingsGoal(
                     title = title,
@@ -144,19 +149,19 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun updateSavingsGoal(goal: SavingsGoal) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.updateSavingsGoal(goal)
         }
     }
 
     fun deleteSavingsGoal(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.deleteSavingsGoal(id)
         }
     }
 
     fun addSavingsContribution(goalId: Long, amount: Double, fromAccountId: Long? = null) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.addSavingsContribution(goalId, amount, fromAccountId)
         }
     }

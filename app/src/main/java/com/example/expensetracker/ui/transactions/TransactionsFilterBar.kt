@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,20 +28,17 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.TimeFilter
 import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.rememberAppHaptics
@@ -57,6 +55,9 @@ fun TransactionsFilterBar(
     onMarketTripsViewChanged: (Boolean) -> Unit,
     selectedTimeFilter: TimeFilter,
     onTimeFilterChanged: (TimeFilter) -> Unit,
+    accounts: List<Account> = emptyList(),
+    selectedAccountId: Long? = null,
+    onAccountFilterChanged: (Long?) -> Unit = {},
     onOpenCustomDateRange: () -> Unit,
     onResetFilters: () -> Unit,
     activeFilterCount: Int,
@@ -64,6 +65,7 @@ fun TransactionsFilterBar(
     modifier: Modifier = Modifier
 ) {
     val haptics = rememberAppHaptics()
+    val appColors = LocalAppColors.current
 
     AnimatedVisibility(
         visible = isSearchActive || searchQuery.isNotBlank(),
@@ -84,14 +86,14 @@ fun TransactionsFilterBar(
                     Text(
                         text = strings.searchTransactions,
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.Search,
                         contentDescription = "Search",
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(18.dp)
                     )
                 },
@@ -101,7 +103,7 @@ fun TransactionsFilterBar(
                             Icon(
                                 imageVector = Icons.Outlined.Clear,
                                 contentDescription = "Clear",
-                                tint = ColorTextSecondary,
+                                tint = appColors.textSecondary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -109,13 +111,13 @@ fun TransactionsFilterBar(
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ColorSurface,
-                    unfocusedContainerColor = ColorSurface,
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary,
-                    cursorColor = ColorAccent
+                    focusedContainerColor = appColors.surface,
+                    unfocusedContainerColor = appColors.surface,
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary,
+                    cursorColor = appColors.accent
                 ),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                 modifier = Modifier.weight(1f),
@@ -124,10 +126,11 @@ fun TransactionsFilterBar(
 
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = ColorSurface,
-                border = BorderStroke(1.dp, ColorBorder),
+                color = appColors.surface,
+                border = BorderStroke(1.dp, appColors.border),
                 modifier = Modifier
-                    .size(44.dp)
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .minimumInteractiveComponentSize()
                     .clickable {
                         haptics.lightTick()
                         onSearchQueryChanged("")
@@ -138,7 +141,7 @@ fun TransactionsFilterBar(
                     Icon(
                         imageVector = Icons.Outlined.Close,
                         contentDescription = "Close search",
-                        tint = ColorTextSecondary,
+                        tint = appColors.textSecondary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -157,20 +160,23 @@ fun TransactionsFilterBar(
         ) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = ColorSurface,
-                border = BorderStroke(1.dp, ColorBorder),
+                color = appColors.surface,
+                border = BorderStroke(1.dp, appColors.border),
                 modifier = Modifier
-                    .size(38.dp)
+                    .minimumInteractiveComponentSize()
                     .clickable {
                         haptics.lightTick()
                         onSearchActiveChanged(true)
                     }
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.Search,
                         contentDescription = "Search",
-                        tint = ColorTextPrimary,
+                        tint = appColors.textPrimary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -191,15 +197,26 @@ fun TransactionsFilterBar(
                 strings = strings
             )
 
+            if (accounts.isNotEmpty()) {
+                TransactionAccountFilterDropdown(
+                    accounts = accounts,
+                    selectedAccountId = selectedAccountId,
+                    onAccountFilterChanged = onAccountFilterChanged,
+                    strings = strings
+                )
+            }
+
             if (activeFilterCount > 0 || isMarketTripsView) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = ColorDangerExpense.copy(alpha = 0.15f),
-                    border = BorderStroke(1.dp, ColorDangerExpense.copy(alpha = 0.4f)),
-                    modifier = Modifier.clickable {
-                        haptics.mediumClick()
-                        onResetFilters()
-                    }
+                    color = appColors.expense.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable {
+                            haptics.mediumClick()
+                            onResetFilters()
+                        }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
@@ -209,7 +226,7 @@ fun TransactionsFilterBar(
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = null,
-                            tint = ColorDangerExpense,
+                            tint = appColors.expense,
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
@@ -218,7 +235,7 @@ fun TransactionsFilterBar(
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorDangerExpense
+                            color = appColors.expense
                         )
                     }
                 }

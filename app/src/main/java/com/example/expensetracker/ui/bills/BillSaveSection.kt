@@ -22,11 +22,10 @@ import com.example.expensetracker.data.model.BillFrequency
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.RecurringBill
 import com.example.expensetracker.data.model.calculateInitialDueDate
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillSaveSection(
@@ -44,19 +43,20 @@ fun BillSaveSection(
     onSave: (RecurringBill) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (errorMessage != null) {
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = ColorDangerExpense.copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, ColorDangerExpense.copy(alpha = 0.3f)),
+                color = appColors.expense.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.3f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = errorMessage,
-                    color = ColorDangerExpense,
+                    color = appColors.expense,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
@@ -116,7 +116,7 @@ fun BillSaveSection(
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
         ) {
             Text(text = strings.save, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.White)
         }

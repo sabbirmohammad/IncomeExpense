@@ -16,6 +16,7 @@ internal object DatabaseMigrations {
         if (oldVersion < 10) upgradeToVersion10(db)
         if (oldVersion < 11) upgradeToVersion11(db)
         if (oldVersion < 12) upgradeToVersion12(db, dbHelper)
+        if (oldVersion < 13) upgradeToVersion13(db)
     }
 
     private fun upgradeToVersion2(db: SQLiteDatabase) {
@@ -96,10 +97,10 @@ internal object DatabaseMigrations {
 
     private fun upgradeToVersion5(db: SQLiteDatabase) {
         try {
-            db.execSQL("ALTER TABLE $TABLE_PROFILE ADD COLUMN $COL_PROFILE_GEMINI_KEY TEXT")
+            db.execSQL("ALTER TABLE $TABLE_PROFILE ADD COLUMN gemini_api_key TEXT")
         } catch (_: Exception) {}
         try {
-            db.execSQL("ALTER TABLE $TABLE_PROFILE ADD COLUMN $COL_PROFILE_AI_INSIGHTS_ENABLED INTEGER NOT NULL DEFAULT 1")
+            db.execSQL("ALTER TABLE $TABLE_PROFILE ADD COLUMN ai_insights_enabled INTEGER NOT NULL DEFAULT 1")
         } catch (_: Exception) {}
     }
 
@@ -199,5 +200,15 @@ internal object DatabaseMigrations {
 
     private fun upgradeToVersion12(db: SQLiteDatabase, dbHelper: ExpenseDatabaseHelper) {
         dbHelper.reconcileAndDeduplicateCategoryColors(db)
+    }
+
+    private fun upgradeToVersion13(db: SQLiteDatabase) {
+        try {
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_budgets_month_year ON $TABLE_BUDGETS ($COL_BUDGET_MONTH, $COL_BUDGET_YEAR)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_budgets_cat_month_year ON $TABLE_BUDGETS ($COL_BUDGET_CAT_ID, $COL_BUDGET_MONTH, $COL_BUDGET_YEAR)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_rec_due_date ON $TABLE_RECEIVABLES ($COL_REC_DUE_DATE)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_pay_due_date ON $TABLE_PAYABLES ($COL_PAY_DUE_DATE)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_bills_due_day ON $TABLE_RECURRING_BILLS ($COL_BILL_DUE_DAY)")
+        } catch (_: Exception) {}
     }
 }

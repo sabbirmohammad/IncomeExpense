@@ -2,7 +2,6 @@ package com.example.expensetracker.ui.settings
 
 import com.example.expensetracker.data.repository.*
 
-import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -117,33 +116,6 @@ fun SettingsViewModel.restoreFromGoogleDrive() {
             result.getOrNull() ?: "Restored successfully!"
         } else {
             "Restore failed: ${result.exceptionOrNull()?.message}"
-        }
-    }
-}
-
-fun SettingsViewModel.restoreFromUri(uri: android.net.Uri) {
-    viewModelScope.launch {
-        _isSyncing.value = true
-        try {
-            val context = getApplication<Application>()
-            val json = context.contentResolver.openInputStream(uri)?.use { stream ->
-                stream.bufferedReader(Charsets.UTF_8).readText()
-            }
-            if (json.isNullOrBlank()) {
-                _isSyncing.value = false
-                _syncMessage.value = "Selected backup file is empty."
-                return@launch
-            }
-            val success = repository.restoreFromJson(json)
-            _isSyncing.value = false
-            _syncMessage.value = if (success) {
-                "Backup restored successfully from file!"
-            } else {
-                "Restore failed: Invalid or incompatible backup file format."
-            }
-        } catch (e: Exception) {
-            _isSyncing.value = false
-            _syncMessage.value = "Restore failed: ${e.localizedMessage ?: e.message}"
         }
     }
 }

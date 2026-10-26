@@ -32,12 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -52,12 +47,13 @@ fun AllCategoriesSheet(
     onDeleteCategory: (Category) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -77,7 +73,7 @@ fun AllCategoriesSheet(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Text(
                     text = if (strings.isBangla) "+ নতুন" else "+ New",
@@ -85,7 +81,7 @@ fun AllCategoriesSheet(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorAccent,
+                    color = appColors.accent,
                     modifier = Modifier
                         .clickable { onAddNew() }
                         .padding(4.dp)
@@ -112,7 +108,7 @@ fun AllCategoriesSheet(
                         ) {
                             CategoryIconBadge(
                                 iconName = cat.icon,
-                                colorHex = cat.colorHex,
+                                colorHex = catColorOrFallback(cat.colorHex),
                                 size = 36.dp
                             )
                             Spacer(modifier = Modifier.width(12.dp))
@@ -123,12 +119,12 @@ fun AllCategoriesSheet(
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Normal
                                     ),
-                                    color = ColorTextPrimary
+                                    color = appColors.textPrimary
                                 )
                                 Text(
                                     text = if (cat.type == TransactionType.INCOME) strings.income else strings.expense,
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                    color = ColorTextMuted
+                                    color = appColors.textMuted
                                 )
                             }
                         }
@@ -138,7 +134,7 @@ fun AllCategoriesSheet(
                                 Icon(
                                     imageVector = Icons.Outlined.Edit,
                                     contentDescription = "Edit",
-                                    tint = ColorTextSecondary,
+                                    tint = appColors.textSecondary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -146,7 +142,7 @@ fun AllCategoriesSheet(
                                 Icon(
                                     imageVector = Icons.Outlined.Delete,
                                     contentDescription = "Delete",
-                                    tint = ColorDangerExpense,
+                                    tint = appColors.expense,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -158,3 +154,5 @@ fun AllCategoriesSheet(
         }
     }
 }
+
+private fun catColorOrFallback(hex: String?): String = hex ?: "#3B82F6"

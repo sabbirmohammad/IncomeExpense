@@ -21,12 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -39,8 +34,9 @@ fun RecordPaymentAccountSelector(
     onAccountSelected: (Long) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(strings.depositToAccount, fontSize = 12.sp, color = ColorTextSecondary)
+        Text(strings.depositToAccount, fontSize = 12.sp, color = appColors.textSecondary)
         Spacer(modifier = Modifier.height(6.dp))
         Row(
             modifier = Modifier
@@ -52,8 +48,8 @@ fun RecordPaymentAccountSelector(
                 val isSelected = selectedAccountId == acc.id
                 Surface(
                     shape = RoundedCornerShape(SmallElementRadius),
-                    color = if (isSelected) ColorSuccessIncome else ColorBackground,
-                    border = if (isSelected) null else BorderStroke(1.dp, ColorBorder),
+                    color = if (isSelected) appColors.income else appColors.surfaceVariant,
+                    border = if (isSelected) null else BorderStroke(1.dp, appColors.border),
                     modifier = Modifier.clickable { onAccountSelected(acc.id) }
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
@@ -61,12 +57,12 @@ fun RecordPaymentAccountSelector(
                             text = acc.name,
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (isSelected) Color.White else ColorTextPrimary
+                            color = if (isSelected) Color.White else appColors.textPrimary
                         )
                         Text(
                             text = formatCurrency(acc.currentBalance, currencySymbol),
                             fontSize = 10.sp,
-                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else ColorTextMuted
+                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else appColors.textMuted
                         )
                     }
                 }

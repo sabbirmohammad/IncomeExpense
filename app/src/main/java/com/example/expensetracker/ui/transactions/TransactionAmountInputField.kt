@@ -30,8 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 @Composable
@@ -43,6 +42,7 @@ fun TransactionAmountInputField(
     amountFocusRequester: FocusRequester,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
     Row(
@@ -66,7 +66,7 @@ fun TransactionAmountInputField(
         OutlinedTextField(
             value = amountText,
             onValueChange = { input ->
-                val sanitized = input.filter { it.isDigit() || it == '.' || it in "+-×÷/* " }
+                val sanitized = input.filter { it.isDigit() || it == '.' || it in "+-×÷/*−— " }
                 onAmountChange(sanitized)
             },
             placeholder = {
@@ -74,21 +74,23 @@ fun TransactionAmountInputField(
                     text = "0.00",
                     fontSize = 40.sp,
                     fontWeight = FontWeight.Black,
-                    color = ColorTextMuted.copy(alpha = 0.4f)
+                    color = appColors.textMuted.copy(alpha = 0.4f)
                 )
             },
             textStyle = MaterialTheme.typography.headlineLarge.copy(
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Black,
-                color = ColorTextPrimary,
+                color = LocalAppColors.current.textPrimary,
                 textAlign = TextAlign.Start
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent,
+                focusedTextColor = LocalAppColors.current.textPrimary,
+                unfocusedTextColor = LocalAppColors.current.textPrimary,
                 cursorColor = typeAccentColor
             ),
             modifier = Modifier
@@ -102,13 +104,12 @@ fun TransactionAmountInputField(
                 onClick = {
                     haptics.lightTick()
                     onAmountChange("")
-                },
-                modifier = Modifier.size(30.dp)
+                }
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Clear,
                     contentDescription = "Clear",
-                    tint = ColorTextMuted,
+                    tint = appColors.textMuted,
                     modifier = Modifier.size(17.dp)
                 )
             }

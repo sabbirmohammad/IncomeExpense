@@ -24,7 +24,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Responsive Hero Balance:
@@ -44,6 +44,7 @@ fun ResponsiveHeroBalance(
     minFontSize: TextUnit = 22.sp,
     isPrivacyMode: Boolean = false
 ) {
+    val appColors = LocalAppColors.current
     val animatedAmount by animateFloatAsState(
         targetValue = amount.toFloat(),
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
@@ -64,7 +65,7 @@ fun ResponsiveHeroBalance(
     }
 
     val isNegative = amount < 0 && !isPrivacyMode
-    val balanceColor = if (isNegative) ColorDangerExpense else ColorTextPrimary
+    val balanceColor = if (isNegative) appColors.expense else LocalAppColors.current.textPrimary
 
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth(),

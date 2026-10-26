@@ -75,7 +75,6 @@ import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.expensetracker.theme.ColorNeutralCategory
 
 object CategoryIconHelper {
 
@@ -188,7 +187,7 @@ object CategoryIconHelper {
             }
             Color(colorInt)
         } catch (e: Exception) {
-            ColorNeutralCategory
+            Color(0xFF8B90A0)
         }
     }
 }

@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 import java.util.Calendar
@@ -24,6 +23,7 @@ fun TransactionDateRangeDialog(
     onDismiss: () -> Unit,
     onConfirmDateRange: (startDateMillis: Long, endDateMillis: Long) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val dateRangePickerState = rememberDateRangePickerState()
 
     DatePickerDialog(
@@ -45,7 +45,7 @@ fun TransactionDateRangeDialog(
                     onDismiss()
                 }
             ) {
-                Text(strings.confirm, color = ColorAccent)
+                Text(strings.confirm, color = appColors.accent)
             }
         },
         dismissButton = {

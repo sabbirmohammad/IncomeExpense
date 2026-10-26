@@ -24,10 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -39,6 +36,7 @@ fun SettingsDriveActionsRow(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -49,7 +47,7 @@ fun SettingsDriveActionsRow(
             enabled = !isSyncing,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(SmallElementRadius),
-            colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
         ) {
             if (isSyncing) {
                 CircularProgressIndicator(
@@ -81,17 +79,17 @@ fun SettingsDriveActionsRow(
             enabled = !isSyncing,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(SmallElementRadius),
-            border = BorderStroke(1.dp, ColorBorder),
+            border = BorderStroke(1.dp, appColors.border),
             colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = ColorSurface,
-                contentColor = ColorTextPrimary
+                containerColor = appColors.surface,
+                contentColor = appColors.textPrimary
             )
         ) {
             Icon(
                 imageVector = Icons.Outlined.Refresh,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = ColorTextPrimary
+                tint = appColors.textPrimary
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
@@ -100,7 +98,7 @@ fun SettingsDriveActionsRow(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         }
     }

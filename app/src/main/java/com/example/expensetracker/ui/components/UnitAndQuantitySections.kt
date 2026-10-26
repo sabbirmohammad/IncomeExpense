@@ -33,9 +33,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.MarketListParser
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -47,6 +44,7 @@ fun UnitSelectorGrid(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -57,10 +55,10 @@ fun UnitSelectorGrid(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (isSelected) ColorAccent else LocalAppColors.current.background)
+                    .background(if (isSelected) appColors.accent else LocalAppColors.current.background)
                     .border(
                         width = 1.dp,
-                        color = if (isSelected) ColorAccent else LocalAppColors.current.border,
+                        color = if (isSelected) appColors.accent else LocalAppColors.current.border,
                         shape = RoundedCornerShape(8.dp)
                     )
                     .clickable {
@@ -88,7 +86,7 @@ fun UnitSelectorGrid(
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         ),
-                        color = if (isSelected) Color.White else ColorTextPrimary
+                        color = if (isSelected) Color.White else appColors.textPrimary
                     )
                 }
             }
@@ -106,6 +104,7 @@ fun QuantityStepperSection(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -120,12 +119,11 @@ fun QuantityStepperSection(
                 onQuantityChange(if (next % 1.0 == 0.0) next.toInt().toString() else next.toString())
             },
             modifier = Modifier
-                .size(44.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(LocalAppColors.current.background)
                 .border(1.dp, LocalAppColors.current.border, RoundedCornerShape(10.dp))
         ) {
-            Icon(imageVector = Icons.Filled.Remove, contentDescription = "Decrease", tint = ColorTextPrimary)
+            Icon(imageVector = Icons.Filled.Remove, contentDescription = "Decrease", tint = appColors.textPrimary)
         }
 
         OutlinedTextField(
@@ -134,9 +132,9 @@ fun QuantityStepperSection(
             modifier = Modifier.weight(1f),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            textStyle = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold, color = ColorTextPrimary),
+            textStyle = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold, color = appColors.textPrimary),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ColorAccent,
+                focusedBorderColor = appColors.accent,
                 unfocusedBorderColor = LocalAppColors.current.border,
                 focusedContainerColor = LocalAppColors.current.background,
                 unfocusedContainerColor = LocalAppColors.current.background
@@ -145,7 +143,7 @@ fun QuantityStepperSection(
                 Text(
                     text = selectedUnit,
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
-                    color = ColorAccent,
+                    color = appColors.accent,
                     modifier = Modifier.padding(end = 12.dp)
                 )
             }
@@ -160,12 +158,11 @@ fun QuantityStepperSection(
                 onQuantityChange(if (next % 1.0 == 0.0) next.toInt().toString() else next.toString())
             },
             modifier = Modifier
-                .size(44.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(LocalAppColors.current.background)
                 .border(1.dp, LocalAppColors.current.border, RoundedCornerShape(10.dp))
         ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase", tint = ColorTextPrimary)
+            Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase", tint = appColors.textPrimary)
         }
     }
 
@@ -186,7 +183,7 @@ fun QuantityStepperSection(
                     }
                     .padding(horizontal = 8.dp, vertical = 5.dp)
             ) {
-                Text(text = presetLabel, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp), color = ColorTextSecondary)
+                Text(text = presetLabel, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp), color = appColors.textSecondary)
             }
         }
     }

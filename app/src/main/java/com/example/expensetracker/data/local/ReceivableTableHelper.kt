@@ -119,7 +119,11 @@ internal class ReceivableTableHelper(private val dbHelper: ExpenseDatabaseHelper
         val db = dbHelper.writableDatabase
         db.beginTransaction()
         try {
-            val newReceived = (rec.amountReceived + amountPaid).coerceAtMost(rec.amount)
+            val remaining = (rec.amount - rec.amountReceived).coerceAtLeast(0.0)
+            val actualPaid = amountPaid.coerceAtMost(remaining)
+            if (actualPaid <= 0.0) return false
+
+            val newReceived = (rec.amountReceived + actualPaid).coerceAtMost(rec.amount)
             val isFullyPaid = newReceived >= rec.amount - 0.001
             val newStatus = if (isFullyPaid) ReceivableStatus.SETTLED else ReceivableStatus.PARTIAL
 
@@ -135,7 +139,7 @@ internal class ReceivableTableHelper(private val dbHelper: ExpenseDatabaseHelper
             val incomeTx = Transaction(
                 id = 0,
                 title = "Repayment from ${rec.personName}",
-                amount = amountPaid,
+                amount = actualPaid,
                 type = TransactionType.INCOME,
                 categoryId = recoveryCat.id,
                 categoryName = recoveryCat.name,

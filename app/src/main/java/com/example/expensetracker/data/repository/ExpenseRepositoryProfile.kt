@@ -19,18 +19,6 @@ suspend fun ExpenseRepository.setAppLanguage(languageCode: String): Boolean = wi
     rows > 0
 }
 
-suspend fun ExpenseRepository.setGeminiApiKey(key: String?): Boolean = withContext(Dispatchers.IO) {
-    val rows = dbHelper.updateGeminiApiKey(key?.trim()?.ifBlank { null })
-    if (rows > 0) refreshUserProfile()
-    rows > 0
-}
-
-suspend fun ExpenseRepository.setAiInsightsEnabled(enabled: Boolean): Boolean = withContext(Dispatchers.IO) {
-    val rows = dbHelper.updateAiInsightsEnabled(enabled)
-    if (rows > 0) refreshUserProfile()
-    rows > 0
-}
-
 suspend fun ExpenseRepository.setAppTheme(theme: String): Boolean = withContext(Dispatchers.IO) {
     val rows = dbHelper.updateProfileTheme(theme)
     if (rows > 0) refreshUserProfile()

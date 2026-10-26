@@ -19,10 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.getAvatarIcon
 
 @Composable
@@ -33,6 +30,7 @@ fun EditProfileAvatarPicker(
     onAvatarSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val avatarOptions = listOf(
         0 to "Initials",
         1 to "Person",
@@ -52,10 +50,10 @@ fun EditProfileAvatarPicker(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(if (isSel) ColorAccent.copy(alpha = 0.25f) else ColorBackground)
+                    .background(if (isSel) appColors.accent.copy(alpha = 0.25f) else appColors.surfaceVariant)
                     .border(
                         width = if (isSel) 2.dp else 1.dp,
-                        color = if (isSel) ColorAccent else ColorBorder,
+                        color = if (isSel) appColors.accent else appColors.border,
                         shape = CircleShape
                     )
                     .clickable { onAvatarSelected(idx) },
@@ -74,13 +72,13 @@ fun EditProfileAvatarPicker(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (isSel) ColorAccent else ColorTextSecondary
+                        color = if (isSel) appColors.accent else appColors.textSecondary
                     )
                 } else {
                     Icon(
                         imageVector = getAvatarIcon(idx),
                         contentDescription = null,
-                        tint = if (isSel) ColorAccent else ColorTextSecondary,
+                        tint = if (isSel) appColors.accent else appColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }

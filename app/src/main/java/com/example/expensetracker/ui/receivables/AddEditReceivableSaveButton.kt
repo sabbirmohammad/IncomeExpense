@@ -12,10 +12,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun AddEditReceivableSaveButton(
@@ -30,6 +30,7 @@ fun AddEditReceivableSaveButton(
     onSave: (String, String, Double, Long?, String, Long?) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     Button(
         onClick = {
@@ -51,7 +52,7 @@ fun AddEditReceivableSaveButton(
             .fillMaxWidth()
             .height(48.dp),
         shape = RoundedCornerShape(SmallElementRadius),
-        colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+        colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
     ) {
         Text(
             text = strings.save,

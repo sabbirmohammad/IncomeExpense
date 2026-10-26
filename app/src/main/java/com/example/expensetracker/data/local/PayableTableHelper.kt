@@ -120,7 +120,11 @@ internal class PayableTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val db = dbHelper.writableDatabase
         db.beginTransaction()
         try {
-            val newPaid = (pay.amountPaid + amountPaid).coerceAtMost(pay.amount)
+            val remaining = (pay.amount - pay.amountPaid).coerceAtLeast(0.0)
+            val actualPaid = amountPaid.coerceAtMost(remaining)
+            if (actualPaid <= 0.0) return false
+
+            val newPaid = (pay.amountPaid + actualPaid).coerceAtMost(pay.amount)
             val isFullyPaid = newPaid >= pay.amount - 0.001
             val newStatus = if (isFullyPaid) PayableStatus.SETTLED else PayableStatus.PARTIAL
 
@@ -136,7 +140,7 @@ internal class PayableTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
             val expenseTx = Transaction(
                 id = 0,
                 title = "Repaid to ${pay.personName}",
-                amount = amountPaid,
+                amount = actualPaid,
                 type = TransactionType.EXPENSE,
                 categoryId = repaymentCat.id,
                 categoryName = repaymentCat.name,

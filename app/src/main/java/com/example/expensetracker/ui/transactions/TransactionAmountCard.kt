@@ -1,13 +1,7 @@
 package com.example.expensetracker.ui.transactions
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,15 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,14 +32,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.CalculatorEvaluator
 import com.example.expensetracker.ui.components.CalculatorKeypadBar
 import com.example.expensetracker.ui.components.CalculatorPreviewBadge
+import com.example.expensetracker.ui.components.CalculatorToggleButton
+import com.example.expensetracker.ui.components.ExpandableCalculatorKeypadBar
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.rememberAppHaptics
-import java.util.Locale
 
 @Composable
 fun TransactionAmountCard(
@@ -53,14 +48,17 @@ fun TransactionAmountCard(
     isExpense: Boolean,
     typeAccentColor: Color,
     currencySymbol: String,
-    showCalculatorBar: Boolean,
-    onToggleCalculator: () -> Unit,
     errorMessage: String?,
     amountFocusRequester: FocusRequester,
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
+    var showCalculator by remember { mutableStateOf(false) }
+    val hasOperators = remember(amountText) {
+        amountText.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Card(
@@ -88,8 +86,8 @@ fun TransactionAmountCard(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -108,43 +106,22 @@ fun TransactionAmountCard(
                                     fontWeight = FontWeight.SemiBold,
                                     letterSpacing = 0.2.sp
                                 ),
-                                color = ColorTextSecondary
+                                color = appColors.textSecondary
                             )
                         }
 
-                        Surface(
-                            shape = CircleShape,
-                            color = if (showCalculatorBar) typeAccentColor.copy(alpha = 0.2f) else LocalAppColors.current.surfaceVariant,
-                            border = BorderStroke(1.dp, if (showCalculatorBar) typeAccentColor else LocalAppColors.current.border),
-                            modifier = Modifier.clickable {
+                        CalculatorToggleButton(
+                            isOpen = showCalculator || hasOperators,
+                            onToggle = {
                                 haptics.lightTick()
-                                onToggleCalculator()
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Calculate,
-                                    contentDescription = "Calculator",
-                                    tint = if (showCalculatorBar) typeAccentColor else ColorTextSecondary,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    text = strings.calc,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    color = if (showCalculatorBar) typeAccentColor else ColorTextSecondary
-                                )
-                            }
-                        }
+                                showCalculator = !showCalculator
+                            },
+                            accentColor = typeAccentColor,
+                            label = strings.calc
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     TransactionAmountInputField(
                         amountText = amountText,
@@ -154,33 +131,32 @@ fun TransactionAmountCard(
                         amountFocusRequester = amountFocusRequester
                     )
 
+                    // Live calculation preview badge
                     CalculatorPreviewBadge(
                         expression = amountText,
                         currencySymbol = currencySymbol,
                         onApply = { evaluated ->
                             haptics.successFeedback()
-                            onAmountChange(if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated))
+                            onAmountChange(CalculatorEvaluator.formatResult(evaluated))
+                            showCalculator = false
                         },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        modifier = Modifier.padding(top = 4.dp),
+                        accentColor = typeAccentColor
                     )
 
-                    AnimatedVisibility(
-                        visible = showCalculatorBar,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Column {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            CalculatorKeypadBar(
-                                currentExpression = amountText,
-                                onExpressionChanged = onAmountChange,
-                                onApplyResult = { evaluated ->
-                                    haptics.successFeedback()
-                                    onAmountChange(if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated))
-                                }
-                            )
-                        }
-                    }
+                    // Expandable On-Demand Calculator Operator Bar
+                    ExpandableCalculatorKeypadBar(
+                        expanded = showCalculator,
+                        currentExpression = amountText,
+                        onExpressionChanged = onAmountChange,
+                        onApplyResult = { evaluated ->
+                            haptics.successFeedback()
+                            onAmountChange(CalculatorEvaluator.formatResult(evaluated))
+                            showCalculator = false
+                        },
+                        accentColor = typeAccentColor,
+                        haptics = haptics
+                    )
                 }
             }
         }
@@ -188,13 +164,13 @@ fun TransactionAmountCard(
         if (errorMessage != null) {
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = ColorDangerExpense.copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, ColorDangerExpense.copy(alpha = 0.3f)),
+                color = appColors.expense.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.3f)),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
                 Text(
                     text = errorMessage,
-                    color = ColorDangerExpense,
+                    color = appColors.expense,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )

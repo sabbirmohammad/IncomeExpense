@@ -30,9 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.PillFilterChip
 import com.example.expensetracker.ui.components.Strings
 
@@ -43,13 +41,14 @@ fun ShareFormatSwitcher(
     onFormatChange: (ShareFormatType) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF0F131D))
-            .border(1.dp, ColorBorder, RoundedCornerShape(12.dp))
+            .background(appColors.surfaceVariant)
+            .border(1.dp, appColors.border, RoundedCornerShape(12.dp))
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -60,9 +59,9 @@ fun ShareFormatSwitcher(
         ).forEach { (format, label, icon) ->
             val isSelected = selectedFormat == format
             val activeBg = when (format) {
-                ShareFormatType.PDF -> Color(0xFFE53935)
-                ShareFormatType.IMAGE -> ColorAccent
-                ShareFormatType.TEXT -> Color(0xFF2EC4B6)
+                ShareFormatType.PDF -> if (appColors.isDark) Color(0xFFE53935) else Color(0xFFDC2626)
+                ShareFormatType.IMAGE -> appColors.accent
+                ShareFormatType.TEXT -> if (appColors.isDark) Color(0xFF2EC4B6) else Color(0xFF0F766E)
             }
             Surface(
                 shape = RoundedCornerShape(8.dp),
@@ -79,7 +78,7 @@ fun ShareFormatSwitcher(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = if (isSelected) Color.White else ColorTextSecondary,
+                        tint = if (isSelected) Color.White else appColors.textSecondary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -89,7 +88,7 @@ fun ShareFormatSwitcher(
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                         ),
-                        color = if (isSelected) Color.White else ColorTextSecondary,
+                        color = if (isSelected) Color.White else appColors.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

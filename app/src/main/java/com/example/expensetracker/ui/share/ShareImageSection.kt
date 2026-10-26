@@ -31,10 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.UserProfile
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.ui.components.Strings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ShareImageSection(
@@ -54,6 +54,7 @@ fun ShareImageSection(
     onSharingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Column(modifier = modifier) {
         Box(
             modifier = Modifier
@@ -115,7 +116,7 @@ fun ShareImageSection(
                 .height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = ColorAccent,
+                containerColor = appColors.accent,
                 contentColor = Color.White
             )
         ) {

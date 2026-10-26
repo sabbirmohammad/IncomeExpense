@@ -28,11 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.PaymentMethod
 import com.example.expensetracker.data.model.getLocalizedAccountName
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ListRow(
@@ -49,13 +45,15 @@ fun ListRow(
     hasReceipt: Boolean = false
 ) {
     val isBangla = LocalAppStrings.current.isBangla
+    val appColors = LocalAppColors.current
+
     val methodDisplayName = if (paymentMethodName != null) {
         getLocalizedAccountName(paymentMethodName, isBangla)
     } else {
         paymentMethod?.getDisplayName(isBangla)
     }
-    val methodColor = paymentMethod?.let { getPaymentMethodColor(it) } ?: ColorTextSecondary
-    val badgeBgColor = if (paymentMethod != null) methodColor.copy(alpha = 0.14f) else ColorBorder
+    val methodColor = paymentMethod?.let { getPaymentMethodColor(it, appColors.isDark) } ?: appColors.textSecondary
+    val badgeBgColor = if (paymentMethod != null) methodColor.copy(alpha = 0.14f) else appColors.border
 
     Row(
         modifier = modifier
@@ -83,7 +81,7 @@ fun ListRow(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Normal
                     ),
-                    color = ColorTextPrimary,
+                    color = appColors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -94,7 +92,7 @@ fun ListRow(
                     Text(
                         text = meta,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = ColorTextMuted,
+                        color = appColors.textMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
@@ -122,14 +120,14 @@ fun ListRow(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(ColorAccent.copy(alpha = 0.14f))
+                                .background(appColors.accent.copy(alpha = 0.14f))
                                 .padding(horizontal = 5.dp, vertical = 2.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.ReceiptLong,
-                                contentDescription = "Receipt",
-                                tint = ColorAccent,
+                                contentDescription = if (isBangla) "রশিদ সংযুক্ত" else "Receipt Attached",
+                                tint = appColors.accent,
                                 modifier = Modifier.size(10.dp)
                             )
                         }

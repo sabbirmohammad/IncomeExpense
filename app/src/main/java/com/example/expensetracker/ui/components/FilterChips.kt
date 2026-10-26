@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,11 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextSecondary
+import androidx.compose.ui.graphics.isSpecified
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun PillFilterChip(
@@ -36,11 +34,14 @@ fun PillFilterChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         shape = CircleShape,
-        color = if (selected) ColorAccent else ColorSurface,
-        border = if (selected) null else BorderStroke(1.dp, ColorBorder),
-        modifier = modifier.clickable { onClick() }
+        color = if (selected) appColors.accent else appColors.surface,
+        border = if (selected) null else BorderStroke(1.dp, appColors.border),
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .clickable { onClick() }
     ) {
         Text(
             text = text,
@@ -48,7 +49,7 @@ fun PillFilterChip(
                 fontSize = 12.sp,
                 fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
             ),
-            color = if (selected) Color.White else ColorTextSecondary,
+            color = if (selected) Color.White else appColors.textSecondary,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
         )
     }
@@ -61,16 +62,20 @@ fun DropdownFilterChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    activeColor: Color = ColorAccent
+    activeColor: Color = Color.Unspecified
 ) {
+    val appColors = LocalAppColors.current
+    val resolvedActiveColor = if (activeColor.isSpecified) activeColor else appColors.accent
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isActive) activeColor.copy(alpha = 0.16f) else ColorSurface,
+        color = if (isActive) resolvedActiveColor.copy(alpha = 0.16f) else appColors.surface,
         border = BorderStroke(
             1.dp,
-            if (isActive) activeColor.copy(alpha = 0.55f) else ColorBorder
+            if (isActive) resolvedActiveColor.copy(alpha = 0.55f) else appColors.border
         ),
-        modifier = modifier.clickable { onClick() }
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
@@ -81,7 +86,7 @@ fun DropdownFilterChip(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (isActive) activeColor else ColorTextSecondary,
+                    tint = if (isActive) resolvedActiveColor else appColors.textSecondary,
                     modifier = Modifier.size(15.dp)
                 )
             }
@@ -91,14 +96,14 @@ fun DropdownFilterChip(
                     fontSize = 12.sp,
                     fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
                 ),
-                color = if (isActive) (if (activeColor == ColorAccent) ColorAccent else activeColor) else ColorTextSecondary,
+                color = if (isActive) resolvedActiveColor else appColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null,
-                tint = if (isActive) activeColor else ColorTextMuted,
+                tint = if (isActive) resolvedActiveColor else appColors.textMuted,
                 modifier = Modifier.size(16.dp)
             )
         }

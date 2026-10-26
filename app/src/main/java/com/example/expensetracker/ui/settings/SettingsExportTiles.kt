@@ -37,13 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.model.toFinancialSummary
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.StatementExportHelper
 
@@ -56,6 +50,7 @@ fun SettingsExportTiles(
 ) {
     val context = LocalContext.current
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -64,9 +59,8 @@ fun SettingsExportTiles(
         // 1. PDF Report Tile
         SettingsExportTileItem(
             icon = Icons.Outlined.PictureAsPdf,
-            iconTint = ColorDangerExpense,
+            iconTint = appColors.expense,
             title = if (strings.isBangla) "PDF রিপোর্ট" else "PDF Report",
-            subtitle = if (strings.isBangla) "প্রিন্টযোগ্য A4" else "Print A4",
             onClick = {
                 val summary = transactions.toFinancialSummary()
                 StatementExportHelper.exportAndSharePdf(
@@ -82,18 +76,16 @@ fun SettingsExportTiles(
         // 2. Image Slip Tile
         SettingsExportTileItem(
             icon = Icons.Outlined.Image,
-            iconTint = ColorAccent,
+            iconTint = appColors.accent,
             title = if (strings.isBangla) "ইমেজ স্লিপ" else "Image Slip",
-            subtitle = if (strings.isBangla) "শেয়ারযোগ্য" else "Shareable",
             onClick = onShareSlipClick
         )
 
         // 3. Excel (CSV) Tile
         SettingsExportTileItem(
             icon = Icons.Outlined.TableChart,
-            iconTint = ColorSuccessIncome,
+            iconTint = appColors.income,
             title = if (strings.isBangla) "এক্সেল (CSV)" else "Excel (CSV)",
-            subtitle = if (strings.isBangla) "স্প্রেডশীট" else "Sheets",
             onClick = {
                 StatementExportHelper.exportAndShareCsv(
                     context = context,
@@ -111,17 +103,18 @@ private fun RowScope.SettingsExportTileItem(
     icon: ImageVector,
     iconTint: Color,
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     onClick: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         modifier = Modifier
             .weight(1f)
             .clip(RoundedCornerShape(14.dp))
             .clickable { onClick() },
-        color = ColorBackground,
+        color = appColors.surfaceVariant,
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, ColorBorder)
+        border = BorderStroke(1.dp, appColors.border)
     ) {
         Column(
             modifier = Modifier
@@ -151,20 +144,22 @@ private fun RowScope.SettingsExportTileItem(
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Normal
-                ),
-                color = ColorTextMuted,
-                maxLines = 1
-            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Normal
+                    ),
+                    color = appColors.textMuted,
+                    maxLines = 1
+                )
+            }
         }
     }
 }

@@ -34,20 +34,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.PaymentMethod
 import com.example.expensetracker.data.model.PaymentMethodSpend
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 
-fun getPaymentMethodColor(method: PaymentMethod): Color {
-    return when (method) {
-        PaymentMethod.BKASH -> Color(0xFFE2136E)
-        PaymentMethod.NAGAD -> Color(0xFFF7941D)
-        PaymentMethod.BANK_TRANSFER -> Color(0xFF3B8FF0)
-        PaymentMethod.CASH -> Color(0xFF3DDC97)
-        PaymentMethod.CREDIT_CARD -> Color(0xFF9D4EDD)
-        PaymentMethod.DEBIT_CARD -> Color(0xFF5C7CFA)
-        PaymentMethod.OTHER -> Color(0xFF8B90A0)
+fun getPaymentMethodColor(method: PaymentMethod, isDark: Boolean = true): Color {
+    return if (isDark) {
+        when (method) {
+            PaymentMethod.BKASH -> Color(0xFFE2136E)
+            PaymentMethod.NAGAD -> Color(0xFFF7941D)
+            PaymentMethod.BANK_TRANSFER -> Color(0xFF3B8FF0)
+            PaymentMethod.CASH -> Color(0xFF3DDC97)
+            PaymentMethod.CREDIT_CARD -> Color(0xFF9D4EDD)
+            PaymentMethod.DEBIT_CARD -> Color(0xFF5C7CFA)
+            PaymentMethod.OTHER -> Color(0xFF8B90A0)
+        }
+    } else {
+        when (method) {
+            PaymentMethod.BKASH -> Color(0xFFBE123C) // Rose-700, 5.0:1 on #FFF
+            PaymentMethod.NAGAD -> Color(0xFFD97706) // Amber-600, 4.5:1 on #FFF
+            PaymentMethod.BANK_TRANSFER -> Color(0xFF1D4ED8) // Blue-700, 5.2:1 on #FFF
+            PaymentMethod.CASH -> Color(0xFF15803D) // Green-700, 4.8:1 on #FFF
+            PaymentMethod.CREDIT_CARD -> Color(0xFF7E22CE) // Purple-700, 5.1:1 on #FFF
+            PaymentMethod.DEBIT_CARD -> Color(0xFF4338CA) // Indigo-700, 5.5:1 on #FFF
+            PaymentMethod.OTHER -> Color(0xFF64748B) // Slate-500, 4.6:1 on #FFF
+        }
     }
 }
 
@@ -59,6 +68,7 @@ fun PaymentMethodDonutChart(
     centerLabel: String = "Total spent",
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val chartDiameter = 160.dp
     val strokeWidthDp = 22.dp
@@ -72,12 +82,13 @@ fun PaymentMethodDonutChart(
             contentAlignment = Alignment.Center
         ) {
             if (spends.isEmpty() || totalAmount <= 0.0) {
+                val emptyBorderColor = appColors.border
                 Canvas(modifier = Modifier.size(chartDiameter - 10.dp)) {
                     val stroke = strokeWidthDp.toPx()
                     val radius = (size.minDimension - stroke) / 2
                     val topLeft = Offset((size.width - 2 * radius) / 2, (size.height - 2 * radius) / 2)
                     drawArc(
-                        color = ColorBorder,
+                        color = emptyBorderColor,
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,
@@ -93,7 +104,7 @@ fun PaymentMethodDonutChart(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Normal
                     ),
-                    color = ColorTextMuted
+                    color = appColors.textMuted
                 )
             } else {
                 val animationProgress = remember { Animatable(0f) }
@@ -111,7 +122,7 @@ fun PaymentMethodDonutChart(
                     var startAngle = -90f
                     for (spend in spends) {
                         val sweepAngle = spend.percentage * 360f * animationProgress.value
-                        val color = getPaymentMethodColor(spend.paymentMethod)
+                        val color = getPaymentMethodColor(spend.paymentMethod, appColors.isDark)
 
                         drawArc(
                             color = color,
@@ -133,7 +144,7 @@ fun PaymentMethodDonutChart(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Normal
                         ),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -142,7 +153,7 @@ fun PaymentMethodDonutChart(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
             }
@@ -158,7 +169,7 @@ fun PaymentMethodDonutChart(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 spends.forEach { spend ->
-                    val color = getPaymentMethodColor(spend.paymentMethod)
+                    val color = getPaymentMethodColor(spend.paymentMethod, appColors.isDark)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -183,7 +194,7 @@ fun PaymentMethodDonutChart(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Normal
                                 ),
-                                color = ColorTextPrimary,
+                                color = appColors.textPrimary,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis
@@ -197,7 +208,7 @@ fun PaymentMethodDonutChart(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
-                                color = ColorTextPrimary
+                                color = appColors.textPrimary
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
@@ -206,7 +217,7 @@ fun PaymentMethodDonutChart(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Normal
                                 ),
-                                color = ColorTextSecondary,
+                                color = appColors.textSecondary,
                                 modifier = Modifier.width(36.dp),
                                 textAlign = androidx.compose.ui.text.style.TextAlign.End
                             )

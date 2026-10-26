@@ -35,9 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.expensetracker.common.MarketListParser
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
@@ -48,6 +45,7 @@ fun UnitAndQuantityDialog(
     onDismiss: () -> Unit,
     onConfirm: (quantity: Double, unit: String) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     var selectedUnit by remember { mutableStateOf(initialUnit.ifBlank { "কেজি" }) }
     var quantityText by remember {
@@ -97,21 +95,21 @@ fun UnitAndQuantityDialog(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(ColorAccent.copy(alpha = 0.15f)),
+                            .background(appColors.accent.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = Icons.Outlined.Scale, contentDescription = null, tint = ColorAccent, modifier = Modifier.size(20.dp))
+                        Icon(imageVector = Icons.Outlined.Scale, contentDescription = null, tint = appColors.accent, modifier = Modifier.size(20.dp))
                     }
                     Column {
                         Text(
                             text = if (isBangla) "পরিমাণ ও একক নির্বাচন" else "Quantity & Unit",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Text(
                             text = if (isBangla) "টাইপ (পিস/কেজি/লিটার) ও সংখ্যা নির্ধারণ করুন" else "Select unit type & specify amount",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -122,7 +120,7 @@ fun UnitAndQuantityDialog(
                 Text(
                     text = if (isBangla) "১. টাইপ / একক সিলেক্ট করুন" else "1. Select Unit Type",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -139,7 +137,7 @@ fun UnitAndQuantityDialog(
                 Text(
                     text = if (isBangla) "২. পরিমাণ লিখুন" else "2. Enter Quantity",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -165,7 +163,7 @@ fun UnitAndQuantityDialog(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorTextSecondary),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textSecondary),
                         border = BorderStroke(1.dp, LocalAppColors.current.border)
                     ) {
                         Text(text = if (isBangla) "বাতিল" else "Cancel")
@@ -180,7 +178,7 @@ fun UnitAndQuantityDialog(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+                        colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
                     ) {
                         Text(text = if (isBangla) "নিশ্চিত করুন" else "Confirm", fontWeight = FontWeight.Bold)
                     }

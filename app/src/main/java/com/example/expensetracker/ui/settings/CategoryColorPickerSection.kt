@@ -30,10 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.components.CategoryColorHelper
 import com.example.expensetracker.ui.components.CategoryIconHelper
@@ -52,6 +49,7 @@ fun CategoryColorPickerSection(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -62,13 +60,13 @@ fun CategoryColorPickerSection(
             Text(
                 text = strings.selectUniqueColor,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
             Text(
                 text = "🎲 " + strings.pickNextColor,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp,
-                    color = ColorAccent,
+                    color = appColors.accent,
                     fontWeight = FontWeight.SemiBold
                 ),
                 modifier = Modifier
@@ -105,9 +103,9 @@ fun CategoryColorPickerSection(
                         .background(if (isTaken) parsed.copy(alpha = 0.28f) else parsed)
                         .then(
                             when {
-                                isSel -> Modifier.border(2.5.dp, Color.White, CircleShape)
-                                isTaken -> Modifier.border(1.dp, ColorBorder.copy(alpha = 0.4f), CircleShape)
-                                else -> Modifier.border(1.dp, ColorBorder, CircleShape)
+                                isSel -> Modifier.border(2.5.dp, if (appColors.isDark) Color.White else appColors.textPrimary, CircleShape)
+                                isTaken -> Modifier.border(1.dp, appColors.border.copy(alpha = 0.4f), CircleShape)
+                                else -> Modifier.border(1.dp, appColors.border, CircleShape)
                             }
                         )
                         .clickable {
@@ -146,7 +144,7 @@ fun CategoryColorPickerSection(
             Text(
                 text = colorWarningMessage,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
-                color = ColorDangerExpense
+                color = appColors.expense
             )
         }
     }

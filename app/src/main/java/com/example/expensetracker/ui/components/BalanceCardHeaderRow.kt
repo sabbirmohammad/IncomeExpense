@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -19,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,10 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
@@ -45,6 +43,7 @@ fun BalanceCardHeaderRow(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
     Row(
@@ -58,10 +57,12 @@ fun BalanceCardHeaderRow(
             border = BorderStroke(1.dp, LocalAppColors.current.border.copy(alpha = 0.8f)),
             modifier = Modifier.then(
                 if (hasWalletBalance) {
-                    Modifier.clickable {
-                        haptics.lightTick()
-                        onToggleWallet()
-                    }
+                    Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable {
+                            haptics.lightTick()
+                            onToggleWallet()
+                        }
                 } else Modifier
             )
         ) {
@@ -74,7 +75,7 @@ fun BalanceCardHeaderRow(
                     modifier = Modifier
                         .size(7.dp)
                         .clip(CircleShape)
-                        .background(if (displayedHero < 0 && !isPrivacyMode) ColorDangerExpense else ColorAccent)
+                        .background(if (displayedHero < 0 && !isPrivacyMode) appColors.expense else appColors.accent)
                 )
                 Text(
                     text = currentHeaderLabel,
@@ -83,14 +84,14 @@ fun BalanceCardHeaderRow(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.2.sp
                     ),
-                    color = ColorTextSecondary,
+                    color = appColors.textSecondary,
                     textAlign = TextAlign.Center
                 )
                 if (hasWalletBalance) {
                     Icon(
                         imageVector = Icons.Outlined.SwapHoriz,
                         contentDescription = "Toggle view",
-                        tint = ColorTextMuted,
+                        tint = appColors.textMuted,
                         modifier = Modifier.size(13.dp)
                     )
                 }
@@ -100,12 +101,13 @@ fun BalanceCardHeaderRow(
         if (onTogglePrivacyMode != null) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .minimumInteractiveComponentSize()
                     .clip(CircleShape)
-                    .background(if (isPrivacyMode) ColorAccent.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.05f))
+                    .background(if (isPrivacyMode) appColors.accent.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.05f))
                     .border(
                         1.dp,
-                        if (isPrivacyMode) ColorAccent.copy(alpha = 0.45f) else LocalAppColors.current.border,
+                        if (isPrivacyMode) appColors.accent.copy(alpha = 0.45f) else LocalAppColors.current.border,
                         CircleShape
                     )
                     .clickable {
@@ -117,7 +119,7 @@ fun BalanceCardHeaderRow(
                 Icon(
                     imageVector = if (isPrivacyMode) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                     contentDescription = if (isPrivacyMode) strings.showBalance else strings.hideBalance,
-                    tint = if (isPrivacyMode) ColorAccent else LocalAppColors.current.textSecondary,
+                    tint = if (isPrivacyMode) appColors.accent else LocalAppColors.current.textSecondary,
                     modifier = Modifier.size(16.dp)
                 )
             }

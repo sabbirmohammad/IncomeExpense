@@ -13,10 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -27,13 +24,14 @@ fun CategoryDeleteConfirmDialog(
     onConfirmDelete: (Category) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
-        titleContentColor = ColorTextPrimary,
-        textContentColor = ColorTextSecondary,
+        containerColor = appColors.surface,
+        titleContentColor = appColors.textPrimary,
+        textContentColor = appColors.textSecondary,
         title = {
             Text(
                 text = if (strings.isBangla) "ক্যাটাগরি মুছে ফেলবেন?" else "Delete category?",
@@ -53,7 +51,7 @@ fun CategoryDeleteConfirmDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirmDelete(category) },
-                colors = ButtonDefaults.buttonColors(containerColor = ColorDangerExpense),
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.expense),
                 shape = RoundedCornerShape(SmallElementRadius)
             ) {
                 Text(strings.delete, color = Color.White)
@@ -61,7 +59,7 @@ fun CategoryDeleteConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )

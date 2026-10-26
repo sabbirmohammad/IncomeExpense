@@ -36,10 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.CategoryIconHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -52,6 +49,7 @@ fun CategoryIconPickerSection(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var selectedIconGroup by remember { mutableStateOf("All") }
 
     val displayedIcons = remember(selectedIconGroup) {
@@ -68,7 +66,7 @@ fun CategoryIconPickerSection(
             Text(
                 text = if (strings.isBangla) "আইকন নির্বাচন করুন (${displayedIcons.size})" else "Select icon (${displayedIcons.size})",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
         }
         Spacer(modifier = Modifier.height(6.dp))
@@ -84,14 +82,14 @@ fun CategoryIconPickerSection(
                 val isSelected = selectedIconGroup == group
                 Surface(
                     shape = CircleShape,
-                    color = if (isSelected) ColorAccent else ColorBackground,
-                    border = if (isSelected) null else BorderStroke(1.dp, ColorBorder),
+                    color = if (isSelected) appColors.accent else appColors.surfaceVariant,
+                    border = if (isSelected) null else BorderStroke(1.dp, appColors.border),
                     modifier = Modifier.clickable { selectedIconGroup = group }
                 ) {
                     Text(
                         text = group,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = if (isSelected) Color.White else ColorTextSecondary,
+                        color = if (isSelected) Color.White else appColors.textSecondary,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                 }
@@ -114,10 +112,10 @@ fun CategoryIconPickerSection(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(SmallElementRadius))
-                        .background(if (isSel) ColorAccent.copy(alpha = 0.22f) else ColorBackground)
+                        .background(if (isSel) appColors.accent.copy(alpha = 0.22f) else appColors.surfaceVariant)
                         .border(
                             1.5.dp,
-                            if (isSel) ColorAccent else ColorBorder,
+                            if (isSel) appColors.accent else appColors.border,
                             RoundedCornerShape(SmallElementRadius)
                         )
                         .clickable { onIconSelected(iconItem.name) },
@@ -126,7 +124,7 @@ fun CategoryIconPickerSection(
                     Icon(
                         imageVector = CategoryIconHelper.getIcon(iconItem.name),
                         contentDescription = iconItem.label,
-                        tint = if (isSel) ColorAccent else ColorTextSecondary,
+                        tint = if (isSel) appColors.accent else appColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }

@@ -20,14 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.ReceivablesSummary
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ReceivablesSummaryHeroCard(
@@ -36,6 +33,7 @@ fun ReceivablesSummaryHeroCard(
     isPrivacyMode: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
     AppCard(
@@ -51,20 +49,20 @@ fun ReceivablesSummaryHeroCard(
                 Text(
                     text = strings.remainingDue,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextMuted
+                    color = appColors.textMuted
                 )
                 if (summary.pendingCount > 0) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(ColorDangerExpense.copy(alpha = 0.15f))
+                            .background(appColors.expense.copy(alpha = 0.15f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = "${summary.pendingCount} ${strings.pendingBadge}",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = ColorDangerExpense
+                            color = appColors.expense
                         )
                     }
                 }
@@ -78,7 +76,7 @@ fun ReceivablesSummaryHeroCard(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -90,22 +88,22 @@ fun ReceivablesSummaryHeroCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(strings.totalLent, fontSize = 11.sp, color = ColorTextMuted)
+                    Text(strings.totalLent, fontSize = 11.sp, color = appColors.textMuted)
                     Text(
                         text = if (isPrivacyMode) "••••" else formatCurrency(summary.totalLent, currencySymbol),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(strings.totalCollected, fontSize = 11.sp, color = ColorTextMuted)
+                    Text(strings.totalCollected, fontSize = 11.sp, color = appColors.textMuted)
                     Text(
                         text = if (isPrivacyMode) "••••" else formatCurrency(summary.totalCollected, currencySymbol),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = ColorSuccessIncome
+                        color = appColors.income
                     )
                 }
             }

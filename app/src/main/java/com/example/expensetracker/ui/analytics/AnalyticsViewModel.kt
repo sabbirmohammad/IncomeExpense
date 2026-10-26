@@ -3,8 +3,6 @@ package com.example.expensetracker.ui.analytics
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.expensetracker.data.ai.GeminiAiService
-import com.example.expensetracker.data.model.AiFinancialAudit
 import com.example.expensetracker.data.model.AnalyticsOverview
 import com.example.expensetracker.data.model.CategorySpend
 import com.example.expensetracker.data.model.DailySpend
@@ -23,7 +21,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 enum class AnalyticsBreakdownMode(val displayName: String) {
     CATEGORIES("Categories"),

@@ -34,12 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Budget
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import java.util.Calendar
@@ -54,6 +49,7 @@ fun AddEditBudgetDialog(
     onSave: (Budget) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var budgetAmountText by remember {
         mutableStateOf(budgetToEdit?.amount?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: "")
     }
@@ -62,12 +58,21 @@ fun AddEditBudgetDialog(
     }
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = appColors.surfaceVariant,
+        unfocusedContainerColor = appColors.surfaceVariant,
+        focusedBorderColor = appColors.border,
+        unfocusedBorderColor = appColors.border,
+        focusedTextColor = appColors.textPrimary,
+        unfocusedTextColor = appColors.textPrimary
+    )
+
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
-        titleContentColor = ColorTextPrimary,
-        textContentColor = ColorTextSecondary,
+        containerColor = appColors.surface,
+        titleContentColor = appColors.textPrimary,
+        textContentColor = appColors.textSecondary,
         title = {
             Text(
                 text = if (budgetToEdit != null)
@@ -85,7 +90,7 @@ fun AddEditBudgetDialog(
                 Text(
                     text = if (strings.isBangla) "বাজেটের লক্ষ্য" else "Budget target",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -109,23 +114,16 @@ fun AddEditBudgetDialog(
                             .fillMaxWidth()
                             .menuAnchor(),
                         shape = RoundedCornerShape(SmallElementRadius),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = ColorSurface,
-                            unfocusedContainerColor = ColorSurface,
-                            focusedBorderColor = ColorBorder,
-                            unfocusedBorderColor = ColorBorder,
-                            focusedTextColor = ColorTextPrimary,
-                            unfocusedTextColor = ColorTextPrimary
-                        )
+                        colors = textFieldColors
                     )
 
                     ExposedDropdownMenu(
                         expanded = isDropdownExpanded,
                         onDismissRequest = { isDropdownExpanded = false },
-                        modifier = Modifier.background(ColorSurface)
+                        modifier = Modifier.background(appColors.surface)
                     ) {
                         DropdownMenuItem(
-                            text = { Text(strings.overallMonthlyBudget, color = ColorTextPrimary) },
+                            text = { Text(strings.overallMonthlyBudget, color = appColors.textPrimary) },
                             onClick = {
                                 selectedCatId = null
                                 isDropdownExpanded = false
@@ -133,7 +131,7 @@ fun AddEditBudgetDialog(
                         )
                         expenseCategories.forEach { cat ->
                             DropdownMenuItem(
-                                text = { Text(cat.getLocalizedName(strings.isBangla), color = ColorTextPrimary) },
+                                text = { Text(cat.getLocalizedName(strings.isBangla), color = appColors.textPrimary) },
                                 onClick = {
                                     selectedCatId = cat.id
                                     isDropdownExpanded = false
@@ -148,23 +146,16 @@ fun AddEditBudgetDialog(
                 Text(
                     text = if (strings.isBangla) "মাসিক বাজেট সীমা ($currencySymbol)" else "Monthly limit ($currencySymbol)",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
                     value = budgetAmountText,
                     onValueChange = { budgetAmountText = it.filter { c -> c.isDigit() || c == '.' } },
-                    placeholder = { Text(if (strings.isBangla) "যেমন: ৫০০" else "e.g. 500", color = ColorTextMuted) },
+                    placeholder = { Text(if (strings.isBangla) "যেমন: ৫০০" else "e.g. 500", color = appColors.textMuted) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(SmallElementRadius),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = ColorSurface,
-                        unfocusedContainerColor = ColorSurface,
-                        focusedBorderColor = ColorBorder,
-                        unfocusedBorderColor = ColorBorder,
-                        focusedTextColor = ColorTextPrimary,
-                        unfocusedTextColor = ColorTextPrimary
-                    ),
+                    colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -187,7 +178,7 @@ fun AddEditBudgetDialog(
                     )
                     onSave(newBudget)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = ColorAccent),
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent),
                 shape = RoundedCornerShape(SmallElementRadius)
             ) {
                 Text(strings.save, color = androidx.compose.ui.graphics.Color.White)
@@ -195,7 +186,7 @@ fun AddEditBudgetDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )

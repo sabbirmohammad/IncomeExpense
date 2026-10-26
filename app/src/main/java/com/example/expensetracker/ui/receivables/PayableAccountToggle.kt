@@ -19,10 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun PayableDepositAccountToggle(
@@ -31,11 +28,12 @@ fun PayableDepositAccountToggle(
     isBangla: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CardCornerRadius))
-            .background(ColorBorder.copy(alpha = 0.2f))
+            .background(appColors.border.copy(alpha = 0.2f))
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -44,18 +42,18 @@ fun PayableDepositAccountToggle(
             Text(
                 text = if (isBangla) "ধার নেওয়া টাকা অ্যাকাউন্টে জমা করবেন?" else "Deposit borrowed loan into account?",
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp, fontWeight = FontWeight.Medium),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
             Text(
                 text = if (isBangla) "অ্যাকাউন্টে ইনকাম লেনদেন রেকর্ড হবে" else "Will log an income transaction in account",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.5.sp),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = ColorAccent, checkedTrackColor = ColorAccent.copy(alpha = 0.5f))
+            colors = SwitchDefaults.colors(checkedThumbColor = appColors.accent, checkedTrackColor = appColors.accent.copy(alpha = 0.5f))
         )
     }
 }
@@ -67,11 +65,12 @@ fun PayableDeductAccountToggle(
     isBangla: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CardCornerRadius))
-            .background(ColorBorder.copy(alpha = 0.2f))
+            .background(appColors.border.copy(alpha = 0.2f))
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -80,18 +79,18 @@ fun PayableDeductAccountToggle(
             Text(
                 text = if (isBangla) "অ্যাকাউন্ট থেকে টাকা কাটবেন?" else "Deduct from account?",
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
             Text(
                 text = if (isBangla) "খরচ লেনদেন হিসেবে সংরক্ষিত হবে" else "Will log an expense transaction",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = ColorAccent, checkedTrackColor = ColorAccent.copy(alpha = 0.5f))
+            colors = SwitchDefaults.colors(checkedThumbColor = appColors.accent, checkedTrackColor = appColors.accent.copy(alpha = 0.5f))
         )
     }
 }

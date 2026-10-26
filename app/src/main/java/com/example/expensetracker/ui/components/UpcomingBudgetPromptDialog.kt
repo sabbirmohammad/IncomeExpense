@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
@@ -82,13 +81,13 @@ fun UpcomingBudgetPromptDialog(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(ColorAccent.copy(alpha = 0.15f)),
+                        .background(appColors.accent.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.AccountBalanceWallet,
                         contentDescription = "Budget Icon",
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -133,7 +132,7 @@ fun UpcomingBudgetPromptDialog(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = ColorAccent, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accent, contentColor = Color.White)
                 ) {
                     Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -155,8 +154,8 @@ fun UpcomingBudgetPromptDialog(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, ColorAccent),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorAccent)
+                    border = BorderStroke(1.dp, appColors.accent),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.accent)
                 ) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -213,7 +212,7 @@ private fun BudgetPromptPreviewCard(
                 Text(
                     text = formatCurrency(amount, currencySymbol, isBangla),
                     style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
-                    color = ColorAccent
+                    color = appColors.accent
                 )
                 if (categoryCount > 0) {
                     Text(

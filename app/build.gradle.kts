@@ -17,6 +17,10 @@ android {
 
     signingConfigs {
         getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
             enableV1Signing = true
             enableV2Signing = true
         }
@@ -119,7 +123,4 @@ dependencies {
   implementation(libs.google.api.client.android)
   implementation(libs.google.api.services.drive)
   implementation(libs.google.http.client.gson)
-
-  // Google Generative AI SDK (Gemini)
-  implementation(libs.google.generativeai)
 }

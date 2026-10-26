@@ -21,6 +21,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -31,11 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.SavingsGoal
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -45,6 +41,7 @@ import com.example.expensetracker.ui.components.globalBengaliNumeralsEnabled
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Individual Savings Goal Item Card
@@ -54,7 +51,6 @@ fun SavingsGoalCard(
     goal: SavingsGoal,
     currencySymbol: String,
     isPrivacyMode: Boolean = false,
-    geminiApiKey: String? = null,
     monthlyIncome: Double = 0.0,
     monthlyExpense: Double = 0.0,
     onAddContribution: () -> Unit,
@@ -62,6 +58,7 @@ fun SavingsGoalCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val goalColor = remember(goal.colorHex) { parseGoalColor(goal.colorHex) }
     val icon = remember(goal.icon) { getSavingsGoalIcon(goal.icon) }
@@ -105,14 +102,14 @@ fun SavingsGoalCard(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Column {
-                    Text(strings.savedAmount, fontSize = 11.sp, color = ColorTextMuted)
+                    Text(strings.savedAmount, fontSize = 11.sp, color = appColors.textMuted)
                     Text(
                         text = if (isPrivacyMode) "••••••" else formatCurrency(goal.savedAmount, currencySymbol),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (goal.isCompleted) ColorSuccessIncome else ColorTextPrimary
+                        color = if (goal.isCompleted) appColors.income else appColors.textPrimary
                     )
                 }
 
@@ -120,7 +117,7 @@ fun SavingsGoalCard(
                     Text(
                         text = "${strings.targetAmount}: ${if (isPrivacyMode) "••••••" else formatCurrency(goal.targetAmount, currencySymbol)}",
                         fontSize = 11.sp,
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Text(
                         text = if (strings.isBangla) {
@@ -145,7 +142,7 @@ fun SavingsGoalCard(
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = goalColor,
-                trackColor = ColorBorder
+                trackColor = appColors.border
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -161,7 +158,7 @@ fun SavingsGoalCard(
                         Icon(
                             imageVector = Icons.Outlined.CalendarToday,
                             contentDescription = null,
-                            tint = ColorTextMuted,
+                            tint = appColors.textMuted,
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -169,7 +166,7 @@ fun SavingsGoalCard(
                         Text(
                             text = if (strings.isBangla) convertToBengaliDigits(formattedDate) else formattedDate,
                             fontSize = 11.sp,
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 } else {
@@ -180,7 +177,7 @@ fun SavingsGoalCard(
                             strings.goalReachedCelebration
                         },
                         fontSize = 11.sp,
-                        color = if (goal.remainingAmount <= 0) ColorSuccessIncome else ColorTextMuted
+                        color = if (goal.remainingAmount <= 0) appColors.income else appColors.textMuted
                     )
                 }
 
@@ -188,7 +185,9 @@ fun SavingsGoalCard(
                     shape = RoundedCornerShape(8.dp),
                     color = goalColor.copy(alpha = 0.15f),
                     border = BorderStroke(1.dp, goalColor.copy(alpha = 0.35f)),
-                    modifier = Modifier.clickable { onAddContribution() }
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable { onAddContribution() }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),

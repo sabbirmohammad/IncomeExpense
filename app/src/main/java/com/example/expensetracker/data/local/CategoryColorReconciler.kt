@@ -29,52 +29,58 @@ internal object CategoryColorReconciler {
     }
 
     fun reconcileAndDeduplicateCategoryColors(db: SQLiteDatabase) {
-        val cursor = db.query(TABLE_CATEGORIES, null, null, null, null, null, "$COL_CAT_ID ASC")
-        val categories = mutableListOf<Category>()
-        cursor.use { c ->
-            while (c.moveToNext()) {
-                categories.add(
-                    Category(
-                        id = c.getLong(c.getColumnIndexOrThrow(COL_CAT_ID)),
-                        name = c.getString(c.getColumnIndexOrThrow(COL_CAT_NAME)),
-                        type = TransactionType.valueOf(c.getString(c.getColumnIndexOrThrow(COL_CAT_TYPE))),
-                        icon = c.getString(c.getColumnIndexOrThrow(COL_CAT_ICON)),
-                        colorHex = c.getString(c.getColumnIndexOrThrow(COL_CAT_COLOR)),
-                        isDefault = c.getInt(c.getColumnIndexOrThrow(COL_CAT_IS_DEFAULT)) == 1
+        db.beginTransaction()
+        try {
+            val cursor = db.query(TABLE_CATEGORIES, null, null, null, null, null, "$COL_CAT_ID ASC")
+            val categories = mutableListOf<Category>()
+            cursor.use { c ->
+                while (c.moveToNext()) {
+                    categories.add(
+                        Category(
+                            id = c.getLong(c.getColumnIndexOrThrow(COL_CAT_ID)),
+                            name = c.getString(c.getColumnIndexOrThrow(COL_CAT_NAME)),
+                            type = TransactionType.valueOf(c.getString(c.getColumnIndexOrThrow(COL_CAT_TYPE))),
+                            icon = c.getString(c.getColumnIndexOrThrow(COL_CAT_ICON)),
+                            colorHex = c.getString(c.getColumnIndexOrThrow(COL_CAT_COLOR)),
+                            isDefault = c.getInt(c.getColumnIndexOrThrow(COL_CAT_IS_DEFAULT)) == 1
+                        )
                     )
-                )
+                }
             }
-        }
 
-        val claimedColors = mutableSetOf<String>()
-        val updatedCategories = mutableListOf<Category>()
+            val claimedColors = mutableSetOf<String>()
+            val updatedCategories = mutableListOf<Category>()
 
-        for (cat in categories) {
-            val normColor = CategoryColorHelper.normalizeHex(cat.colorHex)
-            if (normColor in claimedColors) {
-                val availableColor = CategoryColorHelper.getAvailableColor(updatedCategories)
-                val newCat = cat.copy(colorHex = availableColor)
-                claimedColors.add(CategoryColorHelper.normalizeHex(availableColor))
-                updatedCategories.add(newCat)
+            for (cat in categories) {
+                val normColor = CategoryColorHelper.normalizeHex(cat.colorHex)
+                if (normColor in claimedColors) {
+                    val availableColor = CategoryColorHelper.getAvailableColor(updatedCategories)
+                    val newCat = cat.copy(colorHex = availableColor)
+                    claimedColors.add(CategoryColorHelper.normalizeHex(availableColor))
+                    updatedCategories.add(newCat)
 
-                val cv = ContentValues().apply {
-                    put(COL_CAT_COLOR, availableColor)
+                    val cv = ContentValues().apply {
+                        put(COL_CAT_COLOR, availableColor)
+                    }
+                    db.update(TABLE_CATEGORIES, cv, "$COL_CAT_ID = ?", arrayOf(cat.id.toString()))
+
+                    val txCv = ContentValues().apply {
+                        put(COL_TX_CAT_COLOR, availableColor)
+                    }
+                    db.update(TABLE_TRANSACTIONS, txCv, "$COL_TX_CAT_ID = ?", arrayOf(cat.id.toString()))
+
+                    val billCv = ContentValues().apply {
+                        put(COL_BILL_CAT_COLOR, availableColor)
+                    }
+                    db.update(TABLE_RECURRING_BILLS, billCv, "$COL_BILL_CAT_ID = ?", arrayOf(cat.id.toString()))
+                } else {
+                    claimedColors.add(normColor)
+                    updatedCategories.add(cat)
                 }
-                db.update(TABLE_CATEGORIES, cv, "$COL_CAT_ID = ?", arrayOf(cat.id.toString()))
-
-                val txCv = ContentValues().apply {
-                    put(COL_TX_CAT_COLOR, availableColor)
-                }
-                db.update(TABLE_TRANSACTIONS, txCv, "$COL_TX_CAT_ID = ?", arrayOf(cat.id.toString()))
-
-                val billCv = ContentValues().apply {
-                    put(COL_BILL_CAT_COLOR, availableColor)
-                }
-                db.update(TABLE_RECURRING_BILLS, billCv, "$COL_BILL_CAT_ID = ?", arrayOf(cat.id.toString()))
-            } else {
-                claimedColors.add(normColor)
-                updatedCategories.add(cat)
             }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
         }
     }
 }

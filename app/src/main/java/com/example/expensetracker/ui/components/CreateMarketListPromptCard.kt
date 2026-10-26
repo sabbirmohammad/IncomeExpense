@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Empty / Invitation Card on Dashboard when there's no active market list.
@@ -34,6 +34,7 @@ fun CreateMarketListPromptCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     AppCard(
         modifier = modifier.clickable {
@@ -73,7 +74,7 @@ fun CreateMarketListPromptCard(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
             }
 

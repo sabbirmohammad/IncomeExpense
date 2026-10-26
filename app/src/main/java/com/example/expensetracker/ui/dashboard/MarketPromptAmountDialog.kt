@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,15 +26,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.expensetracker.common.MarketListParser
 import com.example.expensetracker.data.model.MarketItem
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
@@ -45,8 +44,18 @@ fun MarketPromptAmountDialog(
     onDismiss: () -> Unit,
     onConfirm: (amount: Double) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     var promptAmountText by remember { mutableStateOf("") }
+
+    val submitAmount = {
+        val cleanNum = MarketListParser.convertBengaliDigitsToEnglish(promptAmountText)
+        val amt = cleanNum.toDoubleOrNull() ?: 0.0
+        if (amt > 0) {
+            haptics.mediumClick()
+            onConfirm(amt)
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -59,13 +68,13 @@ fun MarketPromptAmountDialog(
                 Text(
                     text = "${item.name} (${item.formatQuantity()})",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = if (isBangla) "পণ্যটি কেনার জন্য কত টাকা খরচ হয়েছে লিখুন:" else "Enter the purchase amount:",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -74,19 +83,20 @@ fun MarketPromptAmountDialog(
                     onValueChange = { promptAmountText = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submitAmount() }),
                     leadingIcon = {
                         Text(
                             text = currencySymbol,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = ColorAccent
+                                color = appColors.accent
                             )
                         )
                     },
                     placeholder = { Text(if (isBangla) "০.০০" else "0.00") },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ColorAccent,
+                        focusedBorderColor = appColors.accent,
                         unfocusedBorderColor = LocalAppColors.current.border,
                         focusedContainerColor = LocalAppColors.current.background,
                         unfocusedContainerColor = LocalAppColors.current.background
@@ -108,17 +118,10 @@ fun MarketPromptAmountDialog(
                     }
 
                     Button(
-                        onClick = {
-                            val cleanNum = MarketListParser.convertBengaliDigitsToEnglish(promptAmountText)
-                            val amt = cleanNum.toDoubleOrNull() ?: 0.0
-                            if (amt > 0) {
-                                haptics.mediumClick()
-                                onConfirm(amt)
-                            }
-                        },
+                        onClick = submitAmount,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+                        colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
                     ) {
                         Text(text = if (isBangla) "যুক্ত করুন" else "Log Expense")
                     }

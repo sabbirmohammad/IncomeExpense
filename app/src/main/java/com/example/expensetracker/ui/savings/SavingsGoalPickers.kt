@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,10 +33,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.CardCornerRadius
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 import java.util.Calendar
 import java.util.TimeZone
@@ -47,6 +46,7 @@ fun GoalIconPickerRow(
     onIconSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val currentColor = parseGoalColor(selectedColorHex)
 
     Row(
@@ -61,10 +61,10 @@ fun GoalIconPickerRow(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) currentColor.copy(alpha = 0.25f) else ColorBackground)
+                    .background(if (isSelected) currentColor.copy(alpha = 0.25f) else appColors.surfaceVariant)
                     .border(
                         width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) currentColor else ColorBorder,
+                        color = if (isSelected) currentColor else appColors.border,
                         shape = RoundedCornerShape(12.dp)
                     )
                     .clickable { onIconSelected(key) },
@@ -73,7 +73,7 @@ fun GoalIconPickerRow(
                 Icon(
                     imageVector = iconVec,
                     contentDescription = null,
-                    tint = if (isSelected) currentColor else ColorTextSecondary,
+                    tint = if (isSelected) currentColor else appColors.textSecondary,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -87,6 +87,7 @@ fun GoalColorPickerRow(
     onColorSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -96,6 +97,7 @@ fun GoalColorPickerRow(
         AVAILABLE_GOAL_COLORS.forEach { hex ->
             val isSelected = selectedColorHex.equals(hex, ignoreCase = true)
             val color = parseGoalColor(hex)
+            val ringColor = if (appColors.isDark) Color.White else appColors.textPrimary
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -103,7 +105,7 @@ fun GoalColorPickerRow(
                     .background(color)
                     .border(
                         width = if (isSelected) 3.dp else 1.dp,
-                        color = if (isSelected) Color.White else Color.Transparent,
+                        color = if (isSelected) ringColor else Color.Transparent,
                         shape = CircleShape
                     )
                     .clickable { onColorSelected(hex) },
@@ -125,6 +127,7 @@ fun GoalDatePickerDialog(
     onDateConfirmed: (Long) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val initialUtcMillis = remember(targetDateMillis) {
         val localCal = Calendar.getInstance().apply {
             timeInMillis = targetDateMillis ?: (System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)
@@ -141,6 +144,23 @@ fun GoalDatePickerDialog(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialUtcMillis
     )
+    val pickerColors = DatePickerDefaults.colors(
+        containerColor = appColors.surface,
+        titleContentColor = appColors.textPrimary,
+        headlineContentColor = appColors.textPrimary,
+        weekdayContentColor = appColors.textSecondary,
+        subheadContentColor = appColors.textSecondary,
+        yearContentColor = appColors.textPrimary,
+        currentYearContentColor = appColors.accent,
+        selectedYearContentColor = Color.White,
+        selectedYearContainerColor = appColors.accent,
+        dayContentColor = appColors.textPrimary,
+        selectedDayContentColor = Color.White,
+        selectedDayContainerColor = appColors.accent,
+        todayContentColor = appColors.accent,
+        todayDateBorderColor = appColors.accent
+    )
+
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -162,15 +182,20 @@ fun GoalDatePickerDialog(
                 }
                 onDismiss()
             }) {
-                Text(strings.confirm, color = ColorAccent)
+                Text(strings.confirm, color = appColors.accent)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
-        }
+        },
+        shape = RoundedCornerShape(CardCornerRadius),
+        colors = pickerColors
     ) {
-        DatePicker(state = datePickerState)
+        DatePicker(
+            state = datePickerState,
+            colors = pickerColors
+        )
     }
 }

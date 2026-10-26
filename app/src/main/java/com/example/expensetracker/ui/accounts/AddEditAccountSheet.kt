@@ -38,14 +38,9 @@ import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.AccountType
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
-import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
+import com.example.expensetracker.ui.components.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +51,7 @@ fun AddEditAccountSheet(
     onSave: (Account) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var type by remember { mutableStateOf(account?.type ?: AccountType.BANK) }
     var name by remember { mutableStateOf(account?.name ?: "") }
     var institution by remember { mutableStateOf(account?.institutionName ?: "") }
@@ -72,7 +68,7 @@ fun AddEditAccountSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -93,16 +89,16 @@ fun AddEditAccountSheet(
                 Text(
                     text = if (account != null) strings.editAccount else strings.addAccount,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = ColorTextSecondary)
+                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = appColors.textSecondary)
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(strings.accountTypeLabel, fontSize = 12.sp, color = ColorTextSecondary)
+            Text(strings.accountTypeLabel, fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(6.dp))
             AccountTypeSelector(
                 selectedType = type,
@@ -127,7 +123,7 @@ fun AddEditAccountSheet(
 
             if (type != AccountType.CASH) {
                 val suggestions = if (type == AccountType.BANK) bankSuggestions else mfsSuggestions
-                Text(strings.quickSelectProvider, fontSize = 11.sp, color = ColorTextMuted)
+                Text(strings.quickSelectProvider, fontSize = 11.sp, color = appColors.textMuted)
                 Spacer(modifier = Modifier.height(6.dp))
                 AccountProviderSuggestionChips(
                     selectedInstitution = institution,
@@ -157,7 +153,7 @@ fun AddEditAccountSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Text(strings.accountColorTheme, fontSize = 12.sp, color = ColorTextSecondary)
+            Text(strings.accountColorTheme, fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(6.dp))
             AccountColorThemePicker(
                 selectedColor = selectedColor,
@@ -167,7 +163,7 @@ fun AddEditAccountSheet(
 
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(errorMessage!!, color = ColorDangerExpense, fontSize = 12.sp)
+                Text(errorMessage!!, color = appColors.dangerExpense, fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -193,7 +189,7 @@ fun AddEditAccountSheet(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(SmallElementRadius),
-                colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
             ) {
                 Text(
                     text = if (account != null) strings.updateAccount else strings.saveAccount,

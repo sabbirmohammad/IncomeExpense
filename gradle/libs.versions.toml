@@ -20,10 +20,8 @@ playServicesAuth = "21.3.0"
 googleApiClient = "2.7.0"
 googleApiServicesDrive = "v3-rev20241027-2.0.0"
 googleHttpClientGson = "1.45.1"
-googleGenerativeAi = "0.9.0"
 
 [libraries]
-google-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "googleGenerativeAi" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidxComposeBom" }

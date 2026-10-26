@@ -31,7 +31,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,10 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.repository.*
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import java.text.SimpleDateFormat
@@ -69,8 +66,9 @@ fun ShareExpenseSheet(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val appColors = LocalAppColors.current
     val repository = remember { ExpenseRepository.getInstance(context.applicationContext as Application) }
-    val userProfile by repository.userProfile.collectAsState()
+    val userProfile by repository.userProfile.collectAsStateWithLifecycle()
 
     var selectedPeriod by remember { mutableStateOf(initialPeriod) }
     var selectedFormat by remember { mutableStateOf(ShareFormatType.PDF) }
@@ -140,7 +138,7 @@ fun ShareExpenseSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         dragHandle = null
     ) {
         Column(
@@ -161,14 +159,14 @@ fun ShareExpenseSheet(
                 Text(
                     text = strings.shareExpenseTitle,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = ColorTextPrimary,
+                    color = appColors.textPrimary,
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(32.dp).clip(CircleShape).background(Color(0xFF1F2436))
+                    modifier = Modifier.size(32.dp).clip(CircleShape).background(appColors.surfaceVariant)
                 ) {
-                    Icon(Icons.Outlined.Close, contentDescription = strings.close, tint = ColorTextSecondary, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Close, contentDescription = strings.close, tint = appColors.textSecondary, modifier = Modifier.size(18.dp))
                 }
             }
 
@@ -191,7 +189,7 @@ fun ShareExpenseSheet(
 
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = ColorAccent, modifier = Modifier.size(36.dp))
+                    CircularProgressIndicator(color = appColors.accent, modifier = Modifier.size(36.dp))
                 }
             } else {
                 when (selectedFormat) {

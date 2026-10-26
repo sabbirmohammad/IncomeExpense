@@ -30,9 +30,6 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.PaymentMethodSpend
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.AppProgressBar
@@ -41,6 +38,7 @@ import com.example.expensetracker.ui.components.PaymentMethodDonutChart
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.getPaymentMethodColor
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun PaymentMethodDonutChartCard(
@@ -51,6 +49,7 @@ fun PaymentMethodDonutChartCard(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     AppCard(modifier = modifier) {
         Column {
             Text(
@@ -63,7 +62,7 @@ fun PaymentMethodDonutChartCard(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -88,6 +87,7 @@ fun PaymentMethodRankingCard(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     AppCard(modifier = modifier) {
         Column {
             Text(
@@ -96,12 +96,12 @@ fun PaymentMethodRankingCard(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
             Spacer(modifier = Modifier.height(14.dp))
 
             spends.forEachIndexed { index, spend ->
-                val color = getPaymentMethodColor(spend.paymentMethod)
+                val color = getPaymentMethodColor(spend.paymentMethod, appColors.isDark)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -142,7 +142,7 @@ fun PaymentMethodRankingCard(
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Medium
                                     ),
-                                    color = ColorTextPrimary,
+                                    color = appColors.textPrimary,
                                     maxLines = 1,
                                     softWrap = false,
                                     overflow = TextOverflow.Ellipsis
@@ -150,7 +150,7 @@ fun PaymentMethodRankingCard(
                                 Text(
                                     text = "${spend.transactionCount} ${if (strings.isBangla) "টি লেনদেন" else "transactions"}",
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = ColorTextMuted
+                                    color = appColors.textMuted
                                 )
                             }
                         }
@@ -162,12 +162,12 @@ fun PaymentMethodRankingCard(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
-                                color = ColorTextPrimary
+                                color = appColors.textPrimary
                             )
                             Text(
                                 text = "${(spend.percentage * 100).toInt()}%",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = ColorTextSecondary
+                                color = appColors.textSecondary
                             )
                         }
                     }

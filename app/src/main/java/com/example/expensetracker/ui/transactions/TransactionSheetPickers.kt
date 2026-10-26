@@ -25,10 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.Strings
 import java.util.Calendar
@@ -46,6 +43,7 @@ fun TransactionDatePickerDialog(
 ) {
     if (!show) return
 
+    val appColors = LocalAppColors.current
     val localCal = remember(dateMillis) {
         Calendar.getInstance().apply { timeInMillis = dateMillis }
     }
@@ -84,21 +82,21 @@ fun TransactionDatePickerDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         },
         shape = RoundedCornerShape(CardCornerRadius),
         colors = DatePickerDefaults.colors(
-            containerColor = ColorSurface,
-            titleContentColor = ColorTextPrimary,
-            headlineContentColor = ColorTextPrimary,
-            weekdayContentColor = ColorTextSecondary,
-            subheadContentColor = ColorTextSecondary,
-            yearContentColor = ColorTextPrimary,
+            containerColor = appColors.surface,
+            titleContentColor = appColors.textPrimary,
+            headlineContentColor = appColors.textPrimary,
+            weekdayContentColor = appColors.textSecondary,
+            subheadContentColor = appColors.textSecondary,
+            yearContentColor = appColors.textPrimary,
             currentYearContentColor = typeAccentColor,
             selectedYearContentColor = Color.White,
             selectedYearContainerColor = typeAccentColor,
-            dayContentColor = ColorTextPrimary,
+            dayContentColor = appColors.textPrimary,
             selectedDayContentColor = Color.White,
             selectedDayContainerColor = typeAccentColor,
             todayContentColor = typeAccentColor,
@@ -108,16 +106,16 @@ fun TransactionDatePickerDialog(
         DatePicker(
             state = datePickerState,
             colors = DatePickerDefaults.colors(
-                containerColor = ColorSurface,
-                titleContentColor = ColorTextPrimary,
-                headlineContentColor = ColorTextPrimary,
-                weekdayContentColor = ColorTextSecondary,
-                subheadContentColor = ColorTextSecondary,
-                yearContentColor = ColorTextPrimary,
+                containerColor = appColors.surface,
+                titleContentColor = appColors.textPrimary,
+                headlineContentColor = appColors.textPrimary,
+                weekdayContentColor = appColors.textSecondary,
+                subheadContentColor = appColors.textSecondary,
+                yearContentColor = appColors.textPrimary,
                 currentYearContentColor = typeAccentColor,
                 selectedYearContentColor = Color.White,
                 selectedYearContainerColor = typeAccentColor,
-                dayContentColor = ColorTextPrimary,
+                dayContentColor = appColors.textPrimary,
                 selectedDayContentColor = Color.White,
                 selectedDayContainerColor = typeAccentColor,
                 todayContentColor = typeAccentColor,
@@ -139,6 +137,7 @@ fun TransactionTimePickerDialog(
 ) {
     if (!show) return
 
+    val appColors = LocalAppColors.current
     val timePickerCal = remember(dateMillis) {
         Calendar.getInstance().apply { timeInMillis = dateMillis }
     }
@@ -151,12 +150,12 @@ fun TransactionTimePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         title = {
             Text(
                 text = strings.selectTime,
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         },
         text = {
@@ -164,20 +163,20 @@ fun TransactionTimePickerDialog(
                 TimePicker(
                     state = timePickerState,
                     colors = TimePickerDefaults.colors(
-                        clockDialColor = ColorBorder,
+                        clockDialColor = appColors.border,
                         clockDialSelectedContentColor = Color.White,
-                        clockDialUnselectedContentColor = ColorTextPrimary,
+                        clockDialUnselectedContentColor = appColors.textPrimary,
                         selectorColor = typeAccentColor,
-                        containerColor = ColorSurface,
-                        periodSelectorBorderColor = ColorBorder,
+                        containerColor = appColors.surface,
+                        periodSelectorBorderColor = appColors.border,
                         periodSelectorSelectedContainerColor = typeAccentColor,
-                        periodSelectorUnselectedContainerColor = ColorSurface,
+                        periodSelectorUnselectedContainerColor = appColors.surface,
                         periodSelectorSelectedContentColor = Color.White,
-                        periodSelectorUnselectedContentColor = ColorTextSecondary,
+                        periodSelectorUnselectedContentColor = appColors.textSecondary,
                         timeSelectorSelectedContainerColor = typeAccentColor,
-                        timeSelectorUnselectedContainerColor = ColorBorder,
+                        timeSelectorUnselectedContainerColor = appColors.border,
                         timeSelectorSelectedContentColor = Color.White,
-                        timeSelectorUnselectedContentColor = ColorTextPrimary
+                        timeSelectorUnselectedContentColor = appColors.textPrimary
                     )
                 )
             }
@@ -201,7 +200,7 @@ fun TransactionTimePickerDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )

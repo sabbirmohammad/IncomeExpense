@@ -38,12 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.SavingsGoal
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 
@@ -59,6 +54,7 @@ fun SavingsGoalCardHeader(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var showMenu by remember { mutableStateOf(false) }
 
     Row(
@@ -95,7 +91,7 @@ fun SavingsGoalCardHeader(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = ColorTextPrimary,
+                    color = appColors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -104,7 +100,7 @@ fun SavingsGoalCardHeader(
                     Text(
                         text = goal.notes,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ColorTextSecondary,
+                        color = appColors.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -117,14 +113,14 @@ fun SavingsGoalCardHeader(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(ColorSuccessIncome.copy(alpha = 0.15f))
+                        .background(appColors.income.copy(alpha = 0.15f))
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = if (strings.isBangla) "অর্জিত 🎉" else "Reached 🎉",
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorSuccessIncome
+                        color = appColors.income
                     )
                 }
             } else if (daysRemaining != null) {
@@ -133,8 +129,8 @@ fun SavingsGoalCardHeader(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .background(
-                            if (isOverdue) ColorDangerExpense.copy(alpha = 0.15f)
-                            else ColorAccent.copy(alpha = 0.12f)
+                            if (isOverdue) appColors.expense.copy(alpha = 0.15f)
+                            else appColors.accent.copy(alpha = 0.12f)
                         )
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
@@ -147,22 +143,22 @@ fun SavingsGoalCardHeader(
                         },
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isOverdue) ColorDangerExpense else ColorAccent
+                        color = if (isOverdue) appColors.expense else appColors.accent
                     )
                 }
             }
 
             Box {
                 IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, null, tint = ColorTextSecondary, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.MoreVert, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp))
                 }
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
-                    modifier = Modifier.background(ColorSurface)
+                    modifier = Modifier.background(appColors.surface)
                 ) {
                     DropdownMenuItem(
-                        text = { Text(strings.addSavingsContribution, color = ColorTextPrimary) },
+                        text = { Text(strings.addSavingsContribution, color = appColors.textPrimary) },
                         leadingIcon = { Icon(Icons.Outlined.Savings, null, tint = goalColor) },
                         onClick = {
                             showMenu = false
@@ -170,16 +166,16 @@ fun SavingsGoalCardHeader(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text(if (strings.isBangla) "লক্ষ্য এডিট করুন" else "Edit Goal", color = ColorTextPrimary) },
-                        leadingIcon = { Icon(Icons.Outlined.Edit, null, tint = ColorTextSecondary) },
+                        text = { Text(if (strings.isBangla) "লক্ষ্য এডিট করুন" else "Edit Goal", color = appColors.textPrimary) },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, null, tint = appColors.textSecondary) },
                         onClick = {
                             showMenu = false
                             onEdit()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text(strings.delete, color = ColorDangerExpense) },
-                        leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = ColorDangerExpense) },
+                        text = { Text(strings.delete, color = appColors.expense) },
+                        leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = appColors.expense) },
                         onClick = {
                             showMenu = false
                             onDelete()

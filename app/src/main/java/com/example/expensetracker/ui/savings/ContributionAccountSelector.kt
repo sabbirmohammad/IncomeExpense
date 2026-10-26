@@ -24,12 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -46,11 +41,12 @@ fun ContributionAccountSelector(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     Surface(
         shape = RoundedCornerShape(SmallElementRadius),
-        color = ColorBackground,
-        border = BorderStroke(1.dp, ColorBorder),
+        color = appColors.surfaceVariant,
+        border = BorderStroke(1.dp, appColors.border),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -64,12 +60,12 @@ fun ContributionAccountSelector(
                         text = if (strings.isBangla) "ওয়ালেট থেকে কেটে নিন" else "Deduct from Account",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                     Text(
                         text = if (strings.isBangla) "টাকাটি নির্বাচিত অ্যাকাউন্ট থেকে বিয়োগ হবে" else "Balance will be deducted from chosen account",
                         fontSize = 11.sp,
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
                 Switch(
@@ -81,7 +77,7 @@ fun ContributionAccountSelector(
 
             if (deductFromAccount) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Text("${strings.fromAccount}:", fontSize = 11.sp, color = ColorTextMuted)
+                Text("${strings.fromAccount}:", fontSize = 11.sp, color = appColors.textMuted)
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier
@@ -93,14 +89,14 @@ fun ContributionAccountSelector(
                         val isSelected = selectedAccountId == acc.id
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) goalColor else ColorSurface,
-                            border = BorderStroke(1.dp, if (isSelected) goalColor else ColorBorder),
+                            color = if (isSelected) goalColor else appColors.surface,
+                            border = BorderStroke(1.dp, if (isSelected) goalColor else appColors.border),
                             modifier = Modifier.clickable { onAccountSelected(acc.id) }
                         ) {
                             Text(
                                 text = "${acc.getLocalizedName(strings.isBangla)} (${formatCurrency(acc.currentBalance, currencySymbol)})",
                                 fontSize = 11.sp,
-                                color = if (isSelected) Color.White else ColorTextPrimary,
+                                color = if (isSelected) Color.White else appColors.textPrimary,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                             )
                         }

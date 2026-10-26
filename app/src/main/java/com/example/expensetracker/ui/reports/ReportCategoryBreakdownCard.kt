@@ -23,11 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.CategorySpend
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -41,11 +37,13 @@ fun ReportCategoryBreakdownCard(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = ColorSurface,
-        border = BorderStroke(1.dp, ColorBorder)
+        color = appColors.surface,
+        border = BorderStroke(1.dp, appColors.border)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -57,7 +55,7 @@ fun ReportCategoryBreakdownCard(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
 
             categorySpends.take(5).forEach { cat ->
@@ -81,7 +79,7 @@ fun ReportCategoryBreakdownCard(
                                 text = cat.categoryName,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = ColorTextPrimary,
+                                color = appColors.textPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -95,13 +93,13 @@ fun ReportCategoryBreakdownCard(
                                 text = String.format(Locale.US, "%.0f%%", cat.percentage * 100),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = ColorTextMuted
+                                color = appColors.textMuted
                             )
                             Text(
                                 text = if (isPrivacyMode) "••••" else formatCurrency(cat.totalAmount, currencySymbol),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = ColorTextPrimary
+                                color = appColors.textPrimary
                             )
                         }
                     }
@@ -111,12 +109,12 @@ fun ReportCategoryBreakdownCard(
                             .fillMaxWidth()
                             .height(5.dp)
                             .clip(RoundedCornerShape(3.dp))
-                            .background(ColorBorder)
+                            .background(appColors.border)
                     ) {
                         val barColor = try {
                             Color(android.graphics.Color.parseColor(cat.categoryColor))
                         } catch (_: Exception) {
-                            ColorAccent
+                            appColors.accent
                         }
                         Box(
                             modifier = Modifier

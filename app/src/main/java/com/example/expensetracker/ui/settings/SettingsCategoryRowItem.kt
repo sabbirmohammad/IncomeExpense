@@ -26,12 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
@@ -44,13 +39,14 @@ fun SettingsCategoryRowItem(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val isIncome = category.type == TransactionType.INCOME
 
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = ColorBackground.copy(alpha = 0.45f),
-        border = BorderStroke(0.5.dp, ColorBorder.copy(alpha = 0.6f)),
+        color = appColors.surface.copy(alpha = 0.6f),
+        border = BorderStroke(0.5.dp, appColors.border.copy(alpha = 0.7f)),
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
@@ -79,11 +75,11 @@ fun SettingsCategoryRowItem(
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = if (isIncome) ColorSuccessIncome.copy(alpha = 0.12f) else ColorDangerExpense.copy(alpha = 0.12f)
+                        color = if (isIncome) appColors.income.copy(alpha = 0.12f) else appColors.expense.copy(alpha = 0.12f)
                     ) {
                         Text(
                             text = if (isIncome) (if (strings.isBangla) "↑ আয়" else "↑ Income") else (if (strings.isBangla) "↓ ব্যয়" else "↓ Expense"),
@@ -91,7 +87,7 @@ fun SettingsCategoryRowItem(
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = if (isIncome) ColorSuccessIncome else ColorDangerExpense,
+                            color = if (isIncome) appColors.income else appColors.expense,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                         )
                     }
@@ -106,13 +102,12 @@ fun SettingsCategoryRowItem(
                     onClick = {
                         haptics.lightTick()
                         onEditClick()
-                    },
-                    modifier = Modifier.size(32.dp)
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Edit,
                         contentDescription = "Edit",
-                        tint = ColorTextSecondary,
+                        tint = appColors.textSecondary,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -120,13 +115,12 @@ fun SettingsCategoryRowItem(
                     onClick = {
                         haptics.warningFeedback()
                         onDeleteClick()
-                    },
-                    modifier = Modifier.size(32.dp)
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
                         contentDescription = "Delete",
-                        tint = ColorDangerExpense.copy(alpha = 0.85f),
+                        tint = appColors.expense.copy(alpha = 0.85f),
                         modifier = Modifier.size(16.dp)
                     )
                 }

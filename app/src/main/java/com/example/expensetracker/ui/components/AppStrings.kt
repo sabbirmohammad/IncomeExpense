@@ -6,7 +6,7 @@ import com.example.expensetracker.data.model.AppLanguage
 
 class Strings(
     isBangla: Boolean = false
-) : StringsAi(isBangla) {
+) : StringsFeatures(isBangla) {
     // Settings & Preferences
     val settingsTitle: String get() = if (isBangla) "সেটিংস" else "Settings"
     val profileSection: String get() = if (isBangla) "ইউজার প্রোফাইল" else "User Profile"
@@ -117,19 +117,7 @@ class Strings(
     val showBalance: String get() = if (isBangla) "ব্যালেন্স দেখুন" else "Show Balance"
     val privacyModeActive: String get() = if (isBangla) "গোপনীয়তা মোড সক্রিয়" else "Privacy Mode Active"
 
-    // Settings Missing Strings & Export/Import
-    val copyCsv: String get() = if (isBangla) "CSV কপি করুন" else "Copy CSV"
-    val copyJson: String get() = if (isBangla) "JSON কপি করুন" else "Copy JSON"
-    val shareCsv: String get() = if (isBangla) "CSV শেয়ার করুন" else "Share CSV"
-    val shareJson: String get() = if (isBangla) "JSON শেয়ার করুন" else "Share JSON"
-    val csvCopied: String get() = if (isBangla) "CSV ক্লিপবোর্ডে কপি করা হয়েছে" else "CSV copied to clipboard"
-    val jsonBackupCopied: String get() = if (isBangla) "JSON ব্যাকআপ ক্লিপবোর্ডে কপি করা হয়েছে" else "JSON backup copied to clipboard"
-    val shareBackupError: String get() = if (isBangla) "ব্যাকআপ ফাইল শেয়ার করা যায়নি" else "Could not share backup file"
-    val shareCsvData: String get() = if (isBangla) "CSV ডেটা শেয়ার করুন" else "Share CSV Data"
-    val importJsonBackup: String get() = if (isBangla) "JSON ব্যাকআপ ইম্পোর্ট করুন" else "Import JSON Backup"
-    val noFilePicker: String get() = if (isBangla) "কোন ফাইল ম্যানেজার পাওয়া যায়নি" else "No file picker available"
-    val restoreFromJsonTitle: String get() = if (isBangla) "JSON ফাইল থেকে রিস্টোর করবেন?" else "Restore from JSON file?"
-    val restoreFromJsonDesc: String get() = if (isBangla) "এটি আপনার বর্তমান লেনদেন, অ্যাকাউন্ট, ক্যাটাগরি ও বাজেট নির্বাচিত ব্যাকআপ ফাইলের ডেটা দিয়ে প্রতিস্থাপন করবে।" else "This will replace local transactions, accounts, categories, budgets, and recurring bills with data from the backup file."
+    // Restore dialog action
     val restoreNow: String get() = if (isBangla) "এখনই রিস্টোর করুন" else "Restore now"
 
     // Category Unique Color Strings
@@ -145,11 +133,6 @@ class Strings(
     val profileUpdatedSuccess: String get() = if (isBangla) "প্রোফাইল সফলভাবে আপডেট করা হয়েছে" else "Profile updated successfully"
     val langSwitchedBangla: String get() = if (isBangla) "ভাষা পরিবর্তন করা হয়েছে: বাংলা" else "Language switched to Bangla"
     val langSwitchedEnglish: String get() = if (isBangla) "ভাষা পরিবর্তন করা হয়েছে: ইংরেজি" else "Language switched to English"
-    val apiKeyPrivacyNotice: String get() = if (isBangla) "🔒 আপনার এপিআই কি ডিভাইসেই নিরাপদে সংরক্ষিত থাকে, কোনো সার্ভারে শেয়ার হয় না।" else "🔒 Your API key is stored securely on your device only and never shared."
-    val geminiConnectedSuccessDesc: String get() = if (isBangla) "আপনার জেমিনি এপিআই সফলভাবে সংযুক্ত হয়েছে। এখন যেকোনো ভাউচার বা রসিদের ছবি স্ক্যান করলেই নিমেষেই খরচ যুক্ত করতে পারবেন।" else "Your Gemini API is connected. You can now scan receipt photos or quick text to record transactions instantly."
-    val featureReceiptOcr: String get() = if (isBangla) "📸 রসিদ স্ক্যানার" else "📸 Receipt OCR"
-    val featureMagicFill: String get() = if (isBangla) "🪄 ম্যাজিক ইনপুট" else "🪄 Magic Fill"
-    val featureSecureOnDevice: String get() = if (isBangla) "🔒 ডিভাইসে সুরক্ষিত" else "🔒 Secure On-Device"
     val googleDriveRestoreTitle: String get() = if (isBangla) "গুগল ড্রাইভ থেকে রিস্টোর করবেন?" else "Restore from Google Drive?"
     val googleDriveRestoreDesc: String get() = if (isBangla) "এটি আপনার স্থানীয় ডেটা গুগল ড্রাইভ ব্যাকআপ দিয়ে প্রতিস্থাপন করবে।" else "This will overwrite your local data with your latest Google Drive backup."
     val egFirstName: String get() = if (isBangla) "উদাঃ সাব্বির" else "e.g. Sabbir"

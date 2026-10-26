@@ -83,6 +83,29 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val db = dbHelper.writableDatabase
         db.beginTransaction()
         try {
+            // Guard: Prevent deleting the last remaining account in the system
+            val countCursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_ACCOUNTS", null)
+            val totalAccounts = countCursor.use { if (it.moveToFirst()) it.getInt(0) else 0 }
+            if (totalAccounts <= 1) {
+                return 0
+            }
+
+            var isDeletedAccountDefault = false
+            var deletedAccountInitialBalance = 0.0
+            val defCheckCur = db.query(
+                TABLE_ACCOUNTS,
+                arrayOf(COL_ACC_IS_DEFAULT, COL_ACC_INITIAL_BALANCE),
+                "$COL_ACC_ID = ?",
+                arrayOf(id.toString()),
+                null, null, null
+            )
+            defCheckCur.use {
+                if (it.moveToFirst()) {
+                    isDeletedAccountDefault = it.getInt(0) == 1
+                    deletedAccountInitialBalance = it.getDouble(1)
+                }
+            }
+
             var targetAccountId = 0L
             var targetAccountName = ""
             val cur = db.rawQuery(
@@ -97,6 +120,22 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
             }
 
             if (targetAccountId > 0) {
+                // If the deleted account was default, promote target account to default
+                if (isDeletedAccountDefault) {
+                    val promoteCv = ContentValues().apply {
+                        put(COL_ACC_IS_DEFAULT, 1)
+                    }
+                    db.update(TABLE_ACCOUNTS, promoteCv, "$COL_ACC_ID = ?", arrayOf(targetAccountId.toString()))
+                }
+
+                // Preserve historical net worth by adding the deleted account's initial balance to the surviving target account
+                if (deletedAccountInitialBalance != 0.0) {
+                    db.execSQL(
+                        "UPDATE $TABLE_ACCOUNTS SET $COL_ACC_INITIAL_BALANCE = $COL_ACC_INITIAL_BALANCE + ? WHERE $COL_ACC_ID = ?",
+                        arrayOf<Any>(deletedAccountInitialBalance, targetAccountId)
+                    )
+                }
+
                 val txCv = ContentValues().apply {
                     put(COL_TX_ACCOUNT_ID, targetAccountId)
                     put(COL_TX_ACCOUNT_NAME, targetAccountName)

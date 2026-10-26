@@ -28,8 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
 
@@ -45,6 +44,7 @@ fun ShareTextSection(
     context: Context,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val textSummary = remember(periodTitle, periodSubtitle, totalExpense, totalIncome, transactions, userProfile) {
         buildString {
             appendLine("📊 *${periodTitle}*")
@@ -66,8 +66,8 @@ fun ShareTextSection(
     Column(modifier = modifier) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF141824),
-            border = BorderStroke(1.dp, ColorBorder),
+            color = appColors.surfaceVariant,
+            border = BorderStroke(1.dp, appColors.border),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 6.dp)
@@ -75,7 +75,7 @@ fun ShareTextSection(
             Text(
                 text = textSummary,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 modifier = Modifier.padding(14.dp)
             )
         }
@@ -92,7 +92,7 @@ fun ShareTextSection(
                 .height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2EC4B6),
+                containerColor = if (appColors.isDark) Color(0xFF2EC4B6) else Color(0xFF0F766E),
                 contentColor = Color.White
             )
         ) {

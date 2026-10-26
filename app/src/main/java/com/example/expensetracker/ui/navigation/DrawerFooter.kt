@@ -16,10 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.AppConstants
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 
@@ -28,12 +25,13 @@ fun DrawerFooter(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 16.dp)
     ) {
-        HorizontalDivider(thickness = 1.dp, color = ColorBorder)
+        HorizontalDivider(thickness = 1.dp, color = appColors.border)
         Spacer(modifier = Modifier.height(12.dp))
         Column(
             modifier = Modifier
@@ -50,20 +48,20 @@ fun DrawerFooter(
                     text = strings.appName,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Text(
                     text = if (strings.isBangla) "ভার্সন ${convertToBengaliDigits(AppConstants.APP_VERSION.removePrefix("v"))}" else AppConstants.APP_VERSION,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Normal,
-                    color = ColorTextMuted
+                    color = appColors.textMuted
                 )
             }
             Text(
                 text = if (strings.isBangla) "নির্মাতা: AWFI ENTERPRISE" else "Developed by AWFI ENTERPRISE",
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
-                color = ColorAccent.copy(alpha = 0.85f)
+                color = appColors.accent.copy(alpha = 0.85f)
             )
         }
     }

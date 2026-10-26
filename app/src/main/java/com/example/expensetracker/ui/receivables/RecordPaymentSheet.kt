@@ -39,15 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Receivable
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -63,6 +55,7 @@ fun RecordPaymentSheet(
     onConfirm: (Double, Long?, String) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var amountText by remember {
         mutableStateOf(
             receivable.remainingAmount.let {
@@ -76,7 +69,7 @@ fun RecordPaymentSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -97,10 +90,10 @@ fun RecordPaymentSheet(
                 Text(
                     text = strings.recordPayment,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, null, tint = ColorTextSecondary)
+                    Icon(Icons.Outlined.Close, null, tint = appColors.textSecondary)
                 }
             }
 
@@ -109,7 +102,7 @@ fun RecordPaymentSheet(
             Text(
                 text = "${receivable.personName} • ${strings.remainingDue}: ${formatCurrency(receivable.remainingAmount, currencySymbol)}",
                 fontSize = 12.sp,
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -147,31 +140,33 @@ fun RecordPaymentSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(strings.note, fontSize = 12.sp, color = ColorTextSecondary)
+            Text(strings.note, fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
-                placeholder = { Text(strings.optional, color = ColorTextMuted) },
+                placeholder = { Text(strings.optional, color = appColors.textMuted) },
                 singleLine = true,
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ColorBackground,
-                    unfocusedContainerColor = ColorBackground,
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant,
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
 
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(errorMessage!!, color = ColorDangerExpense, fontSize = 12.sp)
+                Text(errorMessage!!, color = appColors.expense, fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
+
+            val buttonContentColor = if (appColors.isDark) Color(0xFF052B14) else Color.White
 
             Button(
                 onClick = {
@@ -190,13 +185,16 @@ fun RecordPaymentSheet(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(SmallElementRadius),
-                colors = ButtonDefaults.buttonColors(containerColor = ColorSuccessIncome)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = appColors.income,
+                    contentColor = buttonContentColor
+                )
             ) {
                 Text(
                     text = strings.confirmRepayment,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    color = buttonContentColor
                 )
             }
 

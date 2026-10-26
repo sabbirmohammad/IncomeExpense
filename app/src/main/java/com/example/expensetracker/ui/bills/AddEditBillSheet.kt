@@ -38,13 +38,10 @@ import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.BillFrequency
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.RecurringBill
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +53,7 @@ fun AddEditBillSheet(
     onDismiss: () -> Unit,
     onSave: (RecurringBill) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
@@ -79,7 +77,7 @@ fun AddEditBillSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF0F131D),
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
@@ -97,7 +95,7 @@ fun AddEditBillSheet(
                     .width(40.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(ColorBorder)
+                    .background(appColors.border)
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -108,7 +106,7 @@ fun AddEditBillSheet(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -119,17 +117,17 @@ fun AddEditBillSheet(
                     title = it
                     errorMessage = null
                 },
-                placeholder = { Text(strings.billTitle, color = ColorTextMuted, fontSize = 13.sp) },
+                placeholder = { Text(strings.billTitle, color = appColors.textMuted, fontSize = 13.sp) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary,
-                    focusedContainerColor = Color(0xFF0F131D),
-                    unfocusedContainerColor = Color(0xFF0F131D)
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary,
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant
                 ),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
             )
@@ -184,17 +182,17 @@ fun AddEditBillSheet(
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                placeholder = { Text(strings.notesOptional, color = ColorTextMuted, fontSize = 13.sp) },
+                placeholder = { Text(strings.notesOptional, color = appColors.textMuted, fontSize = 13.sp) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder,
-                    focusedTextColor = ColorTextPrimary,
-                    unfocusedTextColor = ColorTextPrimary,
-                    focusedContainerColor = Color(0xFF0F131D),
-                    unfocusedContainerColor = Color(0xFF0F131D)
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border,
+                    focusedTextColor = appColors.textPrimary,
+                    unfocusedTextColor = appColors.textPrimary,
+                    focusedContainerColor = appColors.surfaceVariant,
+                    unfocusedContainerColor = appColors.surfaceVariant
                 ),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
             )

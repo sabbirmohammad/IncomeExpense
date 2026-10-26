@@ -23,10 +23,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.ui.components.AppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun UpcomingBillsAlertBanner(
@@ -38,10 +37,11 @@ fun UpcomingBillsAlertBanner(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = Color(0xFFF7941D).copy(alpha = 0.12f),
-        border = BorderStroke(1.dp, Color(0xFFF7941D).copy(alpha = 0.35f)),
+        color = appColors.warning.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, appColors.warning.copy(alpha = 0.35f)),
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = ScreenPaddingHorizontal)
@@ -59,7 +59,7 @@ fun UpcomingBillsAlertBanner(
                 Icon(
                     imageVector = Icons.Filled.NotificationsActive,
                     contentDescription = null,
-                    tint = Color(0xFFF7941D),
+                    tint = appColors.warning,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -68,12 +68,12 @@ fun UpcomingBillsAlertBanner(
                         text = titleText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                     Text(
                         text = "$dueCount $subtitleText",
                         fontSize = 10.sp,
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
             }
@@ -81,7 +81,7 @@ fun UpcomingBillsAlertBanner(
                 text = payNowText,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFFF7941D)
+                color = appColors.warning
             )
         }
     }

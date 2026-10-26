@@ -32,8 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.PaymentMethod
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.BrandIdentityHelper
 import com.example.expensetracker.ui.components.Strings
@@ -57,6 +55,7 @@ fun TransactionAccountDropdown(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val currentAccount = accounts.find { it.id == selectedAccountId }
     val brandStyle = currentAccount?.let { BrandIdentityHelper.getBrandStyle(it) }
@@ -67,7 +66,7 @@ fun TransactionAccountDropdown(
                 Text(
                     text = if (accounts.isNotEmpty()) strings.account else strings.paymentMethod,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Surface(
@@ -105,7 +104,7 @@ fun TransactionAccountDropdown(
                                     Text(
                                         text = currentAccount.name,
                                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold),
-                                        color = ColorTextPrimary,
+                                        color = appColors.textPrimary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -131,7 +130,7 @@ fun TransactionAccountDropdown(
                                 Text(
                                     text = selectedPaymentMethod.getDisplayName(strings.isBangla),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold),
-                                    color = ColorTextPrimary,
+                                    color = appColors.textPrimary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -140,7 +139,7 @@ fun TransactionAccountDropdown(
                         Icon(
                             imageVector = Icons.Filled.ArrowDropDown,
                             contentDescription = "Select Account",
-                            tint = ColorTextSecondary,
+                            tint = appColors.textSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }

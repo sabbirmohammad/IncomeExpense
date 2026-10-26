@@ -17,8 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSuccessIncome
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 
 @Composable
@@ -68,8 +67,8 @@ fun AppProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
     height: Dp = 7.dp,
-    trackColor: Color = ColorBorder,
-    fillColor: Color = ColorSuccessIncome
+    trackColor: Color = LocalAppColors.current.border,
+    fillColor: Color = LocalAppColors.current.income
 ) {
     val clampedProgress = progress.coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(

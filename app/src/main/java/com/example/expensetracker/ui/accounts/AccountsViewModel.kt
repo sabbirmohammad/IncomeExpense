@@ -10,6 +10,7 @@ import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.repository.*
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,6 +73,10 @@ class AccountsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        android.util.Log.e("AccountsViewModel", "Unhandled coroutine error", throwable)
+    }
+
     fun addAccount(
         name: String,
         type: AccountType,
@@ -80,7 +85,7 @@ class AccountsViewModel(application: Application) : AndroidViewModel(application
         initialBalance: Double,
         colorHex: String
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             val acc = Account(
                 name = name.trim(),
                 type = type,
@@ -95,7 +100,7 @@ class AccountsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun updateAccount(account: Account) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.updateAccount(account)
             if (_selectedAccount.value?.id == account.id) {
                 _selectedAccount.value = account
@@ -105,7 +110,7 @@ class AccountsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deleteAccount(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.deleteAccount(id)
             if (_selectedAccount.value?.id == id) {
                 _selectedAccount.value = null
@@ -120,7 +125,7 @@ class AccountsViewModel(application: Application) : AndroidViewModel(application
         amount: Double,
         note: String
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.transferBetweenAccounts(fromAccountId, toAccountId, amount, note)
             val curSelected = _selectedAccount.value
             if (curSelected != null && (curSelected.id == fromAccountId || curSelected.id == toAccountId)) {
@@ -130,13 +135,13 @@ class AccountsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun reconcileBalance(account: Account, newBalance: Double, note: String? = null) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             val diff = newBalance - account.currentBalance
             if (kotlin.math.abs(diff) > 0.001) {
                 val isGain = diff > 0
                 val adjAmount = kotlin.math.abs(diff)
                 val adjType = if (isGain) TransactionType.INCOME else TransactionType.EXPENSE
-                val defaultCat = repository.categories.value.firstOrNull { it.type == adjType }
+                val adjCat = repository.getOrCreateCategoryByName("Adjustment", adjType, "Tune", "#64748B")
                 val pm = when (account.type) {
                     AccountType.CASH -> PaymentMethod.CASH
                     AccountType.BANK -> PaymentMethod.BANK_TRANSFER
@@ -150,10 +155,10 @@ class AccountsViewModel(application: Application) : AndroidViewModel(application
                     title = note?.ifBlank { null } ?: (if (isGain) "Balance Adjustment (+)" else "Balance Adjustment (-)"),
                     amount = adjAmount,
                     type = adjType,
-                    categoryId = defaultCat?.id ?: 1L,
-                    categoryName = defaultCat?.name ?: "Adjustment",
-                    categoryIcon = defaultCat?.icon ?: "AccountBalance",
-                    categoryColor = defaultCat?.colorHex ?: "#3B8FF0",
+                    categoryId = adjCat.id,
+                    categoryName = adjCat.name,
+                    categoryIcon = adjCat.icon,
+                    categoryColor = adjCat.colorHex,
                     dateMillis = System.currentTimeMillis(),
                     paymentMethod = pm,
                     notes = "[Reconciliation] Adjusted balance from ${account.currentBalance} to $newBalance",

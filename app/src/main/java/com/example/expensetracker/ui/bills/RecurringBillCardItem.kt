@@ -37,17 +37,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.RecurringBill
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.CategoryIconHelper
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun RecurringBillCardItem(
@@ -58,6 +54,7 @@ fun RecurringBillCardItem(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     var showMenu by remember { mutableStateOf(false) }
     val strings = LocalAppStrings.current
     val categoryColor = CategoryIconHelper.parseColor(bill.categoryColor)
@@ -101,7 +98,7 @@ fun RecurringBillCardItem(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp
                             ),
-                            color = ColorTextPrimary,
+                            color = appColors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -114,7 +111,7 @@ fun RecurringBillCardItem(
                             Text(
                                 text = "$freqText • ${if (strings.isBangla) "${bill.dueDay} তারিখ" else "Day ${bill.dueDay}"}",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                color = ColorTextMuted,
+                                color = appColors.textMuted,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -122,7 +119,7 @@ fun RecurringBillCardItem(
                                 Text(
                                     text = "• ${bill.accountName}",
                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                    color = ColorAccent,
+                                    color = appColors.accent,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -140,39 +137,38 @@ fun RecurringBillCardItem(
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         ),
-                        color = ColorTextPrimary,
+                        color = appColors.textPrimary,
                         maxLines = 1,
                         softWrap = false
                     )
 
                     Box {
                         IconButton(
-                            onClick = { showMenu = true },
-                            modifier = Modifier.size(32.dp)
+                            onClick = { showMenu = true }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
                                 contentDescription = "Menu",
-                                tint = ColorTextSecondary,
+                                tint = appColors.textSecondary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(Color(0xFF0F131D))
+                            modifier = Modifier.background(appColors.surface)
                         ) {
                             DropdownMenuItem(
-                                text = { Text(strings.editBill, color = ColorTextPrimary) },
-                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = ColorAccent) },
+                                text = { Text(strings.editBill, color = appColors.textPrimary) },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = appColors.accent) },
                                 onClick = {
                                     showMenu = false
                                     onEdit()
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text(strings.delete, color = ColorDangerExpense) },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = ColorDangerExpense) },
+                                text = { Text(strings.delete, color = appColors.expense) },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = appColors.expense) },
                                 onClick = {
                                     showMenu = false
                                     onDelete()

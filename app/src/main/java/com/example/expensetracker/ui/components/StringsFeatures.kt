@@ -8,7 +8,6 @@ open class StringsFeatures(
     val marketTripsTitle: String get() = if (isBangla) "বাজারের ইতিহাস" else "Market Trips History"
     val pasteList: String get() = if (isBangla) "লিস্ট পেস্ট" else "Paste List"
     val createList: String get() = if (isBangla) "বাজার ফর্দ" else "Market Checklist"
-    val aiBazarAssistant: String get() = if (isBangla) "এআই সহকারী" else "AI Assistant"
     val colItemName: String get() = if (isBangla) "পণ্যের নাম" else "Item Name"
     val colQuantity: String get() = if (isBangla) "পরিমাণ" else "Quantity"
     val colPrice: String get() = if (isBangla) "মূল্য" else "Price"
@@ -117,6 +116,8 @@ open class StringsFeatures(
     val dueSoon: String get() = if (isBangla) "পরিশোধের সময় হয়েছে" else "Due Soon"
     val upcoming: String get() = if (isBangla) "সামনে আসবে" else "Upcoming"
     val billPaidSuccess: String get() = if (isBangla) "বিল সফলভাবে পরিশোধ করা হয়েছে!" else "Bill paid and transaction logged!"
+    val deleteBillConfirm: String get() = if (isBangla) "নিয়মিত বিল মুছে ফেলবেন?" else "Delete recurring bill?"
+    val deleteBillMessage: String get() = if (isBangla) "আপনি কি নিশ্চিতভাবে এই নিয়মিত বিলটি মুছে ফেলতে চান? ভবিষ্যৎ অনুস্মারক এবং নির্ধারিত পরিশোধের সময়সূচি স্থায়ীভাবে বাতিল হয়ে যাবে।" else "Are you sure you want to delete this recurring bill? Its scheduled due dates and reminders will be permanently removed."
 
     // Bill Splitter
     val splitBillTitle: String get() = if (isBangla) "ফ্রেন্ডস বিল স্প্লিটার" else "Friends Bill Splitter"
@@ -130,4 +131,11 @@ open class StringsFeatures(
     val sendToReceivables: String get() = if (isBangla) "পাওনা টাকা লিস্টে সেভ করুন" else "Save to Money Owed"
     val copyShareMessage: String get() = if (isBangla) "মেসেজ কপি করুন" else "Copy Message"
     val copiedToClipboard: String get() = if (isBangla) "ক্লিপবোর্ডে কপি করা হয়েছে!" else "Copied to clipboard!"
+
+    // Receipts & Vouchers
+    val attachReceipt: String get() = if (isBangla) "রসিদ / ভাউচার যুক্ত করুন" else "Attach Receipt / Bill"
+    val takePhoto: String get() = if (isBangla) "ছবি তুলুন" else "Take Photo"
+    val chooseFromGallery: String get() = if (isBangla) "গ্যালারি থেকে বেছে নিন" else "Choose from Gallery"
+    val removeReceipt: String get() = if (isBangla) "রসিদ মুছুন" else "Remove Receipt"
+    val viewReceipt: String get() = if (isBangla) "রসিদ দেখুন" else "View Receipt"
 }

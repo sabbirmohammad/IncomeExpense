@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,18 +26,18 @@ fun BudgetScreen(
     onNavigateBack: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null
 ) {
-    val userProfile by viewModel.userProfile.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val budgetStatuses by viewModel.budgetStatuses.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val budgetStatuses by viewModel.budgetStatuses.collectAsStateWithLifecycle()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedBudgetToEdit by remember { mutableStateOf<Budget?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf<Budget?>(null) }
 
-    val selectedTab by viewModel.selectedTab.collectAsState()
-    val savingsGoals by viewModel.savingsGoals.collectAsState()
-    val accounts by viewModel.accounts.collectAsState()
-    val isPrivacyMode by viewModel.isPrivacyMode.collectAsState()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val savingsGoals by viewModel.savingsGoals.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val isPrivacyMode by viewModel.isPrivacyMode.collectAsStateWithLifecycle()
 
     var showAddSavingsGoalSheet by remember { mutableStateOf(false) }
     var goalToEdit by remember { mutableStateOf<SavingsGoal?>(null) }
@@ -97,7 +97,6 @@ fun BudgetScreen(
                 savingsGoals = savingsGoals,
                 currencySymbol = userProfile.currencySymbol,
                 isPrivacyMode = isPrivacyMode,
-                geminiApiKey = userProfile.geminiApiKey,
                 onAddGoalClick = {
                     goalToEdit = null
                     showAddSavingsGoalSheet = true

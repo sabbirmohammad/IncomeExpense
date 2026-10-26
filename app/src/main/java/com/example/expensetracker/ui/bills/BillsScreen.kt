@@ -12,7 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,10 +40,10 @@ fun BillsScreen(
     onNavigateBack: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null
 ) {
-    val bills by viewModel.recurringBills.collectAsState()
-    val accounts by viewModel.accounts.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val userProfile by viewModel.userProfile.collectAsState()
+    val bills by viewModel.recurringBills.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
     val feedbackController = LocalFeedbackController.current
     val haptics = rememberAppHaptics()
@@ -51,6 +51,7 @@ fun BillsScreen(
     var showAddSheet by remember { mutableStateOf(false) }
     var billToEdit by remember { mutableStateOf<RecurringBill?>(null) }
     var billToPay by remember { mutableStateOf<RecurringBill?>(null) }
+    var billToDelete by remember { mutableStateOf<RecurringBill?>(null) }
     var showConfetti by remember { mutableStateOf(false) }
 
     val totalMonthlyCommitments = remember(bills) {
@@ -152,16 +153,8 @@ fun BillsScreen(
                                 showAddSheet = true
                             },
                             onDelete = {
-                                val deletedTitle = bill.title
-                                haptics.warningFeedback()
-                                viewModel.deleteBill(bill.id)
-                                feedbackController.show(
-                                    TransactionFeedbackData(
-                                        type = FeedbackVisualType.ITEM_DELETED,
-                                        title = FeedbackStrings.itemDeleted(strings.isBangla),
-                                        subtitle = deletedTitle
-                                    )
-                                )
+                                haptics.mediumClick()
+                                billToDelete = bill
                             }
                         )
                     }
@@ -223,6 +216,27 @@ fun BillsScreen(
                     )
                 }
                 billToPay = null
+            }
+        )
+    }
+
+    if (billToDelete != null) {
+        BillDeleteConfirmDialog(
+            bill = billToDelete!!,
+            onDismiss = { billToDelete = null },
+            onConfirm = {
+                val toDelete = billToDelete!!
+                val deletedTitle = toDelete.title
+                haptics.warningFeedback()
+                viewModel.deleteBill(toDelete.id)
+                feedbackController.show(
+                    TransactionFeedbackData(
+                        type = FeedbackVisualType.ITEM_DELETED,
+                        title = FeedbackStrings.itemDeleted(strings.isBangla),
+                        subtitle = deletedTitle
+                    )
+                )
+                billToDelete = null
             }
         )
     }

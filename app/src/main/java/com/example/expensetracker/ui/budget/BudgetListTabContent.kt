@@ -30,11 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Budget
 import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.EmptyStateCard
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -53,6 +49,7 @@ fun BudgetListTabContent(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -84,20 +81,20 @@ fun BudgetListTabContent(
                             fontSize = 15.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(SmallElementRadius))
-                            .background(ColorSurface)
-                            .border(1.dp, ColorBorder, RoundedCornerShape(SmallElementRadius))
+                            .background(appColors.surfaceVariant)
+                            .border(1.dp, appColors.border, RoundedCornerShape(SmallElementRadius))
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = if (strings.isBangla) "${categoryBudgetStatuses.size}টি সক্রিয়" else "${categoryBudgetStatuses.size} active",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -106,7 +103,7 @@ fun BudgetListTabContent(
                     Icon(
                         imageVector = Icons.Outlined.Add,
                         contentDescription = "Add category budget",
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(24.dp)
                     )
                 }

@@ -37,12 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Payable
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -61,6 +56,7 @@ fun PayableRowItem(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var showMenu by remember { mutableStateOf(false) }
 
     AppCard(
@@ -84,15 +80,15 @@ fun PayableRowItem(
                             .size(38.dp)
                             .clip(CircleShape)
                             .background(
-                                if (payable.isSettled) ColorSuccessIncome.copy(alpha = 0.15f)
-                                else ColorDangerExpense.copy(alpha = 0.15f)
+                                if (payable.isSettled) appColors.income.copy(alpha = 0.15f)
+                                else appColors.expense.copy(alpha = 0.15f)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = if (payable.isSettled) Icons.Outlined.Check else Icons.Outlined.Person,
                             contentDescription = null,
-                            tint = if (payable.isSettled) ColorSuccessIncome else ColorDangerExpense,
+                            tint = if (payable.isSettled) appColors.income else appColors.expense,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -106,7 +102,7 @@ fun PayableRowItem(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorTextPrimary,
+                            color = appColors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -114,7 +110,7 @@ fun PayableRowItem(
                             Text(
                                 text = payable.phoneNumber,
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                color = ColorTextSecondary,
+                                color = appColors.textSecondary,
                                 maxLines = 1
                             )
                         }
@@ -128,7 +124,7 @@ fun PayableRowItem(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (payable.isSettled) ColorSuccessIncome else ColorDangerExpense
+                        color = if (payable.isSettled) appColors.income else appColors.expense
                     )
                     Text(
                         text = if (payable.isSettled) {
@@ -137,45 +133,44 @@ fun PayableRowItem(
                             payable.status.getDisplayName(strings.isBangla)
                         },
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                        color = if (payable.isSettled) ColorSuccessIncome else ColorTextSecondary
+                        color = if (payable.isSettled) appColors.income else appColors.textSecondary
                     )
                 }
 
                 Box {
                     IconButton(
-                        onClick = { showMenu = true },
-                        modifier = Modifier.size(32.dp)
+                        onClick = { showMenu = true }
                     ) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
                             contentDescription = "Options",
-                            tint = ColorTextSecondary,
+                            tint = appColors.textSecondary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
-                        modifier = Modifier.background(ColorSurface)
+                        modifier = Modifier.background(appColors.surface)
                     ) {
                         DropdownMenuItem(
-                            text = { Text(if (strings.isBangla) "এডিট করুন" else "Edit", color = ColorTextPrimary) },
+                            text = { Text(if (strings.isBangla) "এডিট করুন" else "Edit", color = appColors.textPrimary) },
                             onClick = {
                                 showMenu = false
                                 onEdit()
                             },
                             leadingIcon = {
-                                Icon(Icons.Outlined.Edit, contentDescription = null, tint = ColorAccent)
+                                Icon(Icons.Outlined.Edit, contentDescription = null, tint = appColors.accent)
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(strings.delete, color = ColorDangerExpense) },
+                            text = { Text(strings.delete, color = appColors.expense) },
                             onClick = {
                                 showMenu = false
                                 onDelete()
                             },
                             leadingIcon = {
-                                Icon(Icons.Outlined.Delete, contentDescription = null, tint = ColorDangerExpense)
+                                Icon(Icons.Outlined.Delete, contentDescription = null, tint = appColors.expense)
                             }
                         )
                     }
@@ -187,7 +182,7 @@ fun PayableRowItem(
                 Text(
                     text = payable.notes,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                    color = ColorTextSecondary,
+                    color = appColors.textSecondary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )

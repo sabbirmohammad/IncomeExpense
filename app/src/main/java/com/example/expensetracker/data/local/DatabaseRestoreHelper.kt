@@ -34,7 +34,6 @@ internal object DatabaseRestoreHelper {
     private fun restoreProfile(payload: BackupPayload, dbHelper: ExpenseDatabaseHelper) {
         val currentProfile = dbHelper.getUserProfile()
         val effectiveGoogleEmail = currentProfile.googleAccountEmail ?: payload.profile.googleAccountEmail
-        val effectiveApiKey = currentProfile.geminiApiKey ?: payload.profile.geminiApiKey
 
         val baseProfile = if (payload.profile.firstName.isBlank() && payload.profile.name.isNotBlank()) {
             val parts = payload.profile.name.trim().split(Regex("\\s+"), limit = 2)
@@ -47,7 +46,6 @@ internal object DatabaseRestoreHelper {
         }
         val profileToRestore = baseProfile.copy(
             googleAccountEmail = effectiveGoogleEmail,
-            geminiApiKey = effectiveApiKey,
             lastSyncMillis = System.currentTimeMillis()
         )
         dbHelper.updateUserProfile(profileToRestore)

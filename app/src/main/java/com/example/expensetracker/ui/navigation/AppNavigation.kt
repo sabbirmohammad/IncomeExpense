@@ -9,7 +9,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,24 +21,18 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import com.example.expensetracker.data.model.AppLanguage
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.repository.*
-import com.example.expensetracker.ui.accounts.AccountsViewModel
-import com.example.expensetracker.ui.analytics.AnalyticsViewModel
-import com.example.expensetracker.ui.bills.BillsViewModel
-import com.example.expensetracker.ui.budget.BudgetViewModel
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.LocalFeedbackController
 import com.example.expensetracker.ui.components.MiddleScreenConfirmationOverlay
 import com.example.expensetracker.ui.components.TransactionFeedbackController
 import com.example.expensetracker.ui.components.rememberAppStrings
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
-import com.example.expensetracker.ui.receivables.ReceivablesViewModel
-import com.example.expensetracker.ui.reports.ReportsViewModel
-import com.example.expensetracker.ui.settings.SettingsViewModel
-import com.example.expensetracker.ui.transactions.TransactionsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,21 +44,12 @@ fun MainAppNavigation(
     var isDrawerOpen by remember { mutableStateOf(false) }
 
     val dashboardViewModel: DashboardViewModel = viewModel()
-    val transactionsViewModel: TransactionsViewModel = viewModel()
-    val analyticsViewModel: AnalyticsViewModel = viewModel()
-    val budgetViewModel: BudgetViewModel = viewModel()
-    val settingsViewModel: SettingsViewModel = viewModel()
-    val accountsViewModel: AccountsViewModel = viewModel()
-    val receivablesViewModel: ReceivablesViewModel = viewModel()
-    val billsViewModel: BillsViewModel = viewModel()
-    val reportsViewModel: ReportsViewModel = viewModel()
 
-    val categories by dashboardViewModel.categories.collectAsState()
-    val userProfile by dashboardViewModel.userProfile.collectAsState()
-    val summary by dashboardViewModel.summary.collectAsState()
-    val accounts by dashboardViewModel.accounts.collectAsState()
-    val activeMarketList by dashboardViewModel.activeMarketList.collectAsState()
-    val budgetStatuses by budgetViewModel.budgetStatuses.collectAsState()
+    val categories by dashboardViewModel.categories.collectAsStateWithLifecycle()
+    val userProfile by dashboardViewModel.userProfile.collectAsStateWithLifecycle()
+    val summary by dashboardViewModel.summary.collectAsStateWithLifecycle()
+    val accounts by dashboardViewModel.accounts.collectAsStateWithLifecycle()
+    val activeMarketList by dashboardViewModel.activeMarketList.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val repository = remember { ExpenseRepository.getInstance(context) }
@@ -82,6 +67,7 @@ fun MainAppNavigation(
         }
     }
 
+    var showQuickActionChooserSheet by remember { mutableStateOf(false) }
     var showGlobalAddSheet by remember { mutableStateOf(false) }
     var showTransferSheet by remember { mutableStateOf(false) }
     var showBillSplitterSheet by remember { mutableStateOf(false) }
@@ -89,6 +75,7 @@ fun MainAppNavigation(
     var transactionToEdit by remember { mutableStateOf<Transaction?>(null) }
     var initialDateForAdd by remember { mutableStateOf<Long?>(null) }
     var initialTypeForAdd by remember { mutableStateOf(TransactionType.EXPENSE) }
+    var initialOpenMarketForAdd by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
@@ -96,7 +83,7 @@ fun MainAppNavigation(
         isDrawerOpen = false
     }
 
-    BackHandler(enabled = !isDrawerOpen && (selectedItem == NavigationItem.SETTINGS || selectedItem == NavigationItem.ACCOUNTS || selectedItem == NavigationItem.RECEIVABLES || selectedItem == NavigationItem.BILLS || selectedItem == NavigationItem.BUDGETS || selectedItem == NavigationItem.ANALYTICS || selectedItem == NavigationItem.REPORTS)) {
+    BackHandler(enabled = !isDrawerOpen && selectedItem != NavigationItem.HOME) {
         selectedItem = NavigationItem.HOME
     }
 
@@ -137,36 +124,36 @@ fun MainAppNavigation(
                             transactionToEdit = null
                             initialDateForAdd = dateMillis
                             initialTypeForAdd = type
+                            initialOpenMarketForAdd = false
                             showGlobalAddSheet = true
                         },
                         onEditTransaction = { tx ->
                             transactionToEdit = tx
                             initialDateForAdd = null
                             initialTypeForAdd = tx.type
+                            initialOpenMarketForAdd = false
                             showGlobalAddSheet = true
                         },
                         onSplitBillClick = { showBillSplitterSheet = true },
                         onTransferClick = { showTransferSheet = true },
-                        onOpenMarketList = { showMarketListSheet = true },
-                        dashboardViewModel = dashboardViewModel,
-                        transactionsViewModel = transactionsViewModel,
-                        analyticsViewModel = analyticsViewModel,
-                        budgetViewModel = budgetViewModel,
-                        settingsViewModel = settingsViewModel,
-                        accountsViewModel = accountsViewModel,
-                        receivablesViewModel = receivablesViewModel,
-                        billsViewModel = billsViewModel,
-                        reportsViewModel = reportsViewModel
+                        onOpenMarketList = {
+                            transactionToEdit = null
+                            initialDateForAdd = null
+                            initialTypeForAdd = TransactionType.EXPENSE
+                            initialOpenMarketForAdd = true
+                            showGlobalAddSheet = true
+                        },
+                        dashboardViewModel = dashboardViewModel
                     )
 
                     ModernBottomNavBar(
                         selectedItem = selectedItem,
                         onItemSelected = { item -> selectedItem = item },
                         onAddClick = {
-                            transactionToEdit = null
-                            initialDateForAdd = null
-                            initialTypeForAdd = TransactionType.EXPENSE
-                            showGlobalAddSheet = true
+                            showQuickActionChooserSheet = true
+                        },
+                        onAddLongClick = {
+                            showQuickActionChooserSheet = true
                         },
                         onMoreClick = { isDrawerOpen = !isDrawerOpen },
                         strings = strings,
@@ -182,6 +169,44 @@ fun MainAppNavigation(
             }
         )
 
+        if (showQuickActionChooserSheet) {
+            GlobalActionChooserSheet(
+                isBangla = strings.isBangla,
+                activeMarketList = activeMarketList,
+                onDismiss = {
+                    showQuickActionChooserSheet = false
+                },
+                onAddExpense = {
+                    showQuickActionChooserSheet = false
+                    transactionToEdit = null
+                    initialDateForAdd = null
+                    initialTypeForAdd = TransactionType.EXPENSE
+                    initialOpenMarketForAdd = false
+                    showGlobalAddSheet = true
+                },
+                onAddIncome = {
+                    showQuickActionChooserSheet = false
+                    transactionToEdit = null
+                    initialDateForAdd = null
+                    initialTypeForAdd = TransactionType.INCOME
+                    initialOpenMarketForAdd = false
+                    showGlobalAddSheet = true
+                },
+                onTransfer = {
+                    showQuickActionChooserSheet = false
+                    showTransferSheet = true
+                },
+                onOpenMarket = {
+                    showQuickActionChooserSheet = false
+                    transactionToEdit = null
+                    initialDateForAdd = null
+                    initialTypeForAdd = TransactionType.EXPENSE
+                    initialOpenMarketForAdd = true
+                    showGlobalAddSheet = true
+                }
+            )
+        }
+
         NavigationTransactionSheets(
             showGlobalAddSheet = showGlobalAddSheet,
             showBillSplitterSheet = showBillSplitterSheet,
@@ -189,6 +214,7 @@ fun MainAppNavigation(
             transactionToEdit = transactionToEdit,
             initialDateForAdd = initialDateForAdd,
             initialTypeForAdd = initialTypeForAdd,
+            initialOpenMarketForAdd = initialOpenMarketForAdd,
             categories = categories,
             accounts = accounts,
             userProfile = userProfile,
@@ -202,9 +228,14 @@ fun MainAppNavigation(
                 transactionToEdit = null
                 initialDateForAdd = null
                 initialTypeForAdd = TransactionType.EXPENSE
+                initialOpenMarketForAdd = false
             },
             onCloseBillSplitterSheet = { showBillSplitterSheet = false },
-            onCloseTransferSheet = { showTransferSheet = false }
+            onCloseTransferSheet = { showTransferSheet = false },
+            onOpenMarketList = {
+                initialOpenMarketForAdd = true
+                showGlobalAddSheet = true
+            }
         )
 
         NavigationUtilitySheets(
@@ -212,7 +243,6 @@ fun MainAppNavigation(
             activeMarketList = activeMarketList,
             showUpcomingBudgetPrompt = showUpcomingBudgetPrompt,
             summary = summary,
-            budgetStatuses = budgetStatuses,
             userProfile = userProfile,
             strings = strings,
             feedbackController = feedbackController,

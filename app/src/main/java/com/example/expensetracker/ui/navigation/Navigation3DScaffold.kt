@@ -58,7 +58,7 @@ fun Navigation3DScaffold(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF090C14))
+            .background(LocalAppColors.current.background)
     ) {
         drawerContent()
 

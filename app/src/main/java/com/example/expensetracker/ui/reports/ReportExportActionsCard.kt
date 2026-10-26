@@ -29,10 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
@@ -47,12 +44,13 @@ fun ReportExportActionsCard(
     modifier: Modifier = Modifier
 ) {
     val haptics = rememberAppHaptics()
+    val appColors = LocalAppColors.current
 
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = ColorSurface,
-        border = BorderStroke(1.dp, ColorBorder)
+        color = appColors.surface,
+        border = BorderStroke(1.dp, appColors.border)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -64,7 +62,7 @@ fun ReportExportActionsCard(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
 
             // 1. PDF Share Button (Primary)
@@ -79,7 +77,7 @@ fun ReportExportActionsCard(
                     .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = ColorAccent,
+                    containerColor = appColors.accent,
                     contentColor = Color.White
                 )
             ) {
@@ -117,10 +115,10 @@ fun ReportExportActionsCard(
                         .weight(1f)
                         .height(44.dp),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, ColorBorder),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorTextPrimary)
+                    border = BorderStroke(1.dp, appColors.border),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textPrimary)
                 ) {
-                    Icon(Icons.Outlined.Visibility, null, modifier = Modifier.size(16.dp), tint = ColorAccent)
+                    Icon(Icons.Outlined.Visibility, null, modifier = Modifier.size(16.dp), tint = appColors.accent)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(strings.viewPdf, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
@@ -136,10 +134,10 @@ fun ReportExportActionsCard(
                         .weight(1f)
                         .height(44.dp),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, ColorBorder),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorTextPrimary)
+                    border = BorderStroke(1.dp, appColors.border),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textPrimary)
                 ) {
-                    Icon(Icons.Outlined.TableChart, null, modifier = Modifier.size(16.dp), tint = Color(0xFF10B981))
+                    Icon(Icons.Outlined.TableChart, null, modifier = Modifier.size(16.dp), tint = appColors.income)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(strings.exportCsv, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }

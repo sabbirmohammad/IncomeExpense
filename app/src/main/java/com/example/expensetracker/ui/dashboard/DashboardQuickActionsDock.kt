@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,17 +43,18 @@ import com.example.expensetracker.ui.components.AppHaptics
 fun DashboardQuickActionsDock(
     isBn: Boolean,
     haptics: AppHaptics,
-    onOpenMarketList: (() -> Unit)?,
     onNavigateToAccounts: (() -> Unit)?,
     onNavigateToBills: (() -> Unit)?,
     onNavigateToReceivables: (() -> Unit)?,
     onNavigateToBudgets: (() -> Unit)?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenMarketList: (() -> Unit)? = null
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = LocalAppColors.current.surface,
-        border = BorderStroke(1.dp, LocalAppColors.current.border),
+        color = appColors.surface,
+        border = BorderStroke(1.dp, appColors.border),
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = ScreenPaddingHorizontal)
@@ -64,24 +66,11 @@ fun DashboardQuickActionsDock(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (onOpenMarketList != null) {
-                QuickActionItem(
-                    icon = Icons.Outlined.ShoppingCart,
-                    label = if (isBn) "বাজার সদাই" else "Market",
-                    tintColor = Color(0xFF00A8FF),
-                    onClick = {
-                        haptics.lightTick()
-                        onOpenMarketList()
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
             if (onNavigateToAccounts != null) {
                 QuickActionItem(
                     icon = Icons.Outlined.AccountBalance,
                     label = if (isBn) "অ্যাকাউন্টস" else "Accounts",
-                    tintColor = Color(0xFF00B894),
+                    tintColor = if (appColors.isDark) Color(0xFF00B894) else Color(0xFF0D9488),
                     onClick = {
                         haptics.mediumClick()
                         onNavigateToAccounts()
@@ -94,7 +83,7 @@ fun DashboardQuickActionsDock(
                 QuickActionItem(
                     icon = Icons.Outlined.ReceiptLong,
                     label = if (isBn) "বিল পে" else "Bills",
-                    tintColor = Color(0xFFF7941D),
+                    tintColor = appColors.warning,
                     onClick = {
                         haptics.mediumClick()
                         onNavigateToBills()
@@ -107,7 +96,7 @@ fun DashboardQuickActionsDock(
                 QuickActionItem(
                     icon = Icons.Outlined.Handshake,
                     label = if (isBn) "ধার-দেনা" else "Debts",
-                    tintColor = Color(0xFF9C27B0),
+                    tintColor = if (appColors.isDark) Color(0xFF9C27B0) else Color(0xFF7E22CE),
                     onClick = {
                         haptics.mediumClick()
                         onNavigateToReceivables()
@@ -120,10 +109,23 @@ fun DashboardQuickActionsDock(
                 QuickActionItem(
                     icon = Icons.Outlined.Savings,
                     label = if (isBn) "বাজেট" else "Budget",
-                    tintColor = Color(0xFFE84393),
+                    tintColor = if (appColors.isDark) Color(0xFFE84393) else Color(0xFFBE185D),
                     onClick = {
                         haptics.mediumClick()
                         onNavigateToBudgets()
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (onOpenMarketList != null) {
+                QuickActionItem(
+                    icon = Icons.Outlined.ShoppingCart,
+                    label = if (isBn) "বাজার ফর্দ" else "Market",
+                    tintColor = if (appColors.isDark) Color(0xFF00A8FF) else Color(0xFF0284C7),
+                    onClick = {
+                        haptics.mediumClick()
+                        onOpenMarketList()
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -143,6 +145,7 @@ fun QuickActionItem(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
+            .minimumInteractiveComponentSize()
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp, horizontal = 2.dp)

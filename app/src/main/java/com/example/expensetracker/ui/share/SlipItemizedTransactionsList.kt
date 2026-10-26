@@ -9,8 +9,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,15 +30,11 @@ import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.getLocalizedAccountName
 import com.example.expensetracker.data.model.getLocalizedCategoryName
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun SlipItemizedTransactionsList(
@@ -43,6 +43,7 @@ fun SlipItemizedTransactionsList(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -56,12 +57,12 @@ fun SlipItemizedTransactionsList(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.5.sp
                 ),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
             Text(
                 text = if (strings.isBangla) "${transactions.size} টি এন্ট্রি" else "${transactions.size} entries",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Normal),
-                color = ColorTextMuted
+                color = appColors.textMuted
             )
         }
 
@@ -77,14 +78,14 @@ fun SlipItemizedTransactionsList(
                 Text(
                     text = if (strings.isBangla) "এই সময়ে কোনো লেনদেন নেই" else "No expenses recorded in this period",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = ColorTextMuted
+                    color = appColors.textMuted
                 )
             }
         } else {
             val displayList = transactions.take(10)
             displayList.forEachIndexed { index, tx ->
                 val isIncome = tx.type == TransactionType.INCOME
-                val amountColor = if (isIncome) ColorSuccessIncome else ColorDangerExpense
+                val amountColor = if (isIncome) appColors.income else appColors.expense
                 val formattedAmount = "${if (isIncome) "+" else "-"}${formatCurrency(tx.amount, currencySymbol)}"
 
                 Row(
@@ -111,7 +112,7 @@ fun SlipItemizedTransactionsList(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
-                                color = ColorTextPrimary,
+                                color = appColors.textPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -124,16 +125,30 @@ fun SlipItemizedTransactionsList(
                                 append(" • ")
                                 append(DateTimeHelper.formatTimeOnly(tx.dateMillis, strings.isBangla))
                             }
-                            Text(
-                                text = metaString,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Normal
-                                ),
-                                color = ColorTextSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = metaString,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Normal
+                                    ),
+                                    color = appColors.textSecondary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                if (tx.receiptImagePath != null) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.ReceiptLong,
+                                        contentDescription = if (strings.isBangla) "রশিদ সংযুক্ত" else "Receipt Attached",
+                                        tint = appColors.accent,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -160,7 +175,7 @@ fun SlipItemizedTransactionsList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF161D2E))
+                        .background(if (appColors.isDark) Color(0xFF161D2E) else appColors.surfaceVariant)
                         .padding(vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -170,7 +185,7 @@ fun SlipItemizedTransactionsList(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
             }

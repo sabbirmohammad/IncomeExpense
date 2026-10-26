@@ -161,29 +161,30 @@ internal class RecurringBillTableHelper(private val dbHelper: ExpenseDatabaseHel
             val baseTime = if (b.nextDueDateMillis > 0) b.nextDueDateMillis else System.currentTimeMillis()
             cal.timeInMillis = baseTime
 
-            when (b.frequency) {
-                BillFrequency.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
-                BillFrequency.YEARLY -> {
-                    cal.add(Calendar.YEAR, 1)
-                    val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                    cal.set(Calendar.DAY_OF_MONTH, b.dueDay.coerceIn(1, maxDay))
+            fun advanceOnePeriod() {
+                when (b.frequency) {
+                    BillFrequency.WEEKLY -> cal.add(Calendar.WEEK_OF_YEAR, 1)
+                    BillFrequency.MONTHLY -> {
+                        cal.add(Calendar.MONTH, 1)
+                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                        cal.set(Calendar.DAY_OF_MONTH, b.dueDay.coerceIn(1, maxDay))
+                    }
+                    BillFrequency.YEARLY -> {
+                        cal.add(Calendar.YEAR, 1)
+                        val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                        cal.set(Calendar.DAY_OF_MONTH, b.dueDay.coerceIn(1, maxDay))
+                    }
                 }
-                BillFrequency.MONTHLY -> {
-                    cal.add(Calendar.MONTH, 1)
-                    val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                    cal.set(Calendar.DAY_OF_MONTH, b.dueDay.coerceIn(1, maxDay))
-                }
+                cal.set(Calendar.HOUR_OF_DAY, 9)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
             }
-            cal.set(Calendar.HOUR_OF_DAY, 9)
-            cal.set(Calendar.MINUTE, 0)
-            cal.set(Calendar.SECOND, 0)
-            cal.set(Calendar.MILLISECOND, 0)
 
+            advanceOnePeriod()
             val now = System.currentTimeMillis()
-            while (cal.timeInMillis <= now && b.frequency == BillFrequency.MONTHLY) {
-                cal.add(Calendar.MONTH, 1)
-                val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-                cal.set(Calendar.DAY_OF_MONTH, b.dueDay.coerceIn(1, maxDay))
+            while (cal.timeInMillis <= now) {
+                advanceOnePeriod()
             }
 
             val billCv = ContentValues().apply {

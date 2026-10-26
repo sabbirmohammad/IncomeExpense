@@ -8,11 +8,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.LocalAppStrings
 import java.util.Calendar
 import java.util.TimeZone
+import com.example.expensetracker.theme.LocalAppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,6 +20,7 @@ fun ReceivableDatePickerDialog(
     onDateSelected: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val initialUtcMillis = remember(initialDateMillis) {
         val localCal = Calendar.getInstance().apply {
@@ -63,12 +63,12 @@ fun ReceivableDatePickerDialog(
                 }
                 onDismiss()
             }) {
-                Text(strings.confirm, color = ColorAccent)
+                Text(strings.confirm, color = appColors.accent)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     ) {

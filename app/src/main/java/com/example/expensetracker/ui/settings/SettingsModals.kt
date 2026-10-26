@@ -1,6 +1,5 @@
 package com.example.expensetracker.ui.settings
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.TransactionType
@@ -31,14 +30,8 @@ fun SettingsModals(
     showRestoreConfirmDialog: Boolean,
     onDismissRestoreConfirmDialog: () -> Unit,
     onConfirmDriveRestore: () -> Unit,
-    selectedLocalBackupUri: Uri?,
-    showLocalRestoreConfirmDialog: Boolean,
-    onDismissLocalRestoreConfirmDialog: () -> Unit,
-    onConfirmLocalRestore: (Uri) -> Unit,
     showShareSlipSheet: Boolean,
     onDismissShareSlipSheet: () -> Unit,
-    showAiSuccessDialog: Boolean,
-    onDismissAiSuccessDialog: () -> Unit,
     isBangla: Boolean
 ) {
     if (showAllCategoriesSheet) {
@@ -92,25 +85,10 @@ fun SettingsModals(
         )
     }
 
-    if (showLocalRestoreConfirmDialog && selectedLocalBackupUri != null) {
-        LocalFileRestoreConfirmDialog(
-            backupUri = selectedLocalBackupUri,
-            onDismiss = onDismissLocalRestoreConfirmDialog,
-            onConfirm = onConfirmLocalRestore
-        )
-    }
-
     if (showShareSlipSheet) {
         ShareExpenseSheet(
             initialPeriod = SharePeriodType.THIS_MONTH,
             onDismiss = onDismissShareSlipSheet
-        )
-    }
-
-    if (showAiSuccessDialog) {
-        AiConnectionSuccessDialog(
-            isBangla = isBangla,
-            onDismiss = onDismissAiSuccessDialog
         )
     }
 }

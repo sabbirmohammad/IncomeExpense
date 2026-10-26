@@ -21,10 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
-import com.example.expensetracker.data.model.getLocalizedAccountName
-import com.example.expensetracker.theme.ColorWarningBills
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun AccountBalanceWarning(
@@ -35,12 +34,13 @@ fun AccountBalanceWarning(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     if (isExpense && account != null && amount > account.currentBalance && account.currentBalance > 0.0) {
         Spacer(modifier = Modifier.height(6.dp))
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = ColorWarningBills.copy(alpha = 0.12f),
-            border = BorderStroke(1.dp, ColorWarningBills.copy(alpha = 0.3f)),
+            color = appColors.warning.copy(alpha = 0.12f),
+            border = BorderStroke(1.dp, appColors.warning.copy(alpha = 0.3f)),
             modifier = modifier.fillMaxWidth()
         ) {
             Row(
@@ -51,7 +51,7 @@ fun AccountBalanceWarning(
                 Icon(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = null,
-                    tint = ColorWarningBills,
+                    tint = appColors.warning,
                     modifier = Modifier.size(14.dp)
                 )
                 Text(
@@ -60,7 +60,7 @@ fun AccountBalanceWarning(
                     else
                         "Balance in ${account.getLocalizedName(false)} is ${formatCurrency(account.currentBalance, currencySymbol, false)}. Balance will become negative after this expense.",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = ColorWarningBills
+                    color = appColors.warning
                 )
             }
         }

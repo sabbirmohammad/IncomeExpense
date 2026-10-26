@@ -23,7 +23,7 @@ fun List<Transaction>.toFinancialSummary(overallBudget: Double = 0.0): Financial
     var totalExpense = 0.0
 
     for (tx in this) {
-        if (tx.isAccountTransfer() || tx.isDebtFlow()) continue
+        if (tx.isAccountTransfer() || tx.isDebtFlow() || tx.isReconciliation()) continue
         if (tx.type == TransactionType.INCOME) {
             totalIncome += tx.amount
         } else {

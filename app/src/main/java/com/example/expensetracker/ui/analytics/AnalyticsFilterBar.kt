@@ -26,11 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.model.TimeFilter
 import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.components.DropdownFilterChip
 import com.example.expensetracker.ui.components.Strings
@@ -45,6 +41,7 @@ fun AnalyticsFilterBar(
     onTimeFilterChange: (TimeFilter) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     var showTypeMenu by remember { mutableStateOf(false) }
     var showTimeMenu by remember { mutableStateOf(false) }
 
@@ -60,7 +57,7 @@ fun AnalyticsFilterBar(
             val isExpense = transactionType == TransactionType.EXPENSE
             val typeText = if (isExpense) strings.expense else strings.income
             val typeIcon = if (isExpense) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward
-            val typeColor = if (isExpense) ColorDangerExpense else ColorSuccessIncome
+            val typeColor = if (isExpense) appColors.expense else appColors.income
 
             DropdownFilterChip(
                 text = typeText,
@@ -76,13 +73,13 @@ fun AnalyticsFilterBar(
             DropdownMenu(
                 expanded = showTypeMenu,
                 onDismissRequest = { showTypeMenu = false },
-                modifier = Modifier.background(ColorSurface)
+                modifier = Modifier.background(appColors.surface)
             ) {
                 DropdownMenuItem(
                     text = {
                         Text(
                             text = strings.expense,
-                            color = ColorDangerExpense,
+                            color = appColors.expense,
                             fontWeight = if (isExpense) FontWeight.Bold else FontWeight.Normal
                         )
                     },
@@ -90,7 +87,7 @@ fun AnalyticsFilterBar(
                         Icon(
                             imageVector = Icons.Outlined.ArrowDownward,
                             contentDescription = null,
-                            tint = ColorDangerExpense,
+                            tint = appColors.expense,
                             modifier = Modifier.size(18.dp)
                         )
                     },
@@ -104,7 +101,7 @@ fun AnalyticsFilterBar(
                     text = {
                         Text(
                             text = strings.income,
-                            color = ColorSuccessIncome,
+                            color = appColors.income,
                             fontWeight = if (!isExpense) FontWeight.Bold else FontWeight.Normal
                         )
                     },
@@ -112,7 +109,7 @@ fun AnalyticsFilterBar(
                         Icon(
                             imageVector = Icons.Outlined.ArrowUpward,
                             contentDescription = null,
-                            tint = ColorSuccessIncome,
+                            tint = appColors.income,
                             modifier = Modifier.size(18.dp)
                         )
                     },
@@ -140,7 +137,7 @@ fun AnalyticsFilterBar(
                 text = timeText,
                 isActive = timeFilter != TimeFilter.ALL,
                 icon = Icons.Outlined.CalendarToday,
-                activeColor = ColorAccent,
+                activeColor = appColors.accent,
                 onClick = {
                     haptics.lightTick()
                     showTimeMenu = true
@@ -150,7 +147,7 @@ fun AnalyticsFilterBar(
             DropdownMenu(
                 expanded = showTimeMenu,
                 onDismissRequest = { showTimeMenu = false },
-                modifier = Modifier.background(ColorSurface)
+                modifier = Modifier.background(appColors.surface)
             ) {
                 listOf(
                     TimeFilter.THIS_MONTH to strings.thisMonth,
@@ -163,7 +160,7 @@ fun AnalyticsFilterBar(
                         text = {
                             Text(
                                 text = label,
-                                color = if (timeFilter == filter) ColorAccent else ColorTextPrimary,
+                                color = if (timeFilter == filter) appColors.accent else appColors.textPrimary,
                                 fontWeight = if (timeFilter == filter) FontWeight.Bold else FontWeight.Normal
                             )
                         },

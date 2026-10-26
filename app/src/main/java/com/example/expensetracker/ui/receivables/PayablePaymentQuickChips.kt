@@ -8,15 +8,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun PayablePaymentQuickChips(
@@ -25,6 +26,7 @@ fun PayablePaymentQuickChips(
     onAmountSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -37,9 +39,10 @@ fun PayablePaymentQuickChips(
         ).forEach { (label, amt) ->
             Surface(
                 shape = RoundedCornerShape(SmallElementRadius),
-                color = ColorAccent.copy(alpha = 0.12f),
+                color = appColors.accent.copy(alpha = 0.12f),
                 modifier = Modifier
                     .weight(1f)
+                    .minimumInteractiveComponentSize()
                     .clickable {
                         haptics.lightTick()
                         onAmountSelected(amt.toInt().toString())
@@ -49,7 +52,7 @@ fun PayablePaymentQuickChips(
                     text = label,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = ColorAccent,
+                    color = appColors.accent,
                     modifier = Modifier
                         .padding(vertical = 8.dp)
                         .fillMaxWidth(),

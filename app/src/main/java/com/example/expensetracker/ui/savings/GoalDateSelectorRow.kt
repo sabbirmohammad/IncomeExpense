@@ -23,13 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -45,17 +39,18 @@ fun GoalDateSelectorRow(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val dateFormat = remember(strings.isBangla) {
         SimpleDateFormat("dd MMM yyyy", DateTimeHelper.getLocale(strings.isBangla))
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text("${strings.targetDate} (${strings.optional})", fontSize = 12.sp, color = ColorTextSecondary)
+        Text("${strings.targetDate} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
         Spacer(modifier = Modifier.height(4.dp))
         Surface(
             shape = RoundedCornerShape(SmallElementRadius),
-            color = ColorBackground,
-            border = BorderStroke(1.dp, ColorBorder),
+            color = appColors.surfaceVariant,
+            border = BorderStroke(1.dp, appColors.border),
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onOpenDatePicker() }
@@ -66,7 +61,7 @@ fun GoalDateSelectorRow(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.CalendarToday, null, tint = ColorAccent, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Outlined.CalendarToday, null, tint = appColors.accent, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (targetDateMillis != null) {
@@ -74,14 +69,14 @@ fun GoalDateSelectorRow(
                             if (strings.isBangla) convertToBengaliDigits(dateStr) else dateStr
                         } else (if (strings.isBangla) "টার্গেট তারিখ বেছে নিন" else "Pick a target date"),
                         fontSize = 13.sp,
-                        color = if (targetDateMillis != null) ColorTextPrimary else ColorTextMuted
+                        color = if (targetDateMillis != null) appColors.textPrimary else appColors.textMuted
                     )
                 }
                 if (targetDateMillis != null) {
                     Text(
                         text = strings.clear,
                         fontSize = 11.sp,
-                        color = ColorDangerExpense,
+                        color = appColors.expense,
                         modifier = Modifier.clickable { onClearDate() }
                     )
                 }

@@ -35,13 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 
@@ -54,6 +48,9 @@ fun MarketTripCardHeader(
     isBangla: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
+    val marketTeal = if (appColors.isDark) Color(0xFF2EC4B6) else Color(0xFF0F766E)
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -68,13 +65,13 @@ fun MarketTripCardHeader(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2EC4B6).copy(alpha = 0.15f)),
+                    .background(marketTeal.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Outlined.ShoppingCart,
                     contentDescription = null,
-                    tint = Color(0xFF2EC4B6),
+                    tint = marketTeal,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -86,13 +83,13 @@ fun MarketTripCardHeader(
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = dateText,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
             }
         }
@@ -101,7 +98,7 @@ fun MarketTripCardHeader(
             Text(
                 text = if (isBangla) "মোট বাজার খরচ" else "Total Spent",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                color = ColorTextMuted
+                color = appColors.textMuted
             )
             Text(
                 text = formatCurrency(totalSpent, currencySymbol),
@@ -109,7 +106,7 @@ fun MarketTripCardHeader(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = ColorSuccessIncome
+                color = appColors.income
             )
         }
     }
@@ -127,6 +124,9 @@ fun MarketTripCardActionsRow(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
+    val marketTeal = if (appColors.isDark) Color(0xFF2EC4B6) else Color(0xFF0F766E)
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -145,10 +145,10 @@ fun MarketTripCardActionsRow(
 
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = if (isAllCompleted) ColorSuccessIncome.copy(alpha = 0.12f) else Color(0xFF2EC4B6).copy(alpha = 0.12f),
+            color = if (isAllCompleted) appColors.income.copy(alpha = 0.12f) else marketTeal.copy(alpha = 0.12f),
             border = BorderStroke(
                 1.dp,
-                if (isAllCompleted) ColorSuccessIncome.copy(alpha = 0.35f) else Color(0xFF2EC4B6).copy(alpha = 0.35f)
+                if (isAllCompleted) appColors.income.copy(alpha = 0.35f) else marketTeal.copy(alpha = 0.35f)
             )
         ) {
             Text(
@@ -157,7 +157,7 @@ fun MarketTripCardActionsRow(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = if (isAllCompleted) ColorSuccessIncome else Color(0xFF2EC4B6),
+                color = if (isAllCompleted) appColors.income else marketTeal,
                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
             )
         }
@@ -168,8 +168,8 @@ fun MarketTripCardActionsRow(
         ) {
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = ColorAccent.copy(alpha = 0.1f),
-                border = BorderStroke(1.dp, ColorAccent.copy(alpha = 0.25f)),
+                color = appColors.accent.copy(alpha = 0.1f),
+                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
                 modifier = Modifier.clickable(onClick = onToggleExpand)
             ) {
                 Row(
@@ -183,12 +183,12 @@ fun MarketTripCardActionsRow(
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = ColorAccent
+                        color = appColors.accent
                     )
                     Icon(
                         imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                         contentDescription = null,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(15.dp)
                     )
                 }
@@ -196,13 +196,12 @@ fun MarketTripCardActionsRow(
 
             Box {
                 IconButton(
-                    onClick = { onShowOptionsMenu(true) },
-                    modifier = Modifier.size(32.dp)
+                    onClick = { onShowOptionsMenu(true) }
                 ) {
                     Icon(
                         imageVector = Icons.Filled.MoreVert,
                         contentDescription = "Options",
-                        tint = ColorTextMuted,
+                        tint = appColors.textMuted,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -210,13 +209,13 @@ fun MarketTripCardActionsRow(
                 DropdownMenu(
                     expanded = showOptionsMenu,
                     onDismissRequest = { onShowOptionsMenu(false) },
-                    modifier = Modifier.background(ColorSurface)
+                    modifier = Modifier.background(appColors.surface)
                 ) {
                     DropdownMenuItem(
                         text = {
                             Text(
                                 text = if (isBangla) "বাজার ফর্দ মুছে ফেলুন" else "Delete Market List",
-                                color = ColorDangerExpense,
+                                color = appColors.expense,
                                 fontWeight = FontWeight.Medium
                             )
                         },
@@ -224,7 +223,7 @@ fun MarketTripCardActionsRow(
                             Icon(
                                 imageVector = Icons.Outlined.Delete,
                                 contentDescription = null,
-                                tint = ColorDangerExpense,
+                                tint = appColors.expense,
                                 modifier = Modifier.size(18.dp)
                             )
                         },

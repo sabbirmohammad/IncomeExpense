@@ -26,11 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.MarketItem
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.formatCurrency
@@ -42,11 +37,12 @@ fun MarketTripItemsBreakdown(
     isBangla: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     if (items.isEmpty()) return
 
     Column(modifier = modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.height(10.dp))
-        HairlineDivider(color = ColorBorder.copy(alpha = 0.7f))
+        HairlineDivider(color = appColors.border.copy(alpha = 0.7f))
         Spacer(modifier = Modifier.height(8.dp))
 
         Column(
@@ -72,7 +68,7 @@ fun MarketTripItemsBreakdown(
                                 .size(18.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (item.isPurchased) ColorSuccessIncome else ColorTextMuted.copy(alpha = 0.3f)
+                                    if (item.isPurchased) appColors.income else appColors.textMuted.copy(alpha = 0.3f)
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -92,13 +88,13 @@ fun MarketTripItemsBreakdown(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
 
                         Text(
                             text = "(${item.formatQuantity()})",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
 
@@ -112,7 +108,7 @@ fun MarketTripItemsBreakdown(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (item.amount != null && item.amount > 0) ColorSuccessIncome else ColorTextMuted
+                        color = if (item.amount != null && item.amount > 0) appColors.income else appColors.textMuted
                     )
                 }
             }

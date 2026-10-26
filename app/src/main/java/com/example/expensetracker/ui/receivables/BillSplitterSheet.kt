@@ -40,11 +40,7 @@ import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.BillSplitData
 import com.example.expensetracker.data.model.BillSplitFriend
 import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
@@ -60,6 +56,7 @@ fun BillSplitterSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val context = LocalContext.current
 
@@ -90,7 +87,7 @@ fun BillSplitterSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
@@ -117,7 +114,7 @@ fun BillSplitterSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Text(text = strings.payingAccount, fontSize = 12.sp, color = ColorTextMuted)
+            Text(text = strings.payingAccount, fontSize = 12.sp, color = appColors.textMuted)
             Spacer(modifier = Modifier.height(6.dp))
             BillSplitterAccountPicker(
                 accounts = accounts,
@@ -136,8 +133,8 @@ fun BillSplitterSheet(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border
                 )
             )
 
@@ -197,7 +194,7 @@ fun BillSplitterSheet(
 
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = errorMessage ?: "", color = ColorDangerExpense, fontSize = 12.sp)
+                Text(text = errorMessage ?: "", color = appColors.expense, fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

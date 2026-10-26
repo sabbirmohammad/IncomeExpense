@@ -21,8 +21,8 @@ import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.BillSplitData
 import com.example.expensetracker.data.model.BillSplitFriend
 import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.ui.components.AppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillSplitterConfirmButton(
@@ -41,6 +41,7 @@ fun BillSplitterConfirmButton(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Button(
         onClick = {
             if (totalBill <= 0.0) {
@@ -74,7 +75,7 @@ fun BillSplitterConfirmButton(
         },
         modifier = modifier.fillMaxWidth().height(48.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+        colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
     ) {
         Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.White)
         Spacer(modifier = Modifier.width(8.dp))

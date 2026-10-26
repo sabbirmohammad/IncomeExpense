@@ -1,13 +1,17 @@
 package com.example.expensetracker.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 enum class AppThemeMode(val key: String) {
     SYSTEM("system"),
@@ -31,21 +35,36 @@ data class AppColors(
     val textSecondary: Color,
     val textMuted: Color,
     val accent: Color,
-    val navBorder: Color,
-    val navInactive: Color,
-    val isDark: Boolean
-)
+    val income: Color = ColorSuccessIncome,
+    val expense: Color = ColorDangerExpense,
+    val warning: Color = ColorWarningBills,
+    val info: Color = ColorInfoTransport,
+    val neutral: Color = ColorNeutralCategory,
+    val navBorder: Color = ColorNavBorder,
+    val navInactive: Color = ColorNavInactive,
+    val isDark: Boolean = true
+) {
+    val successIncome: Color get() = income
+    val dangerExpense: Color get() = expense
+    val warningBills: Color get() = warning
+    val infoTransport: Color get() = info
+}
 
 val DarkAppColors = AppColors(
     background = ColorBackground,
     surface = ColorSurface,
-    surfaceVariant = ColorSurface,
+    surfaceVariant = ColorSurfaceVariant,
     border = ColorBorder,
     borderDashed = ColorBorderDashed,
     textPrimary = ColorTextPrimary,
     textSecondary = ColorTextSecondary,
     textMuted = ColorTextMuted,
     accent = ColorAccent,
+    income = ColorSuccessIncome,
+    expense = ColorDangerExpense,
+    warning = ColorWarningBills,
+    info = ColorInfoTransport,
+    neutral = ColorNeutralCategory,
     navBorder = ColorNavBorder,
     navInactive = ColorNavInactive,
     isDark = true
@@ -54,13 +73,18 @@ val DarkAppColors = AppColors(
 val AmoledAppColors = AppColors(
     background = ColorBackgroundAmoled,
     surface = ColorSurfaceAmoled,
-    surfaceVariant = ColorSurfaceAmoled,
+    surfaceVariant = ColorSurfaceVariantAmoled,
     border = ColorBorderAmoled,
     borderDashed = ColorBorderDashedAmoled,
     textPrimary = ColorTextPrimary,
     textSecondary = ColorTextSecondary,
     textMuted = ColorTextMuted,
     accent = ColorAccent,
+    income = ColorSuccessIncome,
+    expense = ColorDangerExpense,
+    warning = ColorWarningBills,
+    info = ColorInfoTransport,
+    neutral = ColorNeutralCategory,
     navBorder = ColorBorderAmoled,
     navInactive = ColorNavInactive,
     isDark = true
@@ -76,6 +100,11 @@ val LightAppColors = AppColors(
     textSecondary = ColorTextSecondaryLight,
     textMuted = ColorTextMutedLight,
     accent = ColorAccentLight,
+    income = ColorSuccessIncomeLight,
+    expense = ColorDangerExpenseLight,
+    warning = ColorWarningBillsLight,
+    info = ColorInfoTransportLight,
+    neutral = ColorNeutralCategoryLight,
     navBorder = ColorBorderLight,
     navInactive = ColorTextMutedLight,
     isDark = false
@@ -96,7 +125,7 @@ private val AppDarkColorScheme = darkColorScheme(
     onBackground = ColorTextPrimary,
     surface = ColorSurface,
     onSurface = ColorTextPrimary,
-    surfaceVariant = ColorSurface,
+    surfaceVariant = ColorSurfaceVariant,
     onSurfaceVariant = ColorTextSecondary,
     outline = ColorBorder,
     outlineVariant = ColorBorderDashed
@@ -115,7 +144,7 @@ private val AppAmoledColorScheme = darkColorScheme(
     onBackground = ColorTextPrimary,
     surface = ColorSurfaceAmoled,
     onSurface = ColorTextPrimary,
-    surfaceVariant = ColorSurfaceAmoled,
+    surfaceVariant = ColorSurfaceVariantAmoled,
     onSurfaceVariant = ColorTextSecondary,
     outline = ColorBorderAmoled,
     outlineVariant = ColorBorderDashedAmoled
@@ -126,9 +155,9 @@ private val AppLightColorScheme = lightColorScheme(
     onPrimary = Color.White,
     primaryContainer = ColorAccentLight.copy(alpha = 0.12f),
     onPrimaryContainer = ColorAccentLight,
-    secondary = ColorSuccessIncome,
+    secondary = ColorSuccessIncomeLight,
     onSecondary = Color.White,
-    tertiary = ColorDangerExpense,
+    tertiary = ColorDangerExpenseLight,
     onTertiary = Color.White,
     background = ColorBackgroundLight,
     onBackground = ColorTextPrimaryLight,
@@ -156,6 +185,18 @@ fun ExpenseTrackerTheme(
         AppThemeMode.DARK -> AppDarkColorScheme to DarkAppColors
     }
 
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = !appColors.isDark
+                insetsController.isAppearanceLightNavigationBars = !appColors.isDark
+            }
+        }
+    }
+
     CompositionLocalProvider(
         LocalAppColors provides appColors
     ) {
@@ -167,4 +208,3 @@ fun ExpenseTrackerTheme(
         )
     }
 }
-

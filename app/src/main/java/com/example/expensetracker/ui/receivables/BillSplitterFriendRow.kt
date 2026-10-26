@@ -22,12 +22,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.BillSplitFriend
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.ui.components.AppHaptics
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillSplitterFriendRow(
@@ -44,6 +41,7 @@ fun BillSplitterFriendRow(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -58,8 +56,8 @@ fun BillSplitterFriendRow(
             singleLine = true,
             modifier = Modifier.weight(1.2f),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ColorAccent,
-                unfocusedBorderColor = ColorBorder
+                focusedBorderColor = appColors.accent,
+                unfocusedBorderColor = appColors.border
             )
         )
 
@@ -71,8 +69,8 @@ fun BillSplitterFriendRow(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.weight(1f),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ColorAccent,
-                unfocusedBorderColor = ColorBorder
+                focusedBorderColor = appColors.accent,
+                unfocusedBorderColor = appColors.border
             )
         )
 
@@ -88,15 +86,15 @@ fun BillSplitterFriendRow(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.width(90.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border
                 )
             )
         } else {
             Text(
                 text = "$currencySymbol ${String.format(Locale.US, "%,.0f", equalShare)}",
                 fontWeight = FontWeight.Bold,
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 fontSize = 13.sp
             )
         }
@@ -106,13 +104,12 @@ fun BillSplitterFriendRow(
                 onClick = {
                     haptics.lightTick()
                     onRemove()
-                },
-                modifier = Modifier.size(28.dp)
+                }
             ) {
                 Icon(
                     Icons.Filled.Close,
                     contentDescription = if (isBangla) "মুছে ফেলুন" else "Remove",
-                    tint = ColorDangerExpense,
+                    tint = appColors.expense,
                     modifier = Modifier.size(16.dp)
                 )
             }

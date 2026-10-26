@@ -13,7 +13,6 @@ import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.expensetracker.theme.ColorAccent
 import java.util.Locale
 
 /**
@@ -41,7 +40,7 @@ fun parseGoalColor(hex: String): Color {
     return try {
         Color(android.graphics.Color.parseColor(hex))
     } catch (e: Exception) {
-        ColorAccent
+        Color(0xFF3B6EF5)
     }
 }
 

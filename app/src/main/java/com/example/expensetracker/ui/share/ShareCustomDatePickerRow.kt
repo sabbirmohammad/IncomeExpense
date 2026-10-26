@@ -29,15 +29,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ShareCustomDatePickerRow(
@@ -50,6 +47,7 @@ fun ShareCustomDatePickerRow(
     onEndDateChange: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -61,8 +59,8 @@ fun ShareCustomDatePickerRow(
             modifier = Modifier
                 .weight(1f)
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF1A2033))
-                .border(1.dp, ColorBorder, RoundedCornerShape(10.dp))
+                .background(appColors.surfaceVariant)
+                .border(1.dp, appColors.border, RoundedCornerShape(10.dp))
                 .clickable {
                     val c = Calendar.getInstance().apply { timeInMillis = customStartDateMillis }
                     DatePickerDialog(
@@ -89,14 +87,14 @@ fun ShareCustomDatePickerRow(
                 Text(
                     text = "${strings.date} (From)",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Outlined.CalendarToday,
                         contentDescription = null,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -107,7 +105,7 @@ fun ShareCustomDatePickerRow(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
             }
@@ -118,8 +116,8 @@ fun ShareCustomDatePickerRow(
             modifier = Modifier
                 .weight(1f)
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF1A2033))
-                .border(1.dp, ColorBorder, RoundedCornerShape(10.dp))
+                .background(appColors.surfaceVariant)
+                .border(1.dp, appColors.border, RoundedCornerShape(10.dp))
                 .clickable {
                     val c = Calendar.getInstance().apply { timeInMillis = customEndDateMillis }
                     DatePickerDialog(
@@ -146,14 +144,14 @@ fun ShareCustomDatePickerRow(
                 Text(
                     text = "${strings.date} (To)",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Outlined.CalendarToday,
                         contentDescription = null,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -164,7 +162,7 @@ fun ShareCustomDatePickerRow(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
             }

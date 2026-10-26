@@ -26,11 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -42,14 +38,15 @@ fun SettingsDriveAccountRow(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     if (email != null) {
         Row(
             modifier = modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(SmallElementRadius))
-                .background(ColorSurface)
-                .border(1.dp, ColorBorder, RoundedCornerShape(SmallElementRadius))
+                .background(appColors.surfaceVariant)
+                .border(1.dp, appColors.border, RoundedCornerShape(SmallElementRadius))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -57,7 +54,7 @@ fun SettingsDriveAccountRow(
             Text(
                 text = email,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 maxLines = 1,
                 modifier = Modifier.weight(1f)
             )
@@ -67,7 +64,7 @@ fun SettingsDriveAccountRow(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = ColorDangerExpense,
+                color = appColors.expense,
                 modifier = Modifier
                     .clickable { onDisconnect() }
                     .padding(4.dp)
@@ -78,7 +75,7 @@ fun SettingsDriveAccountRow(
             onClick = onConnect,
             modifier = modifier.fillMaxWidth(),
             shape = RoundedCornerShape(SmallElementRadius),
-            colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
         ) {
             Icon(
                 imageVector = Icons.Outlined.CloudSync,

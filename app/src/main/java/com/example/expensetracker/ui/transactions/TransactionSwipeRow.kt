@@ -21,11 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.data.model.getLocalizedAccountName
 import com.example.expensetracker.data.model.getLocalizedCategoryName
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.ListRow
@@ -42,9 +38,10 @@ fun TransactionSwipeRow(
     onDelete: (Transaction) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val isIncome = transaction.type == TransactionType.INCOME
     val amountFormatted = "${if (isIncome) "+" else "-"} ${formatCurrency(transaction.amount, currencySymbol, useBengaliNumerals || isBangla)}"
-    val amountColor = if (isIncome) ColorSuccessIncome else ColorDangerExpense
+    val amountColor = if (isIncome) appColors.income else appColors.expense
     val meta = "${getLocalizedCategoryName(transaction.categoryName, isBangla)} • ${DateTimeHelper.formatTimeOnly(transaction.dateMillis, isBangla, useBengaliNumerals || isBangla)}"
 
     val dismissState = rememberSwipeToDismissBoxState(
@@ -69,7 +66,7 @@ fun TransactionSwipeRow(
         backgroundContent = {
             val direction = dismissState.dismissDirection
             val isDelete = direction == SwipeToDismissBoxValue.EndToStart
-            val bgColor = if (isDelete) ColorDangerExpense else ColorAccent
+            val bgColor = if (isDelete) appColors.expense else appColors.accent
             val icon = if (isDelete) Icons.Outlined.Delete else Icons.Outlined.Edit
             val alignment = if (isDelete) Alignment.CenterEnd else Alignment.CenterStart
             Box(
@@ -105,7 +102,7 @@ fun TransactionSwipeRow(
                 amountColor = amountColor,
                 onClick = { onEdit(transaction) },
                 paymentMethod = transaction.paymentMethod,
-                paymentMethodName = getLocalizedAccountName(transaction.accountName, isBangla),
+                paymentMethodName = transaction.accountName?.takeIf { it.isNotBlank() },
                 hasReceipt = transaction.receiptImagePath != null
             )
         }

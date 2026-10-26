@@ -26,15 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun SlipHeaderSummarySection(
@@ -47,6 +42,7 @@ fun SlipHeaderSummarySection(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Column(modifier = modifier.fillMaxWidth()) {
         // 1. Top Header: App Branding & User Profile
         Row(
@@ -62,14 +58,14 @@ fun SlipHeaderSummarySection(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(ColorAccent.copy(alpha = 0.15f))
-                        .border(1.dp, ColorAccent.copy(alpha = 0.4f), CircleShape),
+                        .background(appColors.accent.copy(alpha = 0.15f))
+                        .border(1.dp, appColors.accent.copy(alpha = 0.4f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.ReceiptLong,
                         contentDescription = null,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -80,12 +76,12 @@ fun SlipHeaderSummarySection(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                     Text(
                         text = if (userName.isNotBlank()) (if (strings.isBangla) "$userName-এর খাতা" else "$userName's Ledger") else (if (strings.isBangla) "আর্থিক স্লিপ" else "Financial Slip"),
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
             }
@@ -93,7 +89,7 @@ fun SlipHeaderSummarySection(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF1F283E))
+                    .background(if (appColors.isDark) Color(0xFF1F283E) else appColors.accent.copy(alpha = 0.12f))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -103,7 +99,7 @@ fun SlipHeaderSummarySection(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
-                    color = ColorAccent
+                    color = appColors.accent
                 )
             }
         }
@@ -115,7 +111,8 @@ fun SlipHeaderSummarySection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF181F33))
+                .background(if (appColors.isDark) Color(0xFF181F33) else appColors.surfaceVariant)
+                .border(1.dp, appColors.border, RoundedCornerShape(12.dp))
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
@@ -125,7 +122,7 @@ fun SlipHeaderSummarySection(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.5.sp
                 ),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -134,7 +131,7 @@ fun SlipHeaderSummarySection(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         }
 
@@ -148,7 +145,7 @@ fun SlipHeaderSummarySection(
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 1.sp
             ),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -157,7 +154,7 @@ fun SlipHeaderSummarySection(
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             ),
-            color = ColorDangerExpense
+            color = appColors.expense
         )
 
         if (totalIncome > 0) {
@@ -170,15 +167,15 @@ fun SlipHeaderSummarySection(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF13221E))
-                        .border(1.dp, ColorSuccessIncome.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                        .background(if (appColors.isDark) Color(0xFF13221E) else appColors.income.copy(alpha = 0.08f))
+                        .border(1.dp, appColors.income.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Column {
                         Text(
                             text = if (strings.isBangla) "মোট আয়" else "Total Income",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                         Text(
                             text = "+${formatCurrency(totalIncome, currencySymbol)}",
@@ -186,26 +183,26 @@ fun SlipHeaderSummarySection(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorSuccessIncome
+                            color = appColors.income
                         )
                     }
                 }
 
                 val net = totalIncome - totalExpense
-                val netColor = if (net >= 0) ColorSuccessIncome else ColorDangerExpense
+                val netColor = if (net >= 0) appColors.income else appColors.expense
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF181F33))
-                        .border(1.dp, ColorBorder, RoundedCornerShape(8.dp))
+                        .background(if (appColors.isDark) Color(0xFF181F33) else appColors.surfaceVariant)
+                        .border(1.dp, appColors.border, RoundedCornerShape(8.dp))
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Column {
                         Text(
                             text = if (strings.isBangla) "নেট ব্যালেন্স" else "Net Balance",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                         Text(
                             text = "${if (net >= 0) "+" else ""}${formatCurrency(net, currencySymbol)}",

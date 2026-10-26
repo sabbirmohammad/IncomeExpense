@@ -36,17 +36,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Receivable
 import com.example.expensetracker.data.model.ReceivableStatus
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ReceivableItemCard(
@@ -55,9 +49,9 @@ fun ReceivableItemCard(
     onRecordPayment: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onCall: () -> Unit,
-    onGenerateReminder: () -> Unit = {}
+    onCall: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     var showMenu by remember { mutableStateOf(false) }
 
@@ -89,8 +83,8 @@ fun ReceivableItemCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(ColorAccent.copy(alpha = 0.15f))
-                            .border(1.dp, ColorAccent.copy(alpha = 0.3f), CircleShape),
+                            .background(appColors.accent.copy(alpha = 0.15f))
+                            .border(1.dp, appColors.accent.copy(alpha = 0.3f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -99,7 +93,7 @@ fun ReceivableItemCard(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = ColorAccent
+                            color = appColors.accent
                         )
                     }
 
@@ -112,7 +106,7 @@ fun ReceivableItemCard(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorTextPrimary,
+                            color = appColors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -121,7 +115,7 @@ fun ReceivableItemCard(
                             Text(
                                 text = receivable.phoneNumber,
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                color = ColorTextSecondary
+                                color = appColors.textSecondary
                             )
                         }
                     }
@@ -133,9 +127,9 @@ fun ReceivableItemCard(
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 when (receivable.status) {
-                                    ReceivableStatus.SETTLED -> ColorSuccessIncome.copy(alpha = 0.15f)
-                                    ReceivableStatus.PARTIAL -> Color(0xFFF0A63D).copy(alpha = 0.15f)
-                                    ReceivableStatus.PENDING -> ColorDangerExpense.copy(alpha = 0.15f)
+                                    ReceivableStatus.SETTLED -> appColors.income.copy(alpha = 0.15f)
+                                    ReceivableStatus.PARTIAL -> appColors.warning.copy(alpha = 0.15f)
+                                    ReceivableStatus.PENDING -> appColors.expense.copy(alpha = 0.15f)
                                 }
                             )
                             .padding(horizontal = 6.dp, vertical = 3.dp)
@@ -145,22 +139,21 @@ fun ReceivableItemCard(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = when (receivable.status) {
-                                ReceivableStatus.SETTLED -> ColorSuccessIncome
-                                ReceivableStatus.PARTIAL -> Color(0xFFF0A63D)
-                                ReceivableStatus.PENDING -> ColorDangerExpense
+                                ReceivableStatus.SETTLED -> appColors.income
+                                ReceivableStatus.PARTIAL -> appColors.warning
+                                ReceivableStatus.PENDING -> appColors.expense
                             }
                         )
                     }
 
                     Box {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, null, tint = ColorTextSecondary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.MoreVert, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp))
                         }
                         ReceivableItemMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                             isSettled = receivable.isSettled,
-                            onGenerateReminder = onGenerateReminder,
                             onRecordPayment = onRecordPayment,
                             onEdit = onEdit,
                             onDelete = onDelete
@@ -177,20 +170,20 @@ fun ReceivableItemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(strings.remainingDue, fontSize = 11.sp, color = ColorTextMuted)
+                    Text(strings.remainingDue, fontSize = 11.sp, color = appColors.textMuted)
                     Text(
                         text = formatCurrency(receivable.remainingAmount, currencySymbol),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (receivable.isSettled) ColorSuccessIncome else ColorDangerExpense
+                        color = if (receivable.isSettled) appColors.income else appColors.expense
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("${strings.totalLent}: ${formatCurrency(receivable.amount, currencySymbol)}", fontSize = 11.sp, color = ColorTextSecondary)
-                    Text("${strings.totalCollected}: ${formatCurrency(receivable.amountReceived, currencySymbol)}", fontSize = 11.sp, color = ColorSuccessIncome)
+                    Text("${strings.totalLent}: ${formatCurrency(receivable.amount, currencySymbol)}", fontSize = 11.sp, color = appColors.textSecondary)
+                    Text("${strings.totalCollected}: ${formatCurrency(receivable.amountReceived, currencySymbol)}", fontSize = 11.sp, color = appColors.income)
                 }
             }
 
@@ -202,8 +195,8 @@ fun ReceivableItemCard(
                     .fillMaxWidth()
                     .height(5.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = ColorSuccessIncome,
-                trackColor = ColorBorder
+                color = appColors.income,
+                trackColor = appColors.border
             )
 
             Spacer(modifier = Modifier.height(10.dp))

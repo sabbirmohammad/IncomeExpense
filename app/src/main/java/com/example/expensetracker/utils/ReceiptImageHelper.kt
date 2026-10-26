@@ -15,8 +15,21 @@ import java.util.UUID
 
 object ReceiptImageHelper {
 
-    private const val MAX_DIMENSION = 1600
+    const val MAX_DIMENSION = 1024
     private const val COMPRESS_QUALITY = 85
+
+    /**
+     * Calculates the largest power-of-2 inSampleSize value to ensure the decoded
+     * image does not exceed maxDimension on either axis, preventing OutOfMemoryError.
+     */
+    fun calculateInSampleSize(width: Int, height: Int, maxDimension: Int = MAX_DIMENSION): Int {
+        var inSampleSize = 1
+        val largest = maxOf(width, height)
+        while ((largest / inSampleSize) > maxDimension) {
+            inSampleSize *= 2
+        }
+        return inSampleSize.coerceAtLeast(1)
+    }
 
     /**
      * Copies and optimizes a picked or captured image to private internal storage.
@@ -31,11 +44,27 @@ object ReceiptImageHelper {
             val fileName = "receipt_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}.jpg"
             val targetFile = File(receiptsDir, fileName)
 
-            var inputStream: InputStream? = context.contentResolver.openInputStream(sourceUri)
-            val originalBitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
+            // Pass 1: Decode image dimensions only without allocating bitmap pixels in heap
+            val boundsOptions = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            context.contentResolver.openInputStream(sourceUri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, boundsOptions)
+            }
+            if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) {
+                return@withContext null
+            }
 
-            if (originalBitmap == null) return@withContext null
+            val sampleSize = calculateInSampleSize(boundsOptions.outWidth, boundsOptions.outHeight, MAX_DIMENSION)
+
+            // Pass 2: Decode memory-efficient subsampled bitmap
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+            val sampledBitmap = context.contentResolver.openInputStream(sourceUri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, decodeOptions)
+            } ?: return@withContext null
 
             // Read Exif orientation if possible
             val rotation = try {
@@ -58,11 +87,12 @@ object ReceiptImageHelper {
                 0f
             }
 
-            // Downscale if larger than MAX_DIMENSION to preserve RAM and storage
-            val width = originalBitmap.width
-            val height = originalBitmap.height
-            val scale = if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-                MAX_DIMENSION.toFloat() / maxOf(width, height)
+            // Downscale to exact MAX_DIMENSION (1024px) if post-subsample size still exceeds bound
+            val width = sampledBitmap.width
+            val height = sampledBitmap.height
+            val largestDim = maxOf(width, height)
+            val scale = if (largestDim > MAX_DIMENSION) {
+                MAX_DIMENSION.toFloat() / largestDim
             } else {
                 1f
             }
@@ -73,9 +103,9 @@ object ReceiptImageHelper {
             }
 
             val finalBitmap = if (scale < 1f || rotation != 0f) {
-                Bitmap.createBitmap(originalBitmap, 0, 0, width, height, matrix, true)
+                Bitmap.createBitmap(sampledBitmap, 0, 0, width, height, matrix, true)
             } else {
-                originalBitmap
+                sampledBitmap
             }
 
             FileOutputStream(targetFile).use { fos ->
@@ -83,10 +113,10 @@ object ReceiptImageHelper {
                 fos.flush()
             }
 
-            if (finalBitmap != originalBitmap) {
+            if (finalBitmap != sampledBitmap) {
                 finalBitmap.recycle()
             }
-            originalBitmap.recycle()
+            sampledBitmap.recycle()
 
             targetFile.absolutePath
         } catch (e: Exception) {
@@ -110,10 +140,16 @@ object ReceiptImageHelper {
     /**
      * Loads a Bitmap from a saved receipt path with memory safety.
      */
-    suspend fun loadReceiptBitmap(context: Context, path: String?): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun loadReceiptBitmap(context: Context, path: String?, maxDimension: Int = MAX_DIMENSION): Bitmap? = withContext(Dispatchers.IO) {
         val file = getReceiptFile(context, path) ?: return@withContext null
         try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
+
+            val sampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, maxDimension)
             val options = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
                 inPreferredConfig = Bitmap.Config.RGB_565
             }
             BitmapFactory.decodeFile(file.absolutePath, options)
@@ -133,5 +169,44 @@ object ReceiptImageHelper {
         } catch (_: Exception) {
             false
         }
+    }
+
+    /**
+     * Creates a temporary file in cacheDir/shared_images and its corresponding FileProvider content Uri
+     * for direct camera capture via ActivityResultContracts.TakePicture().
+     */
+    fun createCameraTempUri(context: Context): Uri? {
+        return createCameraTempFileAndUri(context)?.second
+    }
+
+    /**
+     * Creates a temporary file in cacheDir/shared_images and its corresponding FileProvider content Uri,
+     * returning both the File and Uri for easy cleanup.
+     */
+    fun createCameraTempFileAndUri(context: Context): Pair<File, Uri>? {
+        return try {
+            val cacheImagesDir = File(context.cacheDir, "shared_images").apply {
+                if (!exists()) mkdirs()
+            }
+            val tempFile = File(cacheImagesDir, "camera_receipt_${System.currentTimeMillis()}.jpg")
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                tempFile
+            )
+            Pair(tempFile, uri)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Safely deletes a file if it exists, ignoring errors.
+     */
+    fun deleteFileQuietly(file: File?) {
+        try {
+            file?.takeIf { it.exists() }?.delete()
+        } catch (_: Exception) {}
     }
 }

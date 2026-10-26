@@ -24,19 +24,20 @@ import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
 import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
@@ -48,15 +49,45 @@ fun MetricChip(
     useBengaliNumerals: Boolean = globalBengaliNumeralsEnabled,
     labelOverride: String? = null,
     isPrivacyMode: Boolean = false,
+    compact: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
+    val appColors = LocalAppColors.current
+    val isIncome = type == TransactionType.INCOME
+    val tintColor = if (isIncome) appColors.income else appColors.expense
+    val icon = if (isIncome) Icons.Outlined.ArrowUpward else Icons.Outlined.ArrowDownward
+    val strings = LocalAppStrings.current
+    val label = labelOverride ?: if (isIncome) strings.income else strings.expense
+    ActionMetricChip(
+        label = label,
+        amount = amount,
+        currencySymbol = currencySymbol,
+        icon = icon,
+        tintColor = tintColor,
+        modifier = modifier,
+        useBengaliNumerals = useBengaliNumerals,
+        isPrivacyMode = isPrivacyMode,
+        compact = compact,
+        onClick = onClick
+    )
+}
+
+@Composable
+fun ActionMetricChip(
+    label: String,
+    amount: Double,
+    currencySymbol: String,
+    icon: ImageVector,
+    tintColor: Color,
+    modifier: Modifier = Modifier,
+    useBengaliNumerals: Boolean = globalBengaliNumeralsEnabled,
+    isPrivacyMode: Boolean = false,
+    badgeText: String? = null,
+    compact: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
     val haptics = rememberAppHaptics()
-    val isIncome = type == TransactionType.INCOME
-    val tintColor = if (isIncome) ColorSuccessIncome else ColorDangerExpense
     val bgTint = tintColor.copy(alpha = 0.12f)
-    val icon = if (isIncome) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward
-    val strings = LocalAppStrings.current
-    val label = labelOverride ?: if (isIncome) strings.income else strings.expense
 
     val animatedAmount by animateFloatAsState(
         targetValue = amount.toFloat(),
@@ -72,7 +103,7 @@ fun MetricChip(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(if (compact) 14.dp else 16.dp))
             .background(
                 Brush.verticalGradient(
                     listOf(
@@ -81,16 +112,21 @@ fun MetricChip(
                     )
                 )
             )
-            .border(1.dp, tintColor.copy(alpha = 0.22f), RoundedCornerShape(16.dp))
+            .border(1.dp, tintColor.copy(alpha = 0.22f), RoundedCornerShape(if (compact) 14.dp else 16.dp))
             .then(
                 if (onClick != null) {
-                    Modifier.clickable {
-                        haptics.lightTick()
-                        onClick()
-                    }
+                    Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable {
+                            haptics.lightTick()
+                            onClick()
+                        }
                 } else Modifier
             )
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .padding(
+                horizontal = if (compact) 8.dp else 16.dp,
+                vertical = if (compact) 12.dp else 16.dp
+            )
     ) {
         Column {
             Row(
@@ -100,11 +136,12 @@ fun MetricChip(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 8.dp),
+                    modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(if (compact) 20.dp else 24.dp)
                             .clip(CircleShape)
                             .background(tintColor.copy(alpha = 0.18f)),
                         contentAlignment = Alignment.Center
@@ -113,14 +150,14 @@ fun MetricChip(
                             imageVector = icon,
                             contentDescription = null,
                             tint = tintColor,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(if (compact) 12.dp else 14.dp)
                         )
                     }
                     Text(
                         text = label,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.5.sp
+                            fontSize = if (compact) 11.5.sp else 12.5.sp
                         ),
                         color = tintColor,
                         maxLines = 1,
@@ -129,10 +166,26 @@ fun MetricChip(
                     )
                 }
 
-                if (onClick != null) {
+                if (badgeText != null) {
                     Box(
                         modifier = Modifier
-                            .size(22.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(tintColor.copy(alpha = 0.22f))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = tintColor
+                        )
+                    }
+                } else if (onClick != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(if (compact) 18.dp else 22.dp)
                             .clip(CircleShape)
                             .background(tintColor.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
@@ -141,16 +194,16 @@ fun MetricChip(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "Add $label",
                             tint = tintColor,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(if (compact) 11.dp else 14.dp)
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(if (compact) 6.dp else 10.dp))
             Text(
                 text = displayAmountText,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 20.sp,
+                    fontSize = if (compact) 15.sp else 20.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.3).sp
                 ),

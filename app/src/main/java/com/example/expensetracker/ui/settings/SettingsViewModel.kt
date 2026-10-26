@@ -4,11 +4,8 @@ import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.expensetracker.data.ai.GeminiAiService
 import com.example.expensetracker.data.drive.GoogleAuthHelper
 import com.example.expensetracker.data.drive.GoogleDriveSyncManager
-import com.example.expensetracker.data.model.ApiConnectionTestResult
-import com.example.expensetracker.data.model.ApiTestStatusType
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
@@ -110,52 +107,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun setGeminiApiKey(key: String?) {
-        viewModelScope.launch {
-            repository.setGeminiApiKey(key)
-        }
-    }
-
-    private val _apiConnectionTest = MutableStateFlow<ApiConnectionTestResult?>(null)
-    val apiConnectionTest: StateFlow<ApiConnectionTestResult?> = _apiConnectionTest.asStateFlow()
-
-    private val _isTestingApi = MutableStateFlow(false)
-    val isTestingApi: StateFlow<Boolean> = _isTestingApi.asStateFlow()
-
-    fun testGeminiApiKey(key: String) {
-        val trimmed = key.trim()
-        if (trimmed.isBlank()) return
-        viewModelScope.launch {
-            try {
-                _isTestingApi.value = true
-                val res = GeminiAiService.testApiKeyConnection(trimmed)
-                _apiConnectionTest.value = res
-                if (res.isSuccess) {
-                    // Auto-persist successfully verified API key so it survives app/mobile restarts
-                    repository.setGeminiApiKey(trimmed)
-                }
-            } catch (e: Exception) {
-                _apiConnectionTest.value = ApiConnectionTestResult(
-                    isSuccess = false,
-                    statusType = ApiTestStatusType.ERROR,
-                    message = e.localizedMessage ?: "Unexpected error"
-                )
-            } finally {
-                _isTestingApi.value = false
-            }
-        }
-    }
-
-    fun clearApiTestResult() {
-        _apiConnectionTest.value = null
-    }
-
-    fun setAiInsightsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            repository.setAiInsightsEnabled(enabled)
-        }
-    }
-
     // ── Categories ───────────────────────────────────────────────────────
 
     fun addCategory(name: String, type: TransactionType, icon: String, colorHex: String) {
@@ -175,13 +126,5 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             repository.deleteCategory(id)
         }
-    }
-
-    suspend fun getCsvData(): String {
-        return repository.exportToCsv()
-    }
-
-    suspend fun getJsonBackup(): String {
-        return repository.exportToJson()
     }
 }

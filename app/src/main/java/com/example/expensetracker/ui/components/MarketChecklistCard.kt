@@ -31,10 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.MarketListWithItems
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 
 /**
@@ -52,6 +48,7 @@ fun ActiveMarketListDashboardCard(
     onUpdateItemAmount: (item: MarketItem, amount: Double?) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val totalItems = marketListWithItems.totalItems
     val purchasedItems = marketListWithItems.purchasedItems
@@ -99,7 +96,7 @@ fun ActiveMarketListDashboardCard(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         val subText = if (isBangla) {
                             "${convertToBengaliDigits(purchasedItems.toString())}/${convertToBengaliDigits(totalItems.toString())} সম্পন্ন · খরচ: ${formatCurrency(totalSpent, currencySymbol)}"
@@ -109,7 +106,7 @@ fun ActiveMarketListDashboardCard(
                         Text(
                             text = subText,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -127,12 +124,12 @@ fun ActiveMarketListDashboardCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = ColorAccent
+                        color = appColors.accent
                     )
                     Icon(
                         imageVector = Icons.Outlined.ChevronRight,
                         contentDescription = null,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -147,7 +144,7 @@ fun ActiveMarketListDashboardCard(
                     .fillMaxWidth()
                     .height(5.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = ColorSuccessIncome,
+                color = appColors.income,
                 trackColor = LocalAppColors.current.border
             )
 
@@ -177,7 +174,7 @@ fun ActiveMarketListDashboardCard(
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorAccent,
+                    color = appColors.accent,
                     modifier = Modifier
                         .clickable { onOpenFullList() }
                         .padding(vertical = 2.dp)

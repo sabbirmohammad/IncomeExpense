@@ -45,18 +45,13 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.RecurringBill
 import com.example.expensetracker.data.model.getLocalizedCategoryName
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.BrandIdentityHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +62,7 @@ fun PayBillSheet(
     onDismiss: () -> Unit,
     onConfirmPay: (accountId: Long?, accountName: String?) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
@@ -78,7 +74,7 @@ fun PayBillSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF0F131D),
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
@@ -93,7 +89,7 @@ fun PayBillSheet(
                     .width(40.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(ColorBorder)
+                    .background(appColors.border)
                     .align(Alignment.CenterHorizontally)
             )
 
@@ -105,7 +101,7 @@ fun PayBillSheet(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -124,20 +120,20 @@ fun PayBillSheet(
                             text = bill.title,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = getLocalizedCategoryName(bill.categoryName, strings.isBangla),
                             fontSize = 12.sp,
-                            color = ColorTextMuted
+                            color = appColors.textMuted
                         )
                     }
                     Text(
                         text = formatCurrency(bill.amount, currencySymbol),
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = ColorDangerExpense
+                        color = appColors.expense
                     )
                 }
             }
@@ -148,7 +144,7 @@ fun PayBillSheet(
                 Text(
                     text = if (strings.isBangla) "পরিশোধের অ্যাকাউন্ট:" else "Pay From Account:",
                     fontSize = 12.sp,
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -164,8 +160,8 @@ fun PayBillSheet(
 
                         Surface(
                             shape = RoundedCornerShape(SmallElementRadius),
-                            color = if (isSelected) brandStyle.primaryColor.copy(alpha = 0.2f) else Color(0xFF0F131D),
-                            border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) brandStyle.primaryColor else ColorBorder),
+                            color = if (isSelected) brandStyle.primaryColor.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                            border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) brandStyle.primaryColor else appColors.border),
                             modifier = Modifier.clickable {
                                 haptics.lightTick()
                                 selectedAccount = acc
@@ -197,12 +193,12 @@ fun PayBillSheet(
                                             fontSize = 11.5.sp,
                                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                         ),
-                                        color = ColorTextPrimary
+                                        color = appColors.textPrimary
                                     )
                                     Text(
                                         text = formatCurrency(acc.currentBalance, currencySymbol),
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                        color = if (isSelected) brandStyle.primaryColor else ColorTextMuted
+                                        color = if (isSelected) brandStyle.primaryColor else appColors.textMuted
                                     )
                                 }
                             }
@@ -213,6 +209,8 @@ fun PayBillSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            val buttonContentColor = if (appColors.isDark) Color(0xFF052B14) else Color.White
+
             Button(
                 onClick = {
                     haptics.successFeedback()
@@ -222,15 +220,18 @@ fun PayBillSheet(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ColorSuccessIncome)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = appColors.income,
+                    contentColor = buttonContentColor
+                )
             ) {
-                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = buttonContentColor, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (strings.isBangla) "পরিশোধ নিশ্চিত করুন" else "Confirm & Pay",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = Color.White
+                    color = buttonContentColor
                 )
             }
 

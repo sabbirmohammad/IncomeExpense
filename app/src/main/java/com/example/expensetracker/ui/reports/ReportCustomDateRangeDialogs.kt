@@ -11,9 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextMuted
 import com.example.expensetracker.ui.components.Strings
+import com.example.expensetracker.theme.LocalAppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,6 +26,7 @@ fun ReportCustomDateRangeDialogs(
     onDismissStartDate: () -> Unit,
     onDismissEndDate: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     if (showStartDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = tempStartDate)
         DatePickerDialog(
@@ -37,12 +37,12 @@ fun ReportCustomDateRangeDialogs(
                         onStartDateSelected(selected)
                     }
                 }) {
-                    Text(strings.confirm, color = ColorAccent)
+                    Text(strings.confirm, color = appColors.accent)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissStartDate) {
-                    Text(strings.cancel, color = ColorTextMuted)
+                    Text(strings.cancel, color = appColors.textMuted)
                 }
             }
         ) {
@@ -69,12 +69,12 @@ fun ReportCustomDateRangeDialogs(
                         onEndDateSelected(selected)
                     }
                 }) {
-                    Text(strings.done, color = ColorAccent)
+                    Text(strings.done, color = appColors.accent)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissEndDate) {
-                    Text(strings.cancel, color = ColorTextMuted)
+                    Text(strings.cancel, color = appColors.textMuted)
                 }
             }
         ) {

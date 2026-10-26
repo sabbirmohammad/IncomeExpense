@@ -33,17 +33,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.SavingsGoal
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Hero summary card displaying overall savings goal metrics
@@ -55,6 +50,7 @@ fun SavingsSummaryCard(
     isPrivacyMode: Boolean = false,
     onAddGoalClick: () -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val totalTarget = remember(goals) { goals.sumOf { it.targetAmount } }
     val totalSaved = remember(goals) { goals.sumOf { it.savedAmount } }
@@ -81,13 +77,13 @@ fun SavingsSummaryCard(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(ColorAccent.copy(alpha = 0.15f)),
+                            .background(appColors.accent.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Savings,
                             contentDescription = null,
-                            tint = ColorAccent,
+                            tint = appColors.accent,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -99,7 +95,7 @@ fun SavingsSummaryCard(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Text(
                             text = if (strings.isBangla) {
@@ -108,14 +104,14 @@ fun SavingsSummaryCard(
                                 "$completedCount completed / ${goals.size} total"
                             },
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = ColorAccent.copy(alpha = 0.12f),
+                    color = appColors.accent.copy(alpha = 0.12f),
                     modifier = Modifier.clickable { onAddGoalClick() }
                 ) {
                     Row(
@@ -123,12 +119,12 @@ fun SavingsSummaryCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(Icons.Outlined.Add, null, tint = ColorAccent, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Outlined.Add, null, tint = appColors.accent, modifier = Modifier.size(14.dp))
                         Text(
                             text = if (strings.isBangla) "নতুন লক্ষ্য" else "New Goal",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = ColorAccent
+                            color = appColors.accent
                         )
                     }
                 }
@@ -146,7 +142,7 @@ fun SavingsSummaryCard(
                     Text(
                         text = strings.savedAmount,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ColorTextMuted
+                        color = appColors.textMuted
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -155,7 +151,7 @@ fun SavingsSummaryCard(
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = ColorSuccessIncome
+                        color = appColors.income
                     )
                 }
 
@@ -163,7 +159,7 @@ fun SavingsSummaryCard(
                     Text(
                         text = "${strings.targetAmount}: ${if (isPrivacyMode) "••••••" else formatCurrency(totalTarget, currencySymbol)}",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Text(
                         text = if (strings.isBangla) {
@@ -175,7 +171,7 @@ fun SavingsSummaryCard(
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = ColorAccent
+                        color = appColors.accent
                     )
                 }
             }
@@ -189,8 +185,8 @@ fun SavingsSummaryCard(
                     .fillMaxWidth()
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = ColorAccent,
-                trackColor = ColorBorder
+                color = appColors.accent,
+                trackColor = appColors.border
             )
         }
     }

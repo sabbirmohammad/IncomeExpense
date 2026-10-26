@@ -83,7 +83,8 @@ internal class TransactionQueryHelper(private val dbHelper: ExpenseDatabaseHelpe
         timeFilter: TimeFilter = TimeFilter.ALL,
         type: TransactionType? = null,
         categoryId: Long? = null,
-        query: String? = null
+        query: String? = null,
+        accountId: Long? = null
     ): List<Transaction> {
         val db = dbHelper.readableDatabase
         val whereClauses = mutableListOf<String>()
@@ -96,6 +97,10 @@ internal class TransactionQueryHelper(private val dbHelper: ExpenseDatabaseHelpe
         if (categoryId != null && categoryId > 0) {
             whereClauses.add("$COL_TX_CAT_ID = ?")
             args.add(categoryId.toString())
+        }
+        if (accountId != null && accountId > 0) {
+            whereClauses.add("$COL_TX_ACCOUNT_ID = ?")
+            args.add(accountId.toString())
         }
         if (!query.isNullOrBlank()) {
             whereClauses.add("($COL_TX_TITLE LIKE ? OR $COL_TX_NOTES LIKE ? OR $COL_TX_CAT_NAME LIKE ?)")
@@ -136,7 +141,8 @@ internal class TransactionQueryHelper(private val dbHelper: ExpenseDatabaseHelpe
         endMillis: Long,
         type: TransactionType? = null,
         categoryId: Long? = null,
-        query: String? = null
+        query: String? = null,
+        accountId: Long? = null
     ): List<Transaction> {
         val db = dbHelper.readableDatabase
         val whereClauses = mutableListOf<String>()
@@ -149,6 +155,10 @@ internal class TransactionQueryHelper(private val dbHelper: ExpenseDatabaseHelpe
         if (categoryId != null && categoryId > 0) {
             whereClauses.add("$COL_TX_CAT_ID = ?")
             args.add(categoryId.toString())
+        }
+        if (accountId != null && accountId > 0) {
+            whereClauses.add("$COL_TX_ACCOUNT_ID = ?")
+            args.add(accountId.toString())
         }
         if (!query.isNullOrBlank()) {
             whereClauses.add("($COL_TX_TITLE LIKE ? OR $COL_TX_NOTES LIKE ? OR $COL_TX_CAT_NAME LIKE ?)")

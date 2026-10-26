@@ -24,12 +24,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
+import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
 fun AccountsQuickActionsRow(
@@ -37,6 +34,7 @@ fun AccountsQuickActionsRow(
     onTransferFundsClick: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -48,17 +46,17 @@ fun AccountsQuickActionsRow(
                 .clip(RoundedCornerShape(SmallElementRadius))
                 .clickable { onAddAccountClick() },
             shape = RoundedCornerShape(SmallElementRadius),
-            color = ColorAccent.copy(alpha = 0.15f),
-            border = BorderStroke(1.dp, ColorAccent.copy(alpha = 0.35f))
+            color = appColors.accent.copy(alpha = 0.15f),
+            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.35f))
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Filled.Add, null, tint = ColorAccent, modifier = Modifier.size(16.dp))
+                Icon(Icons.Filled.Add, null, tint = appColors.accent, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(strings.addAccount, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = ColorAccent)
+                Text(strings.addAccount, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = appColors.accent)
             }
         }
 
@@ -69,17 +67,17 @@ fun AccountsQuickActionsRow(
                 .clip(RoundedCornerShape(SmallElementRadius))
                 .clickable { onTransferFundsClick() },
             shape = RoundedCornerShape(SmallElementRadius),
-            color = ColorSurface,
-            border = BorderStroke(1.dp, ColorBorder)
+            color = appColors.surface,
+            border = BorderStroke(1.dp, appColors.border)
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Filled.SwapHoriz, null, tint = ColorTextPrimary, modifier = Modifier.size(17.dp))
+                Icon(Icons.Filled.SwapHoriz, null, tint = appColors.textPrimary, modifier = Modifier.size(17.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(strings.transferFunds, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = ColorTextPrimary)
+                Text(strings.transferFunds, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = appColors.textPrimary)
             }
         }
     }

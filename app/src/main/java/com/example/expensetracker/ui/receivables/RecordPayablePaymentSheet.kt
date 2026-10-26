@@ -40,17 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Payable
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import androidx.compose.material.icons.filled.Calculate
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.CalculatorEvaluator
-import com.example.expensetracker.ui.components.CalculatorKeypadBar
 import com.example.expensetracker.ui.components.CalculatorPreviewBadge
+import com.example.expensetracker.ui.components.ExpandableCalculatorKeypadBar
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import java.util.Locale
@@ -65,16 +60,21 @@ fun RecordPayablePaymentSheet(
     onConfirm: (amount: Double, accountId: Long?, note: String) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     var amountText by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     val selectedAccountId by remember { mutableStateOf(accounts.firstOrNull { it.isDefault }?.id ?: accounts.firstOrNull()?.id) }
     var deductFromAccount by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showCalculator by remember { mutableStateOf(false) }
+    val hasOperators = remember(amountText) {
+        amountText.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(
@@ -96,10 +96,10 @@ fun RecordPayablePaymentSheet(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = ColorTextSecondary)
+                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = appColors.textSecondary)
                 }
             }
 
@@ -132,12 +132,21 @@ fun RecordPayablePaymentSheet(
                     errorMessage = null
                 },
                 label = { Text(strings.amount) },
+                trailingIcon = {
+                    IconButton(onClick = { showCalculator = !showCalculator }) {
+                        Icon(
+                            imageVector = Icons.Filled.Calculate,
+                            contentDescription = "Calculator",
+                            tint = if (showCalculator || hasOperators) appColors.accent else appColors.textSecondary
+                        )
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border
                 )
             )
 
@@ -146,12 +155,12 @@ fun RecordPayablePaymentSheet(
                 currencySymbol = currencySymbol,
                 onApply = { evaluated ->
                     amountText = if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated)
+                    showCalculator = false
                 }
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            CalculatorKeypadBar(
+            ExpandableCalculatorKeypadBar(
+                expanded = showCalculator,
                 currentExpression = amountText,
                 onExpressionChanged = {
                     amountText = it
@@ -159,6 +168,7 @@ fun RecordPayablePaymentSheet(
                 },
                 onApplyResult = { evaluated ->
                     amountText = if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated)
+                    showCalculator = false
                 }
             )
 
@@ -171,8 +181,8 @@ fun RecordPayablePaymentSheet(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ColorAccent,
-                    unfocusedBorderColor = ColorBorder
+                    focusedBorderColor = appColors.accent,
+                    unfocusedBorderColor = appColors.border
                 )
             )
 
@@ -189,12 +199,14 @@ fun RecordPayablePaymentSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = errorMessage!!,
-                    color = ColorDangerExpense,
+                    color = appColors.expense,
                     fontSize = 12.sp
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            val buttonContentColor = if (appColors.isDark) Color(0xFF052B14) else Color.White
 
             Button(
                 onClick = {
@@ -219,13 +231,16 @@ fun RecordPayablePaymentSheet(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(SmallElementRadius),
-                colors = ButtonDefaults.buttonColors(containerColor = ColorSuccessIncome)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = appColors.income,
+                    contentColor = buttonContentColor
+                )
             ) {
                 Text(
                     text = strings.confirm,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color.White
+                    color = buttonContentColor
                 )
             }
 

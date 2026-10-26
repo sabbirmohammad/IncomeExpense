@@ -21,71 +21,15 @@ fun TransactionEditFormBody(
     dateOnlyFormat: SimpleDateFormat,
     dayOfWeekFormat: SimpleDateFormat,
     timeOnlyFormat: SimpleDateFormat,
-    onLaunchPhotoPicker: () -> Unit,
-    modifier: Modifier = Modifier
+    onLaunchPhotoPicker: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    onLaunchCamera: () -> Unit = onLaunchPhotoPicker,
+    onLaunchGallery: () -> Unit = onLaunchPhotoPicker,
+    onChangeReceipt: () -> Unit = onLaunchPhotoPicker,
+    onOpenMarketList: (() -> Unit)? = null
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            TransactionAiMagicFillTrigger(
-                showAiMagicFill = state.showAiMagicFill,
-                strings = state.strings,
-                onClick = {
-                    state.haptics.lightTick()
-                    state.showAiMagicFill = !state.showAiMagicFill
-                },
-                modifier = Modifier.weight(1f)
-            )
-            TransactionReceiptTrigger(
-                isReceiptAttached = state.receiptImagePath != null,
-                isBangla = state.strings.isBangla,
-                onClick = {
-                    state.haptics.lightTick()
-                    if (state.receiptImagePath != null) state.showFullReceiptPreview = true
-                    else onLaunchPhotoPicker()
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        TransactionAiMagicFillContent(
-            visible = state.showAiMagicFill,
-            inputText = state.aiMagicInputText,
-            onInputTextChange = { state.aiMagicInputText = it },
-            isParsing = state.isAiMagicParsing,
-            strings = state.strings,
-            onParseClick = { state.parseAiMagic() }
-        )
-
-        TransactionReceiptPreviewBar(
-            visible = state.receiptImagePath != null,
-            receiptBitmap = state.receiptBitmap,
-            isScanningReceipt = state.isScanningReceipt,
-            scanStatusMessage = state.scanStatusMessage,
-            typeAccentColor = typeAccentColor,
-            strings = state.strings,
-            onViewReceipt = { state.showFullReceiptPreview = true },
-            onRemoveReceipt = {
-                state.haptics.lightTick()
-                ReceiptImageHelper.deleteReceiptImage(state.context, state.receiptImagePath)
-                state.receiptImagePath = null
-                state.receiptBitmap = null
-                state.scanStatusMessage = null
-            },
-            onScanReceiptClick = { state.scanReceipt() }
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-        TransactionTypeSwitcher(
-            selectedType = state.selectedType,
-            isExpense = state.isExpense,
-            onTypeSelected = { newType ->
-                state.selectedType = newType
-                state.selectedCategory = state.categories.firstOrNull { it.type == newType }
-            },
-            strings = state.strings
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
+        // Amount Input Card
         TransactionAmountCard(
             amountText = state.amountText,
             onAmountChange = {
@@ -95,24 +39,14 @@ fun TransactionEditFormBody(
             isExpense = state.isExpense,
             typeAccentColor = typeAccentColor,
             currencySymbol = currencySymbol,
-            showCalculatorBar = state.showCalculatorBar,
-            onToggleCalculator = { state.showCalculatorBar = !state.showCalculatorBar },
             errorMessage = state.errorMessage,
             amountFocusRequester = state.amountFocusRequester,
             strings = state.strings
         )
 
         Spacer(modifier = Modifier.height(14.dp))
-        TransactionNoteAndTitleSection(
-            title = state.title,
-            onTitleChange = { state.title = it },
-            notes = state.notes,
-            onNotesChange = { state.notes = it },
-            typeAccentColor = typeAccentColor,
-            strings = state.strings
-        )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        // 3. Category & Account Dropdowns
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             TransactionCategoryDropdown(
                 selectedCategory = state.selectedCategory,
@@ -145,6 +79,62 @@ fun TransactionEditFormBody(
         }
 
         Spacer(modifier = Modifier.height(14.dp))
+
+        // 5. Title and Notes Section
+        TransactionNoteAndTitleSection(
+            title = state.title,
+            onTitleChange = { state.title = it },
+            notes = state.notes,
+            onNotesChange = { state.notes = it },
+            typeAccentColor = typeAccentColor,
+            strings = state.strings
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 6. Receipt / Voucher Section
+        TransactionReceiptSection(
+            receiptImagePath = state.receiptImagePath,
+            receiptBitmap = state.receiptBitmap,
+            typeAccentColor = typeAccentColor,
+            strings = state.strings,
+            onLaunchPhotoPicker = {
+                state.haptics.lightTick()
+                onLaunchPhotoPicker()
+            },
+            onViewReceipt = {
+                if (state.receiptBitmap != null) {
+                    state.haptics.lightTick()
+                    state.showFullReceiptPreview = true
+                } else {
+                    state.haptics.warningFeedback()
+                    state.errorMessage = if (state.strings.isBangla) "রশিদ লোড করা সম্ভব হয়নি" else "Could not load receipt"
+                }
+            },
+            onRemoveReceipt = {
+                if (state.receiptImagePath != null && state.receiptImagePath != state.existingTransaction?.receiptImagePath) {
+                    ReceiptImageHelper.deleteReceiptImage(state.context, state.receiptImagePath)
+                }
+                state.receiptImagePath = null
+                state.receiptBitmap = null
+            },
+            onLaunchCamera = {
+                state.haptics.lightTick()
+                onLaunchCamera()
+            },
+            onLaunchGallery = {
+                state.haptics.lightTick()
+                onLaunchGallery()
+            },
+            onChangeReceipt = {
+                state.haptics.lightTick()
+                onChangeReceipt()
+            }
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 7. Date & Time Section
         TransactionDateTimeSection(
             dateMillis = state.dateMillis,
             onDateMillisChange = { state.dateMillis = it },
@@ -156,6 +146,7 @@ fun TransactionEditFormBody(
             onOpenTimePicker = { state.showTimePickerDialog = true },
             strings = state.strings
         )
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }

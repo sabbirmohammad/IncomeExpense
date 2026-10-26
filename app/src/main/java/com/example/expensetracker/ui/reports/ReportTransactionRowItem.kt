@@ -23,14 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.getLocalizedAccountName
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -44,13 +37,14 @@ fun ReportTransactionRowItem(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val isIncome = transaction.type == TransactionType.INCOME
 
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        color = ColorSurface,
-        border = BorderStroke(1.dp, ColorBorder)
+        color = appColors.surface,
+        border = BorderStroke(1.dp, appColors.border)
     ) {
         Row(
             modifier = Modifier
@@ -75,7 +69,7 @@ fun ReportTransactionRowItem(
                         text = transaction.title,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = ColorTextPrimary,
+                        color = appColors.textPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -87,18 +81,18 @@ fun ReportTransactionRowItem(
                             text = DateTimeHelper.formatItemDateTime(transaction.dateMillis, strings.isBangla),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Normal,
-                            color = ColorTextMuted
+                            color = appColors.textMuted
                         )
                         Text(
                             text = "•",
                             fontSize = 10.sp,
-                            color = ColorTextMuted
+                            color = appColors.textMuted
                         )
                         Text(
-                            text = getLocalizedAccountName(transaction.accountName, strings.isBangla) ?: transaction.paymentMethod.getDisplayName(strings.isBangla),
+                            text = transaction.accountName?.takeIf { it.isNotBlank() }?.let { getLocalizedAccountName(it, strings.isBangla) } ?: transaction.paymentMethod.getDisplayName(strings.isBangla),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
-                            color = ColorTextSecondary,
+                            color = appColors.textSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -116,7 +110,7 @@ fun ReportTransactionRowItem(
                     },
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isIncome) ColorSuccessIncome else ColorDangerExpense
+                    color = if (isIncome) appColors.income else appColors.expense
                 )
 
                 if (transaction.receiptImagePath != null) {
@@ -126,15 +120,15 @@ fun ReportTransactionRowItem(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ReceiptLong,
-                            contentDescription = null,
-                            tint = ColorAccent,
+                            contentDescription = if (strings.isBangla) "রশিদ সংযুক্ত" else "Receipt Attached",
+                            tint = appColors.accent,
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
-                            text = "Receipt",
+                            text = if (strings.isBangla) "রশিদ" else "Receipt",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Medium,
-                            color = ColorAccent
+                            color = appColors.accent
                         )
                     }
                 }

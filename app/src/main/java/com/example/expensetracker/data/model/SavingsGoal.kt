@@ -21,13 +21,3 @@ data class SavingsGoal(
     val remainingAmount: Double
         get() = (targetAmount - savedAmount).coerceAtLeast(0.0)
 }
-
-@Serializable
-data class SavingsGoalAiAnalysis(
-    val feasibilityGrade: String = "Good",
-    val requiredDailySavings: Double = 0.0,
-    val requiredWeeklySavings: Double = 0.0,
-    val requiredMonthlySavings: Double = 0.0,
-    val estimatedCompletionMonths: Double = 0.0,
-    val adviceTips: List<String> = emptyList()
-)

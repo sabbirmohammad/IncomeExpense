@@ -37,14 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.AccountType
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.HairlineDivider
-import com.example.expensetracker.ui.components.formatCurrency
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
+import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.ui.components.globalBengaliNumeralsEnabled
 
 @Composable
 fun AccountsHeroCard(
@@ -56,6 +54,12 @@ fun AccountsHeroCard(
     currencySymbol: String
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
+    val isBn = strings.isBangla || globalBengaliNumeralsEnabled
+
+    val bankColor = if (appColors.isDark) Color(0xFF3B8FF0) else Color(0xFF1D4ED8)
+    val mfsColor = if (appColors.isDark) Color(0xFFE056FD) else Color(0xFF7E22CE)
+    val cashColor = if (appColors.isDark) Color(0xFF2EC4B6) else Color(0xFF0F766E)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -64,7 +68,11 @@ fun AccountsHeroCard(
         border = BorderStroke(
             1.dp,
             Brush.verticalGradient(
-                listOf(Color(0xFF2E3A56), Color(0xFF1B2338))
+                if (appColors.isDark) {
+                    listOf(Color(0xFF2E3A56), Color(0xFF1B2338))
+                } else {
+                    listOf(appColors.border, appColors.border.copy(alpha = 0.5f))
+                }
             )
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -74,7 +82,11 @@ fun AccountsHeroCard(
                 .fillMaxWidth()
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color(0xFF151C2F), Color(0xFF0E1321))
+                        if (appColors.isDark) {
+                            listOf(Color(0xFF151C2F), Color(0xFF0E1321))
+                        } else {
+                            listOf(appColors.surface, appColors.surfaceVariant)
+                        }
                     )
                 )
                 .padding(vertical = 22.dp, horizontal = 18.dp)
@@ -91,7 +103,7 @@ fun AccountsHeroCard(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(if (totalNetWorth < 0) ColorDangerExpense else ColorAccent)
+                            .background(if (totalNetWorth < 0) appColors.dangerExpense else appColors.accent)
                     )
                     Text(
                         text = if (strings.isBangla) "মোট নেট ব্যালেন্স" else "Total Net Balance",
@@ -100,7 +112,7 @@ fun AccountsHeroCard(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.2.sp
                         ),
-                        color = ColorTextSecondary,
+                        color = appColors.textSecondary,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -108,18 +120,18 @@ fun AccountsHeroCard(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = formatCurrency(totalNetWorth, currencySymbol),
+                    text = formatCurrency(totalNetWorth, currencySymbol, isBn),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.5).sp
                     ),
-                    color = ColorTextPrimary,
+                    color = appColors.textPrimary,
                     textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                HairlineDivider(color = Color(0xFF222B42))
+                HairlineDivider(color = appColors.border)
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Row(
@@ -133,7 +145,7 @@ fun AccountsHeroCard(
                         count = accounts.count { it.type == AccountType.BANK },
                         symbol = currencySymbol,
                         icon = Icons.Outlined.AccountBalance,
-                        color = Color(0xFF3B8FF0),
+                        color = bankColor,
                         isBangla = strings.isBangla
                     )
                     SourceStatCard(
@@ -143,7 +155,7 @@ fun AccountsHeroCard(
                         count = accounts.count { it.type == AccountType.MFS },
                         symbol = currencySymbol,
                         icon = Icons.Outlined.PhoneAndroid,
-                        color = Color(0xFFE056FD),
+                        color = mfsColor,
                         isBangla = strings.isBangla
                     )
                     SourceStatCard(
@@ -153,7 +165,7 @@ fun AccountsHeroCard(
                         count = accounts.count { it.type == AccountType.CASH },
                         symbol = currencySymbol,
                         icon = Icons.Outlined.Payments,
-                        color = Color(0xFF2EC4B6),
+                        color = cashColor,
                         isBangla = strings.isBangla
                     )
                 }
@@ -173,11 +185,12 @@ fun SourceStatCard(
     color: Color,
     isBangla: Boolean
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = Color(0xFF101524),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.22f))
+        color = if (appColors.isDark) Color(0xFF101524) else appColors.surfaceVariant,
+        border = BorderStroke(1.dp, color.copy(alpha = if (appColors.isDark) 0.22f else 0.35f))
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
@@ -202,24 +215,25 @@ fun SourceStatCard(
                 text = label,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = ColorTextSecondary,
+                color = appColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = formatCurrency(amount, symbol),
+                text = formatCurrency(amount, symbol, isBangla || globalBengaliNumeralsEnabled),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(1.dp))
+            val countDisp = if (isBangla || globalBengaliNumeralsEnabled) convertToBengaliDigits(count.toString()) else count.toString()
             Text(
-                text = "$count ${if (isBangla) "টি" else "acc"}",
+                text = "$countDisp ${if (isBangla) "টি" else "acc"}",
                 fontSize = 9.5.sp,
-                color = ColorTextMuted
+                color = appColors.textMuted
             )
         }
     }

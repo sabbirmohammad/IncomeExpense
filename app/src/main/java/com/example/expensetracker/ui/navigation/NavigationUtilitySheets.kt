@@ -3,6 +3,9 @@ package com.example.expensetracker.ui.navigation
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.data.model.FinancialSummary
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.UserProfile
@@ -28,7 +31,6 @@ fun NavigationUtilitySheets(
     activeMarketList: MarketListWithItems?,
     showUpcomingBudgetPrompt: Boolean,
     summary: FinancialSummary,
-    budgetStatuses: List<CategoryBudgetStatus>,
     userProfile: UserProfile,
     strings: Strings,
     feedbackController: TransactionFeedbackController,
@@ -46,7 +48,6 @@ fun NavigationUtilitySheets(
             marketListWithItems = activeMarketList,
             currencySymbol = userProfile.currencySymbol,
             isBangla = strings.isBangla,
-            geminiApiKey = userProfile.geminiApiKey,
             onDismiss = {
                 scope.launch { marketSheetState.hide() }.invokeOnCompletion {
                     onCloseMarketList()
@@ -95,11 +96,17 @@ fun NavigationUtilitySheets(
                     }
                 }
                 onCloseMarketList()
+            },
+            onDeleteList = { listId ->
+                dashboardViewModel.deleteActiveMarketList(listId)
+                onCloseMarketList()
             }
         )
     }
 
     if (showUpcomingBudgetPrompt) {
+        val budgetViewModel: com.example.expensetracker.ui.budget.BudgetViewModel = viewModel()
+        val budgetStatuses by budgetViewModel.budgetStatuses.collectAsStateWithLifecycle()
         val cal = Calendar.getInstance()
         val currentDay = cal.get(Calendar.DAY_OF_MONTH)
         val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)

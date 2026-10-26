@@ -27,13 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Receivable
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
@@ -48,6 +42,7 @@ fun ReceivableItemBottomBar(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val dateFormat = remember(strings.isBangla) {
         SimpleDateFormat("d MMM yyyy", DateTimeHelper.getLocale(strings.isBangla))
     }
@@ -66,7 +61,7 @@ fun ReceivableItemBottomBar(
                     Icon(
                         imageVector = Icons.Outlined.CalendarToday,
                         contentDescription = null,
-                        tint = if (isOverdue) ColorDangerExpense else ColorTextMuted,
+                        tint = if (isOverdue) appColors.expense else appColors.textMuted,
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -78,14 +73,14 @@ fun ReceivableItemBottomBar(
                         fontSize = 11.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = if (isOverdue) ColorDangerExpense else ColorTextSecondary
+                        color = if (isOverdue) appColors.expense else appColors.textSecondary
                     )
                 }
             } else {
                 Text(
                     text = receivable.notes.ifBlank { "" },
                     fontSize = 11.sp,
-                    color = ColorTextMuted,
+                    color = appColors.textMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -101,17 +96,17 @@ fun ReceivableItemBottomBar(
             if (receivable.phoneNumber.isNotBlank()) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = ColorSurface,
-                    border = BorderStroke(1.dp, ColorBorder),
+                    color = appColors.surface,
+                    border = BorderStroke(1.dp, appColors.border),
                     modifier = Modifier.clickable { onCall() }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.Call, null, tint = ColorAccent, modifier = Modifier.size(12.dp))
+                        Icon(Icons.Filled.Call, null, tint = appColors.accent, modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(strings.callPerson, fontSize = 11.sp, color = ColorAccent, fontWeight = FontWeight.Medium)
+                        Text(strings.callPerson, fontSize = 11.sp, color = appColors.accent, fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -119,17 +114,17 @@ fun ReceivableItemBottomBar(
             if (!receivable.isSettled) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = ColorSuccessIncome.copy(alpha = 0.15f),
-                    border = BorderStroke(1.dp, ColorSuccessIncome.copy(alpha = 0.3f)),
+                    color = appColors.income.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.3f)),
                     modifier = Modifier.clickable { onRecordPayment() }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Outlined.Paid, null, tint = ColorSuccessIncome, modifier = Modifier.size(13.dp))
+                        Icon(Icons.Outlined.Paid, null, tint = appColors.income, modifier = Modifier.size(13.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(strings.recordPayment, fontSize = 11.sp, color = ColorSuccessIncome, fontWeight = FontWeight.SemiBold)
+                        Text(strings.recordPayment, fontSize = 11.sp, color = appColors.income, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

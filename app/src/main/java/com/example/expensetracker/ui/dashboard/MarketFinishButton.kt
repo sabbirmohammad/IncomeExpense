@@ -19,8 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorSuccessIncome
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun MarketFinishButton(
@@ -28,7 +28,9 @@ fun MarketFinishButton(
     onComplete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
+    val contentColor = if (appColors.isDark) Color(0xFF052B14) else Color.White
 
     Button(
         onClick = {
@@ -39,7 +41,10 @@ fun MarketFinishButton(
             .fillMaxWidth()
             .height(48.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = ColorSuccessIncome)
+        colors = ButtonDefaults.buttonColors(
+            containerColor = appColors.income,
+            contentColor = contentColor
+        )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -48,7 +53,7 @@ fun MarketFinishButton(
             Icon(
                 imageVector = Icons.Filled.DoneAll,
                 contentDescription = null,
-                tint = Color.White
+                tint = contentColor
             )
             Text(
                 text = if (isBangla) "✓ বাজার সম্পন্ন করুন" else "✓ Finish Shopping",
@@ -56,7 +61,7 @@ fun MarketFinishButton(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = Color.White
+                color = contentColor
             )
         }
     }

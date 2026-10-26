@@ -12,11 +12,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.CalculatorEvaluator
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun AddEditPayableSaveButton(
@@ -31,6 +31,7 @@ fun AddEditPayableSaveButton(
     onSave: (personName: String, phoneNumber: String, amount: Double, dueDateMillis: Long?, notes: String, depositToAccountId: Long?) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
 
@@ -60,7 +61,7 @@ fun AddEditPayableSaveButton(
             .fillMaxWidth()
             .height(48.dp),
         shape = RoundedCornerShape(SmallElementRadius),
-        colors = ButtonDefaults.buttonColors(containerColor = ColorAccent)
+        colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
     ) {
         Text(
             text = strings.save,

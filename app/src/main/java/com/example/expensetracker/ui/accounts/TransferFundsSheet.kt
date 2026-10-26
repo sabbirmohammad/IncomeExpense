@@ -40,12 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
-import com.example.expensetracker.ui.components.CalculatorKeypadBar
+import androidx.compose.material.icons.filled.Calculate
 import com.example.expensetracker.ui.components.CalculatorPreviewBadge
+import com.example.expensetracker.ui.components.ExpandableCalculatorKeypadBar
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
@@ -60,6 +59,7 @@ fun TransferFundsSheet(
     onDismiss: () -> Unit,
     onTransfer: (Long, Long, Double, String) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
     var fromAccountId by remember { mutableStateOf(accounts.firstOrNull()?.id ?: 0L) }
@@ -67,6 +67,10 @@ fun TransferFundsSheet(
     var amountText by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showCalculator by remember { mutableStateOf(false) }
+    val hasOperators = remember(amountText) {
+        amountText.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }
+    }
 
     val colors = LocalAppColors.current
 
@@ -117,7 +121,7 @@ fun TransferFundsSheet(
                 currencySymbol = currencySymbol,
                 isBangla = strings.isBangla,
                 haptics = haptics,
-                selectedColor = ColorAccent
+                selectedColor = colors.accent
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -133,7 +137,7 @@ fun TransferFundsSheet(
                 currencySymbol = currencySymbol,
                 isBangla = strings.isBangla,
                 haptics = haptics,
-                selectedColor = Color(0xFF3DDC97)
+                selectedColor = colors.income
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -148,13 +152,22 @@ fun TransferFundsSheet(
                     errorMessage = null
                 },
                 placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = colors.textMuted) },
+                trailingIcon = {
+                    IconButton(onClick = { showCalculator = !showCalculator }) {
+                        Icon(
+                            imageVector = Icons.Filled.Calculate,
+                            contentDescription = "Calculator",
+                            tint = if (showCalculator || hasOperators) appColors.accent else colors.textSecondary
+                        )
+                    }
+                },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 shape = RoundedCornerShape(SmallElementRadius),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = colors.surfaceVariant,
                     unfocusedContainerColor = colors.surfaceVariant,
-                    focusedBorderColor = ColorAccent,
+                    focusedBorderColor = appColors.accent,
                     unfocusedBorderColor = colors.border,
                     focusedTextColor = colors.textPrimary,
                     unfocusedTextColor = colors.textPrimary
@@ -168,17 +181,18 @@ fun TransferFundsSheet(
                 onApply = { evaluated ->
                     haptics.successFeedback()
                     amountText = if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated)
+                    showCalculator = false
                 }
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            CalculatorKeypadBar(
+            ExpandableCalculatorKeypadBar(
+                expanded = showCalculator,
                 currentExpression = amountText,
                 onExpressionChanged = { amountText = it },
                 onApplyResult = { evaluated ->
                     haptics.successFeedback()
                     amountText = if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated)
+                    showCalculator = false
                 }
             )
 
@@ -196,7 +210,7 @@ fun TransferFundsSheet(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = colors.surfaceVariant,
                     unfocusedContainerColor = colors.surfaceVariant,
-                    focusedBorderColor = ColorAccent,
+                    focusedBorderColor = appColors.accent,
                     unfocusedBorderColor = colors.border,
                     focusedTextColor = colors.textPrimary,
                     unfocusedTextColor = colors.textPrimary
@@ -206,7 +220,7 @@ fun TransferFundsSheet(
 
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(errorMessage!!, color = ColorDangerExpense, fontSize = 12.sp)
+                Text(errorMessage!!, color = appColors.expense, fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -231,7 +245,7 @@ fun TransferFundsSheet(
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(SmallElementRadius),
-                colors = ButtonDefaults.buttonColors(containerColor = if (isAmountValid) ColorAccent else ColorAccent.copy(alpha = 0.55f))
+                colors = ButtonDefaults.buttonColors(containerColor = if (isAmountValid) appColors.accent else appColors.accent.copy(alpha = 0.55f))
             ) {
                 Text(text = strings.confirmTransfer, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             }

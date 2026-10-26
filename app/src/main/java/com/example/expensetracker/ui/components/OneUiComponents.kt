@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.CardCornerRadius
 import com.example.expensetracker.theme.CardPadding
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.HairlineDividerStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
@@ -117,14 +116,16 @@ fun HairlineDivider(
  */
 @Composable
 fun EmptyStateCard(
-    icon: ImageVector = Icons.Outlined.ReceiptLong,
+    icon: ImageVector = Icons.AutoMirrored.Outlined.ReceiptLong,
     headline: String,
     explanation: String,
     buttonText: String,
     onButtonClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val colors = LocalAppColors.current
+    val haptics = rememberAppHaptics()
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -152,13 +153,13 @@ fun EmptyStateCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(SmallElementRadius))
-                    .background(ColorAccent.copy(alpha = 0.12f)),
+                    .background(appColors.accent.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = ColorAccent,
+                    tint = appColors.accent,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -184,10 +185,17 @@ fun EmptyStateCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val ctaContentColor = if (appColors.accent == appColors.income && appColors.isDark) Color(0xFF052B14) else Color.White
             Button(
-                onClick = onButtonClick,
+                onClick = {
+                    haptics.mediumClick()
+                    onButtonClick()
+                },
                 shape = RoundedCornerShape(SmallElementRadius),
-                colors = ButtonDefaults.buttonColors(containerColor = ColorAccent),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = appColors.accent,
+                    contentColor = ctaContentColor
+                ),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
             ) {
                 Text(
@@ -196,7 +204,7 @@ fun EmptyStateCard(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = Color.White
+                    color = ctaContentColor
                 )
             }
         }

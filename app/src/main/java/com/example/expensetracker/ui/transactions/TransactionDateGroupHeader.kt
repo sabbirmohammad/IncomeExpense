@@ -13,14 +13,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.formatCurrency
 import java.util.Calendar
 import kotlin.math.abs
+import com.example.expensetracker.theme.LocalAppColors
 
 fun groupTransactionsByDate(
     transactions: List<Transaction>,
@@ -58,6 +55,7 @@ fun TransactionDateGroupHeader(
     isBangla: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -75,17 +73,17 @@ fun TransactionDateGroupHeader(
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
             Text(
                 text = "• ${DateTimeHelper.formatCounter(itemsCount, isBangla)}${if (isBangla) "টি" else ""}",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                color = ColorTextMuted
+                color = appColors.textMuted
             )
         }
 
         val netText = "${if (netAmount >= 0) "+" else "-"}${formatCurrency(abs(netAmount), currencySymbol)}"
-        val netColor = if (netAmount >= 0) ColorSuccessIncome else ColorDangerExpense
+        val netColor = if (netAmount >= 0) appColors.income else appColors.expense
 
         Text(
             text = netText,

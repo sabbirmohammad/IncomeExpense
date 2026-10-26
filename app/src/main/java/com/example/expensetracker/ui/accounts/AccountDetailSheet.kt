@@ -42,17 +42,11 @@ import com.example.expensetracker.data.model.getLocalizedCategoryName
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.ListRow
+import com.example.expensetracker.theme.CardCornerRadius
+import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.globalBengaliNumeralsEnabled
-import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
-import com.example.expensetracker.ui.components.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +59,7 @@ fun AccountDetailSheet(
     onReconcile: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     val totalInflow = remember(transactions) {
         transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
@@ -75,7 +70,7 @@ fun AccountDetailSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -95,7 +90,7 @@ fun AccountDetailSheet(
                         fontSize = 17.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -103,7 +98,7 @@ fun AccountDetailSheet(
                         Icon(
                             imageVector = Icons.Outlined.AccountBalance,
                             contentDescription = strings.reconcileBalance,
-                            tint = ColorAccent,
+                            tint = appColors.accent,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -111,7 +106,7 @@ fun AccountDetailSheet(
                         Icon(
                             imageVector = Icons.Outlined.Edit,
                             contentDescription = "Edit",
-                            tint = ColorTextSecondary,
+                            tint = appColors.textSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -119,7 +114,7 @@ fun AccountDetailSheet(
                         Icon(
                             imageVector = Icons.Outlined.Close,
                             contentDescription = "Close",
-                            tint = ColorTextSecondary,
+                            tint = appColors.textSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -143,19 +138,19 @@ fun AccountDetailSheet(
                     modifier = Modifier.weight(1f),
                     label = if (strings.isBangla) "প্রারম্ভিক" else "Initial",
                     amount = formatCurrency(account.initialBalance, currencySymbol),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 AccountStatMiniCard(
                     modifier = Modifier.weight(1f),
                     label = if (strings.isBangla) "মোট জমা" else "Inflow",
                     amount = "+${formatCurrency(totalInflow, currencySymbol)}",
-                    color = ColorSuccessIncome
+                    color = appColors.income
                 )
                 AccountStatMiniCard(
                     modifier = Modifier.weight(1f),
                     label = if (strings.isBangla) "মোট খরচ" else "Outflow",
                     amount = "-${formatCurrency(totalOutflow, currencySymbol)}",
-                    color = ColorDangerExpense
+                    color = appColors.expense
                 )
             }
 
@@ -165,8 +160,8 @@ fun AccountDetailSheet(
                 onClick = onReconcile,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorAccent),
-                border = BorderStroke(1.dp, ColorAccent.copy(alpha = 0.45f))
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.accent),
+                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.45f))
             ) {
                 Icon(
                     imageVector = Icons.Outlined.AccountBalance,
@@ -187,7 +182,7 @@ fun AccountDetailSheet(
                 text = if (strings.isBangla) "লেনদেনের ইতিহাস (${transactions.size})" else "TRANSACTIONS HISTORY (${transactions.size})",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = ColorTextMuted,
+                color = appColors.textMuted,
                 letterSpacing = 0.8.sp
             )
 
@@ -202,7 +197,7 @@ fun AccountDetailSheet(
                 ) {
                     Text(
                         text = if (strings.isBangla) "এই অ্যাকাউন্টের সাথে এখনও কোনো লেনদেন নেই।" else "No transactions linked to this account yet.",
-                        color = ColorTextMuted,
+                        color = appColors.textMuted,
                         fontSize = 12.sp
                     )
                 }
@@ -215,7 +210,7 @@ fun AccountDetailSheet(
                     itemsIndexed(transactions) { index, tx ->
                         val isIncome = tx.type == TransactionType.INCOME
                         val amountFormatted = "${if (isIncome) "+" else "-"} ${formatCurrency(tx.amount, currencySymbol, globalBengaliNumeralsEnabled || strings.isBangla)}"
-                        val amountColor = if (isIncome) ColorSuccessIncome else ColorDangerExpense
+                        val amountColor = if (isIncome) appColors.income else appColors.expense
 
                         ListRow(
                             iconName = tx.categoryIcon,
@@ -224,7 +219,8 @@ fun AccountDetailSheet(
                             meta = "${getLocalizedCategoryName(tx.categoryName, strings.isBangla)} • ${DateTimeHelper.formatItemDateTime(tx.dateMillis, strings.isBangla, globalBengaliNumeralsEnabled || strings.isBangla)}",
                             amountText = amountFormatted,
                             amountColor = amountColor,
-                            paymentMethod = tx.paymentMethod
+                            paymentMethod = tx.paymentMethod,
+                            hasReceipt = tx.receiptImagePath != null
                         )
                         if (index < transactions.lastIndex) {
                             HairlineDivider()

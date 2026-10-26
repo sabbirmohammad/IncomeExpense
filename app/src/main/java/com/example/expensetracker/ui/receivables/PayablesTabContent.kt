@@ -24,9 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Payable
 import com.example.expensetracker.data.model.PayablesSummary
 import com.example.expensetracker.theme.CardGap
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.Strings
 import java.util.Locale
@@ -52,6 +50,7 @@ fun LazyListScope.payablesTabContent(
     }
 
     item {
+        val appColors = LocalAppColors.current
         Spacer(modifier = Modifier.height(CardGap))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -61,14 +60,14 @@ fun LazyListScope.payablesTabContent(
             Text(
                 text = "${strings.payablesTitle.uppercase(Locale.getDefault())} (${payables.size})",
                 style = MaterialTheme.typography.titleSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                color = ColorTextSecondary,
+                color = appColors.textSecondary,
                 letterSpacing = 0.8.sp
             )
             Text(
                 text = "+ ${strings.addPayable}",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = ColorAccent,
+                color = appColors.accent,
                 modifier = Modifier.clickable { onAddPayable() }
             )
         }
@@ -77,17 +76,18 @@ fun LazyListScope.payablesTabContent(
 
     if (payables.isEmpty()) {
         item {
+            val appColors = LocalAppColors.current
             Spacer(modifier = Modifier.height(CardGap))
             AppCard(modifier = Modifier.fillMaxWidth(), padding = 32.dp) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Outlined.Handshake, null, tint = ColorTextSecondary, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Outlined.Handshake, null, tint = appColors.textSecondary, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(strings.noPayablesFound, style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = ColorTextPrimary)
+                    Text(strings.noPayablesFound, style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = appColors.textPrimary)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(strings.noPayablesHint, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), color = ColorTextSecondary)
+                    Text(strings.noPayablesHint, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), color = appColors.textSecondary)
                 }
             }
         }

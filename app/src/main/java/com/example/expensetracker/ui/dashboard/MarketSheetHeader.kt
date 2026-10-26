@@ -17,12 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,9 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -48,8 +47,10 @@ fun MarketSheetHeader(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDeleteList: (() -> Unit)? = null
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val strings = LocalAppStrings.current
 
@@ -84,29 +85,44 @@ fun MarketSheetHeader(
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                     val listDate = createdAt ?: System.currentTimeMillis()
                     val syncedDateText = remember(listDate, isBangla) {
                         DateTimeHelper.formatDayGroup(listDate, isBangla)
                     }
                     Text(
-                        text = "📅 $syncedDateText",
+                        text = syncedDateText,
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorAccent
+                        color = appColors.accent
                     )
                 }
             }
 
-            IconButton(onClick = onDismiss) {
-                Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = "Close",
-                    tint = ColorTextSecondary
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (onDeleteList != null) {
+                    IconButton(onClick = onDeleteList) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = if (isBangla) "ফর্দ মুছে ফেলুন" else "Delete List",
+                            tint = appColors.expense.copy(alpha = 0.85f)
+                        )
+                    }
+                }
+
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Close",
+                        tint = appColors.textSecondary
+                    )
+                }
             }
         }
 
@@ -127,7 +143,8 @@ fun MarketSheetHeader(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (selectedTab == 0) ColorAccent else Color.Transparent)
+                        .background(if (selectedTab == 0) appColors.accent else Color.Transparent)
+                        .minimumInteractiveComponentSize()
                         .clickable {
                             haptics.lightTick()
                             onTabSelected(0)
@@ -141,7 +158,7 @@ fun MarketSheetHeader(
                             fontSize = 12.sp,
                             fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
                         ),
-                        color = if (selectedTab == 0) Color.White else ColorTextSecondary,
+                        color = if (selectedTab == 0) Color.White else appColors.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -152,6 +169,7 @@ fun MarketSheetHeader(
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
                         .background(if (selectedTab == 1) Color(0xFF25D366) else Color.Transparent)
+                        .minimumInteractiveComponentSize()
                         .clickable {
                             haptics.lightTick()
                             onTabSelected(1)
@@ -166,7 +184,7 @@ fun MarketSheetHeader(
                         Icon(
                             imageVector = Icons.Filled.ContentPaste,
                             contentDescription = null,
-                            tint = if (selectedTab == 1) Color.White else ColorTextSecondary,
+                            tint = if (selectedTab == 1) Color.White else appColors.textSecondary,
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
@@ -175,7 +193,7 @@ fun MarketSheetHeader(
                                 fontSize = 12.sp,
                                 fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
                             ),
-                            color = if (selectedTab == 1) Color.White else ColorTextSecondary,
+                            color = if (selectedTab == 1) Color.White else appColors.textSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

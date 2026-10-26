@@ -36,12 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -52,6 +47,7 @@ fun EditProfileDialog(
     onSave: (String, String, Int) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     var firstNameInput by remember { mutableStateOf(userProfile.firstName) }
     var lastNameInput by remember { mutableStateOf(userProfile.lastName) }
     var selectedAvatar by remember { mutableIntStateOf(userProfile.avatarIndex) }
@@ -60,12 +56,21 @@ fun EditProfileDialog(
     val isFirstValid = effectiveFirst.isNotEmpty()
     val dashboardNamePreview = if (isFirstValid) effectiveFirst else "..."
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = appColors.surfaceVariant,
+        unfocusedContainerColor = appColors.surfaceVariant,
+        focusedBorderColor = appColors.accent,
+        unfocusedBorderColor = appColors.border,
+        focusedTextColor = appColors.textPrimary,
+        unfocusedTextColor = appColors.textPrimary
+    )
+
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
-        titleContentColor = ColorTextPrimary,
-        textContentColor = ColorTextSecondary,
+        containerColor = appColors.surface,
+        titleContentColor = appColors.textPrimary,
+        textContentColor = appColors.textSecondary,
         title = {
             Text(
                 text = strings.editProfileTitle,
@@ -80,22 +85,15 @@ fun EditProfileDialog(
                 Text(
                     text = strings.firstNameLabel,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = firstNameInput,
                     onValueChange = { firstNameInput = it },
-                    placeholder = { Text(strings.egFirstName, color = ColorTextMuted) },
+                    placeholder = { Text(strings.egFirstName, color = appColors.textMuted) },
                     shape = RoundedCornerShape(SmallElementRadius),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = ColorSurface,
-                        unfocusedContainerColor = ColorSurface,
-                        focusedBorderColor = ColorAccent,
-                        unfocusedBorderColor = ColorBorder,
-                        focusedTextColor = ColorTextPrimary,
-                        unfocusedTextColor = ColorTextPrimary
-                    ),
+                    colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -109,22 +107,15 @@ fun EditProfileDialog(
                 Text(
                     text = strings.lastNameLabel,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = lastNameInput,
                     onValueChange = { lastNameInput = it },
-                    placeholder = { Text(strings.egLastName, color = ColorTextMuted) },
+                    placeholder = { Text(strings.egLastName, color = appColors.textMuted) },
                     shape = RoundedCornerShape(SmallElementRadius),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = ColorSurface,
-                        unfocusedContainerColor = ColorSurface,
-                        focusedBorderColor = ColorAccent,
-                        unfocusedBorderColor = ColorBorder,
-                        focusedTextColor = ColorTextPrimary,
-                        unfocusedTextColor = ColorTextPrimary
-                    ),
+                    colors = textFieldColors,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -138,7 +129,7 @@ fun EditProfileDialog(
                 Text(
                     text = strings.chooseAvatarLabel,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -155,15 +146,15 @@ fun EditProfileDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(SmallElementRadius))
-                        .background(ColorAccent.copy(alpha = 0.1f))
-                        .border(1.dp, ColorAccent.copy(alpha = 0.3f), RoundedCornerShape(SmallElementRadius))
+                        .background(appColors.accent.copy(alpha = 0.1f))
+                        .border(1.dp, appColors.accent.copy(alpha = 0.3f), RoundedCornerShape(SmallElementRadius))
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Column {
                         Text(
                             text = strings.dashboardPreviewLabel,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = ColorAccent
+                            color = appColors.accent
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -172,7 +163,7 @@ fun EditProfileDialog(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                     }
                 }
@@ -187,8 +178,8 @@ fun EditProfileDialog(
                 },
                 enabled = isFirstValid,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = ColorAccent,
-                    disabledContainerColor = ColorBorder
+                    containerColor = appColors.accent,
+                    disabledContainerColor = appColors.border
                 ),
                 shape = RoundedCornerShape(SmallElementRadius)
             ) {
@@ -197,7 +188,7 @@ fun EditProfileDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )

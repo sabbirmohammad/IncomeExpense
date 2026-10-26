@@ -29,13 +29,7 @@ import com.example.expensetracker.data.model.DebtBookSummary
 import com.example.expensetracker.data.model.PayablesSummary
 import com.example.expensetracker.data.model.ReceivablesSummary
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.DateTimeHelper
@@ -56,6 +50,7 @@ fun ReceivablesTabsAndNetBanner(
 ) {
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
+    val appColors = LocalAppColors.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         // Segmented Control (Tabs)
@@ -68,8 +63,8 @@ fun ReceivablesTabsAndNetBanner(
             // Tab 1: Receivables
             Surface(
                 shape = RoundedCornerShape(SmallElementRadius),
-                color = if (selectedTab == DebtLedgerTab.RECEIVABLES) ColorAccent else ColorSurface,
-                border = if (selectedTab == DebtLedgerTab.RECEIVABLES) null else BorderStroke(1.dp, ColorBorder),
+                color = if (selectedTab == DebtLedgerTab.RECEIVABLES) appColors.accent else appColors.surface,
+                border = if (selectedTab == DebtLedgerTab.RECEIVABLES) null else BorderStroke(1.dp, appColors.border),
                 modifier = Modifier
                     .weight(1f)
                     .clickable {
@@ -86,21 +81,21 @@ fun ReceivablesTabsAndNetBanner(
                         text = strings.tabReceivables,
                         fontSize = 12.5.sp,
                         fontWeight = if (selectedTab == DebtLedgerTab.RECEIVABLES) FontWeight.Bold else FontWeight.Medium,
-                        color = if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White else ColorTextSecondary
+                        color = if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White else appColors.textSecondary
                     )
                     if (summary.pendingCount > 0) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White.copy(alpha = 0.25f) else ColorAccent.copy(alpha = 0.15f))
+                                .background(if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White.copy(alpha = 0.25f) else appColors.accent.copy(alpha = 0.15f))
                                 .padding(horizontal = 6.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 text = DateTimeHelper.formatCounter(summary.pendingCount, strings.isBangla),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White else ColorAccent
+                                color = if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White else appColors.accent
                             )
                         }
                     }
@@ -110,8 +105,8 @@ fun ReceivablesTabsAndNetBanner(
             // Tab 2: Payables
             Surface(
                 shape = RoundedCornerShape(SmallElementRadius),
-                color = if (selectedTab == DebtLedgerTab.PAYABLES) ColorAccent else ColorSurface,
-                border = if (selectedTab == DebtLedgerTab.PAYABLES) null else BorderStroke(1.dp, ColorBorder),
+                color = if (selectedTab == DebtLedgerTab.PAYABLES) appColors.accent else appColors.surface,
+                border = if (selectedTab == DebtLedgerTab.PAYABLES) null else BorderStroke(1.dp, appColors.border),
                 modifier = Modifier
                     .weight(1f)
                     .clickable {
@@ -128,21 +123,21 @@ fun ReceivablesTabsAndNetBanner(
                         text = strings.tabPayables,
                         fontSize = 12.5.sp,
                         fontWeight = if (selectedTab == DebtLedgerTab.PAYABLES) FontWeight.Bold else FontWeight.Medium,
-                        color = if (selectedTab == DebtLedgerTab.PAYABLES) Color.White else ColorTextSecondary
+                        color = if (selectedTab == DebtLedgerTab.PAYABLES) Color.White else appColors.textSecondary
                     )
                     if (payablesSummary.pendingCount > 0) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(if (selectedTab == DebtLedgerTab.PAYABLES) Color.White.copy(alpha = 0.25f) else ColorDangerExpense.copy(alpha = 0.15f))
+                                .background(if (selectedTab == DebtLedgerTab.PAYABLES) Color.White.copy(alpha = 0.25f) else appColors.expense.copy(alpha = 0.15f))
                                 .padding(horizontal = 6.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 text = DateTimeHelper.formatCounter(payablesSummary.pendingCount, strings.isBangla),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (selectedTab == DebtLedgerTab.PAYABLES) Color.White else ColorDangerExpense
+                                color = if (selectedTab == DebtLedgerTab.PAYABLES) Color.White else appColors.expense
                             )
                         }
                     }
@@ -153,8 +148,8 @@ fun ReceivablesTabsAndNetBanner(
         // Net Position Banner
         Surface(
             shape = RoundedCornerShape(CardCornerRadius),
-            color = ColorSurface,
-            border = BorderStroke(1.dp, ColorBorder),
+            color = appColors.surface,
+            border = BorderStroke(1.dp, appColors.border),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = ScreenPaddingHorizontal, vertical = 4.dp)
@@ -170,16 +165,16 @@ fun ReceivablesTabsAndNetBanner(
                             .size(8.dp)
                             .clip(CircleShape)
                             .background(
-                                if (debtBookSummary.netBalance > 0) ColorSuccessIncome
-                                else if (debtBookSummary.netBalance < 0) ColorDangerExpense
-                                else ColorTextSecondary
+                                if (debtBookSummary.netBalance > 0) appColors.income
+                                else if (debtBookSummary.netBalance < 0) appColors.expense
+                                else appColors.textSecondary
                             )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = strings.netPosition,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
 
@@ -199,9 +194,9 @@ fun ReceivablesTabsAndNetBanner(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (debtBookSummary.netBalance > 0) ColorSuccessIncome
-                        else if (debtBookSummary.netBalance < 0) ColorDangerExpense
-                        else ColorTextPrimary
+                        color = if (debtBookSummary.netBalance > 0) appColors.income
+                        else if (debtBookSummary.netBalance < 0) appColors.expense
+                        else appColors.textPrimary
                     )
                 }
             }

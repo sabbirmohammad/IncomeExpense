@@ -3,12 +3,14 @@ package com.example.expensetracker.ui.transactions
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.TimeFilter
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.repository.*
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,14 +24,24 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
+private data class TxFilterParams(
+    val query: String,
+    val type: TransactionType?,
+    val categoryId: Long?,
+    val accountId: Long?,
+    val timeFilter: TimeFilter
+)
+
 @OptIn(FlowPreview::class)
 class TransactionsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = ExpenseRepository.getInstance(application)
 
     val categories: StateFlow<List<Category>> = repository.categories
+    val accounts: StateFlow<List<Account>> = repository.accounts
     val userProfile: StateFlow<UserProfile> = repository.userProfile
     val marketLists: StateFlow<List<com.example.expensetracker.data.model.MarketListWithItems>> = repository.allMarketLists
+    val allTransactions: StateFlow<List<Transaction>> = repository.transactions
 
     private val _filteredTransactions = MutableStateFlow<List<Transaction>>(emptyList())
     val filteredTransactions: StateFlow<List<Transaction>> = _filteredTransactions.asStateFlow()
@@ -43,7 +55,10 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     private val _selectedCategoryId = MutableStateFlow<Long?>(null)
     val selectedCategoryId: StateFlow<Long?> = _selectedCategoryId.asStateFlow()
 
-    private val _selectedTimeFilter = MutableStateFlow(TimeFilter.ALL)
+    private val _selectedAccountId = MutableStateFlow<Long?>(null)
+    val selectedAccountId: StateFlow<Long?> = _selectedAccountId.asStateFlow()
+
+    private val _selectedTimeFilter = MutableStateFlow(TimeFilter.THIS_MONTH)
     val selectedTimeFilter: StateFlow<TimeFilter> = _selectedTimeFilter.asStateFlow()
 
     private val _customDateRange = MutableStateFlow<Pair<Long, Long>?>(null)
@@ -67,28 +82,34 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
             .debounce(300L)
             .distinctUntilChanged()
 
-        combine(
+        val filterFlow = combine(
             debouncedQuery,
             _selectedType,
             _selectedCategoryId,
-            _selectedTimeFilter,
-            repository.transactions
-        ) { query, type, catId, timeFilter, _ ->
+            _selectedAccountId,
+            _selectedTimeFilter
+        ) { query, type, catId, accId, timeFilter ->
+            TxFilterParams(query, type, catId, accId, timeFilter)
+        }
+
+        combine(filterFlow, repository.transactions) { filters, _ ->
             val customRange = _customDateRange.value
-            if (timeFilter == TimeFilter.CUSTOM && customRange != null) {
+            if (filters.timeFilter == TimeFilter.CUSTOM && customRange != null) {
                 repository.getTransactionsBetween(
                     startMillis = customRange.first,
                     endMillis = customRange.second,
-                    type = type,
-                    categoryId = catId,
-                    query = query
+                    type = filters.type,
+                    categoryId = filters.categoryId,
+                    query = filters.query,
+                    accountId = filters.accountId
                 )
             } else {
                 repository.getFilteredTransactions(
-                    timeFilter = timeFilter,
-                    type = type,
-                    categoryId = catId,
-                    query = query
+                    timeFilter = filters.timeFilter,
+                    type = filters.type,
+                    categoryId = filters.categoryId,
+                    query = filters.query,
+                    accountId = filters.accountId
                 )
             }
         }.flowOn(Dispatchers.IO).onEach { result ->
@@ -100,6 +121,15 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
                 val selectedId = _selectedCategoryId.value
                 if (selectedId != null && cats.none { it.id == selectedId }) {
                     _selectedCategoryId.value = null
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            repository.accounts.collect { accs ->
+                val selectedId = _selectedAccountId.value
+                if (selectedId != null && accs.none { it.id == selectedId }) {
+                    _selectedAccountId.value = null
                 }
             }
         }
@@ -117,6 +147,10 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
         _selectedCategoryId.value = categoryId
     }
 
+    fun setAccountFilter(accountId: Long?) {
+        _selectedAccountId.value = accountId
+    }
+
     fun setTimeFilter(filter: TimeFilter) {
         _selectedTimeFilter.value = filter
         if (filter != TimeFilter.CUSTOM) {
@@ -129,14 +163,18 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
         _selectedTimeFilter.value = TimeFilter.CUSTOM
     }
 
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        android.util.Log.e("TransactionsViewModel", "Unhandled coroutine error", throwable)
+    }
+
     fun deleteTransaction(transaction: Transaction) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.deleteTransaction(transaction.id)
         }
     }
 
     fun restoreTransaction(transaction: Transaction) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.addTransaction(transaction)
         }
     }
@@ -151,14 +189,16 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
                     endMillis = customRange.second,
                     type = _selectedType.value,
                     categoryId = _selectedCategoryId.value,
-                    query = _searchQuery.value
+                    query = _searchQuery.value,
+                    accountId = _selectedAccountId.value
                 )
             } else {
                 repository.getFilteredTransactions(
                     timeFilter = filter,
                     type = _selectedType.value,
                     categoryId = _selectedCategoryId.value,
-                    query = _searchQuery.value
+                    query = _searchQuery.value,
+                    accountId = _selectedAccountId.value
                 )
             }
         }

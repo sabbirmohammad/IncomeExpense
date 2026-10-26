@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Icon
@@ -29,14 +29,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.ui.components.globalBengaliNumeralsEnabled
 
 @Composable
 fun BillsSummaryHeroCard(
@@ -48,11 +47,11 @@ fun BillsSummaryHeroCard(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
+    val isBn = strings.isBangla || globalBengaliNumeralsEnabled
 
     AppCard(
         modifier = modifier.fillMaxWidth(),
-        backgroundColor = Color(0xFF141829),
-        borderColor = Color(0xFF282F46),
         padding = 16.dp
     ) {
         Column {
@@ -68,16 +67,16 @@ fun BillsSummaryHeroCard(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = formatCurrency(totalMonthlyCommitments, currencySymbol),
+                        text = formatCurrency(totalMonthlyCommitments, currencySymbol, isBn),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 }
 
@@ -85,20 +84,20 @@ fun BillsSummaryHeroCard(
                     modifier = Modifier
                         .size(46.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(ColorAccent.copy(alpha = 0.15f)),
+                        .background(appColors.accent.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.ReceiptLong,
+                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                         contentDescription = null,
-                        tint = ColorAccent,
+                        tint = appColors.accent,
                         modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            HairlineDivider(color = Color(0xFF232838))
+            HairlineDivider()
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(
@@ -114,20 +113,22 @@ fun BillsSummaryHeroCard(
                         modifier = Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(ColorAccent)
+                            .background(appColors.accent)
                     )
+                    val activeCountDisp = if (isBn) convertToBengaliDigits(activeBillsCount.toString()) else activeBillsCount.toString()
                     Text(
-                        text = "$activeBillsCount ${strings.activeSubscriptions}",
+                        text = "$activeCountDisp ${strings.activeSubscriptions}",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
 
                 if (overdueCount > 0) {
+                    val overdueDisp = if (isBn) convertToBengaliDigits(overdueCount.toString()) else overdueCount.toString()
                     Surface(
                         shape = CircleShape,
-                        color = ColorDangerExpense.copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, ColorDangerExpense.copy(alpha = 0.35f))
+                        color = appColors.dangerExpense.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, appColors.dangerExpense.copy(alpha = 0.35f))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -137,24 +138,25 @@ fun BillsSummaryHeroCard(
                             Icon(
                                 imageVector = Icons.Outlined.Warning,
                                 contentDescription = null,
-                                tint = ColorDangerExpense,
+                                tint = appColors.dangerExpense,
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "$overdueCount ${if (strings.isBangla) "বকেয়া" else "overdue"}",
+                                text = "$overdueDisp ${if (strings.isBangla) "বকেয়া" else "overdue"}",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = ColorDangerExpense
+                                color = appColors.dangerExpense
                             )
                         }
                     }
                 } else if (dueSoonCount > 0) {
+                    val dueSoonDisp = if (isBn) convertToBengaliDigits(dueSoonCount.toString()) else dueSoonCount.toString()
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFFF7941D).copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, Color(0xFFF7941D).copy(alpha = 0.35f))
+                        color = appColors.warning.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, appColors.warning.copy(alpha = 0.35f))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -164,16 +166,16 @@ fun BillsSummaryHeroCard(
                             Icon(
                                 imageVector = Icons.Outlined.NotificationsActive,
                                 contentDescription = null,
-                                tint = Color(0xFFF7941D),
+                                tint = appColors.warning,
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "$dueSoonCount ${if (strings.isBangla) "তাগিদ" else "due soon"}",
+                                text = "$dueSoonDisp ${if (strings.isBangla) "তাগিদ" else "due soon"}",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = Color(0xFFF7941D)
+                                color = appColors.warning
                             )
                         }
                     }

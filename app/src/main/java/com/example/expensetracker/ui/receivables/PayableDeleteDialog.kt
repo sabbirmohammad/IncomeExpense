@@ -12,10 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Payable
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
@@ -25,15 +22,16 @@ fun PayableDeleteDialog(
     onConfirmDelete: (Payable) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(CardCornerRadius),
-        containerColor = ColorSurface,
+        containerColor = appColors.surface,
         title = {
             Text(
                 text = "${if (strings.isBangla) "দেনা মুছুন" else "Delete Payable"} (${payable.personName})",
-                color = ColorTextPrimary,
+                color = appColors.textPrimary,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -41,21 +39,21 @@ fun PayableDeleteDialog(
         text = {
             Text(
                 text = if (strings.isBangla) "আপনি কি নিশ্চিত যে এই দেনার হিসাবটি মুছে ফেলতে চান?" else "Are you sure you want to delete this payable entry?",
-                color = ColorTextSecondary,
+                color = appColors.textSecondary,
                 fontSize = 13.sp
             )
         },
         confirmButton = {
             Button(
                 onClick = { onConfirmDelete(payable) },
-                colors = ButtonDefaults.buttonColors(containerColor = ColorDangerExpense)
+                colors = ButtonDefaults.buttonColors(containerColor = appColors.expense)
             ) {
                 Text(strings.delete, color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(strings.cancel, color = ColorTextSecondary)
+                Text(strings.cancel, color = appColors.textSecondary)
             }
         }
     )

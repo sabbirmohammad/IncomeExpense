@@ -32,7 +32,6 @@ import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.getLocalizedAccountName
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -48,6 +47,7 @@ fun TransactionHeroAmountCard(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Card(
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -121,15 +121,16 @@ fun TransactionHeroAmountCard(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 val catName = selectedCategory?.getLocalizedName(strings.isBangla) ?: transaction.categoryName
-                val accName = getLocalizedAccountName(matchedAccount?.name ?: transaction.accountName ?: "", strings.isBangla)
-                val subText = if (accName.isNotBlank()) "$catName • $accName" else catName
+                val accountOrMethod = (matchedAccount?.name ?: transaction.accountName)?.takeIf { it.isNotBlank() }?.let { getLocalizedAccountName(it, strings.isBangla) }
+                    ?: transaction.paymentMethod.getDisplayName(strings.isBangla)
+                val subText = if (accountOrMethod.isNotBlank()) "$catName • $accountOrMethod" else catName
                 Text(
                     text = subText,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
             }
         }

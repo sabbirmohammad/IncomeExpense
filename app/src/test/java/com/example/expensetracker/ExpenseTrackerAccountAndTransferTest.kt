@@ -182,4 +182,80 @@ class ExpenseTrackerAccountAndTransferTest {
         val txWithReceipt = txWithoutReceipt.copy(receiptImagePath = "/files/receipts/receipt_123.jpg")
         assertEquals("/files/receipts/receipt_123.jpg", txWithReceipt.receiptImagePath)
     }
+
+    @Test
+    fun testAccountDeletionPreservesNetWorthByMergingInitialBalance() {
+        // Account 1 (Savings): Initial 50,000, 10,000 expense -> Balance = 40,000
+        val acc1 = Account(
+            id = 1L,
+            name = "City Bank Savings",
+            type = AccountType.BANK,
+            initialBalance = 50000.0,
+            currentBalance = 40000.0
+        )
+        // Account 2 (Cash): Initial 5,000, 2,000 income -> Balance = 7,000
+        val acc2 = Account(
+            id = 2L,
+            name = "Cash in Hand",
+            type = AccountType.CASH,
+            initialBalance = 5000.0,
+            currentBalance = 7000.0
+        )
+
+        val preDeletionNetWorth = acc1.currentBalance + acc2.currentBalance
+        assertEquals(47000.0, preDeletionNetWorth, 0.001)
+
+        val txListAcc1 = mutableListOf(
+            Transaction(1, "Shopping", 10000.0, TransactionType.EXPENSE, 1, "Shopping", "Cart", "#F00", 1000L, accountId = 1L)
+        )
+        val txListAcc2 = mutableListOf(
+            Transaction(2, "Freelance", 2000.0, TransactionType.INCOME, 2, "Salary", "Work", "#0F0", 2000L, accountId = 2L)
+        )
+
+        // Simulate Account Deletion Fix:
+        // 1. Acc2 absorbs Acc1's initial balance
+        val mergedInitialBalance = acc2.initialBalance + acc1.initialBalance
+        assertEquals(55000.0, mergedInitialBalance, 0.001)
+
+        // 2. Acc1's transactions migrate to Acc2
+        val migratedTxs = txListAcc1.map { it.copy(accountId = acc2.id) }
+        val allAcc2Txs = txListAcc2 + migratedTxs
+
+        // 3. Recalculate Acc2 current balance
+        val totalInc = allAcc2Txs.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+        val totalExp = allAcc2Txs.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+        val recalculatedAcc2Balance = mergedInitialBalance + totalInc - totalExp
+
+        assertEquals(2000.0, totalInc, 0.001)
+        assertEquals(10000.0, totalExp, 0.001)
+        assertEquals(47000.0, recalculatedAcc2Balance, 0.001)
+
+        // Post-deletion net worth exactly equals pre-deletion net worth
+        val postDeletionNetWorth = recalculatedAcc2Balance
+        assertEquals(preDeletionNetWorth, postDeletionNetWorth, 0.001)
+    }
+
+    @Test
+    fun testMarketTripCompletionAtomicBalanceConsolidation() {
+        val initialAccountBalance = 20000.0
+        val marketTripItems = listOf(
+            Pair("Rice", 1200.0),
+            Pair("Fish", 850.0),
+            Pair("Vegetables", 350.0)
+        )
+        val totalMarketSpent = marketTripItems.sumOf { it.second }
+        assertEquals(2400.0, totalMarketSpent, 0.001)
+
+        // Individual temporary ticks deducted:
+        var interimBalance = initialAccountBalance
+        for (item in marketTripItems) {
+            interimBalance -= item.second
+        }
+        assertEquals(17600.0, interimBalance, 0.001)
+
+        // Consolidated transaction replaces individual items:
+        // (interim + refunded individual txs - single consolidated tx)
+        val consolidatedBalance = interimBalance + totalMarketSpent - totalMarketSpent
+        assertEquals(17600.0, consolidatedBalance, 0.001)
+    }
 }

@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,9 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.ProfileAvatarButton
 
@@ -39,6 +38,8 @@ fun AnalyticsTopBar(
     onNavigateToSettings: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -57,7 +58,7 @@ fun AnalyticsTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = "Back",
-                        tint = ColorTextPrimary
+                        tint = appColors.textPrimary
                     )
                 }
             }
@@ -67,29 +68,35 @@ fun AnalyticsTopBar(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(ColorSurface)
-                    .border(1.dp, ColorBorder, CircleShape)
+                    .minimumInteractiveComponentSize()
                     .clickable { onShareClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Share,
-                    contentDescription = "Share analytics report",
-                    tint = ColorTextPrimary,
-                    modifier = Modifier.size(18.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(appColors.surface)
+                        .border(1.dp, appColors.border, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Share,
+                        contentDescription = "Share analytics report",
+                        tint = appColors.textPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             if (onNavigateToSettings != null) {

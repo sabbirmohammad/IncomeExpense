@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,17 +57,17 @@ fun DashboardScreen(
     onOpenMarketList: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null
 ) {
-    val summary by viewModel.summary.collectAsState()
-    val transactions by viewModel.transactions.collectAsState()
-    val userProfile by viewModel.userProfile.collectAsState()
-    val timeFilter by viewModel.selectedTimeFilter.collectAsState()
-    val accounts by viewModel.accounts.collectAsState()
-    val receivablesSummary by viewModel.receivablesSummary.collectAsState()
-    val debtBookSummary by viewModel.debtBookSummary.collectAsState()
-    val savingsGoals by viewModel.savingsGoals.collectAsState()
-    val recurringBills by viewModel.recurringBills.collectAsState()
-    val activeMarketList by viewModel.activeMarketList.collectAsState()
-    val isPrivacyMode by viewModel.isPrivacyMode.collectAsState()
+    val summary by viewModel.summary.collectAsStateWithLifecycle()
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val timeFilter by viewModel.selectedTimeFilter.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val receivablesSummary by viewModel.receivablesSummary.collectAsStateWithLifecycle()
+    val debtBookSummary by viewModel.debtBookSummary.collectAsStateWithLifecycle()
+    val savingsGoals by viewModel.savingsGoals.collectAsStateWithLifecycle()
+    val recurringBills by viewModel.recurringBills.collectAsStateWithLifecycle()
+    val activeMarketList by viewModel.activeMarketList.collectAsStateWithLifecycle()
+    val isPrivacyMode by viewModel.isPrivacyMode.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
     val feedbackController = LocalFeedbackController.current
@@ -114,15 +114,15 @@ fun DashboardScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(CardGap))
+                Spacer(modifier = Modifier.height(12.dp))
                 DashboardQuickActionsDock(
                     isBn = isBn,
                     haptics = haptics,
-                    onOpenMarketList = onOpenMarketList,
                     onNavigateToAccounts = onNavigateToAccounts,
                     onNavigateToBills = onNavigateToBills,
                     onNavigateToReceivables = onNavigateToReceivables,
-                    onNavigateToBudgets = onNavigateToBudgets
+                    onNavigateToBudgets = onNavigateToBudgets,
+                    onOpenMarketList = onOpenMarketList
                 )
             }
 

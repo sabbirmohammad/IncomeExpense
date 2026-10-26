@@ -17,7 +17,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,17 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.AccountType
+import com.example.expensetracker.theme.CardGap
+import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.FeedbackStrings
 import com.example.expensetracker.ui.components.FeedbackVisualType
+import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.LocalFeedbackController
 import com.example.expensetracker.ui.components.TransactionFeedbackData
-import com.example.expensetracker.theme.CardGap
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.ui.components.LocalAppStrings
-import com.example.expensetracker.theme.ScreenPaddingHorizontal
 
 @Composable
 fun AccountsScreen(
@@ -48,11 +46,12 @@ fun AccountsScreen(
     onMenuClick: (() -> Unit)? = null
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val feedbackController = LocalFeedbackController.current
-    val accounts by viewModel.accounts.collectAsState()
-    val userProfile by viewModel.userProfile.collectAsState()
-    val selectedAccount by viewModel.selectedAccount.collectAsState()
-    val accountTransactions by viewModel.accountTransactions.collectAsState()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val selectedAccount by viewModel.selectedAccount.collectAsStateWithLifecycle()
+    val accountTransactions by viewModel.accountTransactions.collectAsStateWithLifecycle()
 
     var showAddEditSheet by remember { mutableStateOf(false) }
     var accountToEdit by remember { mutableStateOf<Account?>(null) }
@@ -66,7 +65,7 @@ fun AccountsScreen(
     val totalMfs = remember(accounts) { accounts.filter { it.type == AccountType.MFS }.sumOf { it.currentBalance } }
     val totalCash = remember(accounts) { accounts.filter { it.type == AccountType.CASH }.sumOf { it.currentBalance } }
 
-    Column(modifier = Modifier.fillMaxSize().background(ColorBackground)) {
+    Column(modifier = Modifier.fillMaxSize().background(appColors.background)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenPaddingHorizontal, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -79,7 +78,7 @@ fun AccountsScreen(
                     androidx.compose.material3.Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = "Back",
-                        tint = ColorTextPrimary
+                        tint = appColors.textPrimary
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
@@ -88,7 +87,7 @@ fun AccountsScreen(
             Text(
                 text = strings.accountsTitle,
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
-                color = ColorTextPrimary
+                color = appColors.textPrimary
             )
         }
 
@@ -124,7 +123,7 @@ fun AccountsScreen(
                     text = if (strings.isBangla) "সকল অ্যাকাউন্ট" else "ALL ACCOUNTS",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = ColorTextMuted,
+                    color = appColors.textMuted,
                     letterSpacing = 0.8.sp
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -152,7 +151,7 @@ fun AccountsScreen(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(80.dp)) }
+            item { Spacer(modifier = Modifier.height(100.dp)) }
         }
     }
 
@@ -212,6 +211,7 @@ fun AccountsScreen(
     if (accountToDelete != null) {
         AccountDeleteConfirmationDialog(
             account = accountToDelete!!,
+            canDelete = accounts.size > 1,
             onDismiss = { accountToDelete = null },
             onConfirmDelete = {
                 val deletedName = accountToDelete!!.name

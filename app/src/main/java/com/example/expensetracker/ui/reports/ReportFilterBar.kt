@@ -27,13 +27,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.ui.components.DropdownFilterChip
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun ReportFilterBar(
@@ -48,6 +45,7 @@ fun ReportFilterBar(
     onCustomRangeSelected: (Long, Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     var showPeriodMenu by remember { mutableStateOf(false) }
     var showAccountMenu by remember { mutableStateOf(false) }
@@ -69,7 +67,7 @@ fun ReportFilterBar(
                 text = selectedPeriod.getDisplayName(strings.isBangla),
                 isActive = selectedPeriod != ReportPeriod.THIS_MONTH,
                 icon = Icons.Outlined.CalendarToday,
-                activeColor = ColorAccent,
+                activeColor = appColors.accent,
                 onClick = {
                     haptics.lightTick()
                     showPeriodMenu = true
@@ -86,7 +84,7 @@ fun ReportFilterBar(
                             Text(
                                 text = period.getDisplayName(strings.isBangla),
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) ColorAccent else ColorTextPrimary
+                                color = if (isSelected) appColors.accent else appColors.textPrimary
                             )
                         },
                         onClick = {
@@ -100,7 +98,7 @@ fun ReportFilterBar(
                         },
                         leadingIcon = {
                             if (isSelected) {
-                                Icon(Icons.Default.Check, null, tint = ColorAccent)
+                                Icon(Icons.Default.Check, null, tint = appColors.accent)
                             }
                         }
                     )
@@ -133,7 +131,7 @@ fun ReportFilterBar(
                         showAccountMenu = false
                     },
                     leadingIcon = {
-                        if (selectedAccountId == null) Icon(Icons.Default.Check, null, tint = ColorAccent)
+                        if (selectedAccountId == null) Icon(Icons.Default.Check, null, tint = appColors.accent)
                     }
                 )
                 accounts.forEach { acc ->
@@ -145,7 +143,7 @@ fun ReportFilterBar(
                             showAccountMenu = false
                         },
                         leadingIcon = {
-                            if (selectedAccountId == acc.id) Icon(Icons.Default.Check, null, tint = ColorAccent)
+                            if (selectedAccountId == acc.id) Icon(Icons.Default.Check, null, tint = appColors.accent)
                         }
                     )
                 }
@@ -160,9 +158,9 @@ fun ReportFilterBar(
                 null -> strings.allTypes
             }
             val typeColor = when (selectedType) {
-                TransactionType.EXPENSE -> ColorDangerExpense
-                TransactionType.INCOME -> ColorSuccessIncome
-                else -> ColorAccent
+                TransactionType.EXPENSE -> appColors.expense
+                TransactionType.INCOME -> appColors.income
+                else -> appColors.accent
             }
             DropdownFilterChip(
                 text = activeTypeName,
@@ -186,7 +184,7 @@ fun ReportFilterBar(
                         showTypeMenu = false
                     },
                     leadingIcon = {
-                        if (selectedType == null) Icon(Icons.Default.Check, null, tint = ColorAccent)
+                        if (selectedType == null) Icon(Icons.Default.Check, null, tint = appColors.accent)
                     }
                 )
                 DropdownMenuItem(
@@ -197,7 +195,7 @@ fun ReportFilterBar(
                         showTypeMenu = false
                     },
                     leadingIcon = {
-                        if (selectedType == TransactionType.EXPENSE) Icon(Icons.Default.Check, null, tint = ColorDangerExpense)
+                        if (selectedType == TransactionType.EXPENSE) Icon(Icons.Default.Check, null, tint = appColors.expense)
                     }
                 )
                 DropdownMenuItem(
@@ -208,7 +206,7 @@ fun ReportFilterBar(
                         showTypeMenu = false
                     },
                     leadingIcon = {
-                        if (selectedType == TransactionType.INCOME) Icon(Icons.Default.Check, null, tint = ColorSuccessIncome)
+                        if (selectedType == TransactionType.INCOME) Icon(Icons.Default.Check, null, tint = appColors.income)
                     }
                 )
             }

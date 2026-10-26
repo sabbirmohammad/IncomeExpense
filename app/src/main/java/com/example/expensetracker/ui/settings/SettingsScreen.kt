@@ -1,6 +1,5 @@
 package com.example.expensetracker.ui.settings
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,20 +11,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.theme.ColorBackground
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
@@ -35,43 +36,28 @@ fun SettingsScreen(
     onMenuClick: (() -> Unit)? = null
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
+
     if (onNavigateBack != null) {
         BackHandler(onBack = onNavigateBack)
     }
 
-    val userProfile by viewModel.userProfile.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val transactions by viewModel.transactions.collectAsState()
-    val syncMessage by viewModel.syncMessage.collectAsState()
-    val isSyncing by viewModel.isSyncing.collectAsState()
-    val signInIntent by viewModel.signInIntent.collectAsState()
-    val apiConnectionTest by viewModel.apiConnectionTest.collectAsState()
-    val isTestingApi by viewModel.isTestingApi.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
+    val syncMessage by viewModel.syncMessage.collectAsStateWithLifecycle()
+    val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
+    val signInIntent by viewModel.signInIntent.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
-    val scope = rememberCoroutineScope()
-    val exportActions = remember(context, strings, clipboardManager, scope, viewModel) {
-        SettingsDataExportActions(context, strings, clipboardManager, scope, viewModel)
-    }
 
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     var categoryToEdit by remember { mutableStateOf<Category?>(null) }
     var categoryToDelete by remember { mutableStateOf<Category?>(null) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
-    var showLocalRestoreConfirmDialog by remember { mutableStateOf(false) }
-    var selectedLocalBackupUri by remember { mutableStateOf<Uri?>(null) }
     var showAllCategoriesSheet by remember { mutableStateOf(false) }
     var showShareSlipSheet by remember { mutableStateOf(false) }
-    var showAiSuccessDialog by remember { mutableStateOf(false) }
-
-    val filePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            selectedLocalBackupUri = uri
-            showLocalRestoreConfirmDialog = true
-        }
-    }
 
     val signInLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         viewModel.handleSignInResult(result.data)
@@ -94,15 +80,29 @@ fun SettingsScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(ColorBackground)
+            .background(appColors.background)
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
             SettingsTopBar(onNavigateBack = onNavigateBack, onMenuClick = onMenuClick)
         }
+
+        // 1. Executive User Profile & Command Card
         item {
-            SettingsProfileCard(userProfile = userProfile, onClick = { showEditProfileDialog = true })
+            SettingsProfileCard(
+                userProfile = userProfile,
+                onClick = { showEditProfileDialog = true },
+                categoriesCount = categories.size,
+                transactionsCount = transactions.size
+            )
+        }
+
+        // 2. Preferences & Display Section
+        item {
+            SettingsSectionHeader(
+                title = if (strings.isBangla) "অ্যাপ পছন্দসমূহ ও ডিসপ্লে" else "Display & Preferences"
+            )
         }
         item {
             SettingsThemeCard(currentThemeKey = userProfile.appTheme, onThemeChange = { viewModel.setAppTheme(it) })
@@ -113,6 +113,13 @@ fun SettingsScreen(
         item {
             SettingsBengaliNumeralsCard(useBengaliNumerals = userProfile.useBengaliNumerals, onToggle = { viewModel.setBengaliNumeralsEnabled(it) })
         }
+
+        // 3. Category Management (Collapsible Accordion)
+        item {
+            SettingsSectionHeader(
+                title = if (strings.isBangla) "ক্যাটাগরি ব্যবস্থাপনা" else "Category Management"
+            )
+        }
         item {
             SettingsCategoriesCard(
                 categories = categories,
@@ -120,7 +127,15 @@ fun SettingsScreen(
                 onAddCategoryClick = { showAddCategoryDialog = true },
                 onEditCategoryClick = { categoryToEdit = it },
                 onDeleteCategoryClick = { categoryToDelete = it },
-                onViewAllCategoriesClick = { showAllCategoriesSheet = true }
+                onViewAllCategoriesClick = { showAllCategoriesSheet = true },
+                initiallyExpanded = false
+            )
+        }
+
+        // 4. Cloud & Data Backup Section (Collapsible Accordion)
+        item {
+            SettingsSectionHeader(
+                title = if (strings.isBangla) "ব্যাকআপ ও ক্লাউড স্টোরেজ" else "Cloud & Data Storage"
             )
         }
         item {
@@ -131,44 +146,24 @@ fun SettingsScreen(
                 onInitiateGoogleSignIn = { viewModel.initiateGoogleSignIn() },
                 onBackupToGoogleDriveNow = { viewModel.backupToGoogleDriveNow() },
                 onRestoreFromDriveClick = { showRestoreConfirmDialog = true },
-                onAutoSyncChange = { viewModel.setAutoSync(it) }
+                onAutoSyncChange = { viewModel.setAutoSync(it) },
+                initiallyExpanded = false
             )
         }
         item {
             SettingsDataBackupCard(
                 userProfile = userProfile,
                 transactions = transactions,
-                onCopyCsv = { exportActions.copyCsv() },
-                onCopyJson = { exportActions.copyJson() },
-                onShareCsv = { exportActions.shareCsv() },
-                onShareJson = { exportActions.shareJson() },
-                onImportJson = {
-                    try {
-                        filePickerLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
-                    } catch (_: Exception) {
-                        Toast.makeText(context, strings.noFilePicker, Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onShareSlipClick = { showShareSlipSheet = true }
+                onShareSlipClick = { showShareSlipSheet = true },
+                initiallyExpanded = false
             )
         }
-        item {
-            SettingsAiIntegrationCard(
-                userProfile = userProfile,
-                isTestingApi = isTestingApi,
-                apiConnectionTest = apiConnectionTest,
-                onSaveKey = { viewModel.setGeminiApiKey(it) },
-                onTestKey = { viewModel.testGeminiApiKey(it) },
-                onClearKey = {
-                    viewModel.setGeminiApiKey(null)
-                    viewModel.clearApiTestResult()
-                },
-                onSuccessSaved = { showAiSuccessDialog = true }
-            )
-        }
+
+        // 5. About App & System Info
         item {
             SettingsAboutAppCard(transactionsCount = transactions.size, categoriesCount = categories.size)
         }
+
         item {
             Spacer(modifier = Modifier.height(84.dp))
         }
@@ -204,33 +199,40 @@ fun SettingsScreen(
         onOpenAddCategory = { showAddCategoryDialog = true },
         categoryToDelete = categoryToDelete,
         onDismissDeleteCategoryDialog = { categoryToDelete = null },
-        onConfirmDeleteCategory = {
-            viewModel.deleteCategory(it.id)
+        onConfirmDeleteCategory = { cat ->
+            viewModel.deleteCategory(cat.id)
             categoryToDelete = null
         },
-        onSelectEditCategory = { categoryToEdit = it },
-        onSelectDeleteCategory = { categoryToDelete = it },
+        onSelectEditCategory = { cat ->
+            categoryToEdit = cat
+            showAddCategoryDialog = true
+        },
+        onSelectDeleteCategory = { cat ->
+            categoryToDelete = cat
+        },
         showRestoreConfirmDialog = showRestoreConfirmDialog,
         onDismissRestoreConfirmDialog = { showRestoreConfirmDialog = false },
         onConfirmDriveRestore = {
-            showRestoreConfirmDialog = false
             viewModel.restoreFromGoogleDrive()
-        },
-        selectedLocalBackupUri = selectedLocalBackupUri,
-        showLocalRestoreConfirmDialog = showLocalRestoreConfirmDialog,
-        onDismissLocalRestoreConfirmDialog = {
-            showLocalRestoreConfirmDialog = false
-            selectedLocalBackupUri = null
-        },
-        onConfirmLocalRestore = { uri ->
-            showLocalRestoreConfirmDialog = false
-            selectedLocalBackupUri = null
-            viewModel.restoreFromUri(uri)
+            showRestoreConfirmDialog = false
         },
         showShareSlipSheet = showShareSlipSheet,
         onDismissShareSlipSheet = { showShareSlipSheet = false },
-        showAiSuccessDialog = showAiSuccessDialog,
-        onDismissAiSuccessDialog = { showAiSuccessDialog = false },
         isBangla = strings.isBangla
+    )
+}
+
+@Composable
+fun SettingsSectionHeader(title: String, modifier: Modifier = Modifier) {
+    val appColors = LocalAppColors.current
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge.copy(
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp
+        ),
+        color = appColors.accent,
+        modifier = modifier.padding(top = 10.dp, bottom = 4.dp, start = 4.dp)
     )
 }

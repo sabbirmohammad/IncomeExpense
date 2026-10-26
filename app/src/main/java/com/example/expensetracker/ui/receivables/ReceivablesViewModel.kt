@@ -13,6 +13,7 @@ import com.example.expensetracker.data.model.ReceivableStatus
 import com.example.expensetracker.data.model.ReceivablesSummary
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.repository.*
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,6 +63,10 @@ class ReceivablesViewModel(application: Application) : AndroidViewModel(applicat
         _searchQuery.value = query
     }
 
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        android.util.Log.e("ReceivablesViewModel", "Unhandled coroutine error", throwable)
+    }
+
     fun addReceivable(
         personName: String,
         phoneNumber: String,
@@ -70,7 +75,7 @@ class ReceivablesViewModel(application: Application) : AndroidViewModel(applicat
         notes: String,
         deductFromAccountId: Long?
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             val rec = Receivable(
                 personName = personName.trim(),
                 phoneNumber = phoneNumber.trim(),
@@ -86,13 +91,13 @@ class ReceivablesViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun updateReceivable(receivable: Receivable) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.updateReceivable(receivable)
         }
     }
 
     fun deleteReceivable(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.deleteReceivable(id)
         }
     }
@@ -103,7 +108,7 @@ class ReceivablesViewModel(application: Application) : AndroidViewModel(applicat
         depositToAccountId: Long?,
         note: String
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.recordReceivablePayment(receivableId, amountPaid, depositToAccountId, note)
         }
     }
@@ -117,7 +122,7 @@ class ReceivablesViewModel(application: Application) : AndroidViewModel(applicat
         notes: String,
         depositToAccountId: Long?
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             val pay = Payable(
                 personName = personName.trim(),
                 phoneNumber = phoneNumber.trim(),
@@ -133,13 +138,13 @@ class ReceivablesViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun updatePayable(payable: Payable) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.updatePayable(payable)
         }
     }
 
     fun deletePayable(id: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.deletePayable(id)
         }
     }
@@ -150,42 +155,14 @@ class ReceivablesViewModel(application: Application) : AndroidViewModel(applicat
         deductFromAccountId: Long?,
         note: String
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.recordPayablePayment(payableId, amountPaid, deductFromAccountId, note)
         }
     }
 
     fun executeBillSplit(splitData: com.example.expensetracker.data.model.BillSplitData) {
-        viewModelScope.launch {
+        viewModelScope.launch(coroutineExceptionHandler) {
             repository.executeBillSplit(splitData)
         }
-    }
-
-    private val _generatedReminder = MutableStateFlow<String?>(null)
-    val generatedReminder: StateFlow<String?> = _generatedReminder.asStateFlow()
-
-    private val _isGeneratingReminder = MutableStateFlow(false)
-    val isGeneratingReminder: StateFlow<Boolean> = _isGeneratingReminder.asStateFlow()
-
-    fun generatePoliteReminder(receivable: Receivable) {
-        viewModelScope.launch {
-            _isGeneratingReminder.value = true
-            val profile = repository.userProfile.value
-            val isBn = profile.appLanguage == "bn"
-            val due = receivable.amount - receivable.amountReceived
-            val currency = profile.currencySymbol
-            val amountFormatted = String.format(java.util.Locale.US, "%,.2f", due)
-            val message = if (isBn) {
-                "আসসালামু আলাইকুম ${receivable.personName} ভাই, আশা করি ভালো আছেন। আপনার কাছে পাওনা $currency $amountFormatted পরিশোধের বিষয়টি একটু মনে করিয়ে দিচ্ছি। আপনার সুবিধাজনক সময়ে পরিশোধ করলে উপকৃত হব। ধন্যবাদ!"
-            } else {
-                "Hello ${receivable.personName}, hope you are well. This is a gentle reminder regarding the pending amount of $currency $amountFormatted. Please let me know when you can settle it. Thank you!"
-            }
-            _generatedReminder.value = message
-            _isGeneratingReminder.value = false
-        }
-    }
-
-    fun clearGeneratedReminder() {
-        _generatedReminder.value = null
     }
 }

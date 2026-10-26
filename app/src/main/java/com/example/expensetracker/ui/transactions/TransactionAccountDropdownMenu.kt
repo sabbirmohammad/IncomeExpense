@@ -25,8 +25,6 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.AccountType
 import com.example.expensetracker.data.model.PaymentMethod
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.BrandIdentityHelper
 import com.example.expensetracker.ui.components.Strings
@@ -47,6 +45,7 @@ fun TransactionAccountDropdownMenu(
     onSelectPaymentMethod: (PaymentMethod) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
     DropdownMenu(
@@ -80,14 +79,14 @@ fun TransactionAccountDropdownMenu(
                                     fontSize = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 ),
-                                color = ColorTextPrimary,
+                                color = appColors.textPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = formatCurrency(acc.currentBalance, currencySymbol, strings.isBangla),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                                color = if (isSelected) accBrand.primaryColor else ColorTextMuted
+                                color = if (isSelected) accBrand.primaryColor else appColors.textMuted
                             )
                         }
                     },
@@ -129,7 +128,7 @@ fun TransactionAccountDropdownMenu(
                                 fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                     },
                     trailingIcon = {

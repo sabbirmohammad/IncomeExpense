@@ -33,13 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.AccountType
-import com.example.expensetracker.ui.components.CategoryIconHelper
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBackground
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextSecondary
-import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
+import com.example.expensetracker.ui.components.CategoryIconHelper
+import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
 fun AccountTypeSelector(
@@ -47,6 +44,7 @@ fun AccountTypeSelector(
     onTypeSelected: (AccountType) -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -55,8 +53,8 @@ fun AccountTypeSelector(
             val isSelected = selectedType == t
             Surface(
                 shape = RoundedCornerShape(SmallElementRadius),
-                color = if (isSelected) ColorAccent else ColorBackground,
-                border = if (isSelected) null else BorderStroke(1.dp, ColorBorder),
+                color = if (isSelected) appColors.accent else appColors.surfaceVariant,
+                border = if (isSelected) null else BorderStroke(1.dp, appColors.border),
                 modifier = Modifier
                     .weight(1f)
                     .clickable { onTypeSelected(t) }
@@ -73,7 +71,7 @@ fun AccountTypeSelector(
                             AccountType.CASH -> Icons.Outlined.Payments
                         },
                         contentDescription = null,
-                        tint = if (isSelected) Color.White else ColorTextSecondary,
+                        tint = if (isSelected) Color.White else appColors.textSecondary,
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -85,7 +83,7 @@ fun AccountTypeSelector(
                         },
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isSelected) Color.White else ColorTextSecondary
+                        color = if (isSelected) Color.White else appColors.textSecondary
                     )
                 }
             }
@@ -99,6 +97,7 @@ fun AccountProviderSuggestionChips(
     suggestions: List<String>,
     onSelect: (String) -> Unit
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -109,14 +108,14 @@ fun AccountProviderSuggestionChips(
             val isSelected = selectedInstitution == s
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = if (isSelected) ColorAccent.copy(alpha = 0.2f) else ColorBackground,
-                border = BorderStroke(1.dp, if (isSelected) ColorAccent else ColorBorder),
+                color = if (isSelected) appColors.accent.copy(alpha = 0.2f) else appColors.surfaceVariant,
+                border = BorderStroke(1.dp, if (isSelected) appColors.accent else appColors.border),
                 modifier = Modifier.clickable { onSelect(s) }
             ) {
                 Text(
                     text = s,
                     fontSize = 11.sp,
-                    color = if (isSelected) ColorAccent else ColorTextSecondary,
+                    color = if (isSelected) appColors.accent else appColors.textSecondary,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
             }

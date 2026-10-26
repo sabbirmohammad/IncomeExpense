@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,16 +27,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.CalculatorKeypadBar
 import com.example.expensetracker.ui.components.CalculatorPreviewBadge
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import java.util.Locale
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun AddEditBillAmountSection(
@@ -46,13 +43,14 @@ fun AddEditBillAmountSection(
     onToggleCalculator: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
 
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = Color(0xFF0F131D),
-        border = BorderStroke(1.dp, ColorBorder),
+        color = appColors.surfaceVariant,
+        border = BorderStroke(1.dp, appColors.border),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -64,21 +62,23 @@ fun AddEditBillAmountSection(
                 Text(
                     text = strings.expenseAmount,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (showCalculatorBar) ColorAccent.copy(alpha = 0.2f) else Color(0xFF0F131D),
-                    border = BorderStroke(1.dp, if (showCalculatorBar) ColorAccent else ColorBorder),
-                    modifier = Modifier.clickable {
-                        haptics.lightTick()
-                        onToggleCalculator()
-                    }
+                    color = if (showCalculatorBar) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                    border = BorderStroke(1.dp, if (showCalculatorBar) appColors.accent else appColors.border),
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable {
+                            haptics.lightTick()
+                            onToggleCalculator()
+                        }
                 ) {
                     Text(
                         text = strings.calc,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = if (showCalculatorBar) ColorAccent else ColorTextSecondary,
+                        color = if (showCalculatorBar) appColors.accent else appColors.textSecondary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
@@ -96,7 +96,7 @@ fun AddEditBillAmountSection(
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = ColorAccent
+                    color = appColors.accent
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 OutlinedTextField(
@@ -110,7 +110,7 @@ fun AddEditBillAmountSection(
                             text = if (strings.isBangla) "০.০০" else "0.00",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ColorTextMuted
+                            color = appColors.textMuted
                         )
                     },
                     singleLine = true,
@@ -121,13 +121,13 @@ fun AddEditBillAmountSection(
                         unfocusedContainerColor = Color.Transparent,
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = ColorTextPrimary,
-                        unfocusedTextColor = ColorTextPrimary
+                        focusedTextColor = appColors.textPrimary,
+                        unfocusedTextColor = appColors.textPrimary
                     ),
                     textStyle = MaterialTheme.typography.headlineMedium.copy(
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorTextPrimary
+                        color = appColors.textPrimary
                     )
                 )
             }

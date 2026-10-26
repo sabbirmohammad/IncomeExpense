@@ -99,10 +99,3 @@ data class DebtBookSummary(
     val netBalance: Double
         get() = totalReceivable - totalPayable
 }
-
-@Serializable
-data class DebtPortfolioAiAdvice(
-    val recoveryPriority: List<String> = emptyList(),
-    val healthSummary: String = "",
-    val actionSteps: List<String> = emptyList()
-)

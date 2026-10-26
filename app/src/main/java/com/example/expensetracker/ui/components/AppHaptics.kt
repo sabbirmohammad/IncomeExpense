@@ -79,6 +79,21 @@ class AppHaptics(
             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
         }
     }
+
+    /**
+     * Heavy tactile pulse for long-press speed dial activation.
+     */
+    fun longPressFeedback() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
+            } else {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+        } catch (_: Exception) {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
 }
 
 @Composable

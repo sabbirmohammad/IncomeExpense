@@ -20,7 +20,8 @@ object CalculatorEvaluator {
         if (sanitized.isEmpty()) return null
 
         return try {
-            parseExpression(sanitized)
+            val res = parseExpression(sanitized)
+            if (res.isFinite() && !res.isNaN() && !res.isInfinite()) res else null
         } catch (_: Exception) {
             null
         }
@@ -47,6 +48,8 @@ object CalculatorEvaluator {
                     continue
                 }
                 tokens.add(c.toString())
+            } else {
+                throw IllegalArgumentException("Invalid character: $c")
             }
             i++
         }
@@ -73,8 +76,8 @@ object CalculatorEvaluator {
                 idx += 2
             } else {
                 pass1.add(token)
+                idx++
             }
-            idx++
         }
 
         // Second pass: resolve + and -
@@ -106,7 +109,8 @@ object CalculatorEvaluator {
         val converted = com.example.expensetracker.common.MarketListParser.convertBengaliDigitsToEnglish(input)
         val clean = converted.trim().replace(",", "")
         if (clean.isEmpty()) return null
-        return clean.toDoubleOrNull() ?: evaluate(clean)
+        val value = clean.toDoubleOrNull() ?: evaluate(clean)
+        return if (value != null && value.isFinite() && !value.isNaN() && !value.isInfinite()) value else null
     }
 }
 

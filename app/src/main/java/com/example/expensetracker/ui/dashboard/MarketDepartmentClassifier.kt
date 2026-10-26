@@ -30,3 +30,22 @@ internal fun getMarketItemCategory(name: String): String {
         else -> "groceries"
     }
 }
+
+data class DepartmentMeta(
+    val key: String,
+    val titleBn: String,
+    val titleEn: String,
+    val icon: String
+)
+
+val ALL_DEPARTMENTS = listOf(
+    DepartmentMeta("veggies", "কাঁচাবাজার", "Vegetables", "🥬"),
+    DepartmentMeta("meat_fish", "মাছ ও মাংস", "Meat & Fish", "🐟"),
+    DepartmentMeta("dairy_bakery", "দুধ ও বেকারি", "Dairy & Bakery", "🥛"),
+    DepartmentMeta("groceries", "মুদি সদাই", "Groceries", "🧂")
+)
+
+fun getDepartmentMeta(category: String): DepartmentMeta {
+    return ALL_DEPARTMENTS.find { it.key == category }
+        ?: DepartmentMeta("groceries", "মুদি সদাই", "Groceries", "🧂")
+}

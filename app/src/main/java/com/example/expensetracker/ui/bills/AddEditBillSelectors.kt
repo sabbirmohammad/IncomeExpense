@@ -30,14 +30,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.BrandIdentityHelper
 import com.example.expensetracker.ui.components.CategoryIconHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun AddEditBillCategorySelector(
@@ -46,6 +44,7 @@ fun AddEditBillCategorySelector(
     onSelectCategory: (Category) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
 
@@ -53,7 +52,7 @@ fun AddEditBillCategorySelector(
         Text(
             text = strings.category,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -69,8 +68,8 @@ fun AddEditBillCategorySelector(
 
                 Surface(
                     shape = RoundedCornerShape(SmallElementRadius),
-                    color = if (isSelected) catColor.copy(alpha = 0.2f) else Color(0xFF0F131D),
-                    border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) catColor else ColorBorder),
+                    color = if (isSelected) catColor.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                    border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) catColor else appColors.border),
                     modifier = Modifier.clickable {
                         haptics.lightTick()
                         onSelectCategory(cat)
@@ -93,7 +92,7 @@ fun AddEditBillCategorySelector(
                                 fontSize = 11.5.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                             ),
-                            color = if (isSelected) ColorTextPrimary else ColorTextSecondary
+                            color = if (isSelected) appColors.textPrimary else appColors.textSecondary
                         )
                     }
                 }
@@ -109,6 +108,7 @@ fun AddEditBillAccountSelector(
     onSelectAccount: (Account) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     val haptics = rememberAppHaptics()
 
@@ -118,7 +118,7 @@ fun AddEditBillAccountSelector(
         Text(
             text = if (strings.isBangla) "পরিশোধের অ্যাকাউন্ট" else "Paying Account",
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -134,8 +134,8 @@ fun AddEditBillAccountSelector(
 
                 Surface(
                     shape = RoundedCornerShape(SmallElementRadius),
-                    color = if (isSelected) brandStyle.primaryColor.copy(alpha = 0.2f) else Color(0xFF0F131D),
-                    border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) brandStyle.primaryColor else ColorBorder),
+                    color = if (isSelected) brandStyle.primaryColor.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                    border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) brandStyle.primaryColor else appColors.border),
                     modifier = Modifier.clickable {
                         haptics.lightTick()
                         onSelectAccount(acc)
@@ -166,7 +166,7 @@ fun AddEditBillAccountSelector(
                                 fontSize = 11.5.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                     }
                 }

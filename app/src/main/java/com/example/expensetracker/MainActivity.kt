@@ -19,10 +19,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.example.expensetracker.data.repository.*
+import com.example.expensetracker.data.update.AppUpdateManager
 import com.example.expensetracker.data.worker.BudgetReminderWorker
 import com.example.expensetracker.theme.ExpenseTrackerTheme
+import com.example.expensetracker.ui.components.AppUpdateDialog
 import com.example.expensetracker.ui.components.globalBengaliNumeralsEnabled
 import com.example.expensetracker.ui.navigation.MainAppNavigation
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class MainActivity : ComponentActivity() {
 
@@ -50,9 +54,13 @@ class MainActivity : ComponentActivity() {
 
     enableEdgeToEdge()
     setContent {
-      val userProfile by repository.userProfile.collectAsState()
+      val userProfile by repository.userProfile.collectAsStateWithLifecycle()
       LaunchedEffect(userProfile.useBengaliNumerals, userProfile.appLanguage) {
         globalBengaliNumeralsEnabled = userProfile.useBengaliNumerals || userProfile.appLanguage.equals("bn", ignoreCase = true)
+      }
+
+      LaunchedEffect(Unit) {
+        AppUpdateManager.checkForUpdates(applicationContext, isManualCheck = false)
       }
 
       ExpenseTrackerTheme(themeMode = userProfile.appTheme) {
@@ -64,6 +72,7 @@ class MainActivity : ComponentActivity() {
             triggerBudgetPromptFromNotification = showBudgetPromptFromNotification.value,
             onBudgetPromptHandled = { showBudgetPromptFromNotification.value = false }
           )
+          AppUpdateDialog()
         }
       }
     }

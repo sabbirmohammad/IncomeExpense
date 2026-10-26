@@ -8,12 +8,14 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.expensetracker.data.local.ExpenseDatabaseHelper
 import com.example.expensetracker.data.repository.*
 import com.example.expensetracker.data.worker.DailySyncWorker
 import com.google.api.client.http.ByteArrayContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -30,6 +32,58 @@ class GoogleDriveSyncManager(private val context: Context) {
 
     companion object {
         private const val BACKUP_FILE_NAME = "ExpenseTracker_Backup.json"
+        const val PRE_RESTORE_BAK_FILE_NAME = "expense_tracker.db.bak"
+        const val PRE_RESTORE_JSON_BACKUP_NAME = "pre_restore_backup.json"
+    }
+
+    /**
+     * Creates a local timestamped backup copy and fallback .bak snapshot of the active SQLite
+     * database file before downloading and overwriting it during Google Drive restore.
+     * Also saves a secondary JSON snapshot of current data.
+     * Returns the timestamped snapshot file if created, or null.
+     */
+    suspend fun createPreRestoreSnapshot(): File? = withContext(Dispatchers.IO) {
+        try {
+            val dbFile = context.getDatabasePath(ExpenseDatabaseHelper.DATABASE_NAME)
+            if (!dbFile.exists()) return@withContext null
+
+            val parentDir = dbFile.parentFile ?: context.filesDir
+            if (!parentDir.exists()) parentDir.mkdirs()
+
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val timestampedBak = File(parentDir, "expense_tracker_pre_restore_$timestamp.db.bak")
+            val fallbackBak = File(parentDir, PRE_RESTORE_BAK_FILE_NAME)
+
+            // Copy active SQLite database
+            dbFile.copyTo(timestampedBak, overwrite = true)
+            dbFile.copyTo(fallbackBak, overwrite = true)
+
+            // Preserve WAL / SHM files if present
+            val walFile = File(parentDir, "${dbFile.name}-wal")
+            if (walFile.exists()) {
+                walFile.copyTo(File(parentDir, "${timestampedBak.name}-wal"), overwrite = true)
+                walFile.copyTo(File(parentDir, "${fallbackBak.name}-wal"), overwrite = true)
+            }
+            val shmFile = File(parentDir, "${dbFile.name}-shm")
+            if (shmFile.exists()) {
+                shmFile.copyTo(File(parentDir, "${timestampedBak.name}-shm"), overwrite = true)
+                shmFile.copyTo(File(parentDir, "${fallbackBak.name}-shm"), overwrite = true)
+            }
+
+            // Also create JSON snapshot for auxiliary human-readable recovery
+            try {
+                val jsonPayload = repository.exportToJson()
+                val jsonFile = File(context.filesDir, PRE_RESTORE_JSON_BACKUP_NAME)
+                jsonFile.writeText(jsonPayload)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            timestampedBak
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     /**
@@ -128,6 +182,9 @@ class GoogleDriveSyncManager(private val context: Context) {
                     IllegalStateException("No backup found on Google Drive. Create a backup first.")
                 )
             }
+
+            // Create local safety snapshot prior to active file replacement
+            createPreRestoreSnapshot()
 
             val outputStream = ByteArrayOutputStream()
             driveService.files()

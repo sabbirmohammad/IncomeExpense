@@ -29,13 +29,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillsTopBar(
@@ -44,6 +41,7 @@ fun BillsTopBar(
     title: String,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -58,7 +56,7 @@ fun BillsTopBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Back",
-                    tint = ColorTextPrimary
+                    tint = appColors.textPrimary
                 )
             }
             Spacer(modifier = Modifier.width(4.dp))
@@ -70,7 +68,7 @@ fun BillsTopBar(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             ),
-            color = ColorTextPrimary
+            color = appColors.textPrimary
         )
     }
 }
@@ -80,12 +78,13 @@ fun AddRecurringBillButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = ColorAccent.copy(alpha = 0.14f),
-        border = BorderStroke(1.dp, ColorAccent.copy(alpha = 0.45f)),
+        color = appColors.accent.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.45f)),
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -101,7 +100,7 @@ fun AddRecurringBillButton(
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)
-                    .background(ColorAccent),
+                    .background(appColors.accent),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -118,7 +117,7 @@ fun AddRecurringBillButton(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = ColorAccent
+                color = appColors.accent
             )
         }
     }
@@ -129,6 +128,7 @@ fun BillsSectionHeader(
     count: Int,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
     Row(
@@ -144,13 +144,13 @@ fun BillsSectionHeader(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             ),
-            color = ColorTextPrimary
+            color = appColors.textPrimary
         )
 
         Surface(
             shape = CircleShape,
-            color = Color(0xFF0F131D),
-            border = BorderStroke(1.dp, ColorBorder)
+            color = appColors.surfaceVariant,
+            border = BorderStroke(1.dp, appColors.border)
         ) {
             Text(
                 text = "$count",
@@ -158,7 +158,7 @@ fun BillsSectionHeader(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = ColorTextSecondary,
+                color = appColors.textSecondary,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
             )
         }

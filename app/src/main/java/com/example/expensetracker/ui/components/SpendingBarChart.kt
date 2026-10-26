@@ -26,12 +26,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.DailySpend
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextSecondary
 import kotlin.math.max
+import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Spending trend bar chart per spec:
@@ -43,6 +39,7 @@ fun SpendingBarChart(
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
     if (dailySpends.isEmpty()) {
         Box(
@@ -54,7 +51,7 @@ fun SpendingBarChart(
             Text(
                 text = if (strings.isBangla) "কোনো সাম্প্রতিক ট্রেন্ড তথ্য নেই" else "No recent trend data",
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                color = ColorTextMuted
+                color = appColors.textMuted
             )
         }
         return
@@ -96,7 +93,7 @@ fun SpendingBarChart(
                                     .width(8.dp)
                                     .height(incomeHeight.dp)
                                     .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                    .background(ColorSuccessIncome)
+                                    .background(appColors.income)
                             )
                         }
                         // Expense Bar: #f0716b
@@ -106,7 +103,7 @@ fun SpendingBarChart(
                                     .width(8.dp)
                                     .height(expenseHeight.dp)
                                     .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                    .background(ColorDangerExpense)
+                                    .background(appColors.expense)
                             )
                         } else if (spend.income <= 0) {
                             // Subtle neutral indicator on days with no spend or income
@@ -115,7 +112,7 @@ fun SpendingBarChart(
                                     .width(8.dp)
                                     .height(3.dp)
                                     .clip(CircleShape)
-                                    .background(ColorBorder)
+                                    .background(appColors.border)
                             )
                         }
                     }
@@ -124,7 +121,7 @@ fun SpendingBarChart(
                     Text(
                         text = spend.dayLabel,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = ColorTextSecondary
+                        color = appColors.textSecondary
                     )
                 }
             }
@@ -138,22 +135,22 @@ fun SpendingBarChart(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ColorSuccessIncome))
+            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(appColors.income))
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = strings.income,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
 
             Spacer(modifier = Modifier.width(20.dp))
 
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ColorDangerExpense))
+            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(appColors.expense))
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = strings.expense,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = ColorTextSecondary
+                color = appColors.textSecondary
             )
         }
     }

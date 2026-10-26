@@ -28,10 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
 
@@ -45,11 +41,12 @@ fun TransactionNoteAndTitleSection(
     strings: Strings,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = strings.titleOrDescription,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(6.dp))
         OutlinedTextField(
@@ -58,7 +55,7 @@ fun TransactionNoteAndTitleSection(
             placeholder = {
                 Text(
                     text = strings.titlePlaceholder,
-                    color = ColorTextMuted.copy(alpha = 0.7f),
+                    color = appColors.textMuted.copy(alpha = 0.7f),
                     fontSize = 13.5.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -82,11 +79,11 @@ fun TransactionNoteAndTitleSection(
             },
             trailingIcon = {
                 if (title.isNotEmpty()) {
-                    IconButton(onClick = { onTitleChange("") }, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = { onTitleChange("") }) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear",
-                            tint = ColorTextMuted,
+                            tint = appColors.textMuted,
                             modifier = Modifier.size(15.dp)
                         )
                     }
@@ -98,8 +95,8 @@ fun TransactionNoteAndTitleSection(
                 unfocusedContainerColor = LocalAppColors.current.surfaceVariant,
                 focusedBorderColor = typeAccentColor.copy(alpha = 0.8f),
                 unfocusedBorderColor = LocalAppColors.current.border,
-                focusedTextColor = ColorTextPrimary,
-                unfocusedTextColor = ColorTextPrimary,
+                focusedTextColor = LocalAppColors.current.textPrimary,
+                unfocusedTextColor = LocalAppColors.current.textPrimary,
                 cursorColor = typeAccentColor
             ),
             textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium),
@@ -112,7 +109,7 @@ fun TransactionNoteAndTitleSection(
         Text(
             text = strings.notesOptional,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-            color = ColorTextSecondary
+            color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(6.dp))
         OutlinedTextField(
@@ -121,7 +118,7 @@ fun TransactionNoteAndTitleSection(
             placeholder = {
                 Text(
                     text = strings.notesPlaceholder,
-                    color = ColorTextMuted.copy(alpha = 0.7f),
+                    color = appColors.textMuted.copy(alpha = 0.7f),
                     fontSize = 13.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -132,24 +129,24 @@ fun TransactionNoteAndTitleSection(
                     modifier = Modifier
                         .size(30.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(ColorBorder.copy(alpha = 0.35f)),
+                        .background(appColors.border.copy(alpha = 0.35f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.Notes,
                         contentDescription = null,
-                        tint = ColorTextSecondary,
+                        tint = appColors.textSecondary,
                         modifier = Modifier.size(16.dp)
                     )
                 }
             },
             trailingIcon = {
                 if (notes.isNotEmpty()) {
-                    IconButton(onClick = { onNotesChange("") }, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = { onNotesChange("") }) {
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "Clear",
-                            tint = ColorTextMuted,
+                            tint = appColors.textMuted,
                             modifier = Modifier.size(15.dp)
                         )
                     }
@@ -161,8 +158,8 @@ fun TransactionNoteAndTitleSection(
                 unfocusedContainerColor = LocalAppColors.current.surfaceVariant,
                 focusedBorderColor = typeAccentColor.copy(alpha = 0.8f),
                 unfocusedBorderColor = LocalAppColors.current.border,
-                focusedTextColor = ColorTextPrimary,
-                unfocusedTextColor = ColorTextPrimary,
+                focusedTextColor = LocalAppColors.current.textPrimary,
+                unfocusedTextColor = LocalAppColors.current.textPrimary,
                 cursorColor = typeAccentColor
             ),
             textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Normal),

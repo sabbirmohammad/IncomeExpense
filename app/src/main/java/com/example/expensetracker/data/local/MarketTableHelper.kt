@@ -163,7 +163,41 @@ internal class MarketTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
 
     fun deleteMarketList(listId: Long): Boolean {
         val db = dbHelper.writableDatabase
-        db.delete(TABLE_MARKET_ITEMS, "$COL_MI_LIST_ID = ?", arrayOf(listId.toString()))
-        return db.delete(TABLE_MARKET_LISTS, "$COL_ML_ID = ?", arrayOf(listId.toString())) > 0
+        db.beginTransaction()
+        try {
+            db.delete(TABLE_MARKET_ITEMS, "$COL_MI_LIST_ID = ?", arrayOf(listId.toString()))
+            val rows = db.delete(TABLE_MARKET_LISTS, "$COL_ML_ID = ?", arrayOf(listId.toString()))
+            db.setTransactionSuccessful()
+            return rows > 0
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun getLastPurchasedRates(): Map<String, Pair<Double, String>> {
+        val db = dbHelper.readableDatabase
+        val map = mutableMapOf<String, Pair<Double, String>>()
+        val cursor = db.query(
+            TABLE_MARKET_ITEMS,
+            arrayOf(COL_MI_NAME, COL_MI_AMOUNT, COL_MI_QUANTITY, COL_MI_UNIT),
+            "$COL_MI_IS_PURCHASED = 1 AND $COL_MI_AMOUNT > 0 AND $COL_MI_QUANTITY > 0",
+            null,
+            null,
+            null,
+            "$COL_MI_ID DESC"
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                val name = it.getString(0)?.trim()?.lowercase() ?: continue
+                if (!map.containsKey(name)) {
+                    val amount = it.getDouble(1)
+                    val quantity = it.getDouble(2)
+                    val unit = it.getString(3) ?: ""
+                    val unitRate = amount / quantity
+                    map[name] = Pair(unitRate, unit)
+                }
+            }
+        }
+        return map
     }
 }

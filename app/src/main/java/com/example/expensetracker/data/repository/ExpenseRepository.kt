@@ -14,6 +14,7 @@ import com.example.expensetracker.data.model.ReceivablesSummary
 import com.example.expensetracker.data.model.RecurringBill
 import com.example.expensetracker.data.model.SavingsGoal
 import com.example.expensetracker.data.model.Transaction
+import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -89,6 +90,9 @@ class ExpenseRepository private constructor(context: Context) {
     internal val _allMarketLists = MutableStateFlow<List<MarketListWithItems>>(emptyList())
     val allMarketLists: StateFlow<List<MarketListWithItems>> = _allMarketLists.asStateFlow()
 
+    internal val _lastPurchasedRates = MutableStateFlow<Map<String, Pair<Double, String>>>(emptyMap())
+    val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = _lastPurchasedRates.asStateFlow()
+
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -158,6 +162,7 @@ class ExpenseRepository private constructor(context: Context) {
     fun refreshMarketList() {
         _activeMarketList.value = dbHelper.getActiveMarketList()
         _allMarketLists.value = dbHelper.getAllMarketLists()
+        _lastPurchasedRates.value = dbHelper.getLastPurchasedRates()
     }
 
     fun refreshAll() {
@@ -198,6 +203,17 @@ class ExpenseRepository private constructor(context: Context) {
         refreshBudgets()
         triggerAutoSync()
         rows > 0
+    }
+
+    suspend fun getOrCreateCategoryByName(
+        name: String,
+        type: TransactionType,
+        defaultIcon: String = "MoreHoriz",
+        defaultColor: String = "#8B90A0"
+    ): Category = withContext(Dispatchers.IO) {
+        val cat = dbHelper.getOrCreateCategoryByName(name, type, defaultIcon, defaultColor)
+        refreshCategories()
+        cat
     }
 
     suspend fun addCategory(category: Category): Long = withContext(Dispatchers.IO) {

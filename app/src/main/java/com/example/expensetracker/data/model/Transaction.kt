@@ -82,6 +82,7 @@ data class Transaction(
         return categoryName.equals("Transfer", ignoreCase = true) ||
                 categoryName.equals("Account Transfer", ignoreCase = true) ||
                 categoryName.equals("অ্যাকাউন্ট স্থানান্তর", ignoreCase = true) ||
+                categoryName.equals("স্থানান্তর", ignoreCase = true) ||
                 notes.startsWith("[Transfer]") ||
                 title.startsWith("Transfer to ") ||
                 title.startsWith("Transfer from ")
@@ -90,8 +91,20 @@ data class Transaction(
     fun isDebtFlow(): Boolean {
         return categoryName.equals("Loan & Debt Given", ignoreCase = true) ||
                 categoryName.equals("Debt Recovery", ignoreCase = true) ||
+                categoryName.equals("Loan & Debt Borrowed", ignoreCase = true) ||
+                categoryName.equals("Debt Repayment", ignoreCase = true) ||
                 categoryName.equals("ঋণ বা ধার প্রদান", ignoreCase = true) ||
-                categoryName.equals("পাওনা টাকা আদায়", ignoreCase = true)
+                categoryName.equals("পাওনা টাকা আদায়", ignoreCase = true) ||
+                categoryName.equals("ধার বা ঋণ গ্রহণ", ignoreCase = true) ||
+                categoryName.equals("দেনা বা ঋণ পরিশোধ", ignoreCase = true)
+    }
+
+    fun isReconciliation(): Boolean {
+        return categoryName.equals("Adjustment", ignoreCase = true) ||
+                categoryName.equals("Balance Adjustment", ignoreCase = true) ||
+                categoryName.equals("সমন্বয়", ignoreCase = true) ||
+                categoryName.equals("ব্যালেন্স সমন্বয়", ignoreCase = true) ||
+                notes.startsWith("[Reconciliation]")
     }
 }
 
@@ -107,8 +120,6 @@ data class UserProfile(
     val isAutoSyncEnabled: Boolean = true,
     val lastSyncMillis: Long = 0L,
     val appLanguage: String = "bn",
-    val geminiApiKey: String? = null,
-    val aiInsightsEnabled: Boolean = true,
     val appTheme: String = "dark",
     val useBengaliNumerals: Boolean = true,
     val isPrivacyModeEnabled: Boolean = false
@@ -147,24 +158,3 @@ data class UserProfile(
             }
         }
 }
-
-@Serializable
-data class ScannedReceiptData(
-    val amount: Double? = null,
-    val title: String? = null,
-    val categoryName: String? = null,
-    val dateMillis: Long? = null,
-    val notes: String? = null,
-    val paymentMethod: PaymentMethod? = null
-)
-
-@Serializable
-data class ParsedTransactionResult(
-    val amount: Double? = null,
-    val title: String? = null,
-    val type: TransactionType = TransactionType.EXPENSE,
-    val categoryName: String? = null,
-    val paymentMethod: PaymentMethod? = null,
-    val accountName: String? = null,
-    val notes: String? = null
-)

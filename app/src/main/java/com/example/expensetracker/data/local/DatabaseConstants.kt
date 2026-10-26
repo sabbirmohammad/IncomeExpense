@@ -1,9 +1,8 @@
 package com.example.expensetracker.data.local
 
 internal const val DATABASE_NAME = "expense_tracker.db"
-internal const val DATABASE_VERSION = 12
+internal const val DATABASE_VERSION = 13
 internal const val PREFS_NAME = "expense_tracker_secure_prefs"
-internal const val PREF_KEY_GEMINI_API_KEY = "gemini_api_key"
 internal const val PREF_KEY_PRIVACY_MODE = "is_privacy_mode_enabled"
 internal const val PREF_KEY_LAST_BUDGET_PROMPT = "last_budget_prompt_month_key"
 internal const val PREF_KEY_LAST_BUDGET_NOTIFIED = "last_budget_notified_month_key"
@@ -56,8 +55,6 @@ internal const val COL_PROFILE_GOOGLE_EMAIL = "google_email"
 internal const val COL_PROFILE_AUTO_SYNC = "auto_sync"
 internal const val COL_PROFILE_LAST_SYNC = "last_sync"
 internal const val COL_PROFILE_LANGUAGE = "app_language"
-internal const val COL_PROFILE_GEMINI_KEY = "gemini_api_key"
-internal const val COL_PROFILE_AI_INSIGHTS_ENABLED = "ai_insights_enabled"
 internal const val COL_PROFILE_THEME = "app_theme"
 internal const val COL_PROFILE_BENGALI_NUMERALS = "use_bengali_numerals"
 

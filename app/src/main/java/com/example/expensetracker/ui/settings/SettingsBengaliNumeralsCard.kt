@@ -3,11 +3,8 @@ package com.example.expensetracker.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -51,32 +47,24 @@ fun SettingsBengaliNumeralsCard(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(ColorAccent.copy(alpha = 0.12f)),
+                        .background(appColors.accent.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "১২৩",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorAccent
+                        color = appColors.accent
                     )
                 }
-                Column {
-                    Text(
-                        text = strings.bengaliNumeralsTitle,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = appColors.textPrimary
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = strings.bengaliNumeralsSubtitle,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = appColors.textSecondary
-                    )
-                }
+                Text(
+                    text = strings.bengaliNumeralsTitle,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = appColors.textPrimary
+                )
             }
 
             Switch(
@@ -84,7 +72,7 @@ fun SettingsBengaliNumeralsCard(
                 onCheckedChange = onToggle,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = ColorAccent,
+                    checkedTrackColor = appColors.accent,
                     uncheckedThumbColor = appColors.textMuted,
                     uncheckedTrackColor = appColors.surface
                 )

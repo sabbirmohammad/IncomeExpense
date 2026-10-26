@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.AccountType
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AccountBrandStyle
-import com.example.expensetracker.theme.ColorAccent
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
@@ -32,6 +32,7 @@ fun AccountCardFooterRow(
     brandStyle: AccountBrandStyle
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -49,7 +50,7 @@ fun AccountCardFooterRow(
                     AccountType.CASH -> if (strings.isBangla) "💵 ক্যাশ ইন হ্যান্ড" else "💵 Cash Wallet"
                 },
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
-                color = if (brandStyle.isDarkCard) brandStyle.primaryColor else ColorAccent,
+                color = if (brandStyle.isDarkCard) brandStyle.primaryColor else appColors.accent,
                 modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
             )
         }
@@ -61,12 +62,12 @@ fun AccountCardFooterRow(
             Text(
                 text = if (strings.isBangla) "কার্ড দেখুন" else "View Card",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Medium),
-                color = ColorAccent
+                color = appColors.accent
             )
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                 contentDescription = null,
-                tint = ColorAccent,
+                tint = appColors.accent,
                 modifier = Modifier.size(11.dp).scale(scaleX = -1f, scaleY = 1f)
             )
         }

@@ -35,11 +35,6 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.model.toFinancialSummary
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.StatementExportHelper
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -47,6 +42,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun SharePdfSection(
@@ -65,11 +61,13 @@ fun SharePdfSection(
     onSharingPdfChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
+    val pdfRed = if (appColors.isDark) Color(0xFFE53935) else Color(0xFFDC2626)
     Column(modifier = modifier) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF141824),
-            border = BorderStroke(1.dp, ColorBorder),
+            color = appColors.surface,
+            border = BorderStroke(1.dp, appColors.border),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 6.dp)
@@ -83,13 +81,13 @@ fun SharePdfSection(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFE53935).copy(alpha = 0.15f)),
+                            .background(pdfRed.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.PictureAsPdf,
                             contentDescription = null,
-                            tint = Color(0xFFE53935),
+                            tint = pdfRed,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -100,13 +98,13 @@ fun SharePdfSection(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp
                             ),
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "$periodTitle • $periodSubtitle",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = ColorTextSecondary
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -118,30 +116,30 @@ fun SharePdfSection(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text(strings.income, fontSize = 11.sp, color = ColorTextSecondary)
+                        Text(strings.income, fontSize = 11.sp, color = appColors.textSecondary)
                         Text(
                             formatCurrency(totalIncome, userProfile.currencySymbol),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = ColorSuccessIncome
+                            color = appColors.income
                         )
                     }
                     Column {
-                        Text(strings.expense, fontSize = 11.sp, color = ColorTextSecondary)
+                        Text(strings.expense, fontSize = 11.sp, color = appColors.textSecondary)
                         Text(
                             formatCurrency(totalExpense, userProfile.currencySymbol),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = ColorDangerExpense
+                            color = appColors.expense
                         )
                     }
                     Column {
-                        Text(strings.transactionsTitle, fontSize = 11.sp, color = ColorTextSecondary)
+                        Text(strings.transactionsTitle, fontSize = 11.sp, color = appColors.textSecondary)
                         Text(
                             "${transactions.size} ${strings.recordsFound}",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = ColorTextPrimary
+                            color = appColors.textPrimary
                         )
                     }
                 }
@@ -181,7 +179,7 @@ fun SharePdfSection(
                 .height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE53935),
+                containerColor = pdfRed,
                 contentColor = Color.White
             )
         ) {

@@ -12,11 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSurface
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
@@ -29,38 +25,39 @@ fun AccountCardMenu(
     onDelete: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = Modifier.background(ColorSurface)
+        modifier = Modifier.background(appColors.surface)
     ) {
         DropdownMenuItem(
-            text = { Text(if (strings.isBangla) "কার্ড ও ইতিহাস দেখুন" else "View Card & History", color = ColorTextPrimary) },
-            leadingIcon = { Icon(Icons.Outlined.History, null, tint = ColorTextSecondary) },
+            text = { Text(if (strings.isBangla) "কার্ড ও ইতিহাস দেখুন" else "View Card & History", color = appColors.textPrimary) },
+            leadingIcon = { Icon(Icons.Outlined.History, null, tint = appColors.textSecondary) },
             onClick = {
                 onDismissRequest()
                 onClick()
             }
         )
         DropdownMenuItem(
-            text = { Text(strings.reconcileBalance, color = ColorAccent) },
-            leadingIcon = { Icon(Icons.Outlined.AccountBalance, null, tint = ColorAccent) },
+            text = { Text(strings.reconcileBalance, color = appColors.accent) },
+            leadingIcon = { Icon(Icons.Outlined.AccountBalance, null, tint = appColors.accent) },
             onClick = {
                 onDismissRequest()
                 onReconcile()
             }
         )
         DropdownMenuItem(
-            text = { Text(strings.editAccount, color = ColorTextPrimary) },
-            leadingIcon = { Icon(Icons.Outlined.Edit, null, tint = ColorTextSecondary) },
+            text = { Text(strings.editAccount, color = appColors.textPrimary) },
+            leadingIcon = { Icon(Icons.Outlined.Edit, null, tint = appColors.textSecondary) },
             onClick = {
                 onDismissRequest()
                 onEdit()
             }
         )
         DropdownMenuItem(
-            text = { Text(strings.delete, color = ColorDangerExpense) },
-            leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = ColorDangerExpense) },
+            text = { Text(strings.delete, color = appColors.dangerExpense) },
+            leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = appColors.dangerExpense) },
             onClick = {
                 onDismissRequest()
                 onDelete()

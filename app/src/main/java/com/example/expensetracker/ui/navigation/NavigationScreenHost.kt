@@ -9,6 +9,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.ui.accounts.AccountsScreen
@@ -34,23 +35,17 @@ import com.example.expensetracker.ui.transactions.TransactionsViewModel
 fun NavigationScreenHost(
     selectedItem: NavigationItem,
     onNavigate: (NavigationItem) -> Unit,
-    onOpenMenu: () -> Unit,
     onOpenAddTransaction: (TransactionType, Long?) -> Unit,
     onEditTransaction: (Transaction) -> Unit,
     onSplitBillClick: () -> Unit,
     onTransferClick: () -> Unit,
     onOpenMarketList: () -> Unit,
     dashboardViewModel: DashboardViewModel,
-    transactionsViewModel: TransactionsViewModel,
-    analyticsViewModel: AnalyticsViewModel,
-    budgetViewModel: BudgetViewModel,
-    settingsViewModel: SettingsViewModel,
-    accountsViewModel: AccountsViewModel,
-    receivablesViewModel: ReceivablesViewModel,
-    billsViewModel: BillsViewModel,
-    reportsViewModel: ReportsViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenMenu: () -> Unit = {}
 ) {
+    val transactionsViewModel: TransactionsViewModel = viewModel()
+
     AnimatedContent(
         targetState = selectedItem,
         transitionSpec = {
@@ -115,6 +110,7 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.ANALYTICS -> {
+                val analyticsViewModel: AnalyticsViewModel = viewModel()
                 AnalyticsScreen(
                     viewModel = analyticsViewModel,
                     onNavigateToCategoryTransactions = { categoryId ->
@@ -127,6 +123,7 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.ACCOUNTS -> {
+                val accountsViewModel: AccountsViewModel = viewModel()
                 AccountsScreen(
                     viewModel = accountsViewModel,
                     onNavigateBack = { onNavigate(NavigationItem.HOME) },
@@ -134,6 +131,7 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.BILLS -> {
+                val billsViewModel: BillsViewModel = viewModel()
                 BillsScreen(
                     viewModel = billsViewModel,
                     onNavigateBack = { onNavigate(NavigationItem.HOME) },
@@ -141,6 +139,7 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.RECEIVABLES -> {
+                val receivablesViewModel: ReceivablesViewModel = viewModel()
                 ReceivablesScreen(
                     viewModel = receivablesViewModel,
                     onNavigateBack = { onNavigate(NavigationItem.HOME) },
@@ -148,6 +147,7 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.BUDGETS -> {
+                val budgetViewModel: BudgetViewModel = viewModel()
                 BudgetScreen(
                     viewModel = budgetViewModel,
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
@@ -156,6 +156,7 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.REPORTS -> {
+                val reportsViewModel: ReportsViewModel = viewModel()
                 ReportsScreen(
                     viewModel = reportsViewModel,
                     onNavigateBack = { onNavigate(NavigationItem.HOME) },
@@ -163,6 +164,7 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.SETTINGS -> {
+                val settingsViewModel: SettingsViewModel = viewModel()
                 SettingsScreen(
                     viewModel = settingsViewModel,
                     onNavigateBack = { onNavigate(NavigationItem.HOME) },

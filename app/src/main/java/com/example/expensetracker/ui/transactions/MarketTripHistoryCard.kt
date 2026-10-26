@@ -18,8 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.model.MarketListWithItems
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorSurface
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.convertToBengaliDigits
@@ -105,19 +103,21 @@ fun MarketTripHistoryCard(
         }
     }
 
+    val appColors = LocalAppColors.current
+
     if (isEmbedded) {
         androidx.compose.foundation.layout.Box(
             modifier = modifier
                 .fillMaxWidth()
-                .background(LocalAppColors.current.surface)
+                .background(appColors.surface)
         ) {
             cardContent()
         }
     } else {
         Surface(
             shape = RoundedCornerShape(14.dp),
-            color = ColorSurface,
-            border = BorderStroke(1.dp, ColorBorder),
+            color = appColors.surface,
+            border = BorderStroke(1.dp, appColors.border),
             modifier = modifier.fillMaxWidth()
         ) {
             cardContent()

@@ -16,11 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.CardCornerRadius
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun PayablePaymentInfoCard(
@@ -30,9 +27,10 @@ fun PayablePaymentInfoCard(
     remainingToPayLabel: String,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Surface(
         shape = RoundedCornerShape(CardCornerRadius),
-        color = ColorBorder.copy(alpha = 0.2f),
+        color = appColors.border.copy(alpha = 0.2f),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
@@ -44,12 +42,12 @@ fun PayablePaymentInfoCard(
                 Text(
                     text = personName,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = ColorTextPrimary
+                    color = appColors.textPrimary
                 )
                 Text(
                     text = remainingToPayLabel,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = ColorTextSecondary
+                    color = appColors.textSecondary
                 )
             }
             Text(
@@ -58,7 +56,7 @@ fun PayablePaymentInfoCard(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = ColorDangerExpense
+                color = appColors.expense
             )
         }
     }

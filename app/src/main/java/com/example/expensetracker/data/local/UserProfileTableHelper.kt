@@ -30,29 +30,10 @@ internal class UserProfileTableHelper(private val dbHelper: ExpenseDatabaseHelpe
                 }
                 val langCol = c.getColumnIndex(COL_PROFILE_LANGUAGE)
                 val appLang = if (langCol != -1 && !c.isNull(langCol)) c.getString(langCol) else "bn"
-                val keyCol = c.getColumnIndex(COL_PROFILE_GEMINI_KEY)
-                var geminiKey = if (keyCol != -1 && !c.isNull(keyCol)) c.getString(keyCol)?.trim()?.ifBlank { null } else null
-                val aiInsightsCol = c.getColumnIndex(COL_PROFILE_AI_INSIGHTS_ENABLED)
-                val aiInsights = if (aiInsightsCol != -1 && !c.isNull(aiInsightsCol)) c.getInt(aiInsightsCol) == 1 else true
                 val themeCol = c.getColumnIndex(COL_PROFILE_THEME)
                 val appTheme = if (themeCol != -1 && !c.isNull(themeCol)) c.getString(themeCol) else "dark"
                 val bengaliNumCol = c.getColumnIndex(COL_PROFILE_BENGALI_NUMERALS)
                 val useBengaliNumerals = if (bengaliNumCol != -1 && !c.isNull(bengaliNumCol)) c.getInt(bengaliNumCol) == 1 else (appLang == "bn")
-
-                if (geminiKey.isNullOrBlank()) {
-                    val fallbackKey = dbHelper.getPersistedApiKey()
-                    if (!fallbackKey.isNullOrBlank()) {
-                        geminiKey = fallbackKey
-                        try {
-                            val healCv = ContentValues().apply {
-                                put(COL_PROFILE_GEMINI_KEY, fallbackKey)
-                            }
-                            dbHelper.writableDatabase.update(TABLE_PROFILE, healCv, "$COL_PROFILE_ID = 1", null)
-                        } catch (_: Exception) {}
-                    }
-                } else {
-                    dbHelper.persistApiKey(geminiKey)
-                }
 
                 return UserProfile(
                     firstName = firstName.ifBlank { "Sabbir" },
@@ -65,27 +46,18 @@ internal class UserProfileTableHelper(private val dbHelper: ExpenseDatabaseHelpe
                     isAutoSyncEnabled = c.getInt(c.getColumnIndexOrThrow(COL_PROFILE_AUTO_SYNC)) == 1,
                     lastSyncMillis = c.getLong(c.getColumnIndexOrThrow(COL_PROFILE_LAST_SYNC)),
                     appLanguage = appLang,
-                    geminiApiKey = geminiKey,
-                    aiInsightsEnabled = aiInsights,
                     appTheme = appTheme,
                     useBengaliNumerals = useBengaliNumerals,
                     isPrivacyModeEnabled = dbHelper.isPrivacyModeEnabled()
                 )
             }
         }
-        val fallbackKey = dbHelper.getPersistedApiKey()
-        return UserProfile(geminiApiKey = fallbackKey, isPrivacyModeEnabled = dbHelper.isPrivacyModeEnabled())
+        return UserProfile(isPrivacyModeEnabled = dbHelper.isPrivacyModeEnabled())
     }
 
     fun updateUserProfile(profile: UserProfile): Int {
         val db = dbHelper.writableDatabase
         dbHelper.setPrivacyModeEnabled(profile.isPrivacyModeEnabled)
-        val fallbackKey = dbHelper.getPersistedApiKey()
-        val effectiveApiKey = profile.geminiApiKey?.trim()?.ifBlank { null } ?: fallbackKey
-
-        if (!effectiveApiKey.isNullOrBlank()) {
-            dbHelper.persistApiKey(effectiveApiKey)
-        }
 
         val cv = ContentValues().apply {
             put(COL_PROFILE_NAME, profile.name)
@@ -102,12 +74,6 @@ internal class UserProfileTableHelper(private val dbHelper: ExpenseDatabaseHelpe
             put(COL_PROFILE_AUTO_SYNC, if (profile.isAutoSyncEnabled) 1 else 0)
             put(COL_PROFILE_LAST_SYNC, profile.lastSyncMillis)
             put(COL_PROFILE_LANGUAGE, profile.appLanguage)
-            if (effectiveApiKey != null) {
-                put(COL_PROFILE_GEMINI_KEY, effectiveApiKey)
-            } else {
-                putNull(COL_PROFILE_GEMINI_KEY)
-            }
-            put(COL_PROFILE_AI_INSIGHTS_ENABLED, if (profile.aiInsightsEnabled) 1 else 0)
             put(COL_PROFILE_THEME, profile.appTheme)
             put(COL_PROFILE_BENGALI_NUMERALS, if (profile.useBengaliNumerals) 1 else 0)
         }
@@ -128,48 +94,6 @@ internal class UserProfileTableHelper(private val dbHelper: ExpenseDatabaseHelpe
         val db = dbHelper.writableDatabase
         val cv = ContentValues().apply {
             put(COL_PROFILE_LANGUAGE, languageCode)
-        }
-        return db.update(TABLE_PROFILE, cv, "$COL_PROFILE_ID = 1", null)
-    }
-
-    fun updateGeminiApiKey(key: String?): Int {
-        val cleanKey = key?.trim()?.ifBlank { null }
-        dbHelper.persistApiKey(cleanKey)
-
-        val db = dbHelper.writableDatabase
-        val cv = ContentValues().apply {
-            if (cleanKey != null) put(COL_PROFILE_GEMINI_KEY, cleanKey) else putNull(COL_PROFILE_GEMINI_KEY)
-        }
-        var rows = db.update(TABLE_PROFILE, cv, "$COL_PROFILE_ID = 1", null)
-        if (rows == 0) {
-            val insertCv = ContentValues().apply {
-                put(COL_PROFILE_ID, 1)
-                put(COL_PROFILE_NAME, "Sabbir")
-                put(COL_PROFILE_FIRST_NAME, "Sabbir")
-                put(COL_PROFILE_LAST_NAME, "")
-                put(COL_PROFILE_CURRENCY_CODE, "BDT")
-                put(COL_PROFILE_CURRENCY_SYMBOL, "৳")
-                put(COL_PROFILE_AVATAR, 0)
-                put(COL_PROFILE_AUTO_SYNC, 1)
-                put(COL_PROFILE_LAST_SYNC, 0L)
-                put(COL_PROFILE_LANGUAGE, "bn")
-                if (cleanKey != null) put(COL_PROFILE_GEMINI_KEY, cleanKey) else putNull(COL_PROFILE_GEMINI_KEY)
-                put(COL_PROFILE_AI_INSIGHTS_ENABLED, 1)
-            }
-            val insertId = db.insertWithOnConflict(TABLE_PROFILE, null, insertCv, SQLiteDatabase.CONFLICT_REPLACE)
-            if (insertId != -1L) rows = 1
-        }
-        try {
-            val cur = db.rawQuery("PRAGMA wal_checkpoint(FULL)", null)
-            cur.close()
-        } catch (_: Exception) {}
-        return rows
-    }
-
-    fun updateAiInsightsEnabled(enabled: Boolean): Int {
-        val db = dbHelper.writableDatabase
-        val cv = ContentValues().apply {
-            put(COL_PROFILE_AI_INSIGHTS_ENABLED, if (enabled) 1 else 0)
         }
         return db.update(TABLE_PROFILE, cv, "$COL_PROFILE_ID = 1", null)
     }

@@ -31,13 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ColorAccent
-import com.example.expensetracker.theme.ColorBorder
-import com.example.expensetracker.theme.ColorDangerExpense
-import com.example.expensetracker.theme.ColorSuccessIncome
-import com.example.expensetracker.theme.ColorTextMuted
-import com.example.expensetracker.theme.ColorTextPrimary
-import com.example.expensetracker.theme.ColorTextSecondary
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.share.ShareExpenseHelper
@@ -51,17 +45,18 @@ fun BillSplitterModeToggle(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(ColorBorder.copy(alpha = 0.35f))
+            .background(appColors.border.copy(alpha = 0.35f))
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = if (isSplitEqually) ColorAccent else Color.Transparent,
+            color = if (isSplitEqually) appColors.accent else Color.Transparent,
             modifier = Modifier
                 .weight(1f)
                 .clickable {
@@ -74,14 +69,14 @@ fun BillSplitterModeToggle(
                     text = if (isBangla) "সমান ভাগ" else "Equal Split",
                     fontSize = 12.sp,
                     fontWeight = if (isSplitEqually) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSplitEqually) Color.White else ColorTextSecondary
+                    color = if (isSplitEqually) Color.White else appColors.textSecondary
                 )
             }
         }
 
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = if (!isSplitEqually) ColorAccent else Color.Transparent,
+            color = if (!isSplitEqually) appColors.accent else Color.Transparent,
             modifier = Modifier
                 .weight(1f)
                 .clickable {
@@ -94,7 +89,7 @@ fun BillSplitterModeToggle(
                     text = if (isBangla) "কাস্টম ভাগ" else "Custom Split",
                     fontSize = 12.sp,
                     fontWeight = if (!isSplitEqually) FontWeight.Bold else FontWeight.Normal,
-                    color = if (!isSplitEqually) Color.White else ColorTextSecondary
+                    color = if (!isSplitEqually) Color.White else appColors.textSecondary
                 )
             }
         }
@@ -111,6 +106,7 @@ fun BillSplitterSummaryCard(
     isBangla: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     AppCard(
         modifier = modifier.fillMaxWidth(),
         padding = 14.dp
@@ -120,11 +116,11 @@ fun BillSplitterSummaryCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = myShareLabel, color = ColorTextMuted, fontSize = 13.sp)
+                Text(text = myShareLabel, color = appColors.textMuted, fontSize = 13.sp)
                 Text(
                     text = "$currencySymbol ${String.format(Locale.US, "%,.2f", myShare)}",
                     fontWeight = FontWeight.Bold,
-                    color = ColorSuccessIncome,
+                    color = appColors.income,
                     fontSize = 15.sp
                 )
             }
@@ -135,13 +131,13 @@ fun BillSplitterSummaryCard(
             ) {
                 Text(
                     text = if (isBangla) "বন্ধুদের প্রাপ্য ($friendsCount জন)" else "Friends Owe ($friendsCount people)",
-                    color = ColorTextMuted,
+                    color = appColors.textMuted,
                     fontSize = 13.sp
                 )
                 Text(
                     text = "$currencySymbol ${String.format(Locale.US, "%,.2f", friendsTotalShare)}",
                     fontWeight = FontWeight.Bold,
-                    color = ColorDangerExpense,
+                    color = appColors.expense,
                     fontSize = 15.sp
                 )
             }
@@ -158,13 +154,14 @@ fun BillSplitterShareRow(
     haptics: AppHaptics,
     modifier: Modifier = Modifier
 ) {
+    val appColors = LocalAppColors.current
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = ColorBorder.copy(alpha = 0.4f),
+            color = appColors.border.copy(alpha = 0.4f),
             modifier = Modifier
                 .weight(1f)
                 .clickable {
@@ -179,11 +176,11 @@ fun BillSplitterShareRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Filled.ContentCopy, contentDescription = null, tint = ColorAccent, modifier = Modifier.size(16.dp))
+                Icon(Icons.Filled.ContentCopy, contentDescription = null, tint = appColors.accent, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (isBangla) "মেসেজ কপি করুন" else "Copy Message",
-                    color = ColorTextPrimary,
+                    color = appColors.textPrimary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -192,7 +189,7 @@ fun BillSplitterShareRow(
 
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = ColorAccent.copy(alpha = 0.18f),
+            color = appColors.accent.copy(alpha = 0.18f),
             modifier = Modifier
                 .weight(1f)
                 .clickable {
@@ -209,11 +206,11 @@ fun BillSplitterShareRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Filled.Share, contentDescription = null, tint = ColorAccent, modifier = Modifier.size(16.dp))
+                Icon(Icons.Filled.Share, contentDescription = null, tint = appColors.accent, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (isBangla) "নোট শেয়ার করুন" else "Share Note",
-                    color = ColorTextPrimary,
+                    color = appColors.textPrimary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
