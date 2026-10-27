@@ -134,13 +134,30 @@ class MultiMarketListAndItemUxTest {
     fun testCreateMarketListSectionFeatures() {
         val content = readFile("com/example/expensetracker/ui/dashboard/CreateMarketListSection.kt")
 
-        // Title options
+        // 1. Stepped wizard architecture
+        assertTrue(
+            "CreateMarketListSection must define CreateMarketListStep enum with TITLE, METHOD, ITEMS",
+            content.contains("enum class CreateMarketListStep") &&
+            content.contains("TITLE") &&
+            content.contains("METHOD") &&
+            content.contains("ITEMS")
+        )
+
+        // 2. Title options
         assertTrue(
             "CreateMarketListSection must offer quick title chips (সকালের কাঁচাবাজার, বিকালের মুদি, etc.)",
             content.contains("সকালের কাঁচাবাজার") && content.contains("বিকালের মুদি")
         )
 
-        // Both input modes: WhatsApp bulk paste and manual item entry
+        // 3. Method selection cards and back navigation
+        assertTrue(
+            "CreateMarketListSection must offer clear method chooser with back navigation",
+            content.contains("CreateMarketListStep.METHOD") &&
+            content.contains("সরাসরি পণ্য লিখুন") &&
+            content.contains("হোয়াটসঅ্যাপ পেস্ট")
+        )
+
+        // 4. Both input modes: WhatsApp bulk paste and manual item entry
         assertTrue(
             "CreateMarketListSection must support WhatsApp paste mode",
             content.contains("MarketListParser.parseBulkText(bulkInputText)")
@@ -148,6 +165,12 @@ class MultiMarketListAndItemUxTest {
         assertTrue(
             "CreateMarketListSection must support manual item addition with quick staples",
             content.contains("quickStaples") && content.contains("addManualItem")
+        )
+
+        // 5. Quick quantities assistant
+        assertTrue(
+            "CreateMarketListSection must provide quick quantity selector chips",
+            content.contains("quickQuantities") && content.contains("১ কেজি")
         )
     }
 
