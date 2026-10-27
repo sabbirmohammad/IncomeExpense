@@ -22,6 +22,7 @@ import com.example.expensetracker.ui.budget.BudgetScreen
 import com.example.expensetracker.ui.budget.BudgetViewModel
 import com.example.expensetracker.ui.dashboard.DashboardScreen
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
+import com.example.expensetracker.ui.market.MarketScreen
 import com.example.expensetracker.ui.receivables.ReceivablesScreen
 import com.example.expensetracker.ui.receivables.ReceivablesViewModel
 import com.example.expensetracker.ui.reports.ReportsScreen
@@ -117,6 +118,12 @@ fun NavigationScreenHost(
                     onAddTransactionForDate = { dateMillis ->
                         onOpenAddTransaction(TransactionType.EXPENSE, dateMillis)
                     },
+                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
+                )
+            }
+            NavigationItem.MARKET -> {
+                MarketScreen(
+                    dashboardViewModel = dashboardViewModel,
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
                 )
             }

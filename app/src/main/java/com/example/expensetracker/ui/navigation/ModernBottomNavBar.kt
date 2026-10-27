@@ -28,9 +28,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -61,7 +63,8 @@ fun ModernBottomNavBar(
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
-    val isMoreSelected = selectedItem == NavigationItem.ACCOUNTS ||
+    val isMoreSelected = selectedItem == NavigationItem.ANALYTICS ||
+            selectedItem == NavigationItem.ACCOUNTS ||
             selectedItem == NavigationItem.BILLS ||
             selectedItem == NavigationItem.RECEIVABLES ||
             selectedItem == NavigationItem.BUDGETS ||
@@ -159,11 +162,11 @@ fun ModernBottomNavBar(
             }
 
             BottomNavItemButton(
-                selected = selectedItem == NavigationItem.ANALYTICS,
-                label = strings.navAnalytics,
-                activeIcon = Icons.Filled.PieChart,
-                inactiveIcon = Icons.Outlined.PieChart,
-                onClick = { onItemSelected(NavigationItem.ANALYTICS) }
+                selected = selectedItem == NavigationItem.MARKET,
+                label = strings.navMarket,
+                activeIcon = Icons.Filled.ShoppingCart,
+                inactiveIcon = Icons.Outlined.ShoppingCart,
+                onClick = { onItemSelected(NavigationItem.MARKET) }
             )
 
             BottomNavItemButton(

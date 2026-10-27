@@ -200,10 +200,11 @@ fun SideMenuDrawer(
                 // Menu Items List
                 val drawerMenuItems = listOf(
                     NavigationItem.ACCOUNTS,
-                    NavigationItem.BILLS,
-                    NavigationItem.RECEIVABLES,
+                    NavigationItem.ANALYTICS,
                     NavigationItem.BUDGETS,
                     NavigationItem.REPORTS,
+                    NavigationItem.BILLS,
+                    NavigationItem.RECEIVABLES,
                     NavigationItem.SETTINGS
                 )
                 drawerMenuItems.forEach { item ->

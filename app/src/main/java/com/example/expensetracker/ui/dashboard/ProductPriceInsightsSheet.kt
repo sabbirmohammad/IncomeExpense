@@ -83,6 +83,38 @@ fun ProductPriceInsightsSheet(
     onDismiss: () -> Unit
 ) {
     val appColors = LocalAppColors.current
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = appColors.background,
+        dragHandle = null
+    ) {
+        ProductPriceInsightsContent(
+            priceInsights = priceInsights,
+            onFetchHistory = onFetchHistory,
+            isBangla = isBangla,
+            currencySymbol = currencySymbol,
+            onClose = onDismiss,
+            modifier = Modifier.fillMaxHeight(0.92f)
+        )
+    }
+}
+
+/**
+ * Embeddable commodity price intelligence & trend content.
+ * Can be hosted directly in full-screen tabs (e.g. MarketScreen) or in bottom sheets.
+ */
+@Composable
+fun ProductPriceInsightsContent(
+    priceInsights: Map<String, ProductPriceInsight>,
+    onFetchHistory: (productName: String) -> List<ProductPriceRecord>,
+    isBangla: Boolean = true,
+    currencySymbol: String = "৳",
+    onClose: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
     var searchQuery by remember { mutableStateOf("") }
@@ -102,44 +134,38 @@ fun ProductPriceInsightsSheet(
     val priceUpCount = remember(allInsights) { allInsights.count { it.priceTrend == PriceTrend.UP } }
     val priceDownCount = remember(allInsights) { allInsights.count { it.priceTrend == PriceTrend.DOWN } }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = appColors.background,
-        dragHandle = null
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = if (onClose != null) 16.dp else 4.dp)
     ) {
-        Column(
+        // Header
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.92f)
-                .padding(top = 16.dp)
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = if (isBangla) "📊 দ্রব্যমূল্যের দরদাম ও বিশ্লেষণ" else "📊 Price Intelligence & Trends",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        ),
-                        color = appColors.textPrimary
-                    )
-                    Text(
-                        text = if (isBangla) "বিগত ক্রয়ের তুলনায় দাম বাড়া-কমার রিয়েল-টাইম তথ্য" else "Compare past vs current purchase rates",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = appColors.textSecondary
-                    )
-                }
+            Column {
+                Text(
+                    text = if (isBangla) "📊 দ্রব্যমূল্যের দরদাম ও বিশ্লেষণ" else "📊 Price Intelligence & Trends",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    ),
+                    color = appColors.textPrimary
+                )
+                Text(
+                    text = if (isBangla) "বিগত ক্রয়ের তুলনায় দাম বাড়া-কমার রিয়েল-টাইম তথ্য" else "Compare past vs current purchase rates",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = appColors.textSecondary
+                )
+            }
 
+            if (onClose != null) {
                 IconButton(
-                    onClick = onDismiss,
+                    onClick = onClose,
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
@@ -153,6 +179,7 @@ fun ProductPriceInsightsSheet(
                     )
                 }
             }
+        }
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -377,7 +404,7 @@ fun ProductPriceInsightsSheet(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 84.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(filteredInsights, key = { it.productName }) { insight ->
@@ -397,7 +424,6 @@ fun ProductPriceInsightsSheet(
             }
         }
     }
-}
 
 @Composable
 private fun ProductPriceItemCard(

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Assessment
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.expensetracker.ui.components.Strings
 
@@ -29,6 +31,7 @@ enum class NavigationItem(
 ) {
     HOME("Home", Icons.Filled.Home, Icons.Outlined.Home),
     TRANSACTIONS("Transactions", Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong),
+    MARKET("Market", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart),
     ANALYTICS("Analytics", Icons.Filled.PieChart, Icons.Outlined.PieChart),
     ACCOUNTS("Accounts & MFS", Icons.Filled.AccountBalance, Icons.Outlined.AccountBalance),
     BILLS("Bills & Subscriptions", Icons.Filled.Payments, Icons.Outlined.Payments),
@@ -43,6 +46,7 @@ enum class NavigationItem(
 fun NavigationItem.getLocalizedTitle(strings: Strings): String = when (this) {
     NavigationItem.HOME -> strings.navHome
     NavigationItem.TRANSACTIONS -> strings.navTransactions
+    NavigationItem.MARKET -> strings.navMarket
     NavigationItem.ANALYTICS -> strings.navAnalytics
     NavigationItem.ACCOUNTS -> strings.navAccounts
     NavigationItem.BILLS -> strings.navBills

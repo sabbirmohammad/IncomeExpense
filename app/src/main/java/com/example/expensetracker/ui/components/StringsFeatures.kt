@@ -4,6 +4,11 @@ open class StringsFeatures(
     isBangla: Boolean
 ) : StringsCore(isBangla) {
     // Market List & History
+    val marketHubTitle: String get() = if (isBangla) "বাজার" else "Market"
+    val marketHubSubtitle: String get() = if (isBangla) "বাজারের ফর্দ ও নিত্যপণ্যের দরদাম" else "Shopping checklist & commodity price trends"
+    val marketTabChecklist: String get() = if (isBangla) "বাজারের ফর্দ" else "Market Lists"
+    val marketTabPrices: String get() = if (isBangla) "বাজার দর" else "Price Trends"
+    val marketTabCreate: String get() = if (isBangla) "নতুন ফর্দ" else "New List"
     val marketTripsFilter: String get() = if (isBangla) "🛒 বাজার" else "🛒 Market"
     val marketTripsTitle: String get() = if (isBangla) "বাজারের ইতিহাস" else "Market Trips History"
     val pasteList: String get() = if (isBangla) "লিস্ট পেস্ট" else "Paste List"
