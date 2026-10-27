@@ -223,8 +223,7 @@ fun MarketNativeContent(
                     if (itm.isPurchased) {
                         itm.amount ?: 0.0
                     } else {
-                        val cleanName = UnitConverterEngine.normalizeProductName(itm.name)
-                        val insight = productPriceInsights[cleanName]
+                        val insight = UnitConverterEngine.findMatchingInsight(itm.name, productPriceInsights)
                         if (insight != null) {
                             UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
                         } else {
@@ -506,7 +505,7 @@ fun MarketNativeContent(
                                     itemToSubstitute = item
                                 },
                                 lastRateText = lastRateText,
-                                priceInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(item.name)]
+                                priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
                             )
                         }
                     } else {
@@ -603,7 +602,7 @@ fun MarketNativeContent(
                                         itemToSubstitute = item
                                     },
                                     lastRateText = lastRateText,
-                                    priceInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(item.name)]
+                                    priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
                                 )
                             }
                         }
@@ -617,7 +616,8 @@ fun MarketNativeContent(
                         isBangla = isBangla,
                         onAddItem = onAddItem,
                         existingItemNames = items.map { it.name.lowercase() }.toSet(),
-                        productPriceInsights = productPriceInsights
+                        productPriceInsights = productPriceInsights,
+                        currencySymbol = currencySymbol
                     )
                 }
 
@@ -667,7 +667,7 @@ fun MarketNativeContent(
     if (promptAmountForItem != null) {
         val curItem = promptAmountForItem!!
         val lastRate = lastPurchasedRates[curItem.name.lowercase().trim()]
-        val curInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(curItem.name)]
+        val curInsight = UnitConverterEngine.findMatchingInsight(curItem.name, productPriceInsights)
         MarketPromptAmountDialog(
             item = curItem,
             currencySymbol = currencySymbol,

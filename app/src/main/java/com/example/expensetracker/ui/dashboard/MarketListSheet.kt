@@ -230,8 +230,7 @@ fun MarketListSheet(
                             if (itm.isPurchased) {
                                 itm.amount ?: 0.0
                             } else {
-                                val cleanName = UnitConverterEngine.normalizeProductName(itm.name)
-                                val insight = productPriceInsights[cleanName]
+                                val insight = UnitConverterEngine.findMatchingInsight(itm.name, productPriceInsights)
                                 if (insight != null) {
                                     UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
                                 } else {
@@ -453,7 +452,7 @@ fun MarketListSheet(
                                     itemToSubstitute = item
                                 },
                                 lastRateText = lastRateText,
-                                priceInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(item.name)]
+                                priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
                             )
                         }
 
@@ -467,7 +466,8 @@ fun MarketListSheet(
                                     onAddItem(newItem, currentViewingList.list.id)
                                 },
                                 existingItemNames = items.map { it.name.lowercase() }.toSet(),
-                                productPriceInsights = productPriceInsights
+                                productPriceInsights = productPriceInsights,
+                                currencySymbol = currencySymbol
                             )
                         }
 
@@ -522,8 +522,7 @@ fun MarketListSheet(
     if (promptAmountForItem != null) {
         val targetItem = promptAmountForItem!!
         val lastRate = lastPurchasedRates[targetItem.name.lowercase().trim()]
-        val targetCleanName = UnitConverterEngine.normalizeProductName(targetItem.name)
-        val targetInsight = productPriceInsights[targetCleanName]
+        val targetInsight = UnitConverterEngine.findMatchingInsight(targetItem.name, productPriceInsights)
         MarketPromptAmountDialog(
             item = targetItem,
             currencySymbol = currencySymbol,

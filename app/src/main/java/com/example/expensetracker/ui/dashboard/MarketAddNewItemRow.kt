@@ -50,6 +50,7 @@ import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.UnitAndQuantityDialog
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 @Composable
@@ -59,7 +60,8 @@ fun MarketAddNewItemRow(
     onAddItem: (MarketItem) -> Unit,
     modifier: Modifier = Modifier,
     existingItemNames: Set<String> = emptySet(),
-    productPriceInsights: Map<String, ProductPriceInsight> = emptyMap()
+    productPriceInsights: Map<String, ProductPriceInsight> = emptyMap(),
+    currencySymbol: String = "৳"
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -142,8 +144,10 @@ fun MarketAddNewItemRow(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
+                        val qtyRaw = if (newProductQuantity % 1.0 == 0.0) newProductQuantity.toInt().toString() else newProductQuantity.toString()
+                        val qtyDisplay = if (isBangla) convertToBengaliDigits(qtyRaw) else qtyRaw
                         Text(
-                            text = "${if (newProductQuantity % 1.0 == 0.0) newProductQuantity.toInt() else newProductQuantity} $newProductUnit",
+                            text = "$qtyDisplay $newProductUnit",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -190,13 +194,8 @@ fun MarketAddNewItemRow(
         }
 
         // Smart live price estimation preview while typing!
-        val currentTypedClean = remember(newProductName) {
-            UnitConverterEngine.normalizeProductName(newProductName)
-        }
-        val matchedInsight = remember(currentTypedClean, productPriceInsights) {
-            if (currentTypedClean.isBlank()) null
-            else productPriceInsights[currentTypedClean]
-                ?: productPriceInsights.values.find { it.productName.contains(currentTypedClean) || currentTypedClean.contains(it.productName) }
+        val matchedInsight = remember(newProductName, productPriceInsights) {
+            UnitConverterEngine.findMatchingInsight(newProductName, productPriceInsights)
         }
 
         if (matchedInsight != null) {
@@ -205,8 +204,15 @@ fun MarketAddNewItemRow(
                 newProductQuantity,
                 newProductUnit
             )
-            val estFormatted = if (estimatedCost % 1.0 == 0.0) estimatedCost.toInt().toString() else "%.0f".format(estimatedCost)
+            val estFormatted = if (estimatedCost % 1.0 == 0.0) estimatedCost.toLong().toString() else "%.0f".format(estimatedCost)
             val estText = if (isBangla) com.example.expensetracker.ui.components.convertToBengaliDigits(estFormatted) else estFormatted
+
+            val rateStr = if (matchedInsight.currentUnitPrice % 1.0 == 0.0) {
+                matchedInsight.currentUnitPrice.toLong().toString()
+            } else {
+                "%.1f".format(matchedInsight.currentUnitPrice)
+            }
+            val rateNum = if (isBangla) com.example.expensetracker.ui.components.convertToBengaliDigits(rateStr) else rateStr
 
             Spacer(modifier = Modifier.height(4.dp))
             Surface(
@@ -221,12 +227,12 @@ fun MarketAddNewItemRow(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = if (isBangla) "💡 পূর্বের দর: ${matchedInsight.formatUnitRate()}" else "💡 Last rate: ${matchedInsight.formatUnitRate()}",
+                        text = if (isBangla) "💡 পূর্বের দর: $currencySymbol$rateNum/${matchedInsight.baseUnit}" else "💡 Last rate: $currencySymbol$rateNum/${matchedInsight.baseUnit}",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                         color = appColors.textSecondary
                     )
                     Text(
-                        text = if (isBangla) "সম্ভাব্য: ৳$estText" else "Est: ৳$estText",
+                        text = if (isBangla) "সম্ভাব্য: $currencySymbol$estText" else "Est: $currencySymbol$estText",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
                         color = appColors.accent
                     )

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -173,13 +174,13 @@ fun CreateMarketListSection(
                         val cleanTitle = titleOption.substringAfter(" ").trim()
                         val isSelected = listTitle == cleanTitle
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) appColors.accent.copy(alpha = 0.15f) else LocalAppColors.current.background,
-                            border = BorderStroke(1.dp, if (isSelected) appColors.accent else LocalAppColors.current.border),
-                            modifier = Modifier.clickable {
+                            onClick = {
                                 haptics.lightTick()
                                 listTitle = cleanTitle
-                            }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) appColors.accent.copy(alpha = 0.15f) else LocalAppColors.current.background,
+                            border = BorderStroke(1.dp, if (isSelected) appColors.accent else LocalAppColors.current.border)
                         ) {
                             Text(
                                 text = titleOption,
@@ -204,18 +205,25 @@ fun CreateMarketListSection(
                 border = BorderStroke(1.dp, LocalAppColors.current.border),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(modifier = Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(38.dp)
+                        .padding(3.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     // Manual Add Tab (Primary / Default)
                     Box(
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (inputMode == 1) appColors.accent else Color.Transparent)
                             .clickable {
                                 haptics.lightTick()
                                 inputMode = 1
-                            }
-                            .padding(vertical = 7.dp),
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -223,7 +231,7 @@ fun CreateMarketListSection(
                                 imageVector = Icons.AutoMirrored.Outlined.ListAlt,
                                 contentDescription = null,
                                 tint = if (inputMode == 1) Color.White else appColors.textSecondary,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                             Text(
                                 text = if (isBangla) "সরাসরি পণ্য লিখুন" else "Add Items",
@@ -240,13 +248,13 @@ fun CreateMarketListSection(
                     Box(
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (inputMode == 0) Color(0xFF25D366) else Color.Transparent)
+                            .background(if (inputMode == 0) appColors.accent else Color.Transparent)
                             .clickable {
                                 haptics.lightTick()
                                 inputMode = 0
-                            }
-                            .padding(vertical = 7.dp),
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -254,7 +262,7 @@ fun CreateMarketListSection(
                                 imageVector = Icons.Filled.ContentPaste,
                                 contentDescription = null,
                                 tint = if (inputMode == 0) Color.White else appColors.textSecondary,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                             Text(
                                 text = if (isBangla) "হোয়াটসঅ্যাপ পেস্ট" else "Bulk Paste",
@@ -385,16 +393,18 @@ fun CreateMarketListSection(
                     ) {
                         quickStaples.forEach { staple ->
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = LocalAppColors.current.background,
                                 border = BorderStroke(1.dp, LocalAppColors.current.border),
-                                modifier = Modifier.clickable { addManualItem(staple) }
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { addManualItem(staple) }
                             ) {
                                 Text(
                                     text = "+ $staple",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
                                     color = appColors.accent,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                                 )
                             }
                         }
@@ -508,6 +518,11 @@ fun CreateMarketListSection(
                     )
                 }
             }
+        }
+
+        // Bottom nav bar clearance
+        item {
+            Spacer(modifier = Modifier.height(84.dp))
         }
     }
 }

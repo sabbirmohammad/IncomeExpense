@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -327,6 +328,71 @@ fun MarketPromptAmountDialog(
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+
+                // Suggested Estimated Cost Quick Chip
+                val estimatedCostSuggestion = remember(item, priceInsight, lastRate) {
+                    val unitPrice = priceInsight?.currentUnitPrice ?: lastRate?.first
+                    if (unitPrice != null && unitPrice > 0.0 && item.quantity > 0.0) {
+                        UnitConverterEngine.estimateCost(unitPrice, item.quantity, item.unit)
+                    } else null
+                }
+
+                if (estimatedCostSuggestion != null && estimatedCostSuggestion > 0.0) {
+                    val estAmtStr = if (estimatedCostSuggestion % 1.0 == 0.0) {
+                        estimatedCostSuggestion.toLong().toString()
+                    } else {
+                        "%.1f".format(estimatedCostSuggestion)
+                    }
+                    val estAmtBengali = if (isBangla) convertToBengaliDigits(estAmtStr) else estAmtStr
+                    val isAlreadyApplied = promptAmountText.trim() == estAmtStr ||
+                        MarketListParser.convertBengaliDigitsToEnglish(promptAmountText.trim()) == estAmtStr
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isAlreadyApplied) appColors.income.copy(alpha = 0.10f) else appColors.accent.copy(alpha = 0.10f),
+                        border = BorderStroke(1.dp, if (isAlreadyApplied) appColors.income.copy(alpha = 0.30f) else appColors.accent.copy(alpha = 0.30f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                haptics.lightTick()
+                                promptAmountText = estAmtStr
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (isBangla) "💡 সম্ভাব্য দাম: $currencySymbol$estAmtBengali" else "💡 Estimated: $currencySymbol$estAmtBengali",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp
+                                ),
+                                color = if (isAlreadyApplied) appColors.income else appColors.accent
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isAlreadyApplied) appColors.income else appColors.accent
+                            ) {
+                                Text(
+                                    text = if (isAlreadyApplied) {
+                                        if (isBangla) "✓ বসানো হয়েছে" else "✓ Applied"
+                                    } else {
+                                        if (isBangla) "বসিয়ে দিন" else "Use"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = Color.White
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
                             }
                         }
                     }

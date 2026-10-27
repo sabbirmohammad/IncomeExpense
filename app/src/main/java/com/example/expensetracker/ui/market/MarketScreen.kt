@@ -1,8 +1,12 @@
 package com.example.expensetracker.ui.market
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,13 +27,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.History
@@ -41,6 +49,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -49,6 +59,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,8 +68,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -114,6 +128,8 @@ fun MarketScreen(
 
     // 0: Market Lists (Checklist & Trips), 1: Price Intelligence (বাজার দর), 2: Create New List
     var selectedTab by remember { mutableIntStateOf(0) }
+    var priceSearchQuery by remember { mutableStateOf("") }
+    var isPriceSearchActive by remember { mutableStateOf(false) }
 
     // Consolidated active lists
     val effectiveActiveLists = remember(activeMarketLists, activeMarketList) {
@@ -156,9 +172,11 @@ fun MarketScreen(
             isBangla = isBangla,
             activeListsCount = effectiveActiveLists.size,
             selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it },
-            onNavigateToSettings = onNavigateToSettings,
-            onCreateNewClick = { selectedTab = 2 }
+            searchQuery = priceSearchQuery,
+            onSearchQueryChange = { priceSearchQuery = it },
+            isSearchActive = isPriceSearchActive,
+            onSearchActiveChange = { isPriceSearchActive = it },
+            onNavigateToSettings = onNavigateToSettings
         )
 
         // 2. Segmented Pill Tabs
@@ -167,6 +185,9 @@ fun MarketScreen(
             onTabSelected = {
                 haptics.lightTick()
                 selectedTab = it
+                if (it != 1) {
+                    isPriceSearchActive = false
+                }
             },
             isBangla = isBangla,
             activeListsCount = effectiveActiveLists.size,
@@ -226,6 +247,10 @@ fun MarketScreen(
                     isBangla = isBangla,
                     currencySymbol = currencySymbol,
                     onClose = null,
+                    searchQuery = priceSearchQuery,
+                    onSearchQueryChange = { priceSearchQuery = it },
+                    showInternalSearchBar = false,
+                    showHeader = true,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -237,7 +262,8 @@ fun MarketScreen(
                         dashboardViewModel.createMarketListWithBulk(title, items)
                         selectedTab = 0
                         selectedListId = null
-                    }
+                    },
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
@@ -263,8 +289,7 @@ fun MarketScreen(
     if (promptAmountForItem != null) {
         val targetItem = promptAmountForItem!!
         val lastRate = lastPurchasedRates[targetItem.name.lowercase().trim()]
-        val targetCleanName = UnitConverterEngine.normalizeProductName(targetItem.name)
-        val targetInsight = productPriceInsights[targetCleanName]
+        val targetInsight = UnitConverterEngine.findMatchingInsight(targetItem.name, productPriceInsights)
         MarketPromptAmountDialog(
             item = targetItem,
             currencySymbol = currencySymbol,
@@ -443,103 +468,207 @@ fun MarketScreen(
 
 /**
  * Clean, modern One UI top bar for Market Screen.
+ * Provides instant search for Tab 1 (বাজার দর) in place of the old redundant '+' button.
  */
 @Composable
 private fun MarketTopBar(
     isBangla: Boolean,
     activeListsCount: Int,
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    onNavigateToSettings: (() -> Unit)?,
-    onCreateNewClick: () -> Unit
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    isSearchActive: Boolean,
+    onSearchActiveChange: (Boolean) -> Unit,
+    onNavigateToSettings: (() -> Unit)?
 ) {
     val appColors = LocalAppColors.current
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
-    Row(
+    LaunchedEffect(isSearchActive, selectedTab) {
+        if (isSearchActive && selectedTab == 1) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(appColors.accent, Color(0xFF2563EB))
+        AnimatedContent(
+            targetState = isSearchActive && selectedTab == 1,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(150)) togetherWith fadeOut(animationSpec = tween(150))
+            },
+            label = "topBarSearchAnimation"
+        ) { inSearchMode ->
+            if (inSearchMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
+                        placeholder = {
+                            Text(
+                                text = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
+                                fontSize = 13.sp,
+                                color = appColors.textSecondary.copy(alpha = 0.6f)
                             )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ShoppingCart,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = appColors.accent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { onSearchQueryChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        tint = appColors.textSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = appColors.accent,
+                            unfocusedBorderColor = appColors.border,
+                            focusedContainerColor = appColors.surface,
+                            unfocusedContainerColor = appColors.surface
+                        )
                     )
+
+                    IconButton(
+                        onClick = {
+                            focusManager.clearFocus()
+                            onSearchActiveChange(false)
+                        },
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(appColors.surfaceVariant)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = if (isBangla) "অনুসন্ধান বন্ধ করুন" else "Close search",
+                            tint = appColors.textPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Text(
-                    text = if (isBangla) "বাজার হাব" else "Market Hub",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    ),
-                    color = appColors.textPrimary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Text(
-                text = if (activeListsCount > 0) {
-                    if (isBangla) "${convertToBengaliDigits(activeListsCount.toString())}টি সক্রিয় ফর্দ চলমান" else "$activeListsCount active checklists"
-                } else {
-                    if (isBangla) "বাজারের ফর্দ ও নিত্যপণ্যের দরদাম" else "Shopping checklist & price trends"
-                },
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = appColors.textSecondary
-            )
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Quick Add List Button
-            IconButton(
-                onClick = onCreateNewClick,
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(appColors.surfaceVariant)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = if (isBangla) "নতুন ফর্দ" else "New List",
-                    tint = appColors.accent,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            if (onNavigateToSettings != null) {
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = onNavigateToSettings,
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(appColors.surfaceVariant)
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = if (isBangla) "সেটিংস" else "Settings",
-                        tint = appColors.textSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        Brush.linearGradient(
+                                            colors = listOf(appColors.accent, Color(0xFF2563EB))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ShoppingCart,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Text(
+                                text = if (isBangla) "বাজার হাব" else "Market Hub",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                ),
+                                color = appColors.textPrimary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = when (selectedTab) {
+                                0 -> if (activeListsCount > 0) {
+                                    if (isBangla) "${convertToBengaliDigits(activeListsCount.toString())}টি সক্রিয় ফর্দ চলমান" else "$activeListsCount active checklists"
+                                } else {
+                                    if (isBangla) "বাজারের ফর্দ ও কেনাকাটার তালিকা" else "Shopping checklist & trips"
+                                }
+                                1 -> if (isBangla) "নিত্যপণ্যের বাজার দর ও দামের ট্রেন্ড" else "Commodity price rates & trends"
+                                2 -> if (isBangla) "নতুন বাজার ফর্দ তৈরি করুন" else "Create a new shopping list"
+                                else -> if (isBangla) "বাজারের ফর্দ ও নিত্যপণ্যের দরদাম" else "Shopping checklist & price trends"
+                            },
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = appColors.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // In Tab 1 (Price Intelligence / বাজার দর): Show Search Button where '+' was
+                        if (selectedTab == 1) {
+                            val hasQuery = searchQuery.isNotBlank()
+                            IconButton(
+                                onClick = { onSearchActiveChange(true) },
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(if (hasQuery) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = if (isBangla) "পণ্য খুঁজুন" else "Search",
+                                    tint = if (hasQuery) appColors.accent else appColors.textPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        if (onNavigateToSettings != null) {
+                            IconButton(
+                                onClick = onNavigateToSettings,
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(appColors.surfaceVariant)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Settings,
+                                    contentDescription = if (isBangla) "সেটিংস" else "Settings",
+                                    tint = appColors.textSecondary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -548,6 +677,8 @@ private fun MarketTopBar(
 
 /**
  * Segmented Pill Tab Bar for Market Hub.
+ * Uses exact uniform height (42.dp container with 3.dp padding) and fillMaxHeight so active tab
+ * background always seamlessly covers 100% of the pill area across all tabs.
  */
 @Composable
 private fun MarketSegmentedPills(
@@ -570,12 +701,14 @@ private fun MarketSegmentedPills(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .height(42.dp)
+                .padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Tab 0: Market Lists
+            // Tab 0: Market Lists (বাজার ফর্দ)
             MarketTabPill(
-                title = if (isBangla) "বাজারের ফর্দ" else "Lists",
+                title = if (isBangla) "বাজার ফর্দ" else "Lists",
                 badge = if (activeListsCount > 0) (if (isBangla) convertToBengaliDigits(activeListsCount.toString()) else activeListsCount.toString()) else null,
                 icon = Icons.Outlined.Checklist,
                 isSelected = selectedTab == 0,
@@ -583,7 +716,7 @@ private fun MarketSegmentedPills(
                 modifier = Modifier.weight(1f)
             )
 
-            // Tab 1: Price Intelligence
+            // Tab 1: Price Intelligence (বাজার দর)
             MarketTabPill(
                 title = if (isBangla) "বাজার দর" else "Price Trends",
                 badge = if (priceInsightsCount > 0) (if (isBangla) convertToBengaliDigits(priceInsightsCount.toString()) else priceInsightsCount.toString()) else null,
@@ -593,14 +726,14 @@ private fun MarketSegmentedPills(
                 modifier = Modifier.weight(1f)
             )
 
-            // Tab 2: Create List
+            // Tab 2: Create List (নতুন ফর্দ)
             MarketTabPill(
                 title = if (isBangla) "নতুন ফর্দ" else "New List",
                 badge = null,
                 icon = Icons.Filled.Add,
                 isSelected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
-                modifier = Modifier.weight(0.9f)
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -616,18 +749,22 @@ private fun MarketTabPill(
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
+    val pillBackground by animateColorAsState(
+        targetValue = if (isSelected) appColors.accent else Color.Transparent,
+        animationSpec = tween(150),
+        label = "pillBackground"
+    )
 
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(10.dp),
-        color = if (isSelected) appColors.accent else Color.Transparent,
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .clickable { onClick() }
+        color = pillBackground,
+        modifier = modifier.fillMaxHeight()
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 4.dp),
+                .fillMaxSize()
+                .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -635,10 +772,10 @@ private fun MarketTabPill(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isSelected) Color.White else appColors.textSecondary,
-                modifier = Modifier.size(15.dp)
+                modifier = Modifier.size(14.dp)
             )
 
-            Spacer(modifier = Modifier.width(5.dp))
+            Spacer(modifier = Modifier.width(4.dp))
 
             Text(
                 text = title,
@@ -648,22 +785,29 @@ private fun MarketTabPill(
                 ),
                 color = if (isSelected) Color.White else appColors.textSecondary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
             )
 
             if (badge != null) {
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(3.dp))
                 Box(
                     modifier = Modifier
+                        .height(16.dp)
+                        .defaultMinSize(minWidth = 16.dp)
                         .clip(CircleShape)
                         .background(if (isSelected) Color.White.copy(alpha = 0.25f) else appColors.accent.copy(alpha = 0.15f))
-                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                        .padding(horizontal = 4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = badge,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSelected) Color.White else appColors.accent
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = if (isSelected) Color.White else appColors.accent,
+                        maxLines = 1
                     )
                 }
             }
@@ -780,7 +924,8 @@ private fun MarketListsTabContent(
             isBangla = isBangla,
             onSelectList = onSelectList,
             onDeleteList = onDeleteListClick,
-            onCreateNewClick = onCreateNewClick
+            onCreateNewClick = onCreateNewClick,
+            modifier = Modifier.padding(horizontal = 20.dp)
         )
     } else if (currentViewingList != null) {
         // Single List Active Shopping Mode
@@ -793,8 +938,7 @@ private fun MarketListsTabContent(
                 if (itm.isPurchased) {
                     itm.amount ?: 0.0
                 } else {
-                    val cleanName = UnitConverterEngine.normalizeProductName(itm.name)
-                    val insight = productPriceInsights[cleanName]
+                    val insight = UnitConverterEngine.findMatchingInsight(itm.name, productPriceInsights)
                     if (insight != null) {
                         UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
                     } else {
@@ -822,22 +966,24 @@ private fun MarketListsTabContent(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
         ) {
-            // Header strip if multiple lists exist (allows back or switching)
-            if (effectiveActiveLists.size > 1) {
+            // Header strip (title, back if multiple lists, and delete action)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    if (onBackToAllLists != null) {
+                    if (effectiveActiveLists.size > 1 && onBackToAllLists != null) {
                         Surface(
+                            onClick = onBackToAllLists,
                             shape = RoundedCornerShape(8.dp),
-                            color = appColors.surfaceVariant,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onBackToAllLists() }
+                            color = appColors.surfaceVariant
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -851,7 +997,7 @@ private fun MarketListsTabContent(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = if (isBangla) "সকল ফর্দ (${convertToBengaliDigits(effectiveActiveLists.size.toString())})" else "All Lists (${effectiveActiveLists.size})",
+                                    text = if (isBangla) "সকল (${convertToBengaliDigits(effectiveActiveLists.size.toString())})" else "All (${effectiveActiveLists.size})",
                                     fontSize = 11.sp,
                                     color = appColors.textSecondary,
                                     fontWeight = FontWeight.Medium
@@ -860,18 +1006,29 @@ private fun MarketListsTabContent(
                         }
                     }
 
-                    // Delete current list action
-                    IconButton(
-                        onClick = { onDeleteListClick(currentViewingList.list.id) },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "Delete List",
-                            tint = appColors.textSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Text(
+                        text = currentViewingList.list.title.ifBlank { if (isBangla) "বাজার ফর্দ" else "Market Checklist" },
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        ),
+                        color = appColors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Delete current list action
+                IconButton(
+                    onClick = { onDeleteListClick(currentViewingList.list.id) },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteOutline,
+                        contentDescription = "Delete List",
+                        tint = appColors.expense.copy(alpha = 0.8f),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
 
@@ -899,15 +1056,14 @@ private fun MarketListsTabContent(
 
                     // Filter 0: All
                     Surface(
+                        onClick = {
+                            haptics.lightTick()
+                            filterMode = 0
+                        },
                         shape = RoundedCornerShape(8.dp),
                         color = if (filterMode == 0) appColors.accent.copy(alpha = 0.15f) else Color.Transparent,
                         border = BorderStroke(1.dp, if (filterMode == 0) appColors.accent else appColors.border),
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                haptics.lightTick()
-                                filterMode = 0
-                            }
+                        modifier = Modifier.weight(1f)
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 6.dp),
@@ -926,15 +1082,14 @@ private fun MarketListsTabContent(
 
                     // Filter 1: Remaining
                     Surface(
+                        onClick = {
+                            haptics.lightTick()
+                            filterMode = 1
+                        },
                         shape = RoundedCornerShape(8.dp),
                         color = if (filterMode == 1) appColors.warning.copy(alpha = 0.15f) else Color.Transparent,
                         border = BorderStroke(1.dp, if (filterMode == 1) appColors.warning else appColors.border),
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                haptics.lightTick()
-                                filterMode = 1
-                            }
+                        modifier = Modifier.weight(1f)
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 6.dp),
@@ -953,15 +1108,14 @@ private fun MarketListsTabContent(
 
                     // Filter 2: Purchased
                     Surface(
+                        onClick = {
+                            haptics.lightTick()
+                            filterMode = 2
+                        },
                         shape = RoundedCornerShape(8.dp),
                         color = if (filterMode == 2) appColors.income.copy(alpha = 0.15f) else Color.Transparent,
                         border = BorderStroke(1.dp, if (filterMode == 2) appColors.income else appColors.border),
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                haptics.lightTick()
-                                filterMode = 2
-                            }
+                        modifier = Modifier.weight(1f)
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 6.dp),
@@ -1008,7 +1162,7 @@ private fun MarketListsTabContent(
                         onDeleteClick = { onDeleteItemClick(item) },
                         onSubstituteClick = { onSubstituteClick(item) },
                         lastRateText = lastRateText,
-                        priceInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(item.name)]
+                        priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
                     )
                 }
 
@@ -1022,7 +1176,8 @@ private fun MarketListsTabContent(
                             onAddItem(newItem, currentViewingList.list.id)
                         },
                         existingItemNames = items.map { it.name.lowercase() }.toSet(),
-                        productPriceInsights = productPriceInsights
+                        productPriceInsights = productPriceInsights,
+                        currencySymbol = currencySymbol
                     )
                 }
 

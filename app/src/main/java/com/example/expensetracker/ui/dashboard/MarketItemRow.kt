@@ -259,6 +259,8 @@ fun MarketItemRow(
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = if (item.isPurchased) appColors.textSecondary.copy(alpha = 0.7f) else appColors.textSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             )
                         }
@@ -297,31 +299,10 @@ fun MarketItemRow(
                             }
                         }
 
-                        if (!item.isPurchased) {
-                            val subtitleText = lastRateText ?: priceInsight?.let { ins ->
-                                val estCost = com.example.expensetracker.common.UnitConverterEngine.estimateCost(ins.currentUnitPrice, item.quantity, item.unit)
-                                val estStr = if (estCost % 1.0 == 0.0) estCost.toInt().toString() else "%.0f".format(estCost)
-                                val estNum = if (isBangla) convertToBengaliDigits(estStr) else estStr
-                                if (isBangla) "সম্ভাব্য: ৳$estNum (${ins.formatUnitRate()})" else "Est: ৳$estNum (${ins.formatUnitRate()})"
-                            }
-
-                            if (subtitleText != null) {
-                                Text(
-                                    text = subtitleText,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.Normal
-                                    ),
-                                    color = appColors.textSecondary.copy(alpha = 0.85f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
                     }
                 }
 
-                // 3. Right: Price badge (Only when purchased)
+                // 3. Right: Price badge (When purchased) OR Estimated cost & last rate (When unpurchased)
                 if (item.isPurchased) {
                     val amt = item.amount ?: 0.0
                     Column(horizontalAlignment = Alignment.End) {
@@ -356,6 +337,81 @@ fun MarketItemRow(
                                 ),
                                 color = trendColor,
                                 maxLines = 1
+                            )
+                        }
+                    }
+                } else {
+                    // Right: Estimated cost pill & last purchased rate when unpurchased
+                    if (priceInsight != null && priceInsight.currentUnitPrice > 0.0) {
+                        val rateStr = if (priceInsight.currentUnitPrice % 1.0 == 0.0) {
+                            priceInsight.currentUnitPrice.toLong().toString()
+                        } else {
+                            "%.1f".format(priceInsight.currentUnitPrice)
+                        }
+                        val rateNum = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
+                        val lastRateResolved = if (isBangla) "গত দর: $currencySymbol$rateNum/${priceInsight.baseUnit}" else "Last: $currencySymbol$rateNum/${priceInsight.baseUnit}"
+
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            // Only calculate & show estimated total cost when quantity > 0
+                            if (item.quantity > 0.0) {
+                                val estCost = com.example.expensetracker.common.UnitConverterEngine.estimateCost(
+                                    priceInsight.currentUnitPrice,
+                                    item.quantity,
+                                    item.unit
+                                )
+                                val estStr = if (estCost % 1.0 == 0.0) estCost.toLong().toString() else "%.0f".format(estCost)
+                                val estNum = if (isBangla) convertToBengaliDigits(estStr) else estStr
+                                val estBadgeText = if (isBangla) "সম্ভাব্য $currencySymbol$estNum" else "Est. $currencySymbol$estNum"
+
+                                // Stylish pill badge showing the expected estimated cost
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.accent.copy(alpha = 0.10f),
+                                    border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
+                                ) {
+                                    Text(
+                                        text = estBadgeText,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = appColors.accent,
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+
+                            // Subtle text showing the last purchased unit rate
+                            Text(
+                                text = lastRateResolved,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = appColors.textSecondary.copy(alpha = 0.85f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    } else if (lastRateText != null) {
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = lastRateText,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = appColors.textSecondary.copy(alpha = 0.85f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

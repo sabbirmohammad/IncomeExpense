@@ -28,11 +28,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.TrendingDown
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -112,20 +112,34 @@ fun ProductPriceInsightsContent(
     isBangla: Boolean = true,
     currencySymbol: String = "৳",
     onClose: (() -> Unit)? = null,
+    searchQuery: String = "",
+    onSearchQueryChange: ((String) -> Unit)? = null,
+    showInternalSearchBar: Boolean = true,
+    showHeader: Boolean = onClose != null,
+    onOpenSearch: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
-    var searchQuery by remember { mutableStateOf("") }
+    var localSearchQuery by remember { mutableStateOf("") }
+    val effectiveSearchQuery = if (onSearchQueryChange != null) searchQuery else localSearchQuery
+    val updateSearchQuery: (String) -> Unit = { query ->
+        if (onSearchQueryChange != null) {
+            onSearchQueryChange(query)
+        } else {
+            localSearchQuery = query
+        }
+    }
+
     var selectedFilter by remember { mutableStateOf<PriceTrend?>(null) } // null = All
     var expandedProductName by remember { mutableStateOf<String?>(null) }
 
     val allInsights = remember(priceInsights) { priceInsights.values.toList() }
 
-    val filteredInsights = remember(allInsights, searchQuery, selectedFilter) {
+    val filteredInsights = remember(allInsights, effectiveSearchQuery, selectedFilter) {
         allInsights.filter { insight ->
-            val matchesQuery = searchQuery.isBlank() || insight.productName.contains(searchQuery.trim().lowercase())
+            val matchesQuery = effectiveSearchQuery.isBlank() || insight.productName.contains(effectiveSearchQuery.trim().lowercase())
             val matchesFilter = selectedFilter == null || insight.priceTrend == selectedFilter
             matchesQuery && matchesFilter
         }.sortedByDescending { it.lastPurchasedTimestamp }
@@ -139,187 +153,269 @@ fun ProductPriceInsightsContent(
             .fillMaxWidth()
             .padding(top = if (onClose != null) 16.dp else 4.dp)
     ) {
-        // Header
+        // Clean Header (without AI emojis or redundant subtitles)
+        if (showHeader) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = if (isBangla) "দ্রব্যমূল্যের দরদাম ও বিশ্লেষণ" else "Price Intelligence & Trends",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    ),
+                    color = appColors.textPrimary
+                )
+
+                if (onClose != null) {
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(appColors.surface)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = appColors.textSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                } else if (allInsights.isNotEmpty()) {
+                    Text(
+                        text = if (isBangla) "${convertToBengaliDigits(allInsights.size.toString())}টি পণ্য" else "${allInsights.size} items",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = appColors.textSecondary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
+        // Quick Stats Banner with Interactive One-Tap Filtering
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Column {
-                Text(
-                    text = if (isBangla) "📊 দ্রব্যমূল্যের দরদাম ও বিশ্লেষণ" else "📊 Price Intelligence & Trends",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    ),
-                    color = appColors.textPrimary
-                )
-                Text(
-                    text = if (isBangla) "বিগত ক্রয়ের তুলনায় দাম বাড়া-কমার রিয়েল-টাইম তথ্য" else "Compare past vs current purchase rates",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = appColors.textSecondary
-                )
+            // Total Products Card (Taps reset filter to All)
+            Surface(
+                onClick = {
+                    haptics.lightTick()
+                    selectedFilter = null
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = if (selectedFilter == null) appColors.accent.copy(alpha = 0.10f) else appColors.surface,
+                border = BorderStroke(
+                    if (selectedFilter == null) 1.5.dp else 1.dp,
+                    if (selectedFilter == null) appColors.accent else appColors.border
+                ),
+                modifier = Modifier.weight(1f)
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                        text = if (isBangla) "ট্র্যাককৃত পণ্য" else "Tracked Items",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = if (selectedFilter == null) appColors.accent else appColors.textSecondary
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (isBangla) "${convertToBengaliDigits(allInsights.size.toString())}টি" else "${allInsights.size}",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (selectedFilter == null) appColors.accent else appColors.textPrimary
+                    )
+                }
             }
 
-            if (onClose != null) {
-                IconButton(
-                    onClick = onClose,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(appColors.surface)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
-                        tint = appColors.textSecondary,
-                        modifier = Modifier.size(18.dp)
+            // Price Up Card (Taps toggle Price Up filter)
+            Surface(
+                onClick = {
+                    haptics.lightTick()
+                    selectedFilter = if (selectedFilter == PriceTrend.UP) null else PriceTrend.UP
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = appColors.expense.copy(alpha = if (selectedFilter == PriceTrend.UP) 0.16f else 0.08f),
+                border = BorderStroke(
+                    if (selectedFilter == PriceTrend.UP) 1.5.dp else 1.dp,
+                    appColors.expense.copy(alpha = if (selectedFilter == PriceTrend.UP) 0.6f else 0.25f)
+                ),
+                modifier = Modifier.weight(1f)
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
+                            contentDescription = null,
+                            tint = appColors.expense,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = if (isBangla) "দাম বেড়েছে" else "Price Up",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            color = appColors.expense
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (isBangla) "${convertToBengaliDigits(priceUpCount.toString())}টি" else "$priceUpCount",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = appColors.expense
+                    )
+                }
+            }
+
+            // Price Down Card (Taps toggle Price Down filter)
+            Surface(
+                onClick = {
+                    haptics.lightTick()
+                    selectedFilter = if (selectedFilter == PriceTrend.DOWN) null else PriceTrend.DOWN
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = appColors.income.copy(alpha = if (selectedFilter == PriceTrend.DOWN) 0.16f else 0.08f),
+                border = BorderStroke(
+                    if (selectedFilter == PriceTrend.DOWN) 1.5.dp else 1.dp,
+                    appColors.income.copy(alpha = if (selectedFilter == PriceTrend.DOWN) 0.6f else 0.25f)
+                ),
+                modifier = Modifier.weight(1f)
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.TrendingDown,
+                            contentDescription = null,
+                            tint = appColors.income,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = if (isBangla) "সাশ্রয়ী হয়েছে" else "Price Down",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            color = appColors.income
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (isBangla) "${convertToBengaliDigits(priceDownCount.toString())}টি" else "$priceDownCount",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = appColors.income
                     )
                 }
             }
         }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            if (showInternalSearchBar) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // Quick Stats Banner
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Total Products Card
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = appColors.surface,
-                    border = BorderStroke(1.dp, appColors.border),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
+                // Search Bar
+                OutlinedTextField(
+                    value = effectiveSearchQuery,
+                    onValueChange = updateSearchQuery,
+                    placeholder = {
                         Text(
-                            text = if (isBangla) "ট্র্যাককৃত পণ্য" else "Tracked Items",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                            color = appColors.textSecondary
+                            text = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
+                            fontSize = 13.sp,
+                            color = appColors.textSecondary.copy(alpha = 0.6f)
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isBangla) "${convertToBengaliDigits(allInsights.size.toString())}টি" else "${allInsights.size}",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = appColors.textPrimary
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = appColors.textSecondary,
+                            modifier = Modifier.size(18.dp)
                         )
-                    }
-                }
-
-                // Price Up Card
-                Surface(
+                    },
+                    trailingIcon = {
+                        if (effectiveSearchQuery.isNotBlank()) {
+                            IconButton(onClick = { updateSearchQuery("") }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear",
+                                    tint = appColors.textSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    color = appColors.expense.copy(alpha = 0.08f),
-                    border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.25f)),
-                    modifier = Modifier.weight(1f)
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = appColors.accent,
+                        unfocusedBorderColor = appColors.border,
+                        focusedContainerColor = appColors.surface,
+                        unfocusedContainerColor = appColors.surface
+                    )
+                )
+            } else if (effectiveSearchQuery.isNotBlank()) {
+                // When search is handled in top bar, show active filter chip
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    onClick = {
+                        onOpenSearch?.invoke()
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    color = appColors.accent.copy(alpha = 0.10f),
+                    border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
                 ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
                             Icon(
-                                imageVector = Icons.Outlined.TrendingUp,
+                                imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = appColors.expense,
-                                modifier = Modifier.size(13.dp)
+                                tint = appColors.accent,
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(modifier = Modifier.size(4.dp))
                             Text(
-                                text = if (isBangla) "দাম বেড়েছে" else "Price Up",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = appColors.expense
+                                text = if (isBangla) "অনুসন্ধান: \"${effectiveSearchQuery.trim()}\" (${convertToBengaliDigits(filteredInsights.size.toString())}টি পণ্য)"
+                                       else "Search: \"${effectiveSearchQuery.trim()}\" (${filteredInsights.size} items)",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = appColors.accent,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isBangla) "${convertToBengaliDigits(priceUpCount.toString())}টি" else "$priceUpCount",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = appColors.expense
-                        )
-                    }
-                }
 
-                // Price Down Card
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = appColors.income.copy(alpha = 0.08f),
-                    border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.25f)),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { updateSearchQuery("") },
+                            modifier = Modifier.size(22.dp)
+                        ) {
                             Icon(
-                                imageVector = Icons.Outlined.TrendingDown,
-                                contentDescription = null,
-                                tint = appColors.income,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Spacer(modifier = Modifier.size(4.dp))
-                            Text(
-                                text = if (isBangla) "সাশ্রয়ী হয়েছে" else "Price Down",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = appColors.income
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear search",
+                                tint = appColors.accent,
+                                modifier = Modifier.size(14.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isBangla) "${convertToBengaliDigits(priceDownCount.toString())}টি" else "$priceDownCount",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = appColors.income
-                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = {
-                    Text(
-                        text = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
-                        fontSize = 13.sp,
-                        color = appColors.textSecondary.copy(alpha = 0.6f)
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = appColors.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
-                                tint = appColors.textSecondary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedContainerColor = appColors.surface,
-                    unfocusedContainerColor = appColors.surface
-                )
-            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -332,8 +428,11 @@ fun ProductPriceInsightsContent(
                 item {
                     FilterChip(
                         selected = selectedFilter == null,
-                        onClick = { selectedFilter = null },
-                        label = { Text(text = if (isBangla) "সকল পণ্য" else "All") },
+                        onClick = {
+                            haptics.lightTick()
+                            selectedFilter = null
+                        },
+                        label = { Text(text = if (isBangla) "সব পণ্য" else "All") },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = appColors.accent,
                             selectedLabelColor = Color.White
@@ -343,30 +442,55 @@ fun ProductPriceInsightsContent(
                 item {
                     FilterChip(
                         selected = selectedFilter == PriceTrend.UP,
-                        onClick = { selectedFilter = if (selectedFilter == PriceTrend.UP) null else PriceTrend.UP },
-                        label = { Text(text = if (isBangla) "🔺 দাম বেড়েছে" else "🔺 Price Up") },
+                        onClick = {
+                            haptics.lightTick()
+                            selectedFilter = if (selectedFilter == PriceTrend.UP) null else PriceTrend.UP
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        },
+                        label = { Text(text = if (isBangla) "দাম বেড়েছে" else "Price Up") },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = appColors.expense,
-                            selectedLabelColor = Color.White
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White
                         )
                     )
                 }
                 item {
                     FilterChip(
                         selected = selectedFilter == PriceTrend.DOWN,
-                        onClick = { selectedFilter = if (selectedFilter == PriceTrend.DOWN) null else PriceTrend.DOWN },
-                        label = { Text(text = if (isBangla) "🔻 সাশ্রয়ী" else "🔻 Price Down") },
+                        onClick = {
+                            haptics.lightTick()
+                            selectedFilter = if (selectedFilter == PriceTrend.DOWN) null else PriceTrend.DOWN
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.TrendingDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        },
+                        label = { Text(text = if (isBangla) "সাশ্রয়ী হয়েছে" else "Price Down") },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = appColors.income,
-                            selectedLabelColor = Color.White
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White
                         )
                     )
                 }
                 item {
                     FilterChip(
                         selected = selectedFilter == PriceTrend.STABLE,
-                        onClick = { selectedFilter = if (selectedFilter == PriceTrend.STABLE) null else PriceTrend.STABLE },
-                        label = { Text(text = if (isBangla) "➖ অপরিবর্তিত" else "➖ Stable") },
+                        onClick = {
+                            haptics.lightTick()
+                            selectedFilter = if (selectedFilter == PriceTrend.STABLE) null else PriceTrend.STABLE
+                        },
+                        label = { Text(text = if (isBangla) "অপরিবর্তিত" else "Stable") },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = appColors.surfaceVariant,
                             selectedLabelColor = appColors.textPrimary
@@ -387,14 +511,23 @@ fun ProductPriceInsightsContent(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = if (isBangla) "কোনো তথ্য পাওয়া যায়নি" else "No price records found",
+                            text = if (allInsights.isEmpty()) {
+                                if (isBangla) "এখনো কোনো পণ্যের দর রেকর্ড হয়নি" else "No price records tracked yet"
+                            } else {
+                                if (isBangla) "'${effectiveSearchQuery.trim()}' নামে কোনো পণ্য পাওয়া যায়নি" else "No items found matching '${effectiveSearchQuery.trim()}'"
+                            },
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = appColors.textSecondary
+                            color = appColors.textPrimary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (isBangla) "বাজারের ফর্দ সম্পন্ন করার পর এখানে পণ্যের দামের তুলনামূলক চিত্র প্রদর্শিত হবে।"
-                                   else "Complete your market trips to start tracking item price trends.",
+                            text = if (allInsights.isEmpty()) {
+                                if (isBangla) "বাজারের ফর্দ সম্পন্ন করার পর এখানে পণ্যের দামের তুলনামূলক চিত্র প্রদর্শিত হবে।"
+                                else "Complete your market trips to start tracking item price trends."
+                            } else {
+                                if (isBangla) "বানান চেক করুন অথবা ফিল্টার পরিবর্তন করে আবার চেষ্টা করুন।"
+                                else "Check spelling or change filter to try again."
+                            },
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                             color = appColors.textSecondary.copy(alpha = 0.7f),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
