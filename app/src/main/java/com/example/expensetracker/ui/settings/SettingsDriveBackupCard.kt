@@ -125,10 +125,10 @@ fun SettingsDriveBackupCard(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
                                 text = strings.googleDriveBackup,
@@ -136,23 +136,40 @@ fun SettingsDriveBackupCard(
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
-                                color = appColors.textPrimary
+                                color = appColors.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
 
-                            // Status Chip
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isConnected) appColors.income.copy(alpha = 0.12f) else appColors.border.copy(alpha = 0.6f)
-                            ) {
-                                Text(
-                                    text = if (isConnected) strings.connected else (if (isBangla) "যুক্ত নেই" else "Disconnected"),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = if (isConnected) appColors.income else appColors.textSecondary,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                )
+                            if (isConnected) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = appColors.income.copy(alpha = 0.12f)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .clip(CircleShape)
+                                                .background(appColors.income)
+                                        )
+                                        Text(
+                                            text = strings.connected,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = appColors.income,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -162,6 +179,15 @@ fun SettingsDriveBackupCard(
                                 text = userProfile.googleAccountEmail,
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
                                 color = appColors.textSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else if (!isConnected) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (isBangla) "যুক্ত নেই" else "Disconnected",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                color = appColors.textMuted,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )

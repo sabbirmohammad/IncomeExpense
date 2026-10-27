@@ -113,6 +113,10 @@ class CleanSubtitleAndClutterReductionTest {
             "SettingsDataBackupCard must not contain redundant statement subheader inside accordion",
             backupCardContent.contains("অফিসিয়াল স্টেটমেন্ট (PDF ও এক্সেল)")
         )
+        assertFalse(
+            "SettingsDataBackupCard must not contain wrapping PDF • CSV chip in header",
+            backupCardContent.contains("\"PDF • CSV\"")
+        )
 
         val exportTilesFile = findSourceFile("src/main/java/com/example/expensetracker/ui/settings/SettingsExportTiles.kt")
         assertTrue("SettingsExportTiles.kt must exist at ${exportTilesFile.absolutePath}", exportTilesFile.exists())
@@ -159,6 +163,23 @@ class CleanSubtitleAndClutterReductionTest {
         assertFalse(
             "TransactionSheetHeader must not contain editModeActiveBanner",
             headerContent.contains("editModeActiveBanner")
+        )
+    }
+
+    @Test
+    fun testSettingsDriveBackupConnectedSignalNoWrapAndCleanHeader() {
+        val driveCardFile = findSourceFile("src/main/java/com/example/expensetracker/ui/settings/SettingsDriveBackupCard.kt")
+        assertTrue("SettingsDriveBackupCard.kt must exist at ${driveCardFile.absolutePath}", driveCardFile.exists())
+        val driveCardContent = driveCardFile.readText()
+
+        assertTrue(
+            "Connected signal in SettingsDriveBackupCard must specify maxLines = 1 and softWrap = false to prevent ugly wrapping",
+            driveCardContent.contains("maxLines = 1") &&
+                    driveCardContent.contains("softWrap = false")
+        )
+        assertTrue(
+            "Connected signal in SettingsDriveBackupCard must only show when isConnected is true",
+            driveCardContent.contains("if (isConnected)")
         )
     }
 }

@@ -27,9 +27,8 @@ class NavigationMarketAndCompactReceiptTest {
 
         // 1-Tap Add Transaction FAB: onAddClick opens expense add directly
         assertTrue(
-            "ModernBottomNavBar onAddClick must open AddEditTransactionSheet for Expense",
-            content.contains("showGlobalAddSheet = true") &&
-                    content.contains("initialTypeForAdd = TransactionType.EXPENSE")
+            "ModernBottomNavBar onAddClick must open AddEditTransactionSheet for Expense directly",
+            content.contains("onAddClick = {\n                            transactionToEdit = null\n                            initialDateForAdd = null\n                            initialTypeForAdd = TransactionType.EXPENSE\n                            initialOpenMarketForAdd = false\n                            showGlobalAddSheet = true\n                        }")
         )
         // Long press opens GlobalActionChooserSheet
         assertTrue(

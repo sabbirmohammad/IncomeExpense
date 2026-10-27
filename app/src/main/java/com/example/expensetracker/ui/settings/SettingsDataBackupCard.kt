@@ -112,34 +112,16 @@ fun SettingsDataBackupCard(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = if (isBangla) "ডেটা এক্সপোর্ট ও স্টেটমেন্ট" else "Data Export & Statements",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = appColors.textPrimary
-                        )
-
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = appColors.accent.copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                text = "PDF • CSV",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = appColors.accent,
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
+                    Text(
+                        text = if (isBangla) "ডেটা এক্সপোর্ট ও স্টেটমেন্ট" else "Data Export & Statements",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = appColors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
 
                 // Rotating Chevron Button

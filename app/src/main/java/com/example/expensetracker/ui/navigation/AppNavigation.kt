@@ -150,7 +150,11 @@ fun MainAppNavigation(
                         selectedItem = selectedItem,
                         onItemSelected = { item -> selectedItem = item },
                         onAddClick = {
-                            showQuickActionChooserSheet = true
+                            transactionToEdit = null
+                            initialDateForAdd = null
+                            initialTypeForAdd = TransactionType.EXPENSE
+                            initialOpenMarketForAdd = false
+                            showGlobalAddSheet = true
                         },
                         onAddLongClick = {
                             showQuickActionChooserSheet = true
