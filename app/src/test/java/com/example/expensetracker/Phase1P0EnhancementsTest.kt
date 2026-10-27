@@ -1,6 +1,7 @@
 package com.example.expensetracker
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -192,46 +193,74 @@ class Phase1P0EnhancementsTest {
     }
 
     @Test
-    fun testTopBarDrawerButtonWiringInNavigationScreenHost() {
+    fun testTopBarDrawerHamburgerDuplicationPreventedInNavigationScreenHost() {
         val file = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/NavigationScreenHost.kt")
         assertTrue("NavigationScreenHost.kt must exist", file.exists())
         val content = file.readText()
 
+        // Architectural Invariant: Hamburger menu in screen headers was a duplicate of BottomNavBar 'More'
+        // and prevented back navigation on secondary screens. Top-bar hamburger wiring must remain removed.
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to DashboardScreen",
+            content.contains("DashboardScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to TransactionsScreen",
+            content.contains("TransactionsScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to AnalyticsScreen",
+            content.contains("AnalyticsScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to AccountsScreen",
+            content.contains("AccountsScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to BillsScreen",
+            content.contains("BillsScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to ReceivablesScreen",
+            content.contains("ReceivablesScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to BudgetScreen",
+            content.contains("BudgetScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to ReportsScreen",
+            content.contains("ReportsScreen(") && content.contains("onMenuClick =")
+        )
+        assertFalse(
+            "NavigationScreenHost must NOT pass onMenuClick to SettingsScreen",
+            content.contains("SettingsScreen(") && content.contains("onMenuClick =")
+        )
+
+        // Secondary screens must provide onNavigateBack so users can return to Home smoothly
         assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to DashboardScreen",
-            content.contains("DashboardScreen(") && content.contains("onMenuClick = onOpenMenu")
+            "NavigationScreenHost must provide onNavigateBack to AccountsScreen",
+            content.contains("AccountsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
         )
         assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to TransactionsScreen",
-            content.contains("TransactionsScreen(") && content.contains("onMenuClick = onOpenMenu")
+            "NavigationScreenHost must provide onNavigateBack to BillsScreen",
+            content.contains("BillsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
         )
         assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to AnalyticsScreen",
-            content.contains("AnalyticsScreen(") && content.contains("onMenuClick = onOpenMenu")
+            "NavigationScreenHost must provide onNavigateBack to ReceivablesScreen",
+            content.contains("ReceivablesScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
         )
         assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to AccountsScreen",
-            content.contains("AccountsScreen(") && content.contains("onMenuClick = onOpenMenu")
+            "NavigationScreenHost must provide onNavigateBack to BudgetScreen",
+            content.contains("BudgetScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
         )
         assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to BillsScreen",
-            content.contains("BillsScreen(") && content.contains("onMenuClick = onOpenMenu")
+            "NavigationScreenHost must provide onNavigateBack to ReportsScreen",
+            content.contains("ReportsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
         )
         assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to ReceivablesScreen",
-            content.contains("ReceivablesScreen(") && content.contains("onMenuClick = onOpenMenu")
-        )
-        assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to BudgetScreen",
-            content.contains("BudgetScreen(") && content.contains("onMenuClick = onOpenMenu")
-        )
-        assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to ReportsScreen",
-            content.contains("ReportsScreen(") && content.contains("onMenuClick = onOpenMenu")
-        )
-        assertTrue(
-            "NavigationScreenHost must pass onMenuClick = onOpenMenu to SettingsScreen",
-            content.contains("SettingsScreen(") && content.contains("onMenuClick = onOpenMenu")
+            "NavigationScreenHost must provide onNavigateBack to SettingsScreen",
+            content.contains("SettingsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
         )
     }
 

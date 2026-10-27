@@ -31,6 +31,19 @@ import com.example.expensetracker.ui.settings.SettingsViewModel
 import com.example.expensetracker.ui.transactions.TransactionsScreen
 import com.example.expensetracker.ui.transactions.TransactionsViewModel
 
+/**
+ * ARCHITECTURAL INVARIANT (NO REDUNDANT TOP-BAR HAMBURGER MENUS):
+ *
+ * The 3D side navigation drawer is exclusively accessed via the bottom navigation bar's
+ * 'More' tab (ModernBottomNavBar) or edge swipe gesture.
+ *
+ * DO NOT pass `onMenuClick` to any screen component (DashboardScreen, TransactionsScreen, etc.):
+ * - On primary screens (Dashboard, Transactions), omitting `onMenuClick` keeps a clean,
+ *   uncluttered One UI header without duplicate drawer icons.
+ * - On secondary screens (Accounts, Bills, Receivables, Budgets, Reports, Settings),
+ *   omitting `onMenuClick` allows standard back-arrow navigation (`onNavigateBack`) to return
+ *   to Home, rather than displaying an unnecessary duplicate hamburger button.
+ */
 @Composable
 fun NavigationScreenHost(
     selectedItem: NavigationItem,
@@ -94,8 +107,7 @@ fun NavigationScreenHost(
                         onOpenAddTransaction(TransactionType.INCOME, null)
                     },
                     onTransferClick = onTransferClick,
-                    onOpenMarketList = onOpenMarketList,
-                    onMenuClick = onOpenMenu
+                    onOpenMarketList = onOpenMarketList
                 )
             }
             NavigationItem.TRANSACTIONS -> {
@@ -105,8 +117,7 @@ fun NavigationScreenHost(
                     onAddTransactionForDate = { dateMillis ->
                         onOpenAddTransaction(TransactionType.EXPENSE, dateMillis)
                     },
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onMenuClick = onOpenMenu
+                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
                 )
             }
             NavigationItem.ANALYTICS -> {
@@ -118,32 +129,28 @@ fun NavigationScreenHost(
                         onNavigate(NavigationItem.TRANSACTIONS)
                     },
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) },
-                    onMenuClick = onOpenMenu
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.ACCOUNTS -> {
                 val accountsViewModel: AccountsViewModel = viewModel()
                 AccountsScreen(
                     viewModel = accountsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) },
-                    onMenuClick = onOpenMenu
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.BILLS -> {
                 val billsViewModel: BillsViewModel = viewModel()
                 BillsScreen(
                     viewModel = billsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) },
-                    onMenuClick = onOpenMenu
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.RECEIVABLES -> {
                 val receivablesViewModel: ReceivablesViewModel = viewModel()
                 ReceivablesScreen(
                     viewModel = receivablesViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) },
-                    onMenuClick = onOpenMenu
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.BUDGETS -> {
@@ -151,24 +158,21 @@ fun NavigationScreenHost(
                 BudgetScreen(
                     viewModel = budgetViewModel,
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) },
-                    onMenuClick = onOpenMenu
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.REPORTS -> {
                 val reportsViewModel: ReportsViewModel = viewModel()
                 ReportsScreen(
                     viewModel = reportsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) },
-                    onMenuClick = onOpenMenu
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.SETTINGS -> {
                 val settingsViewModel: SettingsViewModel = viewModel()
                 SettingsScreen(
                     viewModel = settingsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) },
-                    onMenuClick = onOpenMenu
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
         }

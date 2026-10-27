@@ -348,6 +348,25 @@ val transactions by viewModel.transactions.collectAsStateWithLifecycle()
 
 ---
 
+### UI-10: টপ-বার ও হেডারে অপ্রয়োজনীয় হ্যামবার্গার ড্রয়ার মেনু ডুপ্লিকেশন স্থায়ীভাবে অপসারণ ও ব্যাক বাটন সুরক্ষা
+- **Severity**: **High (উচ্চ / আর্কিটেকচারাল রুল)**
+- **Exact Code Location**:
+  - `app/src/main/java/com/example/expensetracker/ui/navigation/NavigationScreenHost.kt`
+  - `app/src/main/java/com/example/expensetracker/ui/components/OneUiHeader.kt`
+  - `app/src/main/java/com/example/expensetracker/ui/navigation/ModernBottomNavBar.kt`
+- **Component**: `NavigationScreenHost`, `OneUiHeader`, `ModernBottomNavBar`
+- **ত্রুটির বিশদ বিবরণ (Deficiency Description)**:
+  বটম নেভিগেশন বারে (`ModernBottomNavBar`) সর্বডানে ড্রয়ার মেনু অ্যাক্সেসের জন্য ইতিমধ্যে ডেডিকেটেড `More` বাটন (`Icons.Filled.Menu`) রাখা হয়েছে, যা পুরো অ্যাপের একমাত্র সিঙ্গেল সোর্স অফ ট্রুথ (Single Source of Truth)। কিন্তু স্ক্রিন কম্পোনেন্টগুলোতে (যেমন ড্যাশবোর্ড হেডার, ট্রানজ্যাকশন টপ-বার, একাউন্টস ও বিলস হেডার) `onMenuClick = onOpenMenu` পাস করায় উপরে বাম কোণে একই হ্যামবার্গার মেনু আইকন অপ্রয়োজনীয়ভাবে প্রদর্শিত হচ্ছিল। এর ফলে দুটি বড় সমস্যা দেখা দেয়:
+  ১. একই স্ক্রিনে একই কাজের জন্য ডুপ্লিকেট মেনু আইকন থাকায় ইউজার ইন্টারফেস অপেশাদার ও ক্ল্যাটারড হয়ে পড়ে।
+  ২. সেকেন্ডারি স্ক্রিনগুলোতে (যেমন Accounts, Bills, Receivables, Budgets, Reports, Settings) মেনু আইকন দৃশ্যমান থাকায় স্ট্যান্ডার্ড ব্যাক অ্যারো (`←`) বাটন হাইড হয়ে যেত।
+- **আর্কিটেকচারাল সিদ্ধান্ত ও স্থায়ী সমাধান (Architectural Invariant & Permanent Rule)**:
+  ১. `NavigationScreenHost`-এর কোনো স্ক্রিন কম্পোনেন্টেই আর কখনো `onMenuClick = onOpenMenu` পাস করা হবে না।
+  ২. ড্যাশবোর্ড ও প্রাইমারি স্ক্রিনসমূহের টপ-বার সম্পূর্ণ ক্লিন থাকবে।
+  ৩. সমস্ত সেকেন্ডারি স্ক্রিনে ব্যাক অ্যারো বাটন (`←`) দ্বারা হোম স্ক্রিনে ফিরে আসার জন্য `onNavigateBack` বাধ্যতামূলক থাকবে।
+  ৪. ইউনিট টেস্টে (`Phase1P0EnhancementsTest.kt`) `testTopBarDrawerHamburgerDuplicationPreventedInNavigationScreenHost` টেস্ট যুক্ত করা হয়েছে, যা ভবিষ্যতেও কোনো কোড পরিবর্তনের মাধ্যমে ভুলবশত টপ-বার হ্যামবার্গার মেনু ফিরে আসা রোধ করবে।
+
+---
+
 ### BK-02: অ্যাপ নেভিগেশন রুটে ৯টি ViewModel-এর একযোগে ইগার ইনিশিয়ালাইজেশন
 - **Severity**: **High (উচ্চ)**
 - **Exact Code Location**: `app/src/main/java/com/example/expensetracker/ui/navigation/AppNavigation.kt`, লাইন ৫৪-৬২

@@ -44,7 +44,10 @@ A modern, privacy-focused, and 100% offline personal finance manager for Android
 ## 🛠️ Architecture & Tech Stack
 
 - **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) with Material 3 Design
-- **Navigation**: Modern Jetpack Compose Navigation 3
+- **Navigation**: Modern Jetpack Compose Navigation 3 with 3D Scaffold Drawer & Clean Bottom Navigation
+  - **Single Source of Navigation**: Bottom Navigation Bar (`ModernBottomNavBar`) handles primary navigation: `Home`, `Transactions`, `+ (Add)`, `Analytics`, and `More` (Menu).
+  - **Drawer Access**: The 3D side drawer is exclusively opened via the bottom `More` menu or edge gestures.
+  - **No Header Menu Duplication**: Screen headers omit duplicate hamburger buttons. Primary screens feature uncluttered One UI headers; secondary screens (`Accounts`, `Bills`, `Receivables`, `Budgets`, `Reports`, `Settings`) provide standard back-arrow (`←`) navigation returning to Home.
 - **Language**: [Kotlin](https://kotlinlang.org/) with Coroutines & StateFlow
 - **Database**: Optimized SQLite Database Helper architecture with modular table delegates
 - **Background Tasks**: [AndroidX WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) for automated Google Drive sync
