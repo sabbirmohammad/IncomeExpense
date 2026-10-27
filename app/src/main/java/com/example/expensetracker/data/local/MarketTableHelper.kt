@@ -37,6 +37,73 @@ internal class MarketTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         return MarketListWithItems(list = marketList, items = items)
     }
 
+    fun getActiveMarketLists(): List<MarketListWithItems> {
+        val db = dbHelper.readableDatabase
+        val result = mutableListOf<MarketListWithItems>()
+        val cursor = db.query(
+            TABLE_MARKET_LISTS,
+            null,
+            "$COL_ML_IS_COMPLETED = 0",
+            null,
+            null,
+            null,
+            "$COL_ML_CREATED_AT DESC"
+        )
+        val lists = mutableListOf<MarketList>()
+        cursor.use {
+            while (it.moveToNext()) {
+                lists.add(
+                    MarketList(
+                        id = it.getLong(it.getColumnIndexOrThrow(COL_ML_ID)),
+                        title = it.getString(it.getColumnIndexOrThrow(COL_ML_TITLE)),
+                        createdAt = it.getLong(it.getColumnIndexOrThrow(COL_ML_CREATED_AT)),
+                        isCompleted = it.getInt(it.getColumnIndexOrThrow(COL_ML_IS_COMPLETED)) == 1
+                    )
+                )
+            }
+        }
+        for (list in lists) {
+            val items = getMarketItemsForList(list.id)
+            result.add(MarketListWithItems(list, items))
+        }
+        return result
+    }
+
+    fun getMarketListById(listId: Long): MarketListWithItems? {
+        val db = dbHelper.readableDatabase
+        val cursor = db.query(
+            TABLE_MARKET_LISTS,
+            null,
+            "$COL_ML_ID = ?",
+            arrayOf(listId.toString()),
+            null,
+            null,
+            null
+        )
+        var marketList: MarketList? = null
+        cursor.use {
+            if (it.moveToFirst()) {
+                marketList = MarketList(
+                    id = it.getLong(it.getColumnIndexOrThrow(COL_ML_ID)),
+                    title = it.getString(it.getColumnIndexOrThrow(COL_ML_TITLE)),
+                    createdAt = it.getLong(it.getColumnIndexOrThrow(COL_ML_CREATED_AT)),
+                    isCompleted = it.getInt(it.getColumnIndexOrThrow(COL_ML_IS_COMPLETED)) == 1
+                )
+            }
+        }
+        if (marketList == null) return null
+        val items = getMarketItemsForList(marketList.id)
+        return MarketListWithItems(list = marketList, items = items)
+    }
+
+    fun updateMarketListTitle(listId: Long, title: String): Boolean {
+        val db = dbHelper.writableDatabase
+        val cv = ContentValues().apply {
+            put(COL_ML_TITLE, title.trim().ifBlank { "বাজারের ফর্দ" })
+        }
+        return db.update(TABLE_MARKET_LISTS, cv, "$COL_ML_ID = ?", arrayOf(listId.toString())) > 0
+    }
+
     fun getAllMarketLists(): List<MarketListWithItems> {
         val db = dbHelper.readableDatabase
         val result = mutableListOf<MarketListWithItems>()

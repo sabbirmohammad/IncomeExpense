@@ -33,4 +33,12 @@ class AppUpdateManagerTest {
         assertFalse(AppUpdateManager.isNewerVersion(current = "5.1", remote = "5.0"))
         assertFalse(AppUpdateManager.isNewerVersion(current = "v5.0.1", remote = "v5.0.0"))
     }
+
+    @Test
+    fun testIsNewerVersion_withDifferentFormats() {
+        assertTrue(AppUpdateManager.isNewerVersion(current = "v5.6", remote = "v5.7"))
+        assertFalse(AppUpdateManager.isNewerVersion(current = "v5.7", remote = "v5.7"))
+        assertFalse(AppUpdateManager.isNewerVersion(current = "5.7", remote = "v5.7"))
+        assertTrue(AppUpdateManager.isNewerVersion(current = "5.7", remote = "5.7.1"))
+    }
 }

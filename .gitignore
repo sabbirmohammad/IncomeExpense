@@ -45,3 +45,7 @@ Thumbs.db
 
 # Agent teamwork logs
 .agents/
+
+# Build artifacts & APKs
+*.apk
+release-output/

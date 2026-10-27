@@ -43,9 +43,11 @@ fun NavigationUtilitySheets(
 ) {
     if (showMarketListSheet) {
         val marketSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val activeMarketLists by dashboardViewModel.activeMarketLists.collectAsStateWithLifecycle()
         MarketListSheet(
             sheetState = marketSheetState,
             marketListWithItems = activeMarketList,
+            activeMarketLists = activeMarketLists,
             currencySymbol = userProfile.currencySymbol,
             isBangla = strings.isBangla,
             onDismiss = {
@@ -56,8 +58,8 @@ fun NavigationUtilitySheets(
             onCreateListWithBulk = { title, items ->
                 dashboardViewModel.createMarketListWithBulk(title, items)
             },
-            onAddItem = { item ->
-                dashboardViewModel.addMarketItem(item)
+            onAddItem = { item, targetListId ->
+                dashboardViewModel.addMarketItem(item, targetListId)
             },
             onUpdateItem = { item ->
                 dashboardViewModel.updateMarketItem(item)

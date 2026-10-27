@@ -209,6 +209,9 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun createMarketList(title: String, createdAt: Long = System.currentTimeMillis()): Long =
         marketHelper.createMarketList(title, createdAt)
     fun getActiveMarketList(): MarketListWithItems? = marketHelper.getActiveMarketList()
+    fun getActiveMarketLists(): List<MarketListWithItems> = marketHelper.getActiveMarketLists()
+    fun getMarketListById(listId: Long): MarketListWithItems? = marketHelper.getMarketListById(listId)
+    fun updateMarketListTitle(listId: Long, title: String): Boolean = marketHelper.updateMarketListTitle(listId, title)
     fun getAllMarketLists(): List<MarketListWithItems> = marketHelper.getAllMarketLists()
     fun getMarketItemsForList(listId: Long): List<MarketItem> = marketHelper.getMarketItemsForList(listId)
     fun addMarketItem(item: MarketItem): Long = marketHelper.addMarketItem(item)

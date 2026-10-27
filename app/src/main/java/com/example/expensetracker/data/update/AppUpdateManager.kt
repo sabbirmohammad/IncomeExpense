@@ -39,6 +39,11 @@ sealed interface UpdateState {
 object AppUpdateManager {
     private const val TAG = "AppUpdateManager"
     private const val GITHUB_REPO_API = "https://api.github.com/repos/sabbirmohammad/IncomeExpense/releases/latest"
+    private const val GITHUB_WEB_LATEST_RELEASE = "https://github.com/sabbirmohammad/IncomeExpense/releases/latest"
+    private const val GITHUB_EXPANDED_ASSETS_BASE = "https://github.com/sabbirmohammad/IncomeExpense/releases/expanded_assets/"
+    private const val PREFS_NAME = "app_update_prefs"
+    private const val KEY_LAST_CHECK_TIME = "last_auto_check_timestamp"
+    private const val AUTO_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
 
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
@@ -56,73 +61,99 @@ object AppUpdateManager {
     suspend fun checkForUpdates(context: Context, isManualCheck: Boolean = false) {
         if (_updateState.value is UpdateState.Downloading) return
 
+        // For automatic background checks, enforce a 24-hour cooldown to avoid rate limits
+        if (!isManualCheck) {
+            try {
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val lastCheck = prefs.getLong(KEY_LAST_CHECK_TIME, 0L)
+                val now = System.currentTimeMillis()
+                if (now - lastCheck < AUTO_CHECK_INTERVAL_MS) {
+                    Log.d(TAG, "Skipping background update check (Cooldown active)")
+                    return
+                }
+            } catch (_: Exception) {}
+        }
+
         _updateState.value = UpdateState.Checking
 
         withContext(Dispatchers.IO) {
+            var updateInfo: AppUpdateInfo? = null
+            var is404NoRelease = false
+            var lastResponseCode = 0
+
+            // 1. First attempt: Official GitHub REST API
             try {
                 val url = URL(GITHUB_REPO_API)
                 val connection = (url.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 10000
-                    readTimeout = 15000
+                    connectTimeout = 8000
+                    readTimeout = 10000
                     setRequestProperty("Accept", "application/vnd.github.v3+json")
                     setRequestProperty("User-Agent", "ExpenseTracker-Android")
                 }
 
-                val responseCode = connection.responseCode
-                if (responseCode == 404) {
-                    // No release published yet
-                    _updateState.value = UpdateState.Idle
-                    if (isManualCheck) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "কোনো নতুন আপডেট পাওয়া যায়নি (v${getCurrentVersion(context)})", Toast.LENGTH_SHORT).show()
+                lastResponseCode = connection.responseCode
+                if (lastResponseCode == 404) {
+                    is404NoRelease = true
+                } else if (lastResponseCode == 200) {
+                    val responseText = connection.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(responseText)
+
+                    val tagName = json.optString("tag_name", "").trim()
+                    val body = json.optString("body", "নতুন ফিচার এবং বাগ ফিক্স অন্তর্ভুক্ত।").trim()
+                    val assets = json.optJSONArray("assets")
+
+                    var apkDownloadUrl = ""
+                    var apkSize = 0L
+
+                    if (assets != null) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.getJSONObject(i)
+                            val name = asset.optString("name", "")
+                            if (name.endsWith(".apk", ignoreCase = true)) {
+                                apkDownloadUrl = asset.optString("browser_download_url", "")
+                                apkSize = asset.optLong("size", 0L)
+                                break
+                            }
                         }
                     }
-                    return@withContext
-                }
 
-                if (responseCode != 200) {
-                    _updateState.value = UpdateState.Idle
-                    if (isManualCheck) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "আপডেট চেক করতে সমস্যা হয়েছে (কোড: $responseCode)", Toast.LENGTH_SHORT).show()
-                        }
+                    if (tagName.isNotEmpty() && apkDownloadUrl.isNotEmpty()) {
+                        updateInfo = AppUpdateInfo(
+                            latestVersion = tagName,
+                            releaseNotes = body,
+                            downloadUrl = apkDownloadUrl,
+                            apkSize = apkSize,
+                            isUpdateAvailable = true
+                        )
                     }
-                    return@withContext
+                } else {
+                    Log.w(TAG, "GitHub API returned code $lastResponseCode, falling back to Web Release check")
                 }
+                connection.disconnect()
+            } catch (e: Exception) {
+                Log.w(TAG, "GitHub API request failed: ${e.message}, falling back to Web Release check")
+            }
 
-                val responseText = connection.inputStream.bufferedReader().use { it.readText() }
-                val json = JSONObject(responseText)
-
-                val tagName = json.optString("tag_name", "").trim()
-                val body = json.optString("body", "নতুন ফিচার এবং বাগ ফিক্স অন্তর্ভুক্ত।").trim()
-                val assets = json.optJSONArray("assets")
-
-                var apkDownloadUrl = ""
-                var apkSize = 0L
-
-                if (assets != null) {
-                    for (i in 0 until assets.length()) {
-                        val asset = assets.getJSONObject(i)
-                        val name = asset.optString("name", "")
-                        if (name.endsWith(".apk", ignoreCase = true)) {
-                            apkDownloadUrl = asset.optString("browser_download_url", "")
-                            apkSize = asset.optLong("size", 0L)
-                            break
-                        }
-                    }
+            // 2. Fallback: If GitHub API returned 403 (Rate Limited) or failed, use Web 302 Redirect
+            if (updateInfo == null && !is404NoRelease) {
+                try {
+                    updateInfo = fetchUpdateInfoViaWebFallback()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Web redirect fallback failed", e)
                 }
+            }
+
+            // 3. Handle resolution
+            if (updateInfo != null) {
+                try {
+                    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    prefs.edit().putLong(KEY_LAST_CHECK_TIME, System.currentTimeMillis()).apply()
+                } catch (_: Exception) {}
 
                 val currentVersion = getCurrentVersion(context)
-                val isNewer = isNewerVersion(current = currentVersion, remote = tagName)
+                val isNewer = isNewerVersion(current = currentVersion, remote = updateInfo.latestVersion)
 
-                if (isNewer && apkDownloadUrl.isNotEmpty()) {
-                    val updateInfo = AppUpdateInfo(
-                        latestVersion = tagName,
-                        releaseNotes = body,
-                        downloadUrl = apkDownloadUrl,
-                        apkSize = apkSize,
-                        isUpdateAvailable = true
-                    )
+                if (isNewer && updateInfo.downloadUrl.isNotEmpty()) {
                     _updateState.value = UpdateState.Available(updateInfo)
                     _isDialogVisible.value = true
                 } else {
@@ -133,17 +164,76 @@ object AppUpdateManager {
                         }
                     }
                 }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking for updates", e)
+            } else if (is404NoRelease) {
                 _updateState.value = UpdateState.Idle
                 if (isManualCheck) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "ইন্টারনেট কানেকশন চেক করুন", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "কোনো নতুন আপডেট পাওয়া যায়নি (v${getCurrentVersion(context)})", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                _updateState.value = UpdateState.Idle
+                if (isManualCheck) {
+                    withContext(Dispatchers.Main) {
+                        val errorMsg = if (lastResponseCode == 403) {
+                            "নেটওয়ার্ক রেট লিমিট শেষ হয়েছে, অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন"
+                        } else {
+                            "আপডেট চেক করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন"
+                        }
+                        Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         }
+    }
+
+    private fun fetchUpdateInfoViaWebFallback(): AppUpdateInfo? {
+        val conn = (URL(GITHUB_WEB_LATEST_RELEASE).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 10000
+            readTimeout = 10000
+            instanceFollowRedirects = false
+            setRequestProperty("User-Agent", "ExpenseTracker-Android")
+        }
+        val code = conn.responseCode
+        val location = conn.getHeaderField("Location")
+        conn.disconnect()
+
+        if (code in 300..399 && !location.isNullOrEmpty()) {
+            val tagName = location.substringAfterLast("/").trim()
+            if (tagName.isNotEmpty()) {
+                var apkUrl = "https://github.com/sabbirmohammad/IncomeExpense/releases/download/$tagName/ExpenseTracker-$tagName.apk"
+                var apkSize = 0L
+
+                // Attempt to fetch exact asset download URL from GitHub expanded assets
+                try {
+                    val assetsConn = (URL("$GITHUB_EXPANDED_ASSETS_BASE$tagName").openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 8000
+                        readTimeout = 8000
+                        setRequestProperty("User-Agent", "ExpenseTracker-Android")
+                    }
+                    if (assetsConn.responseCode == 200) {
+                        val html = assetsConn.inputStream.bufferedReader().use { it.readText() }
+                        val apkMatch = Regex("""href="([^"]+\.apk)"""").find(html)
+                        if (apkMatch != null) {
+                            val path = apkMatch.groupValues[1]
+                            apkUrl = if (path.startsWith("http")) path else "https://github.com$path"
+                        }
+                    }
+                    assetsConn.disconnect()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Expanded assets check fallback to default apk url pattern: ${e.message}")
+                }
+
+                return AppUpdateInfo(
+                    latestVersion = tagName,
+                    releaseNotes = "নতুন ফিচার এবং বাগ ফিক্স অন্তর্ভুক্ত।",
+                    downloadUrl = apkUrl,
+                    apkSize = apkSize,
+                    isUpdateAvailable = true
+                )
+            }
+        }
+        return null
     }
 
     suspend fun startDownload(context: Context, downloadUrl: String, expectedSize: Long) {

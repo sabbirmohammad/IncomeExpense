@@ -87,8 +87,16 @@ fun ActiveMarketListDashboardCard(
                     }
 
                     Column {
-                        val activeTitle = remember(marketListWithItems.list.createdAt, isBangla) {
-                            "🛒 " + DateTimeHelper.formatMarketTripTitle(marketListWithItems.list.createdAt, isBangla)
+                        val activeTitle = remember(marketListWithItems.list.title, marketListWithItems.list.createdAt, isBangla) {
+                            if (marketListWithItems.list.title.isNotBlank() &&
+                                marketListWithItems.list.title != "বাজারের ফর্দ" &&
+                                marketListWithItems.list.title != "Market Checklist" &&
+                                marketListWithItems.list.title != "আজকের বাজার"
+                            ) {
+                                "🛒 " + marketListWithItems.list.title
+                            } else {
+                                "🛒 " + DateTimeHelper.formatMarketTripTitle(marketListWithItems.list.createdAt, isBangla)
+                            }
                         }
                         Text(
                             text = activeTitle,

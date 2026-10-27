@@ -38,6 +38,12 @@ suspend fun ExpenseRepository.updateMarketItem(item: MarketItem): Boolean = with
     success
 }
 
+suspend fun ExpenseRepository.updateMarketListTitle(listId: Long, title: String): Boolean = withContext(Dispatchers.IO) {
+    val success = dbHelper.updateMarketListTitle(listId, title)
+    refreshMarketList()
+    success
+}
+
 suspend fun ExpenseRepository.deleteMarketItem(itemId: Long): Boolean = withContext(Dispatchers.IO) {
     val success = dbHelper.deleteMarketItem(itemId)
     refreshMarketList()

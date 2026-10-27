@@ -46,6 +46,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val savingsGoals: StateFlow<List<SavingsGoal>> = repository.savingsGoals
     val debtBookSummary: StateFlow<DebtBookSummary> = repository.debtBookSummary
     val activeMarketList: StateFlow<MarketListWithItems?> = repository.activeMarketList
+    val activeMarketLists: StateFlow<List<MarketListWithItems>> = repository.activeMarketLists
     val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = repository.lastPurchasedRates
 
     private val _summary = MutableStateFlow(FinancialSummary())
@@ -142,13 +143,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun addMarketItem(item: MarketItem) {
+    fun addMarketItem(item: MarketItem, targetListId: Long? = null) {
         viewModelScope.launch(coroutineExceptionHandler) {
-            val listId = activeMarketList.value?.list?.id ?: repository.createMarketListWithItems(
+            val listId = targetListId ?: (if (item.listId > 0) item.listId else activeMarketList.value?.list?.id) ?: repository.createMarketListWithItems(
                 title = com.example.expensetracker.ui.components.DateTimeHelper.formatMarketTripTitle(System.currentTimeMillis(), isBangla = true),
                 items = emptyList()
             )
             repository.addMarketItem(listId, item)
+        }
+    }
+
+    fun updateMarketListTitle(listId: Long, title: String) {
+        viewModelScope.launch(coroutineExceptionHandler) {
+            repository.updateMarketListTitle(listId, title)
         }
     }
 

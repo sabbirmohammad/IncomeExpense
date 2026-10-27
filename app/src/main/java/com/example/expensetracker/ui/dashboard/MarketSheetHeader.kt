@@ -15,8 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Icon
@@ -37,22 +38,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
-import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 @Composable
 fun MarketSheetHeader(
     isBangla: Boolean,
-    createdAt: Long?,
+    createdAt: Long? = null,
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    onDeleteList: (() -> Unit)? = null
+    onDeleteList: (() -> Unit)? = null,
+    currentListTitle: String? = null,
+    activeListsCount: Int = 0,
+    onBackToLists: (() -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
-    val strings = LocalAppStrings.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -62,30 +65,52 @@ fun MarketSheetHeader(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF2EC4B6).copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ShoppingCart,
-                        contentDescription = null,
-                        tint = Color(0xFF2EC4B6),
-                        modifier = Modifier.size(20.dp)
-                    )
+                if (onBackToLists != null) {
+                    IconButton(
+                        onClick = {
+                            haptics.lightTick()
+                            onBackToLists()
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back to lists",
+                            tint = appColors.textPrimary
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF2EC4B6).copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ShoppingCart,
+                            contentDescription = null,
+                            tint = Color(0xFF2EC4B6),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
-                Column {
+
+                Column(modifier = Modifier.weight(1f)) {
+                    val displayTitle = currentListTitle?.takeIf { it.isNotBlank() }
+                        ?: (if (isBangla) "বাজারের ফর্দ" else "Market Checklist")
                     Text(
-                        text = if (isBangla) "বাজারের ফর্দ" else "Market Checklist",
+                        text = displayTitle,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         ),
-                        color = appColors.textPrimary
+                        color = appColors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     val listDate = createdAt ?: System.currentTimeMillis()
                     val syncedDateText = remember(listDate, isBangla) {
@@ -104,7 +129,7 @@ fun MarketSheetHeader(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 if (onDeleteList != null) {
                     IconButton(onClick = onDeleteList) {
@@ -126,9 +151,9 @@ fun MarketSheetHeader(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Tabs Capsule: [ 0: Checklist ] [ 1: Paste List ]
+        // Tabs: [ 0: আমার ফর্দসমূহ / চলমান ] [ 1: নতুন ফর্দ তৈরি ]
         Surface(
             shape = RoundedCornerShape(12.dp),
             color = LocalAppColors.current.background,
@@ -139,6 +164,15 @@ fun MarketSheetHeader(
                 modifier = Modifier.padding(3.dp),
                 horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
+                val tab0Text = if (isBangla) {
+                    if (activeListsCount > 1) "চলমান ফর্দসমূহ (${convertToBengaliDigits(activeListsCount.toString())})"
+                    else "বাজার ফর্দ"
+                } else {
+                    if (activeListsCount > 1) "Active Lists ($activeListsCount)"
+                    else "Checklist"
+                }
+
+                // Tab 0
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -153,7 +187,7 @@ fun MarketSheetHeader(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = strings.createList,
+                        text = tab0Text,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 12.sp,
                             fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
@@ -164,11 +198,12 @@ fun MarketSheetHeader(
                     )
                 }
 
+                // Tab 1
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (selectedTab == 1) Color(0xFF25D366) else Color.Transparent)
+                        .background(if (selectedTab == 1) Color(0xFF2EC4B6) else Color.Transparent)
                         .minimumInteractiveComponentSize()
                         .clickable {
                             haptics.lightTick()
@@ -179,16 +214,16 @@ fun MarketSheetHeader(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.ContentPaste,
+                            imageVector = Icons.Filled.Add,
                             contentDescription = null,
                             tint = if (selectedTab == 1) Color.White else appColors.textSecondary,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = strings.pasteList,
+                            text = if (isBangla) "নতুন ফর্দ তৈরি" else "Create New List",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp,
                                 fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium

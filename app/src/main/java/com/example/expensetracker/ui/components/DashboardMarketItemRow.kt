@@ -10,34 +10,24 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.common.MarketListParser
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.theme.LocalAppColors
 
@@ -45,62 +35,57 @@ import com.example.expensetracker.theme.LocalAppColors
 fun DashboardMarketItemRow(
     item: MarketItem,
     currencySymbol: String,
-    onAmountChanged: (Double?) -> Unit,
-    onMarkPurchased: (Double) -> Unit,
-    onUnmarkPurchased: () -> Unit,
+    onAmountChanged: (Double?) -> Unit = {},
+    onMarkPurchased: (Double) -> Unit = {},
+    onUnmarkPurchased: () -> Unit = {},
     onRowClick: () -> Unit
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
-    var inlineAmountText by remember(item.amount) {
-        mutableStateOf(item.amount?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "")
-    }
 
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(10.dp),
         color = if (item.isPurchased) appColors.income.copy(alpha = 0.05f) else LocalAppColors.current.background,
         border = BorderStroke(
             1.dp,
             if (item.isPurchased) appColors.income.copy(alpha = 0.25f) else LocalAppColors.current.border
         ),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                haptics.lightTick()
+                onRowClick()
+            }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                // Tick / Check circle
+                // Circular Checkbox
                 Box(
                     modifier = Modifier
-                        .size(26.dp)
+                        .size(24.dp)
                         .clip(CircleShape)
                         .background(
                             if (item.isPurchased) appColors.income else LocalAppColors.current.surface
                         )
                         .border(
-                            width = 1.dp,
+                            width = 1.2.dp,
                             color = if (item.isPurchased) appColors.income else LocalAppColors.current.border,
                             shape = CircleShape
                         )
                         .clickable {
+                            haptics.lightTick()
                             if (item.isPurchased) {
-                                haptics.lightTick()
                                 onUnmarkPurchased()
                             } else {
-                                val cleanNum = MarketListParser.convertBengaliDigitsToEnglish(inlineAmountText)
-                                val amt = cleanNum.toDoubleOrNull()
-                                if (amt != null && amt > 0) {
-                                    haptics.mediumClick()
-                                    onMarkPurchased(amt)
-                                } else {
-                                    onRowClick()
-                                }
+                                onRowClick()
                             }
                         },
                     contentAlignment = Alignment.Center
@@ -110,16 +95,16 @@ fun DashboardMarketItemRow(
                             imageVector = Icons.Filled.Check,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
 
-                // Name & Qty
+                // Name
                 Text(
                     text = item.name,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 13.sp,
+                        fontSize = 13.5.sp,
                         fontWeight = if (item.isPurchased) FontWeight.Normal else FontWeight.SemiBold,
                         textDecoration = if (item.isPurchased) TextDecoration.LineThrough else TextDecoration.None
                     ),
@@ -128,7 +113,7 @@ fun DashboardMarketItemRow(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                // Qty badge
+                // Quantity badge
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = if (item.isPurchased) LocalAppColors.current.surface else appColors.accent.copy(alpha = 0.1f)
@@ -145,39 +130,16 @@ fun DashboardMarketItemRow(
                 }
             }
 
-            // Price display or entry
+            // Price badge (only when purchased)
             if (item.isPurchased) {
+                val amt = item.amount ?: 0.0
                 Text(
-                    text = formatCurrency(item.amount ?: 0.0, currencySymbol),
+                    text = if (amt > 0) formatCurrency(amt, currencySymbol) else "✓",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     color = appColors.income
-                )
-            } else {
-                OutlinedTextField(
-                    value = inlineAmountText,
-                    onValueChange = {
-                        inlineAmountText = it
-                        val cleanNum = MarketListParser.convertBengaliDigitsToEnglish(it)
-                        val amt = cleanNum.toDoubleOrNull()
-                        onAmountChanged(amt)
-                    },
-                    placeholder = { Text(currencySymbol, fontSize = 11.sp, color = appColors.textSecondary) },
-                    modifier = Modifier.width(72.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = appColors.accent,
-                        unfocusedBorderColor = LocalAppColors.current.border,
-                        focusedContainerColor = LocalAppColors.current.surface,
-                        unfocusedContainerColor = LocalAppColors.current.surface
-                    )
                 )
             }
         }

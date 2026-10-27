@@ -87,6 +87,9 @@ class ExpenseRepository private constructor(context: Context) {
     internal val _activeMarketList = MutableStateFlow<MarketListWithItems?>(null)
     val activeMarketList: StateFlow<MarketListWithItems?> = _activeMarketList.asStateFlow()
 
+    internal val _activeMarketLists = MutableStateFlow<List<MarketListWithItems>>(emptyList())
+    val activeMarketLists: StateFlow<List<MarketListWithItems>> = _activeMarketLists.asStateFlow()
+
     internal val _allMarketLists = MutableStateFlow<List<MarketListWithItems>>(emptyList())
     val allMarketLists: StateFlow<List<MarketListWithItems>> = _allMarketLists.asStateFlow()
 
@@ -161,6 +164,7 @@ class ExpenseRepository private constructor(context: Context) {
 
     fun refreshMarketList() {
         _activeMarketList.value = dbHelper.getActiveMarketList()
+        _activeMarketLists.value = dbHelper.getActiveMarketLists()
         _allMarketLists.value = dbHelper.getAllMarketLists()
         _lastPurchasedRates.value = dbHelper.getLastPurchasedRates()
     }

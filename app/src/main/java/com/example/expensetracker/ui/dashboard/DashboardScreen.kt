@@ -1,14 +1,26 @@
 package com.example.expensetracker.ui.dashboard
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,8 +79,11 @@ fun DashboardScreen(
     val savingsGoals by viewModel.savingsGoals.collectAsStateWithLifecycle()
     val recurringBills by viewModel.recurringBills.collectAsStateWithLifecycle()
     val activeMarketList by viewModel.activeMarketList.collectAsStateWithLifecycle()
+    val activeMarketLists by viewModel.activeMarketLists.collectAsStateWithLifecycle()
+    var selectedDashboardListId by remember { mutableStateOf<Long?>(null) }
     val isPrivacyMode by viewModel.isPrivacyMode.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
+    val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     val feedbackController = LocalFeedbackController.current
 
@@ -155,12 +170,55 @@ fun DashboardScreen(
                 )
             }
 
-            val activeMarket = activeMarketList
-            if (onOpenMarketList != null && activeMarket != null && activeMarket.items.isNotEmpty()) {
+            val effectiveMarketList = if (activeMarketLists.isNotEmpty()) {
+                activeMarketLists.find { it.list.id == selectedDashboardListId } ?: activeMarketLists.first()
+            } else {
+                activeMarketList
+            }
+
+            if (onOpenMarketList != null && effectiveMarketList != null && effectiveMarketList.items.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(CardGap))
+
+                    // If multiple active lists, show switcher chips
+                    if (activeMarketLists.size > 1) {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = ScreenPaddingHorizontal),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            items(activeMarketLists, key = { it.list.id }) { aList ->
+                                val isSelected = aList.list.id == effectiveMarketList.list.id
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) appColors.accent.copy(alpha = 0.15f) else LocalAppColors.current.surface,
+                                    border = BorderStroke(1.dp, if (isSelected) appColors.accent else LocalAppColors.current.border),
+                                    modifier = Modifier.clickable {
+                                        haptics.lightTick()
+                                        selectedDashboardListId = aList.list.id
+                                    }
+                                ) {
+                                    val remaining = aList.remainingItems
+                                    val titleShort = aList.list.title.ifBlank { if (isBn) "বাজারের ফর্দ" else "Market List" }
+                                    val badge = if (isBn) "(${convertToBengaliDigits(remaining.toString())}টি বাকি)" else "($remaining left)"
+                                    Text(
+                                        text = "$titleShort $badge",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 11.5.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        ),
+                                        color = if (isSelected) appColors.accent else appColors.textSecondary,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
                     ActiveMarketListDashboardCard(
-                        marketListWithItems = activeMarket,
+                        marketListWithItems = effectiveMarketList,
                         currencySymbol = userProfile.currencySymbol,
                         isBangla = isBn,
                         onOpenFullList = onOpenMarketList,
