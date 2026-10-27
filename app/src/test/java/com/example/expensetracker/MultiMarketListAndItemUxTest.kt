@@ -1,5 +1,12 @@
 package com.example.expensetracker
 
+import com.example.expensetracker.common.MarketListParser
+import com.example.expensetracker.data.model.MarketItem
+import com.example.expensetracker.ui.dashboard.generateMarketShareText
+import com.example.expensetracker.ui.dashboard.getMarketItemCategory
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -165,5 +172,252 @@ class MultiMarketListAndItemUxTest {
             content.contains("itemToDeleteConfirm != null") &&
             content.contains("পণ্য মুছে ফেলতে চান?")
         )
+    }
+
+    @Test
+    fun testMarketDepartmentClassifierPotatoVsOilCategorization() {
+        // Vegetables
+        assertEquals("veggies", getMarketItemCategory("আলু"))
+        assertEquals("veggies", getMarketItemCategory("গোল আলু"))
+        assertEquals("veggies", getMarketItemCategory("কাঁচা মরিচ"))
+        assertEquals("veggies", getMarketItemCategory("পেঁয়াজ"))
+        assertEquals("veggies", getMarketItemCategory("টমেটো"))
+
+        // Groceries & Spices
+        assertEquals("groceries", getMarketItemCategory("সয়াবিন তেল"))
+        assertEquals("groceries", getMarketItemCategory("সরিষার তেল"))
+        assertEquals("groceries", getMarketItemCategory("মরিচ গুঁড়া"))
+        assertEquals("groceries", getMarketItemCategory("হলুদ গুঁড়া"))
+        assertEquals("groceries", getMarketItemCategory("মসুর ডাল"))
+        assertEquals("groceries", getMarketItemCategory("মিনিকেট চাল"))
+        assertEquals("groceries", getMarketItemCategory("লবণ"))
+
+        // Meat & Fish
+        assertEquals("meat_fish", getMarketItemCategory("রুই মাছ"))
+        assertEquals("meat_fish", getMarketItemCategory("ব্রয়লার মুরগি"))
+        assertEquals("meat_fish", getMarketItemCategory("গরুর মাংস"))
+
+        // Dairy & Bakery
+        assertEquals("dairy_bakery", getMarketItemCategory("তরল দুধ"))
+        assertEquals("dairy_bakery", getMarketItemCategory("ফার্মের ডিম"))
+        assertEquals("dairy_bakery", getMarketItemCategory("পাউরুটি"))
+    }
+
+    @Test
+    fun testMarketFinishButtonSingleCheckmarkAndCleanText() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/MarketFinishButton.kt")
+
+        // Must use single Check icon, not DoneAll (which had double checkmarks)
+        assertTrue(
+            "MarketFinishButton must use single Check icon",
+            content.contains("Icons.Filled.Check")
+        )
+        assertFalse(
+            "MarketFinishButton must NOT use DoneAll",
+            content.contains("Icons.Filled.DoneAll")
+        )
+
+        // Must not contain duplicate checkmark characters inside string text
+        assertFalse(
+            "MarketFinishButton must not duplicate checkmark character in string",
+            content.contains("✓ বাজার সম্পন্ন করুন") || content.contains("✓ Finish Shopping")
+        )
+        assertTrue(
+            "MarketFinishButton text must be clean",
+            content.contains("বাজার সম্পন্ন করুন") && content.contains("Finish Shopping")
+        )
+    }
+
+    @Test
+    fun testMarketNativeContentAccidentalTouchProtectionAndEntryFlow() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/MarketNativeContent.kt")
+
+        // 1. Default tab must be 0 (Checklist), not forcefully tab 1 (Paste)
+        assertTrue(
+            "MarketNativeContent must default selectedTab to 0 (Checklist)",
+            content.contains("var selectedTab by remember { mutableIntStateOf(0) }")
+        )
+
+        // 2. Must feature safety confirmation dialog state
+        assertTrue(
+            "MarketNativeContent must track itemToDeleteConfirm state",
+            content.contains("var itemToDeleteConfirm by remember { mutableStateOf<MarketItem?>(null) }")
+        )
+
+        // 3. Both MarketItemRow usages must wire onRequestDelete and onDeleteClick to safety dialog
+        assertTrue(
+            "MarketItemRow onRequestDelete must route to itemToDeleteConfirm",
+            content.contains("onRequestDelete = {\n                                    itemToDeleteConfirm = item\n                                }") ||
+            content.contains("onRequestDelete = {\n                                        itemToDeleteConfirm = item\n                                    }")
+        )
+
+        // 4. Must display the entry choice prompt when empty
+        assertTrue(
+            "MarketNativeContent must display list creation choice mode when items empty",
+            content.contains("ফর্দ তৈরির ধরন বেছে নিন") &&
+            content.contains("সরাসরি ফর্দ") &&
+            content.contains("লিস্ট পেস্ট")
+        )
+    }
+
+    @Test
+    fun testMarketItemRowDisplaysDepartmentBadge() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/MarketItemRow.kt")
+
+        assertTrue(
+            "MarketItemRow must determine department meta for the item",
+            content.contains("getDepartmentMeta(getMarketItemCategory(item.name))")
+        )
+        assertTrue(
+            "MarketItemRow must display department icon and title badge",
+            content.contains("\${dept.icon} \${if (isBangla) dept.titleBn else dept.titleEn}")
+        )
+        assertTrue(
+            "MarketItemRow must provide onSubstituteClick",
+            content.contains("onSubstituteClick")
+        )
+    }
+
+    @Test
+    fun testDesiUnitsParsingInMarketListParser() {
+        // পোয়া
+        val powaItem = MarketListParser.parseSingleLine("কাঁচামরিচ ১ পোয়া")
+        assertNotNull(powaItem)
+        assertEquals("কাঁচামরিচ", powaItem!!.name)
+        assertEquals(1.0, powaItem.quantity, 0.01)
+        assertEquals("পোয়া", powaItem.unit)
+
+        // পাল্লা
+        val pallaItem = MarketListParser.parseSingleLine("আলু ১ পাল্লা")
+        assertNotNull(pallaItem)
+        assertEquals("আলু", pallaItem!!.name)
+        assertEquals(1.0, pallaItem.quantity, 0.01)
+        assertEquals("পাল্লা", pallaItem.unit)
+
+        // জোড়া
+        val joraItem = MarketListParser.parseSingleLine("ইলিশ মাছ ২ জোড়া")
+        assertNotNull(joraItem)
+        assertEquals("ইলিশ মাছ", joraItem!!.name)
+        assertEquals(2.0, joraItem.quantity, 0.01)
+        assertEquals("জোড়া", joraItem.unit)
+
+        // হালি
+        val haliItem = MarketListParser.parseSingleLine("ডিম ৪ হালি")
+        assertNotNull(haliItem)
+        assertEquals("ডিম", haliItem!!.name)
+        assertEquals(4.0, haliItem.quantity, 0.01)
+        assertEquals("হালি", haliItem.unit)
+    }
+
+    @Test
+    fun testUnitAndQuantityDialogDesiPresets() {
+        val content = readFile("com/example/expensetracker/ui/components/UnitAndQuantityDialog.kt")
+
+        // Must support desi units in available units
+        assertTrue("UnitAndQuantityDialog must include পোয়া", content.contains("পোয়া (২৫০ গ্রাম)"))
+        assertTrue("UnitAndQuantityDialog must include পাল্লা", content.contains("পাল্লা (৫ কেজি)"))
+        assertTrue("UnitAndQuantityDialog must include হালি", content.contains("হালি (৪টি)"))
+        assertTrue("UnitAndQuantityDialog must include জোড়া", content.contains("জোড়া (২টি)"))
+
+        // Must include quick presets
+        assertTrue("UnitAndQuantityDialog must include ১ পোয়া preset", content.contains("০.২৫ (১ পোয়া)"))
+        assertTrue("UnitAndQuantityDialog must include ১ পাল্লা preset", content.contains("৫ (১ পাল্লা)"))
+    }
+
+    @Test
+    fun testMarketPromptAmountDialogCalculatorAndAnomalyAlert() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/MarketPromptAmountDialog.kt")
+
+        // Calculator integration
+        assertTrue(
+            "MarketPromptAmountDialog must evaluate math expressions using CalculatorEvaluator",
+            content.contains("CalculatorEvaluator.evaluate(promptAmountText)")
+        )
+        assertTrue(
+            "MarketPromptAmountDialog must show live expression preview chip",
+            content.contains("evaluatedAmount") || content.contains("isExpression")
+        )
+        assertTrue(
+            "MarketPromptAmountDialog must offer math operator quick buttons (×, +, ÷, −)",
+            content.contains("\"×\"") && content.contains("\"+\"") && content.contains("\"÷\"") && content.contains("\"−\"")
+        )
+
+        // Price anomaly comparison
+        assertTrue(
+            "MarketPromptAmountDialog must accept lastRate parameter",
+            content.contains("lastRate: Pair<Double, String>? = null")
+        )
+        assertTrue(
+            "MarketPromptAmountDialog must alert on price difference",
+            content.contains("percentDiff") || content.contains("diffRate")
+        )
+    }
+
+    @Test
+    fun testMarketSubstituteItemDialogStructure() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/MarketSubstituteItemDialog.kt")
+
+        assertTrue(
+            "MarketSubstituteItemDialog must accept item, isBangla, onDismiss, onConfirmSubstitute",
+            content.contains("onConfirmSubstitute: (newTitle: String) -> Unit")
+        )
+        assertTrue(
+            "MarketSubstituteItemDialog must offer alternative suggestions",
+            content.contains("suggestions")
+        )
+        assertTrue(
+            "MarketSubstituteItemDialog must allow custom alternative name input",
+            content.contains("substituteName")
+        )
+    }
+
+    @Test
+    fun testForgotStaplesGuardBeforeFinishingShopping() {
+        val nativeContent = readFile("com/example/expensetracker/ui/dashboard/MarketNativeContent.kt")
+        val sheetContent = readFile("com/example/expensetracker/ui/dashboard/MarketListSheet.kt")
+
+        // Native content
+        assertTrue(
+            "MarketNativeContent must track showForgotStaplesDialog",
+            nativeContent.contains("showForgotStaplesDialog")
+        )
+        assertTrue(
+            "MarketNativeContent must check for chili or lemon before finishing",
+            nativeContent.contains("hasStaplePurchased") && nativeContent.contains("মরিচ") && nativeContent.contains("লেবু")
+        )
+
+        // Sheet content
+        assertTrue(
+            "MarketListSheet must track showForgotStaplesDialog",
+            sheetContent.contains("showForgotStaplesDialog")
+        )
+        assertTrue(
+            "MarketListSheet must check for chili or lemon before finishing",
+            sheetContent.contains("hasStaplePurchased") && sheetContent.contains("মরিচ") && sheetContent.contains("লেবু")
+        )
+    }
+
+    @Test
+    fun testEnhancedMarketShareTextFormatting() {
+        val items = listOf(
+            MarketItem(id = 1, name = "আলু", quantity = 2.0, unit = "কেজি", isPurchased = true, amount = 100.0),
+            MarketItem(id = 2, name = "রুই মাছ", quantity = 1.0, unit = "কেজি", isPurchased = false)
+        )
+        val text = generateMarketShareText(
+            listTitle = "সকালের বাজার",
+            items = items,
+            isBangla = true,
+            targetBudget = 500.0
+        )
+
+        // Title and checklist items
+        assertTrue(text.contains("🛒 সকালের বাজার:"))
+        assertTrue(text.contains("☑ আলু (2 কেজি) - ৳100"))
+        assertTrue(text.contains("☐ রুই মাছ (1 কেজি)"))
+
+        // Summary and budget
+        assertTrue(text.contains("💰 মোট খরচ: ৳১০০ (১টি কেনা)"))
+        assertTrue(text.contains("⏳ বাকি আছে: ১টি পণ্য"))
+        assertTrue(text.contains("🎯 বাজেট: ৳৫০০ (অবশিষ্ট: ৳৪০০)"))
     }
 }

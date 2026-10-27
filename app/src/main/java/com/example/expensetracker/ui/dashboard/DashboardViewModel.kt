@@ -48,6 +48,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val activeMarketList: StateFlow<MarketListWithItems?> = repository.activeMarketList
     val activeMarketLists: StateFlow<List<MarketListWithItems>> = repository.activeMarketLists
     val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = repository.lastPurchasedRates
+    val productPriceInsights: StateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>> = repository.productPriceInsights
 
     private val _summary = MutableStateFlow(FinancialSummary())
     val summary: StateFlow<FinancialSummary> = _summary.asStateFlow()
@@ -207,5 +208,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch(coroutineExceptionHandler) {
             repository.deleteActiveMarketList(listId)
         }
+    }
+
+    fun getProductPriceHistory(productName: String): List<com.example.expensetracker.data.model.ProductPriceRecord> {
+        return repository.dbHelper.getProductPriceHistory(productName)
     }
 }

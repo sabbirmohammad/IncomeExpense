@@ -97,6 +97,15 @@ suspend fun ExpenseRepository.markMarketItemPurchased(
 
     val txId = dbHelper.insertTransaction(newTx)
     dbHelper.updateMarketItemPurchased(item.id, isPurchased = true, amount = amount, transactionId = txId)
+    dbHelper.recordProductPrice(
+        productName = item.name,
+        rawQuantity = item.quantity,
+        rawUnit = item.unit,
+        totalAmount = amount,
+        marketItemId = item.id,
+        transactionId = txId,
+        timestamp = System.currentTimeMillis()
+    )
 
     refreshTransactions()
     refreshAccounts()

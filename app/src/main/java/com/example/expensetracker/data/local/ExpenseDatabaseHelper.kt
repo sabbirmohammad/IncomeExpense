@@ -48,6 +48,7 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
         const val TABLE_SAVINGS_GOALS = com.example.expensetracker.data.local.TABLE_SAVINGS_GOALS
         const val TABLE_MARKET_LISTS = com.example.expensetracker.data.local.TABLE_MARKET_LISTS
         const val TABLE_MARKET_ITEMS = com.example.expensetracker.data.local.TABLE_MARKET_ITEMS
+        const val TABLE_PRODUCT_PRICE_HISTORY = com.example.expensetracker.data.local.TABLE_PRODUCT_PRICE_HISTORY
     }
 
     internal val prefsHelper = UserPreferencesHelper(context)
@@ -64,6 +65,7 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     internal val recurringBillHelper = RecurringBillTableHelper(this)
     internal val billSplitHelper = BillSplitHelper(this)
     internal val marketHelper = MarketTableHelper(this)
+    internal val productPriceHelper = ProductPriceTableHelper(this)
     internal val backupHelper = DatabaseBackupHelper(this)
 
     override fun onConfigure(db: SQLiteDatabase) {
@@ -223,4 +225,36 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun completeMarketList(listId: Long): Boolean = marketHelper.completeMarketList(listId)
     fun deleteMarketList(listId: Long): Boolean = marketHelper.deleteMarketList(listId)
     fun getLastPurchasedRates(): Map<String, Pair<Double, String>> = marketHelper.getLastPurchasedRates()
+
+    // --- Product Price Intelligence Operations ---
+    fun recordProductPrice(
+        productName: String,
+        rawQuantity: Double,
+        rawUnit: String,
+        totalAmount: Double,
+        marketItemId: Long? = null,
+        transactionId: Long? = null,
+        timestamp: Long = System.currentTimeMillis()
+    ): Long = productPriceHelper.recordPrice(productName, rawQuantity, rawUnit, totalAmount, marketItemId, transactionId, timestamp)
+
+    fun recordPricesForMarketItems(
+        items: List<MarketItem>,
+        transactionId: Long?,
+        timestamp: Long
+    ) = productPriceHelper.recordPricesForMarketItems(items, transactionId, timestamp)
+
+    fun getProductPriceInsight(productName: String): com.example.expensetracker.data.model.ProductPriceInsight? =
+        productPriceHelper.getPriceInsight(productName)
+
+    fun getAllProductPriceInsights(): Map<String, com.example.expensetracker.data.model.ProductPriceInsight> =
+        productPriceHelper.getAllPriceInsights()
+
+    fun estimateProductCost(productName: String, quantity: Double, unit: String): Double? =
+        productPriceHelper.estimateCost(productName, quantity, unit)
+
+    fun getProductPriceHistory(productName: String, limit: Int = 50): List<com.example.expensetracker.data.model.ProductPriceRecord> =
+        productPriceHelper.getPriceHistory(productName, limit)
+
+    fun backfillProductPriceHistory(db: SQLiteDatabase) =
+        productPriceHelper.backfillProductPriceHistory(db)
 }

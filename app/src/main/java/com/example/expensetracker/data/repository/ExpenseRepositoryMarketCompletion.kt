@@ -124,6 +124,9 @@ suspend fun ExpenseRepository.completeActiveMarketList(
                     )
                 }
             }
+
+            // Record price intelligence into product_price_history!
+            dbHelper.recordPricesForMarketItems(updatedItems, newTxId, tripDate)
         }
 
         val success = dbHelper.completeMarketList(listId)

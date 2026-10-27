@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,6 +36,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.example.expensetracker.common.UnitConverterEngine
+import com.example.expensetracker.data.model.ProductPriceInsight
+import com.example.expensetracker.data.model.ProductPriceRecord
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,6 +81,8 @@ fun MarketNativeContent(
     onCompleteList: (listId: Long) -> Unit,
     modifier: Modifier = Modifier,
     lastPurchasedRates: Map<String, Pair<Double, String>> = emptyMap(),
+    productPriceInsights: Map<String, ProductPriceInsight> = emptyMap(),
+    onFetchPriceHistory: ((productName: String) -> List<ProductPriceRecord>)? = null,
     onCompleteListWithRollOver: ((listId: Long, rollOverItems: List<MarketItem>) -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
@@ -83,9 +90,7 @@ fun MarketNativeContent(
     val strings = LocalAppStrings.current
     val context = LocalContext.current
 
-    var selectedTab by remember {
-        mutableIntStateOf(if (marketListWithItems == null || marketListWithItems.items.isEmpty()) 1 else 0)
-    }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     var selectedDepartment by rememberSaveable { mutableStateOf("all") }
     var targetBudget by rememberSaveable { mutableStateOf<Double?>(null) }
@@ -93,6 +98,9 @@ fun MarketNativeContent(
 
     var itemForUnitDialog by remember { mutableStateOf<MarketItem?>(null) }
     var promptAmountForItem by remember { mutableStateOf<MarketItem?>(null) }
+    var itemToDeleteConfirm by remember { mutableStateOf<MarketItem?>(null) }
+    var itemToSubstitute by remember { mutableStateOf<MarketItem?>(null) }
+    var showForgotStaplesDialog by remember { mutableStateOf(false) }
 
     val items = marketListWithItems?.items ?: emptyList()
 
@@ -100,7 +108,8 @@ fun MarketNativeContent(
         val shareText = generateMarketShareText(
             listTitle = marketListWithItems?.list?.title ?: "",
             items = items,
-            isBangla = isBangla
+            isBangla = isBangla,
+            targetBudget = targetBudget
         )
         val sendIntent = Intent().apply {
             action = Intent.ACTION_SEND
@@ -209,6 +218,24 @@ fun MarketNativeContent(
             val totalCount = items.size
             val purchasedCount = items.count { it.isPurchased }
             val totalSpent = items.filter { it.isPurchased }.sumOf { it.amount ?: 0.0 }
+            val totalEstimatedBudget = remember(items, productPriceInsights, lastPurchasedRates) {
+                items.sumOf { itm ->
+                    if (itm.isPurchased) {
+                        itm.amount ?: 0.0
+                    } else {
+                        val cleanName = UnitConverterEngine.normalizeProductName(itm.name)
+                        val insight = productPriceInsights[cleanName]
+                        if (insight != null) {
+                            UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
+                        } else {
+                            val fallback = lastPurchasedRates[itm.name.lowercase().trim()]
+                            if (fallback != null) {
+                                UnitConverterEngine.estimateCost(fallback.first, itm.quantity, itm.unit)
+                            } else 0.0
+                        }
+                    }
+                }
+            }
 
             MarketSummarySection(
                 totalCount = totalCount,
@@ -217,6 +244,7 @@ fun MarketNativeContent(
                 currencySymbol = currencySymbol,
                 isBangla = isBangla,
                 targetBudget = targetBudget,
+                estimatedBudget = if (totalEstimatedBudget > 0) totalEstimatedBudget else null,
                 onSetTargetBudget = { targetBudget = it },
                 onShareClick = if (items.isNotEmpty()) onShareList else null
             )
@@ -295,28 +323,142 @@ fun MarketNativeContent(
             ) {
                 if (items.isEmpty()) {
                     item {
-                        Column(
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = appColors.surface,
+                            border = BorderStroke(1.dp, appColors.border),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .padding(vertical = 12.dp)
                         ) {
-                            Text(
-                                text = if (isBangla) "বর্তমানে কোনো বাজার ফর্দ সক্রিয় নেই" else "No active market list",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp
-                                ),
-                                color = appColors.textSecondary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (isBangla) "নিচে নতুন পণ্য যোগ করুন অথবা ওপরের 'লিস্ট পেস্ট' থেকে যোগ করুন"
-                                       else "Add items below or paste a WhatsApp list above",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = appColors.textSecondary.copy(alpha = 0.7f),
-                                textAlign = TextAlign.Center
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = if (isBangla) "ফর্দ তৈরির ধরন বেছে নিন" else "Choose How to Create List",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = appColors.textPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (isBangla)
+                                        "আপনার পছন্দ অনুযায়ী সরাসরি একটি একটি করে লিখুন অথবা সম্পূর্ণ মেমো এক ক্লিকে পেস্ট করুন"
+                                    else
+                                        "Add items one by one below or paste a WhatsApp checklist",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = appColors.textSecondary,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    // Option 1: Manual Checklist
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = appColors.accent.copy(alpha = 0.08f),
+                                        border = BorderStroke(1.2.dp, appColors.accent.copy(alpha = 0.5f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable {
+                                                haptics.lightTick()
+                                                selectedTab = 0
+                                            }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(appColors.accent.copy(alpha = 0.15f)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Checklist,
+                                                    contentDescription = null,
+                                                    tint = appColors.accent,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                            Text(
+                                                text = if (isBangla) "সরাসরি ফর্দ" else "Manual List",
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 13.sp
+                                                ),
+                                                color = appColors.textPrimary
+                                            )
+                                            Text(
+                                                text = if (isBangla) "নিচে লিখে যোগ করুন" else "Add items below",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                                color = appColors.textSecondary,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+
+                                    // Option 2: Bulk Text Paste
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color(0xFF25D366).copy(alpha = 0.08f),
+                                        border = BorderStroke(1.2.dp, Color(0xFF25D366).copy(alpha = 0.5f)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable {
+                                                haptics.mediumClick()
+                                                selectedTab = 1
+                                            }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(Color(0xFF25D366).copy(alpha = 0.15f)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.ContentPaste,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF25D366),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                            Text(
+                                                text = if (isBangla) "লিস্ট পেস্ট" else "Paste List",
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 13.sp
+                                                ),
+                                                color = appColors.textPrimary
+                                            )
+                                            Text(
+                                                text = if (isBangla) "মেমো পেস্ট করুন" else "Paste from WhatsApp",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                                color = appColors.textSecondary,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 } else {
@@ -355,10 +497,16 @@ fun MarketNativeContent(
                                     }
                                 },
                                 onDeleteClick = {
-                                    haptics.lightTick()
-                                    onDeleteItem(item.id)
+                                    itemToDeleteConfirm = item
                                 },
-                                lastRateText = lastRateText
+                                onRequestDelete = {
+                                    itemToDeleteConfirm = item
+                                },
+                                onSubstituteClick = {
+                                    itemToSubstitute = item
+                                },
+                                lastRateText = lastRateText,
+                                priceInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(item.name)]
                             )
                         }
                     } else {
@@ -446,10 +594,16 @@ fun MarketNativeContent(
                                         }
                                     },
                                     onDeleteClick = {
-                                        haptics.lightTick()
-                                        onDeleteItem(item.id)
+                                        itemToDeleteConfirm = item
                                     },
-                                    lastRateText = lastRateText
+                                    onRequestDelete = {
+                                        itemToDeleteConfirm = item
+                                    },
+                                    onSubstituteClick = {
+                                        itemToSubstitute = item
+                                    },
+                                    lastRateText = lastRateText,
+                                    priceInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(item.name)]
                                 )
                             }
                         }
@@ -462,7 +616,8 @@ fun MarketNativeContent(
                         listId = marketListWithItems?.list?.id ?: 0L,
                         isBangla = isBangla,
                         onAddItem = onAddItem,
-                        existingItemNames = items.map { it.name.lowercase() }.toSet()
+                        existingItemNames = items.map { it.name.lowercase() }.toSet(),
+                        productPriceInsights = productPriceInsights
                     )
                 }
 
@@ -473,7 +628,15 @@ fun MarketNativeContent(
                             isBangla = isBangla,
                             onComplete = {
                                 val unpurchased = items.filter { !it.isPurchased }
-                                if (unpurchased.isNotEmpty() && onCompleteListWithRollOver != null) {
+                                val purchased = items.filter { it.isPurchased }
+                                val hasStaplePurchased = purchased.any {
+                                    val name = it.name.lowercase()
+                                    name.contains("মরিচ") || name.contains("লেবু") || name.contains("ধনে") ||
+                                    name.contains("আদা") || name.contains("রসুন") || name.contains("chili") || name.contains("lemon")
+                                }
+                                if (!hasStaplePurchased && items.size >= 3) {
+                                    showForgotStaplesDialog = true
+                                } else if (unpurchased.isNotEmpty() && onCompleteListWithRollOver != null) {
                                     showRollOverDialog = true
                                 } else {
                                     marketListWithItems?.list?.id?.let { onCompleteList(it) }
@@ -502,14 +665,88 @@ fun MarketNativeContent(
     }
 
     if (promptAmountForItem != null) {
+        val curItem = promptAmountForItem!!
+        val lastRate = lastPurchasedRates[curItem.name.lowercase().trim()]
+        val curInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(curItem.name)]
         MarketPromptAmountDialog(
-            item = promptAmountForItem!!,
+            item = curItem,
             currencySymbol = currencySymbol,
             isBangla = isBangla,
+            lastRate = lastRate,
+            priceInsight = curInsight,
             onDismiss = { promptAmountForItem = null },
             onConfirm = { amt ->
-                onMarkPurchased(promptAmountForItem!!, amt)
+                haptics.mediumClick()
+                onMarkPurchased(curItem, amt)
                 promptAmountForItem = null
+            }
+        )
+    }
+
+    // "Forgot Small Staples?" Guard Dialog before finishing shopping
+    if (showForgotStaplesDialog) {
+        val unpurchased = items.filter { !it.isPurchased }
+        AlertDialog(
+            onDismissRequest = { showForgotStaplesDialog = false },
+            title = {
+                Text(
+                    text = if (isBangla) "কাঁচামরিচ বা লেবু কি নিয়েছেন?" else "Forgot Chili or Lemon?",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = appColors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = if (isBangla)
+                        "ফর্দে কোনো কাঁচামরিচ, ধনেপাতা বা লেবু কেনা চিহ্নিত নেই। আপনি কি এগুলো নিয়েছেন নাকি ফর্দ এখনই সম্পন্ন করবেন?"
+                    else
+                        "No chili, lemon, or coriander was marked as purchased. Did you already buy them or want to finish now?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = appColors.textSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showForgotStaplesDialog = false
+                        if (unpurchased.isNotEmpty() && onCompleteListWithRollOver != null) {
+                            showRollOverDialog = true
+                        } else {
+                            marketListWithItems?.list?.id?.let { onCompleteList(it) }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = appColors.income),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = if (isBangla) "হ্যাঁ, সম্পন্ন করুন" else "Yes, Finish Now",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showForgotStaplesDialog = false }) {
+                    Text(
+                        text = if (isBangla) "না, ফর্দে যোগ করব" else "Add to List",
+                        color = appColors.accent
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = appColors.surface
+        )
+    }
+
+    // Smart Item Substitution Dialog
+    if (itemToSubstitute != null) {
+        val curItem = itemToSubstitute!!
+        MarketSubstituteItemDialog(
+            item = curItem,
+            isBangla = isBangla,
+            onDismiss = { itemToSubstitute = null },
+            onConfirmSubstitute = { newTitle ->
+                onUpdateItem(curItem.copy(name = newTitle))
+                itemToSubstitute = null
             }
         )
     }
@@ -562,12 +799,62 @@ fun MarketNativeContent(
             }
         )
     }
+
+    // Safety Dialog: Confirm Item Deletion (Protects against accidental swipe/touch)
+    if (itemToDeleteConfirm != null) {
+        val itemToDelete = itemToDeleteConfirm!!
+        AlertDialog(
+            onDismissRequest = { itemToDeleteConfirm = null },
+            title = {
+                Text(
+                    text = if (isBangla) "পণ্য মুছে ফেলতে চান?" else "Delete Item?",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = appColors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = if (isBangla)
+                        "'${itemToDelete.name}' (${itemToDelete.formatQuantity()}) পণ্যটি কি নিশ্চিতভাবে এই ফর্দ থেকে মুছে ফেলতে চান?"
+                    else
+                        "Are you sure you want to delete '${itemToDelete.name}' (${itemToDelete.formatQuantity()}) from this list?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = appColors.textSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        haptics.warningFeedback()
+                        onDeleteItem(itemToDelete.id)
+                        itemToDeleteConfirm = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = appColors.expense),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = if (isBangla) "মুছে ফেলুন" else "Delete",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemToDeleteConfirm = null }) {
+                    Text(text = if (isBangla) "বাতিল" else "Cancel", color = appColors.textSecondary)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = appColors.surface
+        )
+    }
 }
 
 fun generateMarketShareText(
     listTitle: String,
     items: List<MarketItem>,
-    isBangla: Boolean
+    isBangla: Boolean,
+    targetBudget: Double? = null
 ): String {
     val sb = StringBuilder()
     sb.append("🛒 ")
@@ -578,6 +865,10 @@ fun generateMarketShareText(
     ) listTitle else if (isBangla) "আজকের বাজার ফর্দ" else "Market Checklist"
     sb.append(title)
     sb.append(":\n\n")
+
+    val purchased = items.filter { it.isPurchased }
+    val remaining = items.filter { !it.isPurchased }
+    val totalSpent = purchased.sumOf { it.amount ?: 0.0 }
 
     val grouped = items.groupBy { getMarketItemCategory(it.name) }
     for (dept in ALL_DEPARTMENTS) {
@@ -595,5 +886,26 @@ fun generateMarketShareText(
         }
         sb.append("\n")
     }
+
+    if (purchased.isNotEmpty()) {
+        val spentFormatted = if (totalSpent % 1.0 == 0.0) totalSpent.toInt().toString() else "%.1f".format(totalSpent)
+        sb.append(if (isBangla) "💰 মোট খরচ: ৳${convertToBengaliDigits(spentFormatted)} (${convertToBengaliDigits(purchased.size.toString())}টি কেনা)\n"
+                  else "💰 Total Spent: ৳$spentFormatted (${purchased.size} bought)\n")
+    }
+
+    if (remaining.isNotEmpty()) {
+        sb.append(if (isBangla) "⏳ বাকি আছে: ${convertToBengaliDigits(remaining.size.toString())}টি পণ্য\n"
+                  else "⏳ Remaining: ${remaining.size} items\n")
+    }
+
+    if (targetBudget != null && targetBudget > 0) {
+        val remainingBudget = targetBudget - totalSpent
+        val remFormatted = if (remainingBudget % 1.0 == 0.0) remainingBudget.toInt().toString() else "%.1f".format(remainingBudget)
+        val budFormatted = if (targetBudget % 1.0 == 0.0) targetBudget.toInt().toString() else "%.1f".format(targetBudget)
+        val remText = if (isBangla) convertToBengaliDigits(remFormatted) else remFormatted
+        val budText = if (isBangla) convertToBengaliDigits(budFormatted) else budFormatted
+        sb.append(if (isBangla) "🎯 বাজেট: ৳$budText (অবশিষ্ট: ৳$remText)\n" else "🎯 Budget: ৳$budText (Remaining: ৳$remText)\n")
+    }
+
     return sb.toString().trim()
 }

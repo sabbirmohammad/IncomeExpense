@@ -33,6 +33,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.expensetracker.common.UnitConverterEngine
+import com.example.expensetracker.data.model.ProductPriceInsight
+import com.example.expensetracker.data.model.ProductPriceRecord
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +59,9 @@ fun MarketListSheet(
     activeMarketLists: List<MarketListWithItems> = emptyList(),
     currencySymbol: String = "৳",
     isBangla: Boolean = true,
+    lastPurchasedRates: Map<String, Pair<Double, String>> = emptyMap(),
+    productPriceInsights: Map<String, ProductPriceInsight> = emptyMap(),
+    onFetchPriceHistory: ((productName: String) -> List<ProductPriceRecord>)? = null,
     onDismiss: () -> Unit,
     onCreateListWithBulk: (title: String, items: List<MarketItem>) -> Unit,
     onAddItem: (item: MarketItem, targetListId: Long?) -> Unit = { item, _ -> },
@@ -71,6 +77,7 @@ fun MarketListSheet(
 
     // 0: Checklist/Shopping Hub, 1: Create New List
     var selectedTab by remember { mutableIntStateOf(0) }
+    var showPriceInsightsSheet by remember { mutableStateOf(false) }
 
     // Consolidated active lists
     val effectiveActiveLists = remember(activeMarketLists, marketListWithItems) {
@@ -99,6 +106,8 @@ fun MarketListSheet(
     var itemForUnitDialog by remember { mutableStateOf<MarketItem?>(null) }
     var promptAmountForItem by remember { mutableStateOf<MarketItem?>(null) }
     var itemToDeleteConfirm by remember { mutableStateOf<MarketItem?>(null) }
+    var itemToSubstitute by remember { mutableStateOf<MarketItem?>(null) }
+    var showForgotStaplesDialog by remember { mutableStateOf(false) }
     var listToDeleteConfirmId by remember { mutableStateOf<Long?>(null) }
     var showDeleteListConfirmDialog by remember { mutableStateOf(false) }
 
@@ -137,7 +146,8 @@ fun MarketListSheet(
                 activeListsCount = effectiveActiveLists.size,
                 onBackToLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) {
                     { selectedListId = null }
-                } else null
+                } else null,
+                onOpenPriceInsights = { showPriceInsightsSheet = true }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -215,6 +225,24 @@ fun MarketListSheet(
                     val totalCount = items.size
                     val purchasedCount = items.count { it.isPurchased }
                     val totalSpent = items.filter { it.isPurchased }.sumOf { it.amount ?: 0.0 }
+                    val totalEstimatedBudget = remember(items, productPriceInsights, lastPurchasedRates) {
+                        items.sumOf { itm ->
+                            if (itm.isPurchased) {
+                                itm.amount ?: 0.0
+                            } else {
+                                val cleanName = UnitConverterEngine.normalizeProductName(itm.name)
+                                val insight = productPriceInsights[cleanName]
+                                if (insight != null) {
+                                    UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
+                                } else {
+                                    val fallback = lastPurchasedRates[itm.name.lowercase().trim()]
+                                    if (fallback != null) {
+                                        UnitConverterEngine.estimateCost(fallback.first, itm.quantity, itm.unit)
+                                    } else 0.0
+                                }
+                            }
+                        }
+                    }
                     var filterMode by remember { mutableIntStateOf(0) } // 0: All, 1: Remaining, 2: Done
 
                     val filteredItems = remember(items, filterMode) {
@@ -231,7 +259,8 @@ fun MarketListSheet(
                         purchasedCount = purchasedCount,
                         totalSpent = totalSpent,
                         currencySymbol = currencySymbol,
-                        isBangla = isBangla
+                        isBangla = isBangla,
+                        estimatedBudget = if (totalEstimatedBudget > 0) totalEstimatedBudget else null
                     )
 
                     if (items.isNotEmpty()) {
@@ -387,6 +416,14 @@ fun MarketListSheet(
                         }
 
                         itemsIndexed(filteredItems, key = { _, itm -> itm.id }) { _, item ->
+                            val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
+                            val lastRateText = if (!item.isPurchased && lastRate != null) {
+                                val (rate, unit) = lastRate
+                                val rateStr = if (rate % 1.0 == 0.0) rate.toInt().toString() else "%.1f".format(rate)
+                                if (isBangla) "গতবার: ৳${convertToBengaliDigits(rateStr)}/$unit"
+                                else "Last: ৳$rateStr/$unit"
+                            } else null
+
                             MarketItemRow(
                                 item = item,
                                 currencySymbol = currencySymbol,
@@ -411,7 +448,12 @@ fun MarketListSheet(
                                 },
                                 onRequestDelete = {
                                     itemToDeleteConfirm = item
-                                }
+                                },
+                                onSubstituteClick = {
+                                    itemToSubstitute = item
+                                },
+                                lastRateText = lastRateText,
+                                priceInsight = productPriceInsights[UnitConverterEngine.normalizeProductName(item.name)]
                             )
                         }
 
@@ -424,7 +466,8 @@ fun MarketListSheet(
                                 onAddItem = { newItem ->
                                     onAddItem(newItem, currentViewingList.list.id)
                                 },
-                                existingItemNames = items.map { it.name.lowercase() }.toSet()
+                                existingItemNames = items.map { it.name.lowercase() }.toSet(),
+                                productPriceInsights = productPriceInsights
                             )
                         }
 
@@ -439,8 +482,18 @@ fun MarketListSheet(
                         MarketFinishButton(
                             isBangla = isBangla,
                             onComplete = {
-                                onCompleteList(currentViewingList.list.id)
-                                onDismiss()
+                                val purchased = items.filter { it.isPurchased }
+                                val hasStaplePurchased = purchased.any {
+                                    val name = it.name.lowercase()
+                                    name.contains("মরিচ") || name.contains("লেবু") || name.contains("ধনে") ||
+                                    name.contains("আদা") || name.contains("রসুন") || name.contains("chili") || name.contains("lemon")
+                                }
+                                if (!hasStaplePurchased && items.size >= 3) {
+                                    showForgotStaplesDialog = true
+                                } else {
+                                    onCompleteList(currentViewingList.list.id)
+                                    onDismiss()
+                                }
                             }
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -468,10 +521,15 @@ fun MarketListSheet(
     // Dialog 2: Clean Popup to Enter Price when item is purchased
     if (promptAmountForItem != null) {
         val targetItem = promptAmountForItem!!
+        val lastRate = lastPurchasedRates[targetItem.name.lowercase().trim()]
+        val targetCleanName = UnitConverterEngine.normalizeProductName(targetItem.name)
+        val targetInsight = productPriceInsights[targetCleanName]
         MarketPromptAmountDialog(
             item = targetItem,
             currencySymbol = currencySymbol,
             isBangla = isBangla,
+            lastRate = lastRate,
+            priceInsight = targetInsight,
             onDismiss = { promptAmountForItem = null },
             onConfirm = { amt ->
                 if (amt > 0) {
@@ -481,6 +539,70 @@ fun MarketListSheet(
                 }
                 promptAmountForItem = null
             }
+        )
+    }
+
+    // Dialog 2.5: Smart Item Substitution Dialog
+    if (itemToSubstitute != null) {
+        val curItem = itemToSubstitute!!
+        MarketSubstituteItemDialog(
+            item = curItem,
+            isBangla = isBangla,
+            onDismiss = { itemToSubstitute = null },
+            onConfirmSubstitute = { newTitle ->
+                onUpdateItem(curItem.copy(name = newTitle))
+                itemToSubstitute = null
+            }
+        )
+    }
+
+    // Dialog 2.8: "Forgot Small Staples?" Guard Dialog before finishing shopping
+    if (showForgotStaplesDialog && currentViewingList != null) {
+        AlertDialog(
+            onDismissRequest = { showForgotStaplesDialog = false },
+            title = {
+                Text(
+                    text = if (isBangla) "কাঁচামরিচ বা লেবু কি নিয়েছেন?" else "Forgot Chili or Lemon?",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = appColors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = if (isBangla)
+                        "ফর্দে কোনো কাঁচামরিচ, ধনেপাতা বা লেবু কেনা চিহ্নিত নেই। আপনি কি এগুলো নিয়েছেন নাকি ফর্দ এখনই সম্পন্ন করবেন?"
+                    else
+                        "No chili, lemon, or coriander was marked as purchased. Did you already buy them or want to finish now?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = appColors.textSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showForgotStaplesDialog = false
+                        onCompleteList(currentViewingList.list.id)
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = appColors.income),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = if (isBangla) "হ্যাঁ, সম্পন্ন করুন" else "Yes, Finish Now",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showForgotStaplesDialog = false }) {
+                    Text(
+                        text = if (isBangla) "না, ফর্দে যোগ করব" else "Add to List",
+                        color = appColors.accent
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = appColors.surface
         )
     }
 
@@ -580,6 +702,16 @@ fun MarketListSheet(
             },
             shape = RoundedCornerShape(16.dp),
             containerColor = appColors.surface
+        )
+    }
+
+    if (showPriceInsightsSheet) {
+        ProductPriceInsightsSheet(
+            priceInsights = productPriceInsights,
+            onFetchHistory = { pName -> onFetchPriceHistory?.invoke(pName) ?: emptyList() },
+            isBangla = isBangla,
+            currencySymbol = currencySymbol,
+            onDismiss = { showPriceInsightsSheet = false }
         )
     }
 }

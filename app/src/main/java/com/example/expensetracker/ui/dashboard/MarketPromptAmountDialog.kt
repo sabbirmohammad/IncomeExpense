@@ -2,6 +2,7 @@ package com.example.expensetracker.ui.dashboard
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,8 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.expensetracker.common.MarketListParser
+import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.MarketItem
+import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.CalculatorEvaluator
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
@@ -59,7 +63,9 @@ fun MarketPromptAmountDialog(
     currencySymbol: String,
     isBangla: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: (amount: Double) -> Unit
+    onConfirm: (amount: Double) -> Unit,
+    lastRate: Pair<Double, String>? = null,
+    priceInsight: ProductPriceInsight? = null
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -75,6 +81,12 @@ fun MarketPromptAmountDialog(
         )
     }
 
+    val evaluatedAmount = remember(promptAmountText) {
+        CalculatorEvaluator.evaluate(promptAmountText)
+            ?: MarketListParser.convertBengaliDigitsToEnglish(promptAmountText).toDoubleOrNull()
+    }
+    val isExpression = promptAmountText.any { it in "+-*xX/×÷" }
+
     LaunchedEffect(Unit) {
         try {
             focusRequester.requestFocus()
@@ -82,15 +94,14 @@ fun MarketPromptAmountDialog(
     }
 
     val submitAmount = {
-        val cleanNum = MarketListParser.convertBengaliDigitsToEnglish(promptAmountText)
-        val amt = cleanNum.toDoubleOrNull() ?: 0.0
+        val amt = evaluatedAmount ?: MarketListParser.convertBengaliDigitsToEnglish(promptAmountText).toDoubleOrNull() ?: 0.0
         haptics.mediumClick()
         onConfirm(amt)
     }
 
     val addQuickAmount = { addAmt: Int ->
         haptics.lightTick()
-        val current = MarketListParser.convertBengaliDigitsToEnglish(promptAmountText).toDoubleOrNull() ?: 0.0
+        val current = evaluatedAmount ?: MarketListParser.convertBengaliDigitsToEnglish(promptAmountText).toDoubleOrNull() ?: 0.0
         val nextAmt = (current + addAmt).toInt()
         promptAmountText = nextAmt.toString()
     }
@@ -152,7 +163,7 @@ fun MarketPromptAmountDialog(
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { submitAmount() }),
                     leadingIcon = {
                         Text(
@@ -165,7 +176,7 @@ fun MarketPromptAmountDialog(
                     },
                     placeholder = {
                         Text(
-                            text = if (isBangla) "০" else "0",
+                            text = if (isBangla) "০ (বা ৪৫ * ২.৫)" else "0 (or 45 * 2.5)",
                             color = appColors.textSecondary.copy(alpha = 0.5f)
                         )
                     },
@@ -178,7 +189,183 @@ fun MarketPromptAmountDialog(
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                // Live Evaluated Result Preview (for math expressions like 45 * 2.5 or 120 + 80)
+                if (isExpression && evaluatedAmount != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = appColors.accent.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                haptics.lightTick()
+                                promptAmountText = if (evaluatedAmount % 1.0 == 0.0) evaluatedAmount.toInt().toString() else "%.1f".format(evaluatedAmount)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val evalStr = if (evaluatedAmount % 1.0 == 0.0) evaluatedAmount.toInt().toString() else "%.1f".format(evaluatedAmount)
+                            Text(
+                                text = "= $currencySymbol ${if (isBangla) convertToBengaliDigits(evalStr) else evalStr}",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.5.sp
+                                ),
+                                color = appColors.accent
+                            )
+                            Text(
+                                text = if (isBangla) "ট্যাপ করে বসান" else "Tap to apply",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                color = appColors.textSecondary
+                            )
+                        }
+                    }
+                }
+
+                // Real-time Unit Price & Anomaly / Price Variance Intelligence
+                if (evaluatedAmount != null && evaluatedAmount > 0 && item.quantity > 0) {
+                    val (currentRate, baseUnit) = UnitConverterEngine.calculateBaseUnitPrice(evaluatedAmount, item.quantity, item.unit)
+                    val referenceRate = priceInsight?.currentUnitPrice ?: lastRate?.first
+                    val rateStr = if (currentRate % 1.0 == 0.0) currentRate.toInt().toString() else "%.1f".format(currentRate)
+                    val rateText = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // 1. Calculated Unit Price Badge
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = appColors.accent.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (isBangla) "⚡ হিসাবকৃত প্রতি $baseUnit:" else "⚡ Rate per $baseUnit:",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                color = appColors.textSecondary
+                            )
+                            Text(
+                                text = "৳$rateText/$baseUnit",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                                color = appColors.accent
+                            )
+                        }
+                    }
+
+                    // 2. Comparison against previous purchase
+                    if (referenceRate != null && referenceRate > 0) {
+                        val percentDiff = ((currentRate - referenceRate) / referenceRate) * 100.0
+                        val diffRate = currentRate - referenceRate
+                        val diffAbs = kotlin.math.abs(diffRate)
+                        val diffAbsStr = if (diffAbs % 1.0 == 0.0) diffAbs.toInt().toString() else "%.1f".format(diffAbs)
+                        val diffText = if (isBangla) convertToBengaliDigits(diffAbsStr) else diffAbsStr
+                        val pctAbsStr = "%.1f".format(kotlin.math.abs(percentDiff))
+                        val pctText = if (isBangla) convertToBengaliDigits(pctAbsStr) else pctAbsStr
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        when {
+                            percentDiff >= 1.0 -> {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.expense.copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.3f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
+                                        Text(
+                                            text = if (isBangla) "🔺 গতবারের চেয়ে ৳$diffText/$baseUnit বেশি (+$pctText%)" else "🔺 ৳$diffText/$baseUnit higher than last time (+$pctText%)",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                            color = appColors.expense
+                                        )
+                                        priceInsight?.oneMonthPercentDiff?.let { mPct ->
+                                            val mPctAbs = "%.1f".format(kotlin.math.abs(mPct))
+                                            val mPctText = if (isBangla) convertToBengaliDigits(mPctAbs) else mPctAbs
+                                            val mSign = if (mPct > 0) "+" else "-"
+                                            Text(
+                                                text = if (isBangla) "📅 গত ১ মাসে পরিবর্তন: $mSign$mPctText%" else "📅 30-day change: $mSign$mPctText%",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                                color = appColors.textSecondary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            percentDiff <= -1.0 -> {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.income.copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.3f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = if (isBangla) "🔻 গতবারের চেয়ে ৳$diffText/$baseUnit সাশ্রয়ী (-$pctText%)" else "🔻 ৳$diffText/$baseUnit cheaper than last time (-$pctText%)",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                        color = appColors.income,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                            else -> {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.surface,
+                                    border = BorderStroke(1.dp, appColors.border),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = if (isBangla) "➖ পূর্বের দরেই কেনা হচ্ছে" else "➖ Same rate as last purchase",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                        color = appColors.textSecondary,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Quick Math Operators: [ × ] [ + ] [ ÷ ] [ − ]
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("×" to "*", "+" to "+", "÷" to "/", "−" to "-").forEach { (displayOp, actualOp) ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(appColors.accent.copy(alpha = 0.08f))
+                                .border(1.dp, appColors.accent.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                                .clickable {
+                                    haptics.lightTick()
+                                    promptAmountText = "$promptAmountText$actualOp"
+                                }
+                                .padding(vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = displayOp,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                ),
+                                color = appColors.accent
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Quick increment chips: +50, +100, +200, +500
                 Row(

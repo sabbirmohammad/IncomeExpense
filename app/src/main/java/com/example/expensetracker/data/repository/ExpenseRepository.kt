@@ -96,6 +96,9 @@ class ExpenseRepository private constructor(context: Context) {
     internal val _lastPurchasedRates = MutableStateFlow<Map<String, Pair<Double, String>>>(emptyMap())
     val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = _lastPurchasedRates.asStateFlow()
 
+    internal val _productPriceInsights = MutableStateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>>(emptyMap())
+    val productPriceInsights: StateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>> = _productPriceInsights.asStateFlow()
+
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -166,7 +169,13 @@ class ExpenseRepository private constructor(context: Context) {
         _activeMarketList.value = dbHelper.getActiveMarketList()
         _activeMarketLists.value = dbHelper.getActiveMarketLists()
         _allMarketLists.value = dbHelper.getAllMarketLists()
-        _lastPurchasedRates.value = dbHelper.getLastPurchasedRates()
+        refreshProductPrices()
+    }
+
+    fun refreshProductPrices() {
+        val insights = dbHelper.getAllProductPriceInsights()
+        _productPriceInsights.value = insights
+        _lastPurchasedRates.value = insights.mapValues { Pair(it.value.currentUnitPrice, it.value.baseUnit) }
     }
 
     fun refreshAll() {
@@ -180,6 +189,7 @@ class ExpenseRepository private constructor(context: Context) {
         refreshRecurringBills()
         refreshBudgets()
         refreshMarketList()
+        refreshProductPrices()
     }
 
     suspend fun addTransaction(tx: Transaction): Long = withContext(Dispatchers.IO) {

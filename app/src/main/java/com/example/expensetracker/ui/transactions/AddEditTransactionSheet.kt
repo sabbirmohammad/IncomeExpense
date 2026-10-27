@@ -84,6 +84,7 @@ fun AddEditTransactionSheet(
     onCompleteMarketList: ((listId: Long) -> Unit)? = null,
     onOpenMarketList: (() -> Unit)? = null,
     lastPurchasedRates: Map<String, Pair<Double, String>> = emptyMap(),
+    productPriceInsights: Map<String, com.example.expensetracker.data.model.ProductPriceInsight> = emptyMap(),
     onCompleteMarketListWithRollOver: ((listId: Long, rollOverItems: List<MarketItem>) -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
@@ -327,6 +328,7 @@ fun AddEditTransactionSheet(
                                 onCompleteMarketList?.invoke(listId)
                             },
                             lastPurchasedRates = lastPurchasedRates,
+                            productPriceInsights = productPriceInsights,
                             onCompleteListWithRollOver = onCompleteMarketListWithRollOver,
                             modifier = Modifier
                                 .fillMaxWidth()

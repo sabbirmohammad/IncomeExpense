@@ -86,7 +86,7 @@ fun CreateMarketListSection(
     }
 
     var listTitle by remember { mutableStateOf(defaultInitialTitle) }
-    var inputMode by remember { mutableIntStateOf(0) } // 0: Bulk Paste, 1: Add Items Manually
+    var inputMode by remember { mutableIntStateOf(1) } // 1: Add Items Manually, 0: Bulk Paste
 
     // Bulk paste state
     var bulkInputText by remember { mutableStateOf("") }
@@ -205,6 +205,37 @@ fun CreateMarketListSection(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(modifier = Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    // Manual Add Tab (Primary / Default)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (inputMode == 1) appColors.accent else Color.Transparent)
+                            .clickable {
+                                haptics.lightTick()
+                                inputMode = 1
+                            }
+                            .padding(vertical = 7.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.ListAlt,
+                                contentDescription = null,
+                                tint = if (inputMode == 1) Color.White else appColors.textSecondary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = if (isBangla) "সরাসরি পণ্য লিখুন" else "Add Items",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (inputMode == 1) FontWeight.Bold else FontWeight.Medium
+                                ),
+                                color = if (inputMode == 1) Color.White else appColors.textSecondary
+                            )
+                        }
+                    }
+
                     // Bulk Paste Tab
                     Box(
                         modifier = Modifier
@@ -232,37 +263,6 @@ fun CreateMarketListSection(
                                     fontWeight = if (inputMode == 0) FontWeight.Bold else FontWeight.Medium
                                 ),
                                 color = if (inputMode == 0) Color.White else appColors.textSecondary
-                            )
-                        }
-                    }
-
-                    // Manual Add Tab
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (inputMode == 1) appColors.accent else Color.Transparent)
-                            .clickable {
-                                haptics.lightTick()
-                                inputMode = 1
-                            }
-                            .padding(vertical = 7.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.ListAlt,
-                                contentDescription = null,
-                                tint = if (inputMode == 1) Color.White else appColors.textSecondary,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Text(
-                                text = if (isBangla) "সরাসরি পণ্য লিখুন" else "Add Items",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = if (inputMode == 1) FontWeight.Bold else FontWeight.Medium
-                                ),
-                                color = if (inputMode == 1) Color.White else appColors.textSecondary
                             )
                         }
                     }

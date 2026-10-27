@@ -17,6 +17,7 @@ internal object DatabaseMigrations {
         if (oldVersion < 11) upgradeToVersion11(db)
         if (oldVersion < 12) upgradeToVersion12(db, dbHelper)
         if (oldVersion < 13) upgradeToVersion13(db)
+        if (oldVersion < 14) upgradeToVersion14(db)
     }
 
     private fun upgradeToVersion2(db: SQLiteDatabase) {
@@ -209,6 +210,28 @@ internal object DatabaseMigrations {
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_rec_due_date ON $TABLE_RECEIVABLES ($COL_REC_DUE_DATE)")
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_pay_due_date ON $TABLE_PAYABLES ($COL_PAY_DUE_DATE)")
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_bills_due_day ON $TABLE_RECURRING_BILLS ($COL_BILL_DUE_DAY)")
+        } catch (_: Exception) {}
+    }
+
+    private fun upgradeToVersion14(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS $TABLE_PRODUCT_PRICE_HISTORY (
+                $COL_PPH_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_PPH_PRODUCT_NAME TEXT NOT NULL,
+                $COL_PPH_RAW_QUANTITY REAL NOT NULL,
+                $COL_PPH_RAW_UNIT TEXT NOT NULL,
+                $COL_PPH_BASE_QUANTITY REAL NOT NULL,
+                $COL_PPH_BASE_UNIT TEXT NOT NULL,
+                $COL_PPH_TOTAL_AMOUNT REAL NOT NULL,
+                $COL_PPH_UNIT_PRICE REAL NOT NULL,
+                $COL_PPH_MARKET_ITEM_ID INTEGER,
+                $COL_PPH_TRANSACTION_ID INTEGER,
+                $COL_PPH_TIMESTAMP INTEGER NOT NULL
+            )
+        """.trimIndent())
+        try {
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_pph_name_time ON $TABLE_PRODUCT_PRICE_HISTORY ($COL_PPH_PRODUCT_NAME COLLATE NOCASE, $COL_PPH_TIMESTAMP DESC)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_pph_time ON $TABLE_PRODUCT_PRICE_HISTORY ($COL_PPH_TIMESTAMP DESC)")
         } catch (_: Exception) {}
     }
 }

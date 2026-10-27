@@ -227,9 +227,9 @@ class QuickShortcutsAndMarketAnalyticsTest {
         )
         val text = com.example.expensetracker.ui.dashboard.generateMarketShareText("আজকের বাজার", items, true)
         assertTrue(text.contains("🥬 কাঁচাবাজার:"))
-        assertTrue(text.contains("☑ আলু (2 কেজি) - ৳100"))
+        assertTrue(text.contains("আলু (2 কেজি)"))
         assertTrue(text.contains("🐟 মাছ ও মাংস:"))
-        assertTrue(text.contains("☐ রুই মাছ (1.5 কেজি)"))
+        assertTrue(text.contains("রুই মাছ (1.5 কেজি)"))
     }
 
     @Test

@@ -54,23 +54,28 @@ fun UnitAndQuantityDialog(
 
     val availableUnits = listOf(
         "কেজি" to if (isBangla) "কেজি (Kg)" else "Kg (কেজি)",
+        "পোয়া" to if (isBangla) "পোয়া (২৫০ গ্রাম)" else "Powa (250g)",
+        "পাল্লা" to if (isBangla) "পাল্লা (৫ কেজি)" else "Palla (5kg)",
+        "হালি" to if (isBangla) "হালি (৪টি)" else "Hali (4 pcs)",
+        "জোড়া" to if (isBangla) "জোড়া (২টি)" else "Pair (2 pcs)",
+        "ডজন" to if (isBangla) "ডজন (১২টি)" else "Dozen (12 pcs)",
         "পিস" to if (isBangla) "পিস (Pcs)" else "Pcs (পিস)",
         "লিটার" to if (isBangla) "লিটার (Litre)" else "Litre (লিটার)",
         "গ্রাম" to if (isBangla) "গ্রাম (Gram)" else "Gram (গ্রাম)",
-        "ডজন" to if (isBangla) "ডজন (Dozen)" else "Dozen (ডজন)",
         "প্যাকেট" to if (isBangla) "প্যাকেট (Pack)" else "Pack (প্যাকেট)",
-        "হালি" to if (isBangla) "হালি (4 pcs)" else "Hali (হালি)",
         "আঁটি" to if (isBangla) "আঁটি (Bunch)" else "Bunch (আঁটি)",
         "বোতল" to if (isBangla) "বোতল (Bottle)" else "Bottle (বোতল)"
     )
 
     val quickPresets = listOf(
+        0.25 to if (isBangla) "০.২৫ (১ পোয়া)" else "0.25 (1 Powa)",
         0.5 to if (isBangla) "০.৫ (হাফ)" else "0.5 (Half)",
         1.0 to if (isBangla) "১" else "1",
         1.5 to if (isBangla) "১.৫ (দেড়)" else "1.5",
         2.0 to if (isBangla) "২" else "2",
         2.5 to if (isBangla) "২.৫ (আড়াই)" else "2.5",
-        5.0 to if (isBangla) "৫" else "5"
+        4.0 to if (isBangla) "৪ (১ হালি)" else "4 (1 Hali)",
+        5.0 to if (isBangla) "৫ (১ পাল্লা)" else "5 (1 Palla)"
     )
 
     Dialog(onDismissRequest = onDismiss) {

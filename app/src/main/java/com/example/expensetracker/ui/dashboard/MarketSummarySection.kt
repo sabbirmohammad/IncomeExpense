@@ -59,6 +59,7 @@ fun MarketSummarySection(
     selectedCategoryFilter: String? = null,
     onCategorySelected: ((String?) -> Unit)? = null,
     targetBudget: Double? = null,
+    estimatedBudget: Double? = null,
     onSetTargetBudget: ((Double?) -> Unit)? = null,
     onShareClick: (() -> Unit)? = null
 ) {
@@ -200,6 +201,41 @@ fun MarketSummarySection(
                         ),
                         color = if (isOverBudget) appColors.expense else appColors.income
                     )
+                }
+            } else if (estimatedBudget != null && estimatedBudget > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = if (isBangla) "💡 আনুমানিক মোট বাজেট: ${formatCurrency(estimatedBudget, currencySymbol)}"
+                                   else "💡 Est. Budget: ${formatCurrency(estimatedBudget, currencySymbol)}",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold),
+                            color = appColors.accent
+                        )
+                    }
+
+                    if (onSetTargetBudget != null) {
+                        Text(
+                            text = if (isBangla) "+ কাস্টম বাজেট" else "+ Custom Budget",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = appColors.textSecondary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable { showBudgetDialog = true }
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             } else if (onSetTargetBudget != null) {
                 Row(

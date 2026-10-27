@@ -51,6 +51,7 @@ fun NavigationTransactionSheets(
     if (showGlobalAddSheet) {
         val activeMarketList by dashboardViewModel.activeMarketList.collectAsStateWithLifecycle()
         val lastPurchasedRates by dashboardViewModel.lastPurchasedRates.collectAsStateWithLifecycle()
+        val productPriceInsights by dashboardViewModel.productPriceInsights.collectAsStateWithLifecycle()
         AddEditTransactionSheet(
             sheetState = sheetState,
             existingTransaction = transactionToEdit,
@@ -62,6 +63,7 @@ fun NavigationTransactionSheets(
             currencySymbol = userProfile.currencySymbol,
             marketListWithItems = activeMarketList,
             lastPurchasedRates = lastPurchasedRates,
+            productPriceInsights = productPriceInsights,
             onCompleteMarketListWithRollOver = { listId, rollOverItems ->
                 dashboardViewModel.completeActiveMarketList(listId, rollOverItems) { result ->
                     if (result.success && result.totalSpent > 0) {

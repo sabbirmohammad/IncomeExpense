@@ -44,12 +44,17 @@ fun NavigationUtilitySheets(
     if (showMarketListSheet) {
         val marketSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val activeMarketLists by dashboardViewModel.activeMarketLists.collectAsStateWithLifecycle()
+        val lastPurchasedRates by dashboardViewModel.lastPurchasedRates.collectAsStateWithLifecycle()
+        val productPriceInsights by dashboardViewModel.productPriceInsights.collectAsStateWithLifecycle()
         MarketListSheet(
             sheetState = marketSheetState,
             marketListWithItems = activeMarketList,
             activeMarketLists = activeMarketLists,
             currencySymbol = userProfile.currencySymbol,
             isBangla = strings.isBangla,
+            lastPurchasedRates = lastPurchasedRates,
+            productPriceInsights = productPriceInsights,
+            onFetchPriceHistory = { pName -> dashboardViewModel.getProductPriceHistory(pName) },
             onDismiss = {
                 scope.launch { marketSheetState.hide() }.invokeOnCompletion {
                     onCloseMarketList()

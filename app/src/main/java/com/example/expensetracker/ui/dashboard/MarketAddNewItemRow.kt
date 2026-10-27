@@ -45,7 +45,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.MarketListParser
+import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.MarketItem
+import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.UnitAndQuantityDialog
 import com.example.expensetracker.ui.components.rememberAppHaptics
@@ -56,7 +58,8 @@ fun MarketAddNewItemRow(
     isBangla: Boolean,
     onAddItem: (MarketItem) -> Unit,
     modifier: Modifier = Modifier,
-    existingItemNames: Set<String> = emptySet()
+    existingItemNames: Set<String> = emptySet(),
+    productPriceInsights: Map<String, ProductPriceInsight> = emptyMap()
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -182,6 +185,51 @@ fun MarketAddNewItemRow(
                             modifier = Modifier.size(17.dp)
                         )
                     }
+                }
+            }
+        }
+
+        // Smart live price estimation preview while typing!
+        val currentTypedClean = remember(newProductName) {
+            UnitConverterEngine.normalizeProductName(newProductName)
+        }
+        val matchedInsight = remember(currentTypedClean, productPriceInsights) {
+            if (currentTypedClean.isBlank()) null
+            else productPriceInsights[currentTypedClean]
+                ?: productPriceInsights.values.find { it.productName.contains(currentTypedClean) || currentTypedClean.contains(it.productName) }
+        }
+
+        if (matchedInsight != null) {
+            val estimatedCost = UnitConverterEngine.estimateCost(
+                matchedInsight.currentUnitPrice,
+                newProductQuantity,
+                newProductUnit
+            )
+            val estFormatted = if (estimatedCost % 1.0 == 0.0) estimatedCost.toInt().toString() else "%.0f".format(estimatedCost)
+            val estText = if (isBangla) com.example.expensetracker.ui.components.convertToBengaliDigits(estFormatted) else estFormatted
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = appColors.accent.copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = if (isBangla) "💡 পূর্বের দর: ${matchedInsight.formatUnitRate()}" else "💡 Last rate: ${matchedInsight.formatUnitRate()}",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = appColors.textSecondary
+                    )
+                    Text(
+                        text = if (isBangla) "সম্ভাব্য: ৳$estText" else "Est: ৳$estText",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
+                        color = appColors.accent
+                    )
                 }
             }
         }

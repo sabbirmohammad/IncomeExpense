@@ -1,7 +1,7 @@
 package com.example.expensetracker.data.local
 
 internal const val DATABASE_NAME = "expense_tracker.db"
-internal const val DATABASE_VERSION = 13
+internal const val DATABASE_VERSION = 14
 internal const val PREFS_NAME = "expense_tracker_secure_prefs"
 internal const val PREF_KEY_PRIVACY_MODE = "is_privacy_mode_enabled"
 internal const val PREF_KEY_LAST_BUDGET_PROMPT = "last_budget_prompt_month_key"
@@ -144,3 +144,17 @@ internal const val COL_MI_AMOUNT = "amount"
 internal const val COL_MI_IS_PURCHASED = "is_purchased"
 internal const val COL_MI_TRANSACTION_ID = "transaction_id"
 internal const val COL_MI_CREATED_AT = "created_at"
+
+// Table Product Price History
+internal const val TABLE_PRODUCT_PRICE_HISTORY = "product_price_history"
+internal const val COL_PPH_ID = "id"
+internal const val COL_PPH_PRODUCT_NAME = "product_name"
+internal const val COL_PPH_RAW_QUANTITY = "raw_quantity"
+internal const val COL_PPH_RAW_UNIT = "raw_unit"
+internal const val COL_PPH_BASE_QUANTITY = "base_quantity"
+internal const val COL_PPH_BASE_UNIT = "base_unit"
+internal const val COL_PPH_TOTAL_AMOUNT = "total_amount"
+internal const val COL_PPH_UNIT_PRICE = "unit_price"
+internal const val COL_PPH_MARKET_ITEM_ID = "market_item_id"
+internal const val COL_PPH_TRANSACTION_ID = "transaction_id"
+internal const val COL_PPH_TIMESTAMP = "timestamp"

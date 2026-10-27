@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,7 +53,8 @@ fun MarketSheetHeader(
     onDeleteList: (() -> Unit)? = null,
     currentListTitle: String? = null,
     activeListsCount: Int = 0,
-    onBackToLists: (() -> Unit)? = null
+    onBackToLists: (() -> Unit)? = null,
+    onOpenPriceInsights: (() -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -131,6 +133,16 @@ fun MarketSheetHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+                if (onOpenPriceInsights != null) {
+                    IconButton(onClick = onOpenPriceInsights) {
+                        Icon(
+                            imageVector = Icons.Outlined.TrendingUp,
+                            contentDescription = if (isBangla) "দরদাম ও ট্রেন্ড" else "Price Insights",
+                            tint = appColors.accent
+                        )
+                    }
+                }
+
                 if (onDeleteList != null) {
                     IconButton(onClick = onDeleteList) {
                         Icon(

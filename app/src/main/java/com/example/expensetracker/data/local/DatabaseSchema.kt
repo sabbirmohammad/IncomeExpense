@@ -15,6 +15,7 @@ internal object DatabaseSchema {
         createPayables(db)
         createSavingsGoals(db)
         createMarketListsAndItems(db)
+        createProductPriceHistory(db)
     }
 
     private fun createCategories(db: SQLiteDatabase) {
@@ -211,5 +212,25 @@ internal object DatabaseSchema {
         """.trimIndent())
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_market_items_list ON $TABLE_MARKET_ITEMS ($COL_MI_LIST_ID)")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_market_lists_completed ON $TABLE_MARKET_LISTS ($COL_ML_IS_COMPLETED)")
+    }
+
+    private fun createProductPriceHistory(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE $TABLE_PRODUCT_PRICE_HISTORY (
+                $COL_PPH_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_PPH_PRODUCT_NAME TEXT NOT NULL,
+                $COL_PPH_RAW_QUANTITY REAL NOT NULL,
+                $COL_PPH_RAW_UNIT TEXT NOT NULL,
+                $COL_PPH_BASE_QUANTITY REAL NOT NULL,
+                $COL_PPH_BASE_UNIT TEXT NOT NULL,
+                $COL_PPH_TOTAL_AMOUNT REAL NOT NULL,
+                $COL_PPH_UNIT_PRICE REAL NOT NULL,
+                $COL_PPH_MARKET_ITEM_ID INTEGER,
+                $COL_PPH_TRANSACTION_ID INTEGER,
+                $COL_PPH_TIMESTAMP INTEGER NOT NULL
+            )
+        """.trimIndent())
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_pph_name_time ON $TABLE_PRODUCT_PRICE_HISTORY ($COL_PPH_PRODUCT_NAME COLLATE NOCASE, $COL_PPH_TIMESTAMP DESC)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_pph_time ON $TABLE_PRODUCT_PRICE_HISTORY ($COL_PPH_TIMESTAMP DESC)")
     }
 }
