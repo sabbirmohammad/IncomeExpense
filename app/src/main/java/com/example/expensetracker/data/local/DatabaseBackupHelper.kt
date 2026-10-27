@@ -6,8 +6,14 @@ internal class DatabaseBackupHelper(private val dbHelper: ExpenseDatabaseHelper)
 
     fun createBackupPayload(): BackupPayload {
         val profile = dbHelper.getUserProfile()
+        val allMarketListsWithItems = dbHelper.getAllMarketLists()
+        val allLists = allMarketListsWithItems.map { it.list }
+        val allItems = allMarketListsWithItems.flatMap { it.items }
+        val masterProducts = dbHelper.getAllMasterProducts()
+        val allPriceHistory = masterProducts.flatMap { dbHelper.getProductPriceHistory(it.name, 100) }.distinctBy { it.id }
+
         return BackupPayload(
-            version = 4,
+            version = 5,
             exportDateMillis = System.currentTimeMillis(),
             profile = profile,
             categories = dbHelper.getAllCategories(),
@@ -17,7 +23,11 @@ internal class DatabaseBackupHelper(private val dbHelper: ExpenseDatabaseHelper)
             receivables = dbHelper.getAllReceivables(),
             recurringBills = dbHelper.getAllRecurringBills(),
             payables = dbHelper.getAllPayables(),
-            savingsGoals = dbHelper.getAllSavingsGoals()
+            savingsGoals = dbHelper.getAllSavingsGoals(),
+            marketLists = allLists,
+            marketItems = allItems,
+            masterProducts = masterProducts,
+            productPriceHistory = allPriceHistory
         )
     }
 

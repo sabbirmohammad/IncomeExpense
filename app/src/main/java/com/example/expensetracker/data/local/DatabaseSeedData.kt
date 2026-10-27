@@ -156,6 +156,7 @@ internal object DatabaseSeedData {
         db.insert(TABLE_BUDGETS, null, budgetCv)
 
         seedDefaultAccountsIfEmpty(db)
+        dbHelper.masterProductHelper.seedDefaultStaplesIfEmpty(db)
 
         val recCv = ContentValues().apply {
             put(COL_REC_PERSON_NAME, "Karim Ahmed")

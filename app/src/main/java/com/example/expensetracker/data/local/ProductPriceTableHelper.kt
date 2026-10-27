@@ -44,7 +44,11 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
             put(COL_PPH_TIMESTAMP, timestamp)
         }
 
-        return db.insert(TABLE_PRODUCT_PRICE_HISTORY, null, cv)
+        val insertId = db.insert(TABLE_PRODUCT_PRICE_HISTORY, null, cv)
+        if (insertId > 0) {
+            dbHelper.masterProductHelper.recordOrUpdateProduct(productName, rawQuantity, rawUnit, totalAmount, timestamp)
+        }
+        return insertId
     }
 
     /**
@@ -81,6 +85,7 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
                     put(COL_PPH_TIMESTAMP, timestamp)
                 }
                 db.insert(TABLE_PRODUCT_PRICE_HISTORY, null, cv)
+                dbHelper.masterProductHelper.recordOrUpdateProduct(item.name, item.quantity, item.unit, totalAmt, timestamp)
             }
             db.setTransactionSuccessful()
         } finally {
@@ -280,6 +285,7 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
                     put(COL_PPH_TIMESTAMP, createdAt)
                 }
                 db.insert(TABLE_PRODUCT_PRICE_HISTORY, null, cv)
+                dbHelper.masterProductHelper.recordOrUpdateProduct(rawName, rawQty, rawUnit, amount, createdAt)
             }
         }
     }

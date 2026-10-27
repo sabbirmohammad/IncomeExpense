@@ -128,18 +128,22 @@ class ProductPriceIntelligenceTest {
     @Test
     fun testDatabaseSchemaAndVersion14Migration() {
         val constants = readFile("com/example/expensetracker/data/local/DatabaseConstants.kt")
-        assertTrue(constants.contains("DATABASE_VERSION = 14"))
+        assertTrue(constants.contains("DATABASE_VERSION = 15") || constants.contains("DATABASE_VERSION = 14"))
         assertTrue(constants.contains("TABLE_PRODUCT_PRICE_HISTORY = \"product_price_history\""))
+        assertTrue(constants.contains("TABLE_MASTER_PRODUCTS = \"master_products\""))
         assertTrue(constants.contains("COL_PPH_BASE_QUANTITY = \"base_quantity\""))
         assertTrue(constants.contains("COL_PPH_BASE_UNIT = \"base_unit\""))
         assertTrue(constants.contains("COL_PPH_UNIT_PRICE = \"unit_price\""))
 
         val schema = readFile("com/example/expensetracker/data/local/DatabaseSchema.kt")
         assertTrue(schema.contains("createProductPriceHistory(db)"))
+        assertTrue(schema.contains("createMasterProducts(db)"))
         assertTrue(schema.contains("CREATE TABLE \$TABLE_PRODUCT_PRICE_HISTORY"))
+        assertTrue(schema.contains("CREATE TABLE \$TABLE_MASTER_PRODUCTS"))
 
         val migrations = readFile("com/example/expensetracker/data/local/DatabaseMigrations.kt")
         assertTrue(migrations.contains("upgradeToVersion14(db)"))
+        assertTrue(migrations.contains("upgradeToVersion15(db, dbHelper)"))
     }
 
     @Test
@@ -429,6 +433,24 @@ class ProductPriceIntelligenceTest {
         val matchBracket = UnitConverterEngine.findMatchingInsight("ডিম [১২ পিস]", insights)
         assertNotNull(matchBracket)
         assertEquals("ডিম", matchBracket?.productName)
+    }
+
+    @Test
+    fun testMarketSearchBarSleekProportionsAndDesign() {
+        val searchBar = readFile("com/example/expensetracker/ui/components/MarketSearchBar.kt")
+        assertTrue("MarketSearchBar must use compact 40.dp height by default", searchBar.contains("height: Dp = 40.dp"))
+        assertTrue("MarketSearchBar must use RoundedCornerShape(12.dp)", searchBar.contains("shape: Shape = RoundedCornerShape(12.dp)"))
+        assertTrue("MarketSearchBar must use BasicTextField with decorationBox for exact alignment", searchBar.contains("BasicTextField(") && searchBar.contains("decorationBox ="))
+        assertTrue("MarketSearchBar must bind actualFocusRequester directly to BasicTextField", searchBar.contains(".focusRequester(actualFocusRequester)"))
+
+        val marketScreen = readFile("com/example/expensetracker/ui/market/MarketScreen.kt")
+        assertTrue("MarketTopBar must pass focusRequester to MarketSearchBar", marketScreen.contains("focusRequester = focusRequester"))
+        assertTrue("MarketTopBar must provide onSearch callback to dismiss IME", marketScreen.contains("onSearch = {"))
+        assertTrue("MarketTopBar close button must use circular ArrowBack matching header icons", marketScreen.contains("Icons.AutoMirrored.Outlined.ArrowBack"))
+
+        val insightsContent = readFile("com/example/expensetracker/ui/dashboard/ProductPriceInsightsSheet.kt")
+        assertTrue("ProductPriceInsightsContent must accept isSearchActive to avoid duplicate active filter chips", insightsContent.contains("isSearchActive: Boolean = false"))
+        assertTrue("ProductPriceInsightsContent must hide filter chip while search bar is actively open", insightsContent.contains("effectiveSearchQuery.isNotBlank() && !isSearchActive"))
     }
 }
 

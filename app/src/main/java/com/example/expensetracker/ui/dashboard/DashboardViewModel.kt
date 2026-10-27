@@ -49,6 +49,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val activeMarketLists: StateFlow<List<MarketListWithItems>> = repository.activeMarketLists
     val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = repository.lastPurchasedRates
     val productPriceInsights: StateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>> = repository.productPriceInsights
+    val masterProducts: StateFlow<List<com.example.expensetracker.data.model.MasterProduct>> = repository.masterProducts
+    val stapleProducts: StateFlow<List<com.example.expensetracker.data.model.MasterProduct>> = repository.stapleProducts
 
     private val _summary = MutableStateFlow(FinancialSummary())
     val summary: StateFlow<FinancialSummary> = _summary.asStateFlow()

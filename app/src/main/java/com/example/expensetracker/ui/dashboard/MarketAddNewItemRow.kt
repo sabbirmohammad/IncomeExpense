@@ -61,6 +61,7 @@ fun MarketAddNewItemRow(
     modifier: Modifier = Modifier,
     existingItemNames: Set<String> = emptySet(),
     productPriceInsights: Map<String, ProductPriceInsight> = emptyMap(),
+    stapleProducts: List<com.example.expensetracker.data.model.MasterProduct> = emptyList(),
     currencySymbol: String = "৳"
 ) {
     val appColors = LocalAppColors.current
@@ -217,32 +218,58 @@ fun MarketAddNewItemRow(
             Spacer(modifier = Modifier.height(4.dp))
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = appColors.accent.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                color = if (matchedInsight.isPriceUp && matchedInsight.percentDiff >= 20.0) appColors.expense.copy(alpha = 0.08f) else appColors.accent.copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, if (matchedInsight.isPriceUp && matchedInsight.percentDiff >= 20.0) appColors.expense.copy(alpha = 0.35f) else appColors.accent.copy(alpha = 0.25f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = if (isBangla) "💡 পূর্বের দর: $currencySymbol$rateNum/${matchedInsight.baseUnit}" else "💡 Last rate: $currencySymbol$rateNum/${matchedInsight.baseUnit}",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = appColors.textSecondary
-                    )
-                    Text(
-                        text = if (isBangla) "সম্ভাব্য: $currencySymbol$estText" else "Est: $currencySymbol$estText",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
-                        color = appColors.accent
-                    )
+                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (isBangla) "পূর্বের দর: $currencySymbol$rateNum/${matchedInsight.baseUnit}" else "Last rate: $currencySymbol$rateNum/${matchedInsight.baseUnit}",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            color = appColors.textSecondary
+                        )
+                        Text(
+                            text = if (isBangla) "সম্ভাব্য: $currencySymbol$estText" else "Est: $currencySymbol$estText",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
+                            color = appColors.accent
+                        )
+                    }
+
+                    // Price Spike Warning Alert (No sparkles, clean warning)
+                    if (matchedInsight.isPriceUp && matchedInsight.percentDiff >= 20.0) {
+                        val pctFormatted = if (matchedInsight.percentDiff % 1.0 == 0.0) matchedInsight.percentDiff.toInt().toString() else "%.0f".format(matchedInsight.percentDiff)
+                        val pctNum = if (isBangla) convertToBengaliDigits(pctFormatted) else pctFormatted
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (isBangla) "সতর্কতা: গতবারের চেয়ে দর $pctNum% বেশি ছিল" else "Notice: Prior rate jumped by $pctNum%",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = appColors.expense
+                        )
+                    }
                 }
             }
         }
 
-        // Quick Suggestions Row
-        val quickSuggestions = remember(isBangla) {
-            if (isBangla) {
+        // Quick Suggestions Row (Powered by Master Product Staples & Frequent Items)
+        val quickSuggestions = remember(isBangla, stapleProducts) {
+            if (stapleProducts.isNotEmpty()) {
+                stapleProducts.map { mp ->
+                    val defaultQty = when (mp.defaultUnit) {
+                        "গ্রাম", "gm", "g" -> 250.0
+                        "ডজন", "dozen" -> 1.0
+                        else -> 1.0
+                    }
+                    Triple(mp.name, defaultQty, mp.defaultUnit)
+                }
+            } else if (isBangla) {
                 listOf(
                     Triple("আলু", 1.0, "কেজি"),
                     Triple("পেঁয়াজ", 1.0, "কেজি"),

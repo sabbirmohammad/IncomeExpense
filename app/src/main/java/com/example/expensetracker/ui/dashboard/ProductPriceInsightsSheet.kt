@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -64,6 +65,7 @@ import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.data.model.ProductPriceRecord
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
+import com.example.expensetracker.ui.components.MarketSearchBar
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
@@ -117,6 +119,7 @@ fun ProductPriceInsightsContent(
     showInternalSearchBar: Boolean = true,
     showHeader: Boolean = onClose != null,
     onOpenSearch: (() -> Unit)? = null,
+    isSearchActive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
@@ -317,50 +320,19 @@ fun ProductPriceInsightsContent(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Search Bar
-                OutlinedTextField(
-                    value = effectiveSearchQuery,
-                    onValueChange = updateSearchQuery,
-                    placeholder = {
-                        Text(
-                            text = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
-                            fontSize = 13.sp,
-                            color = appColors.textSecondary.copy(alpha = 0.6f)
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = appColors.textSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    trailingIcon = {
-                        if (effectiveSearchQuery.isNotBlank()) {
-                            IconButton(onClick = { updateSearchQuery("") }) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Clear",
-                                    tint = appColors.textSecondary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    },
+                MarketSearchBar(
+                    query = effectiveSearchQuery,
+                    onQueryChange = updateSearchQuery,
+                    placeholder = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp),
-                    singleLine = true,
+                    height = 40.dp,
                     shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = appColors.accent,
-                        unfocusedBorderColor = appColors.border,
-                        focusedContainerColor = appColors.surface,
-                        unfocusedContainerColor = appColors.surface
-                    )
+                    onClear = { updateSearchQuery("") }
                 )
-            } else if (effectiveSearchQuery.isNotBlank()) {
-                // When search is handled in top bar, show active filter chip
+            } else if (effectiveSearchQuery.isNotBlank() && !isSearchActive) {
+                // When search is handled in top bar and search bar is closed, show active filter chip
                 Spacer(modifier = Modifier.height(8.dp))
                 Surface(
                     onClick = {
@@ -402,15 +374,19 @@ fun ProductPriceInsightsContent(
                             )
                         }
 
-                        IconButton(
-                            onClick = { updateSearchQuery("") },
-                            modifier = Modifier.size(22.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(appColors.accent.copy(alpha = 0.15f))
+                                .clickable { updateSearchQuery("") },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Clear search",
                                 tint = appColors.accent,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(13.dp)
                             )
                         }
                     }
@@ -586,16 +562,53 @@ private fun ProductPriceItemCard(
             ) {
                 // Left: Product Name & Category
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = insight.productName.replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
-                        ),
-                        color = appColors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = insight.productName.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            ),
+                            color = appColors.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (insight.purchaseCount <= 1) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = appColors.accent.copy(alpha = 0.12f),
+                                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f))
+                            ) {
+                                Text(
+                                    text = if (isBangla) "নতুন" else "New",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = appColors.accent,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                )
+                            }
+                        } else if (insight.purchaseCount >= 3) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = appColors.surfaceVariant
+                            ) {
+                                Text(
+                                    text = if (isBangla) "সচরাচর" else "Staple",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = appColors.textSecondary,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isBangla) "${convertToBengaliDigits(insight.purchaseCount.toString())} বার কেনা হয়েছে"

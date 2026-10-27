@@ -26,5 +26,9 @@ data class BackupPayload(
     val receivables: List<Receivable> = emptyList(),
     val recurringBills: List<RecurringBill> = emptyList(),
     val payables: List<Payable> = emptyList(),
-    val savingsGoals: List<SavingsGoal> = emptyList()
+    val savingsGoals: List<SavingsGoal> = emptyList(),
+    val marketLists: List<MarketList> = emptyList(),
+    val marketItems: List<MarketItem> = emptyList(),
+    val masterProducts: List<MasterProduct> = emptyList(),
+    val productPriceHistory: List<ProductPriceRecord> = emptyList()
 )

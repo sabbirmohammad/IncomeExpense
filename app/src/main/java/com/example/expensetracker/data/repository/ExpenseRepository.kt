@@ -99,6 +99,12 @@ class ExpenseRepository private constructor(context: Context) {
     internal val _productPriceInsights = MutableStateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>>(emptyMap())
     val productPriceInsights: StateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>> = _productPriceInsights.asStateFlow()
 
+    internal val _masterProducts = MutableStateFlow<List<com.example.expensetracker.data.model.MasterProduct>>(emptyList())
+    val masterProducts: StateFlow<List<com.example.expensetracker.data.model.MasterProduct>> = _masterProducts.asStateFlow()
+
+    internal val _stapleProducts = MutableStateFlow<List<com.example.expensetracker.data.model.MasterProduct>>(emptyList())
+    val stapleProducts: StateFlow<List<com.example.expensetracker.data.model.MasterProduct>> = _stapleProducts.asStateFlow()
+
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -176,6 +182,12 @@ class ExpenseRepository private constructor(context: Context) {
         val insights = dbHelper.getAllProductPriceInsights()
         _productPriceInsights.value = insights
         _lastPurchasedRates.value = insights.mapValues { Pair(it.value.currentUnitPrice, it.value.baseUnit) }
+        refreshMasterProducts()
+    }
+
+    fun refreshMasterProducts() {
+        _masterProducts.value = dbHelper.getAllMasterProducts()
+        _stapleProducts.value = dbHelper.getStapleProducts(15)
     }
 
     fun refreshAll() {

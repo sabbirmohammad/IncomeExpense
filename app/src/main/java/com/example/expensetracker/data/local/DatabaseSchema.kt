@@ -16,6 +16,7 @@ internal object DatabaseSchema {
         createSavingsGoals(db)
         createMarketListsAndItems(db)
         createProductPriceHistory(db)
+        createMasterProducts(db)
     }
 
     private fun createCategories(db: SQLiteDatabase) {
@@ -232,5 +233,29 @@ internal object DatabaseSchema {
         """.trimIndent())
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_pph_name_time ON $TABLE_PRODUCT_PRICE_HISTORY ($COL_PPH_PRODUCT_NAME COLLATE NOCASE, $COL_PPH_TIMESTAMP DESC)")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_pph_time ON $TABLE_PRODUCT_PRICE_HISTORY ($COL_PPH_TIMESTAMP DESC)")
+    }
+
+    private fun createMasterProducts(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE $TABLE_MASTER_PRODUCTS (
+                $COL_MP_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_MP_NAME TEXT NOT NULL,
+                $COL_MP_NORMALIZED_NAME TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                $COL_MP_CATEGORY TEXT NOT NULL,
+                $COL_MP_DEFAULT_UNIT TEXT NOT NULL,
+                $COL_MP_LATEST_UNIT_PRICE REAL NOT NULL DEFAULT 0.0,
+                $COL_MP_PREVIOUS_UNIT_PRICE REAL,
+                $COL_MP_MIN_UNIT_PRICE REAL NOT NULL DEFAULT 0.0,
+                $COL_MP_MAX_UNIT_PRICE REAL NOT NULL DEFAULT 0.0,
+                $COL_MP_AVG_UNIT_PRICE REAL NOT NULL DEFAULT 0.0,
+                $COL_MP_PURCHASE_COUNT INTEGER NOT NULL DEFAULT 1,
+                $COL_MP_IS_STAPLE INTEGER NOT NULL DEFAULT 0,
+                $COL_MP_FIRST_PURCHASED_AT INTEGER NOT NULL,
+                $COL_MP_LAST_PURCHASED_AT INTEGER NOT NULL
+            )
+        """.trimIndent())
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_mp_norm_name ON $TABLE_MASTER_PRODUCTS ($COL_MP_NORMALIZED_NAME)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_mp_staple_count ON $TABLE_MASTER_PRODUCTS ($COL_MP_IS_STAPLE, $COL_MP_PURCHASE_COUNT DESC)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_mp_last_purchased ON $TABLE_MASTER_PRODUCTS ($COL_MP_LAST_PURCHASED_AT DESC)")
     }
 }

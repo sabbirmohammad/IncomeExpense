@@ -73,6 +73,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,6 +87,7 @@ import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.MarketSearchBar
 import com.example.expensetracker.ui.components.UnitAndQuantityDialog
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
@@ -121,6 +124,7 @@ fun MarketScreen(
     val activeMarketList by dashboardViewModel.activeMarketList.collectAsStateWithLifecycle()
     val lastPurchasedRates by dashboardViewModel.lastPurchasedRates.collectAsStateWithLifecycle()
     val productPriceInsights by dashboardViewModel.productPriceInsights.collectAsStateWithLifecycle()
+    val stapleProducts by dashboardViewModel.stapleProducts.collectAsStateWithLifecycle()
     val userProfile by dashboardViewModel.userProfile.collectAsStateWithLifecycle()
 
     val isBangla = strings.isBangla
@@ -207,6 +211,7 @@ fun MarketScreen(
                     isBangla = isBangla,
                     lastPurchasedRates = lastPurchasedRates,
                     productPriceInsights = productPriceInsights,
+                    stapleProducts = stapleProducts,
                     onSelectList = { listWithItems -> selectedListId = listWithItems.list.id },
                     onBackToAllLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) {
                         { selectedListId = null }
@@ -251,6 +256,8 @@ fun MarketScreen(
                     onSearchQueryChange = { priceSearchQuery = it },
                     showInternalSearchBar = false,
                     showHeader = true,
+                    onOpenSearch = { isPriceSearchActive = true },
+                    isSearchActive = isPriceSearchActive,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -484,10 +491,13 @@ private fun MarketTopBar(
     val appColors = LocalAppColors.current
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(isSearchActive, selectedTab) {
         if (isSearchActive && selectedTab == 1) {
+            delay(50)
             focusRequester.requestFocus()
+            keyboardController?.show()
         }
     }
 
@@ -509,52 +519,25 @@ private fun MarketTopBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        placeholder = {
-                            Text(
-                                text = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
-                                fontSize = 13.sp,
-                                color = appColors.textSecondary.copy(alpha = 0.6f)
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = appColors.accent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { onSearchQueryChange("") }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Clear",
-                                        tint = appColors.textSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focusRequester),
-                        singleLine = true,
+                    MarketSearchBar(
+                        query = searchQuery,
+                        onQueryChange = onSearchQueryChange,
+                        placeholder = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
+                        modifier = Modifier.weight(1f),
+                        height = 40.dp,
                         shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = appColors.accent,
-                            unfocusedBorderColor = appColors.border,
-                            focusedContainerColor = appColors.surface,
-                            unfocusedContainerColor = appColors.surface
-                        )
+                        focusRequester = focusRequester,
+                        onClear = { onSearchQueryChange("") },
+                        onSearch = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                        }
                     )
 
                     IconButton(
                         onClick = {
                             focusManager.clearFocus()
+                            keyboardController?.hide()
                             onSearchActiveChange(false)
                         },
                         modifier = Modifier
@@ -566,7 +549,7 @@ private fun MarketTopBar(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = if (isBangla) "অনুসন্ধান বন্ধ করুন" else "Close search",
                             tint = appColors.textPrimary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -826,6 +809,7 @@ private fun MarketListsTabContent(
     isBangla: Boolean,
     lastPurchasedRates: Map<String, Pair<Double, String>>,
     productPriceInsights: Map<String, ProductPriceInsight>,
+    stapleProducts: List<com.example.expensetracker.data.model.MasterProduct> = emptyList(),
     onSelectList: (MarketListWithItems) -> Unit,
     onBackToAllLists: (() -> Unit)?,
     onCreateNewClick: () -> Unit,
@@ -1177,6 +1161,7 @@ private fun MarketListsTabContent(
                         },
                         existingItemNames = items.map { it.name.lowercase() }.toSet(),
                         productPriceInsights = productPriceInsights,
+                        stapleProducts = stapleProducts,
                         currencySymbol = currencySymbol
                     )
                 }

@@ -19,6 +19,8 @@ internal object DatabaseRestoreHelper {
             restoreRecurringBills(db, payload, dbHelper)
             restorePayables(db, payload)
             restoreSavingsGoals(db, payload)
+            restoreMarketListsAndItems(db, payload)
+            restorePriceHistoryAndMasterProducts(db, payload, dbHelper)
 
             dbHelper.recalculateAllAccountBalances(db)
             db.setTransactionSuccessful()
@@ -223,6 +225,86 @@ internal object DatabaseRestoreHelper {
                 put(COL_GOAL_IS_COMPLETED, if (g.isCompleted) 1 else 0)
             }
             db.insert(TABLE_SAVINGS_GOALS, null, cv)
+        }
+    }
+
+    private fun restoreMarketListsAndItems(db: SQLiteDatabase, payload: BackupPayload) {
+        if (payload.marketLists.isNotEmpty()) {
+            db.delete(TABLE_MARKET_LISTS, null, null)
+            for (ml in payload.marketLists) {
+                val cv = ContentValues().apply {
+                    put(COL_ML_ID, ml.id)
+                    put(COL_ML_TITLE, ml.title)
+                    put(COL_ML_CREATED_AT, ml.createdAt)
+                    put(COL_ML_IS_COMPLETED, if (ml.isCompleted) 1 else 0)
+                }
+                db.insert(TABLE_MARKET_LISTS, null, cv)
+            }
+        }
+        if (payload.marketItems.isNotEmpty()) {
+            db.delete(TABLE_MARKET_ITEMS, null, null)
+            for (item in payload.marketItems) {
+                val cv = ContentValues().apply {
+                    put(COL_MI_ID, item.id)
+                    put(COL_MI_LIST_ID, item.listId)
+                    put(COL_MI_NAME, item.name)
+                    put(COL_MI_QUANTITY, item.quantity)
+                    put(COL_MI_UNIT, item.unit)
+                    if (item.amount != null) put(COL_MI_AMOUNT, item.amount) else putNull(COL_MI_AMOUNT)
+                    put(COL_MI_IS_PURCHASED, if (item.isPurchased) 1 else 0)
+                    if (item.transactionId != null) put(COL_MI_TRANSACTION_ID, item.transactionId) else putNull(COL_MI_TRANSACTION_ID)
+                    put(COL_MI_CREATED_AT, item.createdAt)
+                }
+                db.insert(TABLE_MARKET_ITEMS, null, cv)
+            }
+        }
+    }
+
+    private fun restorePriceHistoryAndMasterProducts(db: SQLiteDatabase, payload: BackupPayload, dbHelper: ExpenseDatabaseHelper) {
+        if (payload.productPriceHistory.isNotEmpty()) {
+            db.delete(TABLE_PRODUCT_PRICE_HISTORY, null, null)
+            for (pph in payload.productPriceHistory) {
+                val cv = ContentValues().apply {
+                    put(COL_PPH_ID, pph.id)
+                    put(COL_PPH_PRODUCT_NAME, pph.productName)
+                    put(COL_PPH_RAW_QUANTITY, pph.rawQuantity)
+                    put(COL_PPH_RAW_UNIT, pph.rawUnit)
+                    put(COL_PPH_BASE_QUANTITY, pph.baseQuantity)
+                    put(COL_PPH_BASE_UNIT, pph.baseUnit)
+                    put(COL_PPH_TOTAL_AMOUNT, pph.totalAmount)
+                    put(COL_PPH_UNIT_PRICE, pph.unitPrice)
+                    if (pph.marketItemId != null) put(COL_PPH_MARKET_ITEM_ID, pph.marketItemId) else putNull(COL_PPH_MARKET_ITEM_ID)
+                    if (pph.transactionId != null) put(COL_PPH_TRANSACTION_ID, pph.transactionId) else putNull(COL_PPH_TRANSACTION_ID)
+                    put(COL_PPH_TIMESTAMP, pph.timestamp)
+                }
+                db.insert(TABLE_PRODUCT_PRICE_HISTORY, null, cv)
+            }
+        }
+
+        if (payload.masterProducts.isNotEmpty()) {
+            db.delete(TABLE_MASTER_PRODUCTS, null, null)
+            for (mp in payload.masterProducts) {
+                val cv = ContentValues().apply {
+                    put(COL_MP_ID, mp.id)
+                    put(COL_MP_NAME, mp.name)
+                    put(COL_MP_NORMALIZED_NAME, mp.normalizedName)
+                    put(COL_MP_CATEGORY, mp.category)
+                    put(COL_MP_DEFAULT_UNIT, mp.defaultUnit)
+                    put(COL_MP_LATEST_UNIT_PRICE, mp.latestUnitPrice)
+                    if (mp.previousUnitPrice != null) put(COL_MP_PREVIOUS_UNIT_PRICE, mp.previousUnitPrice) else putNull(COL_MP_PREVIOUS_UNIT_PRICE)
+                    put(COL_MP_MIN_UNIT_PRICE, mp.minUnitPrice)
+                    put(COL_MP_MAX_UNIT_PRICE, mp.maxUnitPrice)
+                    put(COL_MP_AVG_UNIT_PRICE, mp.avgUnitPrice)
+                    put(COL_MP_PURCHASE_COUNT, mp.purchaseCount)
+                    put(COL_MP_IS_STAPLE, if (mp.isStaple) 1 else 0)
+                    put(COL_MP_FIRST_PURCHASED_AT, mp.firstPurchasedAt)
+                    put(COL_MP_LAST_PURCHASED_AT, mp.lastPurchasedAt)
+                }
+                db.insert(TABLE_MASTER_PRODUCTS, null, cv)
+            }
+        } else {
+            dbHelper.masterProductHelper.backfillFromPriceHistory(db)
+            dbHelper.masterProductHelper.seedDefaultStaplesIfEmpty(db)
         }
     }
 }

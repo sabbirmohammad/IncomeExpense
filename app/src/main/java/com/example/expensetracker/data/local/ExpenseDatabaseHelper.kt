@@ -14,6 +14,7 @@ import com.example.expensetracker.data.model.DebtBookSummary
 import com.example.expensetracker.data.model.FinancialSummary
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.MarketListWithItems
+import com.example.expensetracker.data.model.MasterProduct
 import com.example.expensetracker.data.model.Payable
 import com.example.expensetracker.data.model.PayablesSummary
 import com.example.expensetracker.data.model.PaymentMethod
@@ -49,6 +50,7 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
         const val TABLE_MARKET_LISTS = com.example.expensetracker.data.local.TABLE_MARKET_LISTS
         const val TABLE_MARKET_ITEMS = com.example.expensetracker.data.local.TABLE_MARKET_ITEMS
         const val TABLE_PRODUCT_PRICE_HISTORY = com.example.expensetracker.data.local.TABLE_PRODUCT_PRICE_HISTORY
+        const val TABLE_MASTER_PRODUCTS = com.example.expensetracker.data.local.TABLE_MASTER_PRODUCTS
     }
 
     internal val prefsHelper = UserPreferencesHelper(context)
@@ -66,6 +68,7 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     internal val billSplitHelper = BillSplitHelper(this)
     internal val marketHelper = MarketTableHelper(this)
     internal val productPriceHelper = ProductPriceTableHelper(this)
+    internal val masterProductHelper = MasterProductTableHelper(this)
     internal val backupHelper = DatabaseBackupHelper(this)
 
     override fun onConfigure(db: SQLiteDatabase) {
@@ -257,4 +260,26 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
 
     fun backfillProductPriceHistory(db: SQLiteDatabase) =
         productPriceHelper.backfillProductPriceHistory(db)
+
+    // --- Master Product Catalog Operations ---
+    fun getAllMasterProducts(): List<MasterProduct> =
+        masterProductHelper.getAllMasterProducts()
+
+    fun getStapleProducts(limit: Int = 15): List<MasterProduct> =
+        masterProductHelper.getStapleProducts(limit)
+
+    fun getMasterProductByName(name: String): MasterProduct? =
+        masterProductHelper.getMasterProductByName(name)
+
+    fun searchMasterProducts(query: String, limit: Int = 20): List<MasterProduct> =
+        masterProductHelper.searchMasterProducts(query, limit)
+
+    fun recordOrUpdateMasterProduct(
+        productName: String,
+        rawQuantity: Double,
+        rawUnit: String,
+        totalAmount: Double,
+        timestamp: Long = System.currentTimeMillis()
+    ): Pair<MasterProduct, Boolean>? =
+        masterProductHelper.recordOrUpdateProduct(productName, rawQuantity, rawUnit, totalAmount, timestamp)
 }

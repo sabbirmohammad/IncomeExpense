@@ -1,7 +1,7 @@
 package com.example.expensetracker.data.local
 
 internal const val DATABASE_NAME = "expense_tracker.db"
-internal const val DATABASE_VERSION = 14
+internal const val DATABASE_VERSION = 15
 internal const val PREFS_NAME = "expense_tracker_secure_prefs"
 internal const val PREF_KEY_PRIVACY_MODE = "is_privacy_mode_enabled"
 internal const val PREF_KEY_LAST_BUDGET_PROMPT = "last_budget_prompt_month_key"
@@ -158,3 +158,20 @@ internal const val COL_PPH_UNIT_PRICE = "unit_price"
 internal const val COL_PPH_MARKET_ITEM_ID = "market_item_id"
 internal const val COL_PPH_TRANSACTION_ID = "transaction_id"
 internal const val COL_PPH_TIMESTAMP = "timestamp"
+
+// Table Master Products
+internal const val TABLE_MASTER_PRODUCTS = "master_products"
+internal const val COL_MP_ID = "id"
+internal const val COL_MP_NAME = "name"
+internal const val COL_MP_NORMALIZED_NAME = "normalized_name"
+internal const val COL_MP_CATEGORY = "category"
+internal const val COL_MP_DEFAULT_UNIT = "default_unit"
+internal const val COL_MP_LATEST_UNIT_PRICE = "latest_unit_price"
+internal const val COL_MP_PREVIOUS_UNIT_PRICE = "previous_unit_price"
+internal const val COL_MP_MIN_UNIT_PRICE = "min_unit_price"
+internal const val COL_MP_MAX_UNIT_PRICE = "max_unit_price"
+internal const val COL_MP_AVG_UNIT_PRICE = "avg_unit_price"
+internal const val COL_MP_PURCHASE_COUNT = "purchase_count"
+internal const val COL_MP_IS_STAPLE = "is_staple"
+internal const val COL_MP_FIRST_PURCHASED_AT = "first_purchased_at"
+internal const val COL_MP_LAST_PURCHASED_AT = "last_purchased_at"
