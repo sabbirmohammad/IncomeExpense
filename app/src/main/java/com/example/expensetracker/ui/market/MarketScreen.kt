@@ -34,10 +34,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Checklist
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingBag
@@ -235,18 +237,7 @@ fun MarketScreen(
                     },
                     onUpdateItem = { item -> dashboardViewModel.updateMarketItem(item) },
                     onDeleteItemClick = { item ->
-                        val listId = currentViewingList?.list?.id ?: item.listId
-                        dashboardViewModel.deleteMarketItem(item.id)
-                        coroutineScope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = if (isBangla) "'${item.name}' মুছে ফেলা হয়েছে" else "'${item.name}' deleted",
-                                actionLabel = if (isBangla) "পূর্বাবস্থায় আনুন" else "Undo",
-                                duration = SnackbarDuration.Short
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                dashboardViewModel.addMarketItem(item, listId)
-                            }
-                        }
+                        itemToDeleteConfirm = item
                     },
                     onUnitClick = { item -> itemForUnitDialog = item },
                     onSubstituteClick = { item -> itemToSubstitute = item },
@@ -910,6 +901,9 @@ private fun MarketListsTabContent(
     } else if (currentViewingList != null) {
         // Single List Active Shopping Mode
         val items = currentViewingList.items
+        var isEditMode by remember(currentViewingList.list.id) { mutableStateOf(items.isEmpty()) }
+        val effectiveEditMode = isEditMode || items.isEmpty()
+
         val totalCount = items.size
         val purchasedCount = items.count { it.isPurchased }
         val totalSpent = items.filter { it.isPurchased }.sumOf { it.amount ?: 0.0 }
@@ -998,17 +992,110 @@ private fun MarketListsTabContent(
                     )
                 }
 
-                // Delete current list action
-                IconButton(
-                    onClick = { onDeleteListClick(currentViewingList.list.id) },
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DeleteOutline,
-                        contentDescription = "Delete List",
-                        tint = appColors.expense.copy(alpha = 0.8f),
-                        modifier = Modifier.size(18.dp)
-                    )
+                if (!effectiveEditMode) {
+                    // Normal / Shopping Mode: Show "Edit" button
+                    Surface(
+                        onClick = {
+                            haptics.lightTick()
+                            isEditMode = true
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        color = appColors.accent.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = if (isBangla) "ফর্দ সম্পাদনা" else "Edit List",
+                                tint = appColors.accent,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = if (isBangla) "এডিট" else "Edit",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = appColors.accent
+                            )
+                        }
+                    }
+                } else {
+                    // Edit Mode: Show "Delete List" and "Done" button
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Delete current list action (only in Edit Mode!)
+                        Surface(
+                            onClick = {
+                                haptics.mediumClick()
+                                onDeleteListClick(currentViewingList.list.id)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = appColors.expense.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteOutline,
+                                    contentDescription = if (isBangla) "ফর্দ মুছুন" else "Delete List",
+                                    tint = appColors.expense,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = if (isBangla) "মুছুন" else "Delete",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    color = appColors.expense
+                                )
+                            }
+                        }
+
+                        // Done button to exit Edit Mode (only if list is not empty)
+                        if (items.isNotEmpty()) {
+                            Surface(
+                                onClick = {
+                                    haptics.lightTick()
+                                    isEditMode = false
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                color = appColors.income,
+                                shadowElevation = 1.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = if (isBangla) "সম্পন্ন" else "Done",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = if (isBangla) "সম্পন্ন" else "Done",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1140,34 +1227,77 @@ private fun MarketListsTabContent(
                             }
                         },
                         onDeleteClick = { onDeleteItemClick(item) },
+                        onRequestDelete = { onDeleteItemClick(item) },
                         onSubstituteClick = { onSubstituteClick(item) },
+                        isEditMode = effectiveEditMode,
                         lastRateText = lastRateText,
                         priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
                     )
                 }
 
-                // Add item row at the end of the list
-                item {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    MarketAddNewItemRow(
-                        listId = currentViewingList.list.id,
-                        isBangla = isBangla,
-                        onAddItem = { newItem ->
-                            onAddItem(newItem, currentViewingList.list.id)
-                        },
-                        existingItemNames = items.map { it.name.lowercase() }.toSet(),
-                        productPriceInsights = productPriceInsights,
-                        stapleProducts = stapleProducts,
-                        currencySymbol = currencySymbol
-                    )
+                // In Edit Mode: Show MarketAddNewItemRow
+                if (effectiveEditMode) {
+                    item {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        MarketAddNewItemRow(
+                            listId = currentViewingList.list.id,
+                            isBangla = isBangla,
+                            onAddItem = { newItem ->
+                                onAddItem(newItem, currentViewingList.list.id)
+                            },
+                            existingItemNames = items.map { it.name.lowercase() }.toSet(),
+                            productPriceInsights = productPriceInsights,
+                            stapleProducts = stapleProducts,
+                            currencySymbol = currencySymbol
+                        )
+                    }
+                } else if (items.isNotEmpty()) {
+                    // In View Mode: At the bottom of the list, an elegant button to enter Edit Mode
+                    item {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            onClick = {
+                                haptics.lightTick()
+                                isEditMode = true
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = appColors.surface,
+                            border = BorderStroke(1.dp, appColors.border),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 11.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Edit,
+                                    contentDescription = null,
+                                    tint = appColors.accent,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (isBangla) "পণ্য যোগ বা ফর্দ এডিট করতে ট্যাপ করুন" else "Tap to add items or edit list",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 12.5.sp
+                                    ),
+                                    color = appColors.accent
+                                )
+                            }
+                        }
+                    }
                 }
 
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                // Finish Trip Button inside scroll list
-                if (items.isNotEmpty()) {
+                // Finish Trip Button inside scroll list (Only in View Mode when items are present)
+                if (items.isNotEmpty() && !effectiveEditMode) {
                     item {
                         MarketFinishButton(
                             isBangla = isBangla,

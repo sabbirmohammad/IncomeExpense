@@ -504,4 +504,61 @@ class MultiMarketListAndItemUxTest {
         assertTrue(text.contains("⏳ বাকি আছে: ১টি পণ্য"))
         assertTrue(text.contains("🎯 বাজেট: ৳৫০০ (অবশিষ্ট: ৳৪০০)"))
     }
+
+    @Test
+    fun testMarketEditingModeSeparationAndSafety() {
+        val screenContent = readFile("com/example/expensetracker/ui/market/MarketScreen.kt")
+        val itemRowContent = readFile("com/example/expensetracker/ui/dashboard/MarketItemRow.kt")
+
+        // 1. MarketScreen tracks isEditMode and effectiveEditMode
+        assertTrue(
+            "MarketScreen must track isEditMode initialized with items.isEmpty()",
+            screenContent.contains("var isEditMode by remember(currentViewingList.list.id) { mutableStateOf(items.isEmpty()) }")
+        )
+        assertTrue(
+            "MarketScreen must compute effectiveEditMode",
+            screenContent.contains("val effectiveEditMode = isEditMode || items.isEmpty()")
+        )
+
+        // 2. Edit button in view mode, Delete List & Done in edit mode
+        assertTrue(
+            "MarketScreen must feature Edit mode button in normal shopping mode",
+            screenContent.contains("!effectiveEditMode") &&
+            screenContent.contains("isEditMode = true")
+        )
+        assertTrue(
+            "MarketScreen must show Delete List and Done button in edit mode",
+            screenContent.contains("onDeleteListClick(currentViewingList.list.id)") &&
+            screenContent.contains("isEditMode = false")
+        )
+
+        // 3. MarketAddNewItemRow must be guarded by effectiveEditMode
+        assertTrue(
+            "MarketAddNewItemRow must only be displayed in effectiveEditMode",
+            screenContent.contains("if (effectiveEditMode) {") &&
+            screenContent.contains("MarketAddNewItemRow(")
+        )
+
+        // 4. View mode provides bottom trigger for editing
+        assertTrue(
+            "MarketScreen provides bottom trigger to easily enter edit mode",
+            screenContent.contains("পণ্য যোগ বা ফর্দ এডিট করতে ট্যাপ করুন") &&
+            screenContent.contains("Tap to add items or edit list")
+        )
+
+        // 5. MarketItemRow supports isEditMode parameter and restricts swipe-to-dismiss
+        assertTrue(
+            "MarketItemRow must support isEditMode parameter",
+            itemRowContent.contains("isEditMode: Boolean = false")
+        )
+        assertTrue(
+            "MarketItemRow enables swipe-to-dismiss only in edit mode",
+            itemRowContent.contains("enableDismissFromEndToStart = isEditMode")
+        )
+        assertTrue(
+            "MarketItemRow provides delete action icon in edit mode",
+            itemRowContent.contains("if (isEditMode)") &&
+            itemRowContent.contains("onRequestDelete()")
+        )
+    }
 }

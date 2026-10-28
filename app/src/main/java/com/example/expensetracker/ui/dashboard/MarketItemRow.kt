@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
@@ -71,6 +72,7 @@ fun MarketItemRow(
     onDeleteClick: () -> Unit = {},
     onRequestDelete: () -> Unit = onDeleteClick,
     onSubstituteClick: (() -> Unit)? = null,
+    isEditMode: Boolean = false,
     modifier: Modifier = Modifier,
     lastRateText: String? = null,
     priceInsight: ProductPriceInsight? = null
@@ -80,7 +82,7 @@ fun MarketItemRow(
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
-            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+            if (dismissValue == SwipeToDismissBoxValue.EndToStart && isEditMode) {
                 haptics.mediumClick()
                 onRequestDelete()
                 // Return false so item doesn't disappear until confirmed in dialog
@@ -119,10 +121,10 @@ fun MarketItemRow(
         state = dismissState,
         modifier = modifier.fillMaxWidth(),
         enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true,
+        enableDismissFromEndToStart = isEditMode,
         backgroundContent = {
             val direction = dismissState.dismissDirection
-            if (direction == SwipeToDismissBoxValue.EndToStart) {
+            if (direction == SwipeToDismissBoxValue.EndToStart && isEditMode) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -164,7 +166,11 @@ fun MarketItemRow(
                 .fillMaxWidth()
                 .clickable {
                     haptics.lightTick()
-                    onRowClick()
+                    if (isEditMode) {
+                        onUnitClick()
+                    } else {
+                        onRowClick()
+                    }
                 }
         ) {
             Row(
@@ -179,7 +185,7 @@ fun MarketItemRow(
                     modifier = Modifier
                         .minimumInteractiveComponentSize()
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                        .clickable {
+                        .clickable(enabled = !isEditMode) {
                             haptics.lightTick()
                             onTickClick()
                         },
@@ -190,11 +196,11 @@ fun MarketItemRow(
                             .size(24.dp)
                             .clip(CircleShape)
                             .background(
-                                if (item.isPurchased) appColors.income else Color.Transparent
+                                if (item.isPurchased) appColors.income.copy(alpha = if (isEditMode) 0.6f else 1f) else Color.Transparent
                             )
                             .border(
                                 width = 1.5.dp,
-                                color = if (item.isPurchased) appColors.income else appColors.border,
+                                color = if (item.isPurchased) appColors.income.copy(alpha = if (isEditMode) 0.6f else 1f) else appColors.border,
                                 shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
@@ -327,8 +333,31 @@ fun MarketItemRow(
                     }
                 }
 
-                // 3. Right: Price badge (When purchased) OR Estimated cost & last rate (When unpurchased)
-                if (item.isPurchased) {
+                // 3. Right: In Edit Mode, show Delete item button. Otherwise, Price badge (When purchased) OR Estimated cost & last rate (When unpurchased)
+                if (isEditMode) {
+                    IconButton(
+                        onClick = {
+                            haptics.mediumClick()
+                            onRequestDelete()
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(appColors.expense.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = if (isBangla) "পণ্য মুছুন" else "Delete",
+                                tint = appColors.expense,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                } else if (item.isPurchased) {
                     val amt = item.amount ?: 0.0
                     Column(horizontalAlignment = Alignment.End) {
                         Surface(
