@@ -1223,74 +1223,103 @@ fun CreateMarketListSection(
                                         }
                                     }
 
-                                    FlowRow(
+                                    Column(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         manualItems.value.forEachIndexed { idx, itm ->
                                             val isLatestItem = idx == 0
                                             Surface(
-                                                shape = RoundedCornerShape(8.dp),
-                                                color = if (isLatestItem) appColors.accent.copy(alpha = 0.16f) else appColors.accent.copy(alpha = 0.08f),
+                                                shape = RoundedCornerShape(10.dp),
+                                                color = if (isLatestItem) appColors.accent.copy(alpha = 0.12f) else appColors.background,
                                                 border = BorderStroke(
                                                     1.dp,
-                                                    if (isLatestItem) appColors.accent else appColors.accent.copy(alpha = 0.25f)
-                                                )
+                                                    if (isLatestItem) appColors.accent else appColors.border
+                                                ),
+                                                modifier = Modifier.fillMaxWidth()
                                             ) {
                                                 Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 9.dp),
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                                    horizontalArrangement = Arrangement.SpaceBetween
                                                 ) {
-                                                    if (isLatestItem) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(6.dp)
-                                                                .clip(CircleShape)
-                                                                .background(appColors.accent)
-                                                        )
-                                                    }
-                                                    Text(
-                                                        text = itm.name,
-                                                        style = MaterialTheme.typography.bodySmall.copy(
-                                                            fontSize = 12.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        ),
-                                                        color = appColors.textPrimary
-                                                    )
-                                                    Surface(
-                                                        shape = RoundedCornerShape(4.dp),
-                                                        color = appColors.accent.copy(alpha = 0.2f)
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                        modifier = Modifier.weight(1f)
                                                     ) {
+                                                        // Serial number badge
+                                                        Surface(
+                                                            shape = RoundedCornerShape(6.dp),
+                                                            color = if (isLatestItem) appColors.accent else appColors.surface,
+                                                            border = BorderStroke(
+                                                                1.dp,
+                                                                if (isLatestItem) appColors.accent else appColors.border
+                                                            )
+                                                        ) {
+                                                            Text(
+                                                                text = if (isBangla) convertToBengaliDigits((idx + 1).toString()) else "${idx + 1}",
+                                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    fontSize = 11.sp
+                                                                ),
+                                                                color = if (isLatestItem) Color.White else appColors.textSecondary,
+                                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+
+                                                        // Product Name
                                                         Text(
-                                                            text = itm.formatQuantity(),
-                                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                                fontSize = 10.sp,
-                                                                fontWeight = FontWeight.SemiBold
+                                                            text = itm.name,
+                                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                                fontSize = 13.5.sp,
+                                                                fontWeight = FontWeight.Bold
                                                             ),
-                                                            color = appColors.accent,
-                                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                            color = appColors.textPrimary,
+                                                            maxLines = 1,
+                                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                         )
                                                     }
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(18.dp)
-                                                            .clip(CircleShape)
-                                                            .clickable {
+
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        // Quantity Badge
+                                                        Surface(
+                                                            shape = RoundedCornerShape(6.dp),
+                                                            color = appColors.accent.copy(alpha = 0.16f)
+                                                        ) {
+                                                            Text(
+                                                                text = itm.formatQuantity(),
+                                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                                    fontSize = 11.sp,
+                                                                    fontWeight = FontWeight.Bold
+                                                                ),
+                                                                color = appColors.accent,
+                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                            )
+                                                        }
+
+                                                        // Delete Button
+                                                        IconButton(
+                                                            onClick = {
                                                                 haptics.lightTick()
                                                                 val updated = manualItems.value.toMutableList()
                                                                 updated.removeAt(idx)
                                                                 manualItems.value = updated
                                                             },
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Filled.Close,
-                                                            contentDescription = "Remove",
-                                                            tint = appColors.expense,
-                                                            modifier = Modifier.size(13.dp)
-                                                        )
+                                                            modifier = Modifier.size(26.dp)
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Filled.Close,
+                                                                contentDescription = "Remove",
+                                                                tint = appColors.expense,
+                                                                modifier = Modifier.size(15.dp)
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }

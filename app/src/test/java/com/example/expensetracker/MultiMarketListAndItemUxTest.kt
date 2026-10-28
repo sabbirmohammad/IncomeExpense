@@ -217,7 +217,14 @@ class MultiMarketListAndItemUxTest {
             addedItemsIndex in 1 until quickStaplesIndex
         )
 
-        // 6. Verify prepending behavior on an actual list
+        // 6. Added items must be rendered as a vertical itemized list with serial numbers
+        assertTrue(
+            "Added items must display as an itemized list row with serial numbers",
+            manualEntryContent.contains("Serial number badge") &&
+            manualEntryContent.contains("convertToBengaliDigits((idx + 1).toString())")
+        )
+
+        // 7. Verify prepending behavior on an actual list
         val existingItems = listOf(
             com.example.expensetracker.data.model.MarketItem(name = "আলু", quantity = 1.0, unit = "কেজি"),
             com.example.expensetracker.data.model.MarketItem(name = "পেঁয়াজ", quantity = 2.0, unit = "কেজি")
