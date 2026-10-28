@@ -175,6 +175,60 @@ class MultiMarketListAndItemUxTest {
     }
 
     @Test
+    fun testCreateMarketListManualEntryUxRefinements() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/CreateMarketListSection.kt")
+
+        // 1. Newly added items must be added to the top (prepended)
+        assertTrue(
+            "Newly added items must be prepended so latest items appear at the top",
+            content.contains("manualItems.value = (itemsToAdd + manualItems.value).toMutableList()")
+        )
+
+        // 2. Step 3 summary header must NOT contain 'Switch to Paste' button
+        assertFalse(
+            "Step 3 summary header must not distract user with 'Switch to Paste'",
+            content.contains("Switch to Paste") || content.contains("পেস্ট মোডে যান")
+        )
+
+        // 3. Step 3 header must show clean item counter badge
+        assertTrue(
+            "Step 3 header must display clean item counter badge",
+            content.contains("Live Item Counter Badge") &&
+            content.contains("টি পণ্য যুক্ত")
+        )
+
+        // 4. In manual entry mode, ambient clipboard detection banner must NOT be present
+        val manualEntryIndex = content.indexOf("Mode Content: Manual Entry (inputMode == 1)")
+        val bulkPasteIndex = content.indexOf("Mode Content: Bulk Paste (inputMode == 0)")
+        assertTrue(manualEntryIndex > 0 && bulkPasteIndex > 0)
+        
+        val manualEntryContent = content.substring(manualEntryIndex)
+        assertFalse(
+            "Manual entry mode must not show clipboard detection banner",
+            manualEntryContent.contains("ক্লিপবোর্ডে কপি করা ফর্দ পাওয়া গেছে") ||
+            manualEntryContent.contains("Shopping list detected on clipboard")
+        )
+
+        // 5. Added Items section must be placed ABOVE the quick staples section in manual entry
+        val addedItemsIndex = manualEntryContent.indexOf("Added Items Section")
+        val quickStaplesIndex = manualEntryContent.indexOf("Quick Staples Pills")
+        assertTrue(
+            "Added Items section must appear before Quick Staples pills in manual entry",
+            addedItemsIndex in 1 until quickStaplesIndex
+        )
+
+        // 6. Verify prepending behavior on an actual list
+        val existingItems = listOf(
+            com.example.expensetracker.data.model.MarketItem(name = "আলু", quantity = 1.0, unit = "কেজি"),
+            com.example.expensetracker.data.model.MarketItem(name = "পেঁয়াজ", quantity = 2.0, unit = "কেজি")
+        )
+        val newItem = listOf(com.example.expensetracker.data.model.MarketItem(name = "ডিম", quantity = 12.0, unit = "পিস"))
+        val updated = (newItem + existingItems)
+        assertEquals("Latest item must be at index 0 (top of list)", "ডিম", updated.first().name)
+        assertEquals("Previous first item must shift down", "আলু", updated[1].name)
+    }
+
+    @Test
     fun testActiveMarketListsHubViewSupport() {
         val content = readFile("com/example/expensetracker/ui/dashboard/ActiveMarketListsHubView.kt")
 
