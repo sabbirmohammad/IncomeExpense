@@ -123,8 +123,7 @@ fun NavigationScreenHost(
             }
             NavigationItem.MARKET -> {
                 MarketScreen(
-                    dashboardViewModel = dashboardViewModel,
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
+                    dashboardViewModel = dashboardViewModel
                 )
             }
             NavigationItem.ANALYTICS -> {

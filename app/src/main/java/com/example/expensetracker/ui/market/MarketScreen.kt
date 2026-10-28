@@ -37,10 +37,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -103,7 +101,7 @@ import com.example.expensetracker.ui.dashboard.ProductPriceInsightsContent
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
 
 /**
- * Premium, dedicated full-screen Market Hub (বাজার).
+ * Premium, dedicated full-screen Market (বাজার).
  * Integrates:
  * 1. Active Shopping Checklists & Multi-List Hub (বাজারের ফর্দ)
  * 2. Commodity Price Intelligence & Inflation Tracker (বাজার দর ও দরদাম)
@@ -174,13 +172,11 @@ fun MarketScreen(
         // 1. Top Bar Header
         MarketTopBar(
             isBangla = isBangla,
-            activeListsCount = effectiveActiveLists.size,
             selectedTab = selectedTab,
             searchQuery = priceSearchQuery,
             onSearchQueryChange = { priceSearchQuery = it },
             isSearchActive = isPriceSearchActive,
-            onSearchActiveChange = { isPriceSearchActive = it },
-            onNavigateToSettings = onNavigateToSettings
+            onSearchActiveChange = { isPriceSearchActive = it }
         )
 
         // 2. Segmented Pill Tabs
@@ -480,13 +476,11 @@ fun MarketScreen(
 @Composable
 private fun MarketTopBar(
     isBangla: Boolean,
-    activeListsCount: Int,
     selectedTab: Int,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     isSearchActive: Boolean,
-    onSearchActiveChange: (Boolean) -> Unit,
-    onNavigateToSettings: (() -> Unit)?
+    onSearchActiveChange: (Boolean) -> Unit
 ) {
     val appColors = LocalAppColors.current
     val focusRequester = remember { FocusRequester() }
@@ -559,97 +553,31 @@ private fun MarketTopBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(
-                                            colors = listOf(appColors.accent, Color(0xFF2563EB))
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.ShoppingCart,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                    Text(
+                        text = if (isBangla) "বাজার" else "Market",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ),
+                        color = appColors.textPrimary
+                    )
 
-                            Spacer(modifier = Modifier.width(10.dp))
-
-                            Text(
-                                text = if (isBangla) "বাজার হাব" else "Market Hub",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp
-                                ),
-                                color = appColors.textPrimary
+                    // In Tab 1 (Price Intelligence / বাজার দর): Show Search Button where '+' was
+                    if (selectedTab == 1) {
+                        val hasQuery = searchQuery.isNotBlank()
+                        IconButton(
+                            onClick = { onSearchActiveChange(true) },
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(if (hasQuery) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = if (isBangla) "পণ্য খুঁজুন" else "Search",
+                                tint = if (hasQuery) appColors.accent else appColors.textPrimary,
+                                modifier = Modifier.size(20.dp)
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text = when (selectedTab) {
-                                0 -> if (activeListsCount > 0) {
-                                    if (isBangla) "${convertToBengaliDigits(activeListsCount.toString())}টি সক্রিয় ফর্দ চলমান" else "$activeListsCount active checklists"
-                                } else {
-                                    if (isBangla) "বাজারের ফর্দ ও কেনাকাটার তালিকা" else "Shopping checklist & trips"
-                                }
-                                1 -> if (isBangla) "নিত্যপণ্যের বাজার দর ও দামের ট্রেন্ড" else "Commodity price rates & trends"
-                                2 -> if (isBangla) "নতুন বাজার ফর্দ তৈরি করুন" else "Create a new shopping list"
-                                else -> if (isBangla) "বাজারের ফর্দ ও নিত্যপণ্যের দরদাম" else "Shopping checklist & price trends"
-                            },
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = appColors.textSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // In Tab 1 (Price Intelligence / বাজার দর): Show Search Button where '+' was
-                        if (selectedTab == 1) {
-                            val hasQuery = searchQuery.isNotBlank()
-                            IconButton(
-                                onClick = { onSearchActiveChange(true) },
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(if (hasQuery) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = if (isBangla) "পণ্য খুঁজুন" else "Search",
-                                    tint = if (hasQuery) appColors.accent else appColors.textPrimary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-
-                        if (onNavigateToSettings != null) {
-                            IconButton(
-                                onClick = onNavigateToSettings,
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(appColors.surfaceVariant)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Settings,
-                                    contentDescription = if (isBangla) "সেটিংস" else "Settings",
-                                    tint = appColors.textSecondary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -659,7 +587,7 @@ private fun MarketTopBar(
 }
 
 /**
- * Segmented Pill Tab Bar for Market Hub.
+ * Segmented Pill Tab Bar for Market.
  * Uses exact uniform height (42.dp container with 3.dp padding) and fillMaxHeight so active tab
  * background always seamlessly covers 100% of the pill area across all tabs.
  */
