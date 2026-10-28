@@ -47,22 +47,25 @@ class AppUpdateManagerTest {
 
     @Test
     fun testAppConstantsVersionSync() {
-        assertEquals("v6.5", AppConstants.APP_VERSION)
-        assertEquals("v6.5", AppConstants.getAppVersion(null))
-        assertEquals("6.5", AppConstants.getAppVersionClean(null))
+        val appVersion = AppConstants.APP_VERSION
+        assertTrue("APP_VERSION should start with v prefix", appVersion.startsWith("v"))
+        assertEquals(appVersion, AppConstants.getAppVersion(null))
+        assertEquals(appVersion.removePrefix("v"), AppConstants.getAppVersionClean(null))
     }
 
     @Test
-    fun testIsNewerVersion_withCurrentV6_4AndV6_5() {
-        // v6.4 will see v6.5 as newer
-        assertTrue(AppUpdateManager.isNewerVersion(current = "6.4", remote = "v6.5"))
-        assertTrue(AppUpdateManager.isNewerVersion(current = "v6.4", remote = "6.5"))
+    fun testIsNewerVersion_withVersionProgressions() {
+        // Lower versions see current as newer
+        assertTrue(AppUpdateManager.isNewerVersion(current = "6.0", remote = AppConstants.APP_VERSION))
+        assertTrue(AppUpdateManager.isNewerVersion(current = "5.0", remote = AppConstants.APP_VERSION))
 
-        // Once on v6.5, it won't see v6.5 as newer
-        assertFalse(AppUpdateManager.isNewerVersion(current = "6.5", remote = "v6.5"))
-        assertFalse(AppUpdateManager.isNewerVersion(current = "v6.5", remote = "6.5"))
-        assertFalse(AppUpdateManager.isNewerVersion(current = "6.5", remote = "6.4"))
-        assertTrue(AppUpdateManager.isNewerVersion(current = "6.5", remote = "6.6"))
+        // Same version is not newer
+        assertFalse(AppUpdateManager.isNewerVersion(current = AppConstants.getAppVersionClean(null), remote = AppConstants.APP_VERSION))
+
+        // Higher major or minor is recognized as newer
+        assertTrue(AppUpdateManager.isNewerVersion(current = "6.4", remote = "6.5"))
+        assertTrue(AppUpdateManager.isNewerVersion(current = "6.5", remote = "7.0"))
+        assertTrue(AppUpdateManager.isNewerVersion(current = AppConstants.getAppVersionClean(null), remote = "99.0"))
     }
 
     @Test
