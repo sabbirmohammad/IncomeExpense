@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -551,6 +552,7 @@ private fun MarketTopBar(
     onSearchActiveChange: (Boolean) -> Unit
 ) {
     val appColors = LocalAppColors.current
+    val haptics = rememberAppHaptics()
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -598,20 +600,18 @@ private fun MarketTopBar(
 
                     IconButton(
                         onClick = {
+                            haptics.lightTick()
                             focusManager.clearFocus()
                             keyboardController?.hide()
                             onSearchActiveChange(false)
                         },
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(appColors.surfaceVariant)
+                        modifier = Modifier.size(38.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = if (isBangla) "অনুসন্ধান বন্ধ করুন" else "Close search",
                             tint = appColors.textPrimary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -630,21 +630,21 @@ private fun MarketTopBar(
                         color = appColors.textPrimary
                     )
 
-                    // In Tab 1 (Price Intelligence / বাজার দর): Show Search Button where '+' was
+                    // In Tab 1 (Price Intelligence / বাজার দর): Simple, clean Outlined Search button
                     if (selectedTab == 1) {
                         val hasQuery = searchQuery.isNotBlank()
                         IconButton(
-                            onClick = { onSearchActiveChange(true) },
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(if (hasQuery) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant)
+                            onClick = {
+                                haptics.lightTick()
+                                onSearchActiveChange(true)
+                            },
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Search,
+                                imageVector = Icons.Outlined.Search,
                                 contentDescription = if (isBangla) "পণ্য খুঁজুন" else "Search",
                                 tint = if (hasQuery) appColors.accent else appColors.textPrimary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }

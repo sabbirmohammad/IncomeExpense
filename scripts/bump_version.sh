@@ -41,8 +41,8 @@ if [ -z "$BUMP_TYPE" ]; then
 fi
 
 # Extract current version
-CURRENT_CODE=$(grep -E 'versionCode\s*=\s*' "$BUILD_GRADLE" | head -1 | sed -E 's/.*=\s*([0-9]+).*/\1/')
-CURRENT_NAME=$(grep -E 'versionName\s*=\s*' "$BUILD_GRADLE" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+CURRENT_CODE=$(grep -E 'versionCode[[:space:]]*=[[:space:]]*' "$BUILD_GRADLE" | head -1 | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/')
+CURRENT_NAME=$(grep -E 'versionName[[:space:]]*=[[:space:]]*' "$BUILD_GRADLE" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
 
 echo "=============================================="
 echo "Current Version: v${CURRENT_NAME} (code: ${CURRENT_CODE})"
@@ -88,8 +88,8 @@ echo "Target Version: v${NEW_NAME} (code: ${NEW_CODE})"
 echo ""
 
 # 1. Update app/build.gradle.kts
-sed -i '' -E "s/(versionCode\s*=\s*)[0-9]+/\1${NEW_CODE}/" "$BUILD_GRADLE"
-sed -i '' -E "s/(versionName\s*=\s*\")[^\"]+(\")/\1${NEW_NAME}\2/" "$BUILD_GRADLE"
+sed -i '' -E "s/(versionCode[[:space:]]*=[[:space:]]*)[0-9]+/\1${NEW_CODE}/" "$BUILD_GRADLE"
+sed -i '' -E "s/(versionName[[:space:]]*=[[:space:]]*\")[^\"]+(\")/\1${NEW_NAME}\2/" "$BUILD_GRADLE"
 
 # 2. Update AppConstants.kt
 sed -i '' -E "s/(const val APP_VERSION = \"v)[^\"]+(\")/\1${NEW_NAME}\2/" "$APP_CONSTANTS"
