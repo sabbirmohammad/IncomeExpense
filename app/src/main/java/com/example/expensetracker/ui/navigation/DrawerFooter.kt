@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
 import com.example.expensetracker.common.AppConstants
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.Strings
@@ -26,6 +28,8 @@ fun DrawerFooter(
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
+    val context = LocalContext.current
+    val appVersionClean = remember(context) { AppConstants.getAppVersionClean(context) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -51,7 +55,7 @@ fun DrawerFooter(
                     color = appColors.textSecondary
                 )
                 Text(
-                    text = if (strings.isBangla) "ভার্সন ${convertToBengaliDigits(AppConstants.APP_VERSION.removePrefix("v"))}" else AppConstants.APP_VERSION,
+                    text = if (strings.isBangla) "ভার্সন ${convertToBengaliDigits(appVersionClean)}" else "v$appVersionClean",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Normal,
                     color = appColors.textMuted

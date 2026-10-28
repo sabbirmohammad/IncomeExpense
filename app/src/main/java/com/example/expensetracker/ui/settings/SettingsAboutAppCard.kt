@@ -16,6 +16,8 @@ import com.example.expensetracker.common.AppConstants
 import com.example.expensetracker.data.update.AppUpdateManager
 import com.example.expensetracker.data.update.UpdateState
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import kotlinx.coroutines.launch
 
 @Composable
@@ -25,10 +27,19 @@ fun SettingsAboutAppCard(
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
+    val strings = LocalAppStrings.current
+    val isBangla = strings.isBangla
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val updateState by AppUpdateManager.updateState.collectAsState()
     val isChecking = updateState is UpdateState.Checking
+
+    val appVersionClean = remember(context) { AppConstants.getAppVersionClean(context) }
+    val displayVersion = if (isBangla) {
+        "ভার্সন ${convertToBengaliDigits(appVersionClean)}"
+    } else {
+        "v$appVersionClean"
+    }
 
     Column(
         modifier = modifier
@@ -37,13 +48,17 @@ fun SettingsAboutAppCard(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "$transactionsCount transactions · $categoriesCount categories active",
+            text = if (isBangla) {
+                "${convertToBengaliDigits(transactionsCount.toString())}টি লেনদেন · ${convertToBengaliDigits(categoriesCount.toString())}টি ক্যাটাগরি সক্রিয়"
+            } else {
+                "$transactionsCount transactions · $categoriesCount categories active"
+            },
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
             color = appColors.textSecondary
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "${AppConstants.APP_NAME} ${AppConstants.APP_VERSION}",
+            text = "${if (isBangla) strings.appName else AppConstants.APP_NAME} $displayVersion",
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
             color = appColors.textMuted
         )
@@ -72,7 +87,7 @@ fun SettingsAboutAppCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "চেক করা হচ্ছে...",
+                    text = if (isBangla) "চেক করা হচ্ছে..." else "Checking...",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
                 )
             } else {
@@ -83,7 +98,7 @@ fun SettingsAboutAppCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "আপডেট চেক করুন",
+                    text = if (isBangla) "আপডেট চেক করুন" else "Check for Updates",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
@@ -94,7 +109,7 @@ fun SettingsAboutAppCard(
 
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Develop by AWFI ENTERPRISE",
+            text = if (isBangla) "নির্মাতা: AWFI ENTERPRISE" else "Developed by AWFI ENTERPRISE",
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium

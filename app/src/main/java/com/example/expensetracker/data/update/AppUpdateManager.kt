@@ -33,7 +33,8 @@ sealed interface UpdateState {
     data class Available(val updateInfo: AppUpdateInfo) : UpdateState
     data class Downloading(val progress: Float, val downloadedBytes: Long, val totalBytes: Long) : UpdateState
     data class ReadyToInstall(val apkFile: File) : UpdateState
-    data class Error(val message: String) : UpdateState
+    data class Error(val message: String, val isRateLimited: Boolean = false) : UpdateState
+    data class UpToDate(val currentVersion: String) : UpdateState
 }
 
 object AppUpdateManager {
@@ -157,31 +158,29 @@ object AppUpdateManager {
                     _updateState.value = UpdateState.Available(updateInfo)
                     _isDialogVisible.value = true
                 } else {
-                    _updateState.value = UpdateState.Idle
                     if (isManualCheck) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "আপনার অ্যাপ্লিকেশনটি আপ-টু-ডেট আছে (v$currentVersion)", Toast.LENGTH_SHORT).show()
-                        }
+                        _updateState.value = UpdateState.UpToDate(currentVersion)
+                        _isDialogVisible.value = true
+                    } else {
+                        _updateState.value = UpdateState.Idle
                     }
                 }
             } else if (is404NoRelease) {
-                _updateState.value = UpdateState.Idle
                 if (isManualCheck) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "কোনো নতুন আপডেট পাওয়া যায়নি (v${getCurrentVersion(context)})", Toast.LENGTH_SHORT).show()
-                    }
+                    val currentVersion = getCurrentVersion(context)
+                    _updateState.value = UpdateState.UpToDate(currentVersion)
+                    _isDialogVisible.value = true
+                } else {
+                    _updateState.value = UpdateState.Idle
                 }
             } else {
-                _updateState.value = UpdateState.Idle
                 if (isManualCheck) {
-                    withContext(Dispatchers.Main) {
-                        val errorMsg = if (lastResponseCode == 403) {
-                            "নেটওয়ার্ক রেট লিমিট শেষ হয়েছে, অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন"
-                        } else {
-                            "আপডেট চেক করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন"
-                        }
-                        Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-                    }
+                    val isRateLimited = (lastResponseCode == 403)
+                    val errorMsg = if (isRateLimited) "RATE_LIMIT" else "NETWORK_ERROR"
+                    _updateState.value = UpdateState.Error(message = errorMsg, isRateLimited = isRateLimited)
+                    _isDialogVisible.value = true
+                } else {
+                    _updateState.value = UpdateState.Idle
                 }
             }
         }
@@ -347,12 +346,12 @@ object AppUpdateManager {
         }
     }
 
-    private fun getCurrentVersion(context: Context): String {
+    fun getCurrentVersion(context: Context): String {
         return try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName?.removePrefix("v")?.removePrefix("V") ?: AppConstants.APP_VERSION.removePrefix("v")
+            pInfo.versionName?.removePrefix("v")?.removePrefix("V") ?: AppConstants.getAppVersionClean(context)
         } catch (_: Exception) {
-            AppConstants.APP_VERSION.removePrefix("v")
+            AppConstants.getAppVersionClean(context)
         }
     }
 

@@ -1,6 +1,14 @@
 package com.example.expensetracker.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.SystemUpdate
@@ -18,8 +27,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -40,16 +52,13 @@ fun AppUpdateDialog(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val appColors = LocalAppColors.current
+    val strings = LocalAppStrings.current
+    val isBangla = strings.isBangla
 
     if (!isVisible) return
 
-    val currentVersion = remember {
-        try {
-            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName ?: AppConstants.APP_VERSION
-        } catch (_: Exception) {
-            AppConstants.APP_VERSION
-        }
+    val currentVersion = remember(context) {
+        AppUpdateManager.getCurrentVersion(context)
     }
 
     Dialog(
@@ -66,8 +75,8 @@ fun AppUpdateDialog(
         Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            shape = RoundedCornerShape(24.dp),
+                .padding(horizontal = 12.dp),
+            shape = RoundedCornerShape(26.dp),
             color = appColors.surface,
             tonalElevation = 6.dp
         ) {
@@ -89,7 +98,7 @@ fun AppUpdateDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
+                                contentDescription = if (isBangla) "বন্ধ করুন" else "Close",
                                 tint = appColors.textMuted
                             )
                         }
@@ -98,62 +107,54 @@ fun AppUpdateDialog(
                     }
                 }
 
-                // Header Icon
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(appColors.accent.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    when (updateState) {
-                        is UpdateState.ReadyToInstall -> Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            tint = appColors.income,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        is UpdateState.Error -> Icon(
-                            imageVector = Icons.Outlined.ErrorOutline,
-                            contentDescription = null,
-                            tint = appColors.expense,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        else -> Icon(
-                            imageVector = Icons.Outlined.SystemUpdate,
-                            contentDescription = null,
-                            tint = appColors.accent,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                }
+                // Animated Header Icon
+                AnimatedUpdateHeaderIcon(updateState = updateState)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Title
                 Text(
                     text = when (updateState) {
-                        is UpdateState.Downloading -> "আপডেট ডাউনলোড হচ্ছে..."
-                        is UpdateState.ReadyToInstall -> "ডাউনলোড সম্পন্ন হয়েছে!"
-                        is UpdateState.Error -> "আপডেট ব্যর্থ হয়েছে"
-                        else -> "নতুন আপডেট পাওয়া গেছে!"
+                        is UpdateState.UpToDate -> if (isBangla) "অ্যাপ্লিকেশনটি আপ-টু-ডেট আছে" else "You're All Up to Date"
+                        is UpdateState.Downloading -> if (isBangla) "আপডেট ডাউনলোড হচ্ছে..." else "Downloading Update..."
+                        is UpdateState.ReadyToInstall -> if (isBangla) "ডাউনলোড সম্পন্ন হয়েছে!" else "Download Complete!"
+                        is UpdateState.Error -> if (isBangla) "আপডেট ব্যর্থ হয়েছে" else "Update Check Failed"
+                        else -> if (isBangla) "নতুন আপডেট পাওয়া গেছে!" else "New Update Available!"
                     },
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        fontSize = 19.sp
                     ),
-                    color = appColors.textPrimary
+                    color = appColors.textPrimary,
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Version comparison subtitle
+                // Version / Subtitle
                 when (val state = updateState) {
+                    is UpdateState.UpToDate -> {
+                        Text(
+                            text = if (isBangla) {
+                                "আপনি সর্বাধুনিক সংস্করণ (v${convertToBengaliDigits(state.currentVersion)}) ব্যবহার করছেন।"
+                            } else {
+                                "You are running the latest version (v${state.currentVersion})."
+                            },
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                            color = appColors.textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                     is UpdateState.Available -> {
                         Text(
-                            text = "সংস্করণ ${state.updateInfo.latestVersion} (বর্তমান: $currentVersion)",
+                            text = if (isBangla) {
+                                "সংস্করণ ${state.updateInfo.latestVersion} (বর্তমান: v${convertToBengaliDigits(currentVersion)})"
+                            } else {
+                                "Version ${state.updateInfo.latestVersion} (Current: v$currentVersion)"
+                            },
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                            color = appColors.textSecondary
+                            color = appColors.textSecondary,
+                            textAlign = TextAlign.Center
                         )
                     }
                     is UpdateState.Downloading -> {
@@ -170,8 +171,107 @@ fun AppUpdateDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Content area
+                // State-specific Content & Actions
                 when (val state = updateState) {
+                    is UpdateState.UpToDate -> {
+                        // Modern Up-to-date Status Box
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = appColors.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.NewReleases,
+                                            contentDescription = null,
+                                            tint = appColors.accent,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = if (isBangla) "ইনস্টল করা ভার্সন" else "Installed Version",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                            color = appColors.textSecondary
+                                        )
+                                    }
+                                    Text(
+                                        text = if (isBangla) "v${convertToBengaliDigits(state.currentVersion)}" else "v${state.currentVersion}",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = appColors.accent
+                                    )
+                                }
+
+                                HorizontalDivider(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    thickness = 0.5.dp,
+                                    color = appColors.border.copy(alpha = 0.4f)
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.CheckCircle,
+                                            contentDescription = null,
+                                            tint = appColors.income,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = if (isBangla) "স্ট্যাটাস" else "Status",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                            color = appColors.textSecondary
+                                        )
+                                    }
+                                    Text(
+                                        text = if (isBangla) "সর্বশেষ রিলিজ" else "Latest Release",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        color = appColors.income
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Button(
+                            onClick = { AppUpdateManager.dismissDialog() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
+                        ) {
+                            Text(
+                                text = if (isBangla) "ঠিক আছে" else "Got it",
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
                     is UpdateState.Available -> {
                         if (state.updateInfo.releaseNotes.isNotBlank()) {
                             Card(
@@ -187,7 +287,7 @@ fun AppUpdateDialog(
                                         .verticalScroll(rememberScrollState())
                                 ) {
                                     Text(
-                                        text = "নতুন কী আছে:",
+                                        text = if (isBangla) "নতুন কী আছে:" else "What's New:",
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                         color = appColors.textPrimary
                                     )
@@ -205,7 +305,11 @@ fun AppUpdateDialog(
                             Spacer(modifier = Modifier.height(8.dp))
                             val mbSize = state.updateInfo.apkSize / (1024f * 1024f)
                             Text(
-                                text = String.format(Locale.US, "ফাইলের আকার: ~%.1f MB", mbSize),
+                                text = if (isBangla) {
+                                    String.format(Locale.US, "ফাইলের আকার: ~%.1f MB", mbSize)
+                                } else {
+                                    String.format(Locale.US, "File size: ~%.1f MB", mbSize)
+                                },
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                                 color = appColors.textMuted
                             )
@@ -223,7 +327,10 @@ fun AppUpdateDialog(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("পরে", color = appColors.textSecondary)
+                                Text(
+                                    text = if (isBangla) "পরে" else "Later",
+                                    color = appColors.textSecondary
+                                )
                             }
 
                             Button(
@@ -240,7 +347,11 @@ fun AppUpdateDialog(
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
                             ) {
-                                Text("আপডেট করুন", color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = if (isBangla) "আপডেট করুন" else "Update Now",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             }
                         }
                     }
@@ -257,7 +368,7 @@ fun AppUpdateDialog(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "অনুগ্রহ করে অপেক্ষা করুন...",
+                            text = if (isBangla) "অনুগ্রহ করে অপেক্ষা করুন..." else "Please wait...",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                             color = appColors.textMuted
                         )
@@ -265,9 +376,14 @@ fun AppUpdateDialog(
 
                     is UpdateState.ReadyToInstall -> {
                         Text(
-                            text = "অ্যাপটি প্রস্তুত! ইনস্টলেশন শুরু করতে নিচের বাটনে চাপুন।",
+                            text = if (isBangla) {
+                                "অ্যাপটি প্রস্তুত! ইনস্টলেশন শুরু করতে নিচের বাটনে চাপুন।"
+                            } else {
+                                "The update is ready! Tap below to start installation."
+                            },
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = appColors.textSecondary
+                            color = appColors.textSecondary,
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
@@ -276,15 +392,30 @@ fun AppUpdateDialog(
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = appColors.income)
                         ) {
-                            Text("এখনই ইনস্টল করুন", color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (isBangla) "এখনই ইনস্টল করুন" else "Install Now",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
 
                     is UpdateState.Error -> {
+                        val errorText = when {
+                            state.isRateLimited || state.message == "RATE_LIMIT" ->
+                                if (isBangla) "নেটওয়ার্ক রিকোয়েস্ট লিমিট শেষ হয়েছে, অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন।"
+                                else "Network request limit reached, please try again later."
+                            state.message == "NETWORK_ERROR" ->
+                                if (isBangla) "আপডেট চেক করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন।"
+                                else "Could not check for updates. Please check your internet connection."
+                            else -> state.message
+                        }
+
                         Text(
-                            text = state.message,
+                            text = errorText,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = appColors.expense
+                            color = appColors.expense,
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
@@ -296,7 +427,10 @@ fun AppUpdateDialog(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("বাতিল", color = appColors.textSecondary)
+                                Text(
+                                    text = if (isBangla) "বাতিল" else "Cancel",
+                                    color = appColors.textSecondary
+                                )
                             }
 
                             Button(
@@ -309,13 +443,119 @@ fun AppUpdateDialog(
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
                             ) {
-                                Text("পুনরায় চেষ্টা করুন", color = androidx.compose.ui.graphics.Color.White)
+                                Text(
+                                    text = if (isBangla) "পুনরায় চেষ্টা করুন" else "Try Again",
+                                    color = Color.White
+                                )
                             }
                         }
                     }
 
                     else -> Unit
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnimatedUpdateHeaderIcon(
+    updateState: UpdateState
+) {
+    val appColors = LocalAppColors.current
+
+    val scaleAnim = remember { Animatable(0.7f) }
+    LaunchedEffect(updateState) {
+        scaleAnim.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            )
+        )
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulseGlow")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.12f,
+        targetValue = 0.28f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.10f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+
+    val iconColor = when (updateState) {
+        is UpdateState.UpToDate, is UpdateState.ReadyToInstall -> appColors.income
+        is UpdateState.Error -> appColors.expense
+        else -> appColors.accent
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(76.dp)
+    ) {
+        // Pulsing background ring for UpToDate or ReadyToInstall
+        if (updateState is UpdateState.UpToDate || updateState is UpdateState.ReadyToInstall) {
+            Box(
+                modifier = Modifier
+                    .size(68.dp)
+                    .scale(pulseScale)
+                    .clip(CircleShape)
+                    .background(iconColor.copy(alpha = pulseAlpha))
+            )
+        }
+
+        // Inner circular badge
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .scale(scaleAnim.value)
+                .clip(CircleShape)
+                .background(iconColor.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) {
+            when (updateState) {
+                is UpdateState.UpToDate -> Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(34.dp)
+                )
+                is UpdateState.ReadyToInstall -> Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(34.dp)
+                )
+                is UpdateState.Error -> Icon(
+                    imageVector = Icons.Outlined.ErrorOutline,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(34.dp)
+                )
+                is UpdateState.Downloading -> Icon(
+                    imageVector = Icons.Outlined.CloudDownload,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(34.dp)
+                )
+                else -> Icon(
+                    imageVector = Icons.Outlined.SystemUpdate,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(34.dp)
+                )
             }
         }
     }
