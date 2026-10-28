@@ -222,118 +222,265 @@ fun MarketItemRow(
                     }
                 }
 
-                // 2. Product Name & Quantity (Center Content)
+                // 2. Product Name, Quantity & Badges (2-Row Balanced Layout)
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = item.name,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 15.sp,
-                            fontWeight = if (item.isPurchased) FontWeight.Normal else FontWeight.SemiBold,
-                            textDecoration = if (item.isPurchased) TextDecoration.LineThrough else TextDecoration.None
-                        ),
-                        color = if (item.isPurchased) appColors.textSecondary else appColors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
+                    // Row 1: Product Name (Left) + Estimated Cost / Purchased Price (Right)
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Quantity pill
+                        Text(
+                            text = item.name,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 15.sp,
+                                fontWeight = if (item.isPurchased) FontWeight.Normal else FontWeight.SemiBold,
+                                textDecoration = if (item.isPurchased) TextDecoration.LineThrough else TextDecoration.None
+                            ),
+                            color = if (item.isPurchased) appColors.textSecondary else appColors.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+
+                        // First Row End: Price Badge (Purchased) or Estimated Cost (Unpurchased)
+                        if (!isEditMode) {
+                            if (item.isPurchased) {
+                                val amt = item.amount ?: 0.0
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.income.copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.3f)),
+                                    modifier = Modifier.padding(start = 6.dp)
+                                ) {
+                                    Text(
+                                        text = if (amt > 0) formatCurrency(amt, currencySymbol) else (if (isBangla) "কেনা হয়েছে" else "Done"),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontSize = 12.5.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = appColors.income,
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                    )
+                                }
+                            } else {
+                                // Right: Estimated cost pill & last purchased rate when unpurchased
+                                if (priceInsight != null && priceInsight.currentUnitPrice > 0.0) {
+                                    if (item.quantity > 0.0) {
+                                        val estCost = com.example.expensetracker.common.UnitConverterEngine.estimateCost(
+                                            priceInsight.currentUnitPrice,
+                                            item.quantity,
+                                            item.unit
+                                        )
+                                        val estStr = if (estCost % 1.0 == 0.0) estCost.toLong().toString() else "%.0f".format(estCost)
+                                        val estNum = if (isBangla) convertToBengaliDigits(estStr) else estStr
+                                        val estBadgeText = if (isBangla) "সম্ভাব্য $currencySymbol$estNum" else "Est. $currencySymbol$estNum"
+
+                                        // Stylish pill badge showing the expected estimated cost
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = appColors.accent.copy(alpha = 0.10f),
+                                            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                                            modifier = Modifier.padding(start = 6.dp)
+                                        ) {
+                                            Text(
+                                                text = estBadgeText,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 11.5.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                color = appColors.accent,
+                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    } else {
+                                        val rateStr = if (priceInsight.currentUnitPrice % 1.0 == 0.0) {
+                                            priceInsight.currentUnitPrice.toLong().toString()
+                                        } else {
+                                            "%.1f".format(priceInsight.currentUnitPrice)
+                                        }
+                                        val rateNum = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
+                                        val lastRateResolved = if (isBangla) "গত দর: $currencySymbol$rateNum/${priceInsight.baseUnit}" else "Last: $currencySymbol$rateNum/${priceInsight.baseUnit}"
+
+                                        Text(
+                                            text = lastRateResolved,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium
+                                            ),
+                                            color = appColors.textSecondary.copy(alpha = 0.85f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(start = 6.dp)
+                                        )
+                                    }
+                                } else if (lastRateText != null) {
+                                    Text(
+                                        text = lastRateText,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        color = appColors.textSecondary.copy(alpha = 0.85f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(start = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Row 2: Quantity + Department (Left) + Substitute / Trend Button (Card End)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Left side of Row 2: Quantity & Department pills (+ subtle rate if available)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (item.isPurchased) appColors.background
-                                    else appColors.accent.copy(alpha = 0.10f)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
+                            // Quantity pill
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (item.isPurchased) appColors.background
+                                        else appColors.accent.copy(alpha = 0.10f)
+                                    )
+                                    .clickable(enabled = !item.isPurchased) {
+                                        haptics.lightTick()
+                                        onUnitClick()
+                                    }
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = item.formatQuantity(),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = if (item.isPurchased) appColors.textSecondary else appColors.accent
                                 )
-                                .clickable(enabled = !item.isPurchased) {
-                                    haptics.lightTick()
-                                    onUnitClick()
+                                if (!item.isPurchased) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Edit,
+                                        contentDescription = "Edit quantity",
+                                        tint = appColors.accent.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(10.dp)
+                                    )
                                 }
-                                .padding(horizontal = 7.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = item.formatQuantity(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = if (item.isPurchased) appColors.textSecondary else appColors.accent
-                            )
-                            if (!item.isPurchased) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Edit,
-                                    contentDescription = "Edit quantity",
-                                    tint = appColors.accent.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(10.dp)
-                                )
                             }
-                        }
 
-                        // Department indicator pill (e.g. 🥬 কাঁচাবাজার / 🧂 মুদি সদাই)
-                        val dept = getDepartmentMeta(getMarketItemCategory(item.name))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = appColors.surfaceVariant.copy(alpha = 0.5f)
-                        ) {
-                            Text(
-                                text = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = if (item.isPurchased) appColors.textSecondary.copy(alpha = 0.7f) else appColors.textSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                            )
-                        }
-
-                        // Substitute item quick button
-                        if (!item.isPurchased && onSubstituteClick != null) {
+                            // Department indicator pill (e.g. 🥬 কাঁচাবাজার / 🧂 মুদি সদাই / 🥛 দুধ ও বেকারি)
+                            val dept = getDepartmentMeta(getMarketItemCategory(item.name))
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = appColors.accent.copy(alpha = 0.08f),
-                                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f)),
-                                modifier = Modifier.clickable {
-                                    haptics.lightTick()
-                                    onSubstituteClick()
-                                }
+                                color = appColors.surfaceVariant.copy(alpha = 0.5f)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.SwapHoriz,
-                                        contentDescription = "Substitute item",
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(11.dp)
-                                    )
-                                    Text(
-                                        text = if (isBangla) "বিকল্প" else "Alt",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        color = appColors.accent
-                                    )
+                                Text(
+                                    text = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = if (item.isPurchased) appColors.textSecondary.copy(alpha = 0.7f) else appColors.textSecondary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+
+                            // Subtle text showing last purchased rate when quantity > 0
+                            if (!item.isPurchased && priceInsight != null && priceInsight.currentUnitPrice > 0.0 && item.quantity > 0.0) {
+                                val rateStr = if (priceInsight.currentUnitPrice % 1.0 == 0.0) {
+                                    priceInsight.currentUnitPrice.toLong().toString()
+                                } else {
+                                    "%.1f".format(priceInsight.currentUnitPrice)
                                 }
+                                val rateNum = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
+                                val lastRateResolved = if (isBangla) "গত দর: $currencySymbol$rateNum/${priceInsight.baseUnit}" else "Last: $currencySymbol$rateNum/${priceInsight.baseUnit}"
+                                Text(
+                                    text = lastRateResolved,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = appColors.textSecondary.copy(alpha = 0.8f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
 
+                        // Right side of Row 2: Substitute item quick button (কার্ডের একদম শেষে)
+                        if (!isEditMode) {
+                            if (!item.isPurchased && onSubstituteClick != null) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = appColors.accent.copy(alpha = 0.08f),
+                                    border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f)),
+                                    modifier = Modifier
+                                        .padding(start = 6.dp)
+                                        .clickable {
+                                            haptics.lightTick()
+                                            onSubstituteClick()
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.SwapHoriz,
+                                            contentDescription = "Substitute item",
+                                            tint = appColors.accent,
+                                            modifier = Modifier.size(11.dp)
+                                        )
+                                        Text(
+                                            text = if (isBangla) "বিকল্প" else "Alt",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.5.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            ),
+                                            color = appColors.accent
+                                        )
+                                    }
+                                }
+                            } else if (item.isPurchased && priceInsight?.previousUnitPrice != null && (item.amount ?: 0.0) > 0) {
+                                // Smart Price Trend pill if previous comparison is known
+                                val diffText = priceInsight.formatDiff()
+                                val isUp = priceInsight.isPriceUp
+                                val isDown = priceInsight.isPriceDown
+                                val trendColor = if (isUp) appColors.expense else if (isDown) appColors.income else appColors.textSecondary
+                                val trendIcon = if (isUp) "🔺 " else if (isDown) "🔻 " else "➖ "
+                                Text(
+                                    text = "$trendIcon$diffText",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    color = trendColor,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(start = 6.dp)
+                                )
+                            }
+                        }
                     }
                 }
 
-                // 3. Right: In Edit Mode, show Delete item button. Otherwise, Price badge (When purchased) OR Estimated cost & last rate (When unpurchased)
+                // 3. Right: In Edit Mode, show Delete item button
                 if (isEditMode) {
                     IconButton(
                         onClick = {
@@ -354,118 +501,6 @@ fun MarketItemRow(
                                 contentDescription = if (isBangla) "পণ্য মুছুন" else "Delete",
                                 tint = appColors.expense,
                                 modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                } else if (item.isPurchased) {
-                    val amt = item.amount ?: 0.0
-                    Column(horizontalAlignment = Alignment.End) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = appColors.income.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.3f))
-                        ) {
-                            Text(
-                                text = if (amt > 0) formatCurrency(amt, currencySymbol) else (if (isBangla) "কেনা হয়েছে" else "Done"),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = appColors.income,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        // Smart Price Trend pill if previous comparison is known
-                        if (priceInsight?.previousUnitPrice != null && amt > 0) {
-                            val diffText = priceInsight.formatDiff()
-                            val isUp = priceInsight.isPriceUp
-                            val isDown = priceInsight.isPriceDown
-                            val trendColor = if (isUp) appColors.expense else if (isDown) appColors.income else appColors.textSecondary
-                            val trendIcon = if (isUp) "🔺 " else if (isDown) "🔻 " else "➖ "
-                            Text(
-                                text = "$trendIcon$diffText",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = trendColor,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                } else {
-                    // Right: Estimated cost pill & last purchased rate when unpurchased
-                    if (priceInsight != null && priceInsight.currentUnitPrice > 0.0) {
-                        val rateStr = if (priceInsight.currentUnitPrice % 1.0 == 0.0) {
-                            priceInsight.currentUnitPrice.toLong().toString()
-                        } else {
-                            "%.1f".format(priceInsight.currentUnitPrice)
-                        }
-                        val rateNum = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
-                        val lastRateResolved = if (isBangla) "গত দর: $currencySymbol$rateNum/${priceInsight.baseUnit}" else "Last: $currencySymbol$rateNum/${priceInsight.baseUnit}"
-
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            // Only calculate & show estimated total cost when quantity > 0
-                            if (item.quantity > 0.0) {
-                                val estCost = com.example.expensetracker.common.UnitConverterEngine.estimateCost(
-                                    priceInsight.currentUnitPrice,
-                                    item.quantity,
-                                    item.unit
-                                )
-                                val estStr = if (estCost % 1.0 == 0.0) estCost.toLong().toString() else "%.0f".format(estCost)
-                                val estNum = if (isBangla) convertToBengaliDigits(estStr) else estStr
-                                val estBadgeText = if (isBangla) "সম্ভাব্য $currencySymbol$estNum" else "Est. $currencySymbol$estNum"
-
-                                // Stylish pill badge showing the expected estimated cost
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = appColors.accent.copy(alpha = 0.10f),
-                                    border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
-                                ) {
-                                    Text(
-                                        text = estBadgeText,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 11.5.sp,
-                                            fontWeight = FontWeight.Bold
-                                        ),
-                                        color = appColors.accent,
-                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-
-                            // Subtle text showing the last purchased unit rate
-                            Text(
-                                text = lastRateResolved,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = appColors.textSecondary.copy(alpha = 0.85f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    } else if (lastRateText != null) {
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Text(
-                                text = lastRateText,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = appColors.textSecondary.copy(alpha = 0.85f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
