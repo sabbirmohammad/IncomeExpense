@@ -539,11 +539,10 @@ class MultiMarketListAndItemUxTest {
             screenContent.contains("MarketAddNewItemRow(")
         )
 
-        // 4. View mode provides bottom trigger for editing
-        assertTrue(
-            "MarketScreen provides bottom trigger to easily enter edit mode",
-            screenContent.contains("পণ্য যোগ বা ফর্দ এডিট করতে ট্যাপ করুন") &&
-            screenContent.contains("Tap to add items or edit list")
+        // 4. View mode should have single clean header edit button without redundant bottom edit button
+        assertFalse(
+            "MarketScreen eliminates redundant bottom edit button to keep UI clean",
+            screenContent.contains("পণ্য যোগ বা ফর্দ এডিট করতে ট্যাপ করুন")
         )
 
         // 5. MarketItemRow supports isEditMode parameter and restricts swipe-to-dismiss

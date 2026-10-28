@@ -1251,45 +1251,6 @@ private fun MarketListsTabContent(
                             currencySymbol = currencySymbol
                         )
                     }
-                } else if (items.isNotEmpty()) {
-                    // In View Mode: At the bottom of the list, an elegant button to enter Edit Mode
-                    item {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Surface(
-                            onClick = {
-                                haptics.lightTick()
-                                isEditMode = true
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            color = appColors.surface,
-                            border = BorderStroke(1.dp, appColors.border),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 11.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Edit,
-                                    contentDescription = null,
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (isBangla) "পণ্য যোগ বা ফর্দ এডিট করতে ট্যাপ করুন" else "Tap to add items or edit list",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 12.5.sp
-                                    ),
-                                    color = appColors.accent
-                                )
-                            }
-                        }
-                    }
                 }
 
                 item {
