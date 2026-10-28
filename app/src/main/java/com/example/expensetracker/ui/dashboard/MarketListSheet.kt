@@ -160,7 +160,9 @@ fun MarketListSheet(
                         onCreateListWithBulk(title, items)
                         selectedTab = 0
                         // Next recomposition will pick up the new list
-                    }
+                    },
+                    priceInsights = productPriceInsights,
+                    currencySymbol = currencySymbol
                 )
             } else {
                 // TAB 0: Active Lists Directory OR Single List Shopping View

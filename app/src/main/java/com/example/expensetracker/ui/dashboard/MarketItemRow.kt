@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Delete
@@ -30,10 +33,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,6 +89,20 @@ fun MarketItemRow(
                 false
             }
         }
+    )
+
+    val checkScale by animateFloatAsState(
+        targetValue = if (item.isPurchased) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "checkScale"
+    )
+    val checkAlpha by animateFloatAsState(
+        targetValue = if (item.isPurchased) 1f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "checkAlpha"
     )
 
     // Helper for amount input and price clear
@@ -180,12 +199,18 @@ fun MarketItemRow(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (item.isPurchased) {
+                        if (item.isPurchased || checkScale > 0.05f) {
                             Icon(
                                 imageVector = Icons.Filled.Check,
                                 contentDescription = "Purchased",
                                 tint = Color.White,
-                                modifier = Modifier.size(15.dp)
+                                modifier = Modifier
+                                    .size(15.dp)
+                                    .graphicsLayer {
+                                        scaleX = checkScale
+                                        scaleY = checkScale
+                                        alpha = checkAlpha
+                                    }
                             )
                         }
                     }

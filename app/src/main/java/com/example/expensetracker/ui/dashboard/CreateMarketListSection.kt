@@ -67,9 +67,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.MarketListParser
+import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.MarketItem
+import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.convertToBengaliDigits
+import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import java.util.Calendar
 
@@ -94,12 +97,24 @@ enum class CreateMarketListStep {
 fun CreateMarketListSection(
     isBangla: Boolean,
     onListCreated: (title: String, items: List<MarketItem>) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    priceInsights: Map<String, ProductPriceInsight> = emptyMap(),
+    currencySymbol: String = "৳"
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
+
+    var clipboardText by remember { mutableStateOf("") }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        try {
+            clipboardText = clipboardManager.getText()?.text ?: ""
+        } catch (_: Exception) {}
+    }
+    val hasClipboardText = remember(clipboardText) {
+        clipboardText.isNotBlank() && clipboardText.length > 5
+    }
 
     // Determine smart default title based on time of day
     val defaultInitialTitle = remember(isBangla) {
@@ -179,21 +194,50 @@ fun CreateMarketListSection(
         listOf("1kg", "2kg", "500g", "250g", "12pcs", "1L", "1 pack")
     }
 
+    // Universal omnibox parsing supporting single item, comma separated, or multi-line bulk paste
     val addManualItem = { rawText: String ->
         if (rawText.isNotBlank()) {
             haptics.lightTick()
-            val parsed = MarketListParser.parseSingleLine(rawText.trim())
-            val newItem = if (parsed != null) {
-                MarketItem(name = parsed.name, quantity = parsed.quantity, unit = parsed.unit)
+            val trimmed = rawText.trim()
+            val normalized = trimmed.replace(";", "\n").replace("।", "\n")
+            val rawParts = if (normalized.contains("\n")) {
+                normalized.lines().flatMap { line ->
+                    if (line.contains(",")) line.split(",") else listOf(line)
+                }
+            } else if (trimmed.contains(",")) {
+                trimmed.split(",")
             } else {
-                MarketItem(name = rawText.trim(), quantity = 1.0, unit = if (isBangla) "কেজি" else "kg")
+                listOf(trimmed)
             }
-            manualItems.value = (manualItems.value + newItem).toMutableList()
+            val itemsToAdd = rawParts.mapNotNull { part ->
+                val cleanPart = part.trim()
+                if (cleanPart.isNotBlank()) {
+                    val parsed = MarketListParser.parseSingleLine(cleanPart)
+                    parsed?.let { MarketItem(name = it.name, quantity = it.quantity, unit = it.unit) }
+                        ?: MarketItem(name = cleanPart, quantity = 1.0, unit = if (isBangla) "কেজি" else "kg")
+                } else null
+            }
+            manualItems.value = (manualItems.value + itemsToAdd).toMutableList()
             manualItemName = ""
         }
     }
 
     val effectiveItems = if (inputMode == 0) parsedBulkItems else manualItems.value
+
+    val liveEstimatedBudget = remember(effectiveItems, priceInsights) {
+        effectiveItems.sumOf { item ->
+            val matchingInsight = UnitConverterEngine.findMatchingInsight(item.name, priceInsights)
+            if (matchingInsight != null) {
+                UnitConverterEngine.estimateCost(matchingInsight.currentUnitPrice, item.quantity, item.unit)
+            } else 0.0
+        }
+    }
+    val estimatedItemsCount = remember(effectiveItems, priceInsights) {
+        effectiveItems.count { item ->
+            val matchingInsight = UnitConverterEngine.findMatchingInsight(item.name, priceInsights)
+            matchingInsight != null && UnitConverterEngine.estimateCost(matchingInsight.currentUnitPrice, item.quantity, item.unit) > 0.0
+        }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -698,11 +742,6 @@ fun CreateMarketListSection(
                         }
 
                         // Option 2: WhatsApp Bulk Paste Card
-                        val clipboardText = remember { clipboardManager.getText()?.text ?: "" }
-                        val hasClipboardText = remember(clipboardText) {
-                            clipboardText.isNotBlank() && clipboardText.length > 5
-                        }
-
                         Surface(
                             onClick = {
                                 haptics.mediumClick()
@@ -1023,6 +1062,62 @@ fun CreateMarketListSection(
                 // Mode Content: Manual Entry (inputMode == 1)
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Ambient clipboard detection banner
+                        if (hasClipboardText) {
+                            Surface(
+                                onClick = {
+                                    haptics.lightTick()
+                                    addManualItem(clipboardText)
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color(0xFF25D366).copy(alpha = 0.1f),
+                                border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.35f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ContentPaste,
+                                        contentDescription = null,
+                                        tint = Color(0xFF25D366),
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = if (isBangla) "ক্লিপবোর্ডে কপি করা ফর্দ পাওয়া গেছে" else "Shopping list detected on clipboard",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = appColors.textPrimary
+                                        )
+                                        Text(
+                                            text = if (isBangla) "ট্যাপ করে তালিকায় যোগ করুন" else "Tap to add items to list",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                            color = appColors.textSecondary
+                                        )
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = Color(0xFF25D366).copy(alpha = 0.2f)
+                                    ) {
+                                        Text(
+                                            text = if (isBangla) "যুক্ত করুন" else "Add",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.5.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = Color(0xFF25D366),
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         // Input Row with Add Button
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1212,6 +1307,81 @@ fun CreateMarketListSection(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // Live Budget Estimator Card
+            if (effectiveItems.isNotEmpty()) {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = appColors.accent.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = if (isBangla) "সম্ভাব্য মোট বাজেট" else "Estimated Budget",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = appColors.textPrimary
+                                    )
+                                    if (estimatedItemsCount > 0) {
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = appColors.accent.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = if (isBangla)
+                                                    "${convertToBengaliDigits(estimatedItemsCount.toString())}/${convertToBengaliDigits(effectiveItems.size.toString())} দর পাওয়া গেছে"
+                                                else
+                                                    "$estimatedItemsCount/${effectiveItems.size} priced",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 9.5.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                color = appColors.accent,
+                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    text = if (liveEstimatedBudget > 0.0) {
+                                        if (isBangla) "পূর্বের বাজার দরের হিসাব অনুযায়ী" else "Based on historical commodity prices"
+                                    } else {
+                                        if (isBangla) "দর তথ্য পাওয়া গেলে স্বয়ংক্রিয় প্রাক্কলন হবে" else "Matches with commodity price database"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = appColors.textSecondary
+                                )
+                            }
+
+                            Text(
+                                text = if (liveEstimatedBudget > 0.0) {
+                                    formatCurrency(liveEstimatedBudget, currencySymbol)
+                                } else {
+                                    "—"
+                                },
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                color = if (liveEstimatedBudget > 0.0) appColors.accent else appColors.textSecondary
+                            )
                         }
                     }
                 }

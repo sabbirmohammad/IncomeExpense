@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -21,6 +22,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -136,15 +142,19 @@ fun ProductPriceInsightsContent(
     }
 
     var selectedFilter by remember { mutableStateOf<PriceTrend?>(null) } // null = All
+    var selectedDepartment by remember { mutableStateOf<String?>(null) } // null = All departments
     var expandedProductName by remember { mutableStateOf<String?>(null) }
 
     val allInsights = remember(priceInsights) { priceInsights.values.toList() }
 
-    val filteredInsights = remember(allInsights, effectiveSearchQuery, selectedFilter) {
+    val filteredInsights = remember(allInsights, effectiveSearchQuery, selectedFilter, selectedDepartment) {
         allInsights.filter { insight ->
-            val matchesQuery = effectiveSearchQuery.isBlank() || insight.productName.contains(effectiveSearchQuery.trim().lowercase())
+            val matchesQuery = effectiveSearchQuery.isBlank() ||
+                insight.productName.contains(effectiveSearchQuery.trim().lowercase()) ||
+                insight.baseUnit.contains(effectiveSearchQuery.trim().lowercase())
             val matchesFilter = selectedFilter == null || insight.priceTrend == selectedFilter
-            matchesQuery && matchesFilter
+            val matchesDept = selectedDepartment == null || getMarketItemCategory(insight.productName) == selectedDepartment
+            matchesQuery && matchesFilter && matchesDept
         }.sortedByDescending { it.lastPurchasedTimestamp }
     }
 
@@ -395,6 +405,45 @@ fun ProductPriceInsightsContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Department Category Chips Row (MarketDepartmentClassifier)
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    FilterChip(
+                        selected = selectedDepartment == null,
+                        onClick = {
+                            haptics.lightTick()
+                            selectedDepartment = null
+                        },
+                        label = { Text(text = if (isBangla) "সব বিভাগ" else "All Depts") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = appColors.accent,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+                items(ALL_DEPARTMENTS, key = { it.key }) { dept ->
+                    val isDeptSelected = selectedDepartment == dept.key
+                    FilterChip(
+                        selected = isDeptSelected,
+                        onClick = {
+                            haptics.lightTick()
+                            selectedDepartment = if (isDeptSelected) null else dept.key
+                        },
+                        label = { Text(text = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = appColors.accent.copy(alpha = 0.85f),
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             // Filter Chips Row
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -489,8 +538,12 @@ fun ProductPriceInsightsContent(
                         Text(
                             text = if (allInsights.isEmpty()) {
                                 if (isBangla) "এখনো কোনো পণ্যের দর রেকর্ড হয়নি" else "No price records tracked yet"
-                            } else {
+                            } else if (effectiveSearchQuery.isNotBlank()) {
                                 if (isBangla) "'${effectiveSearchQuery.trim()}' নামে কোনো পণ্য পাওয়া যায়নি" else "No items found matching '${effectiveSearchQuery.trim()}'"
+                            } else if (selectedDepartment != null) {
+                                if (isBangla) "নির্বাচিত বিভাগে কোনো পণ্য পাওয়া যায়নি" else "No items found in selected department"
+                            } else {
+                                if (isBangla) "নির্বাচিত ফিল্টারে কোনো পণ্য পাওয়া যায়নি" else "No items found matching filter"
                             },
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = appColors.textPrimary
@@ -522,6 +575,7 @@ fun ProductPriceInsightsContent(
                             insight = insight,
                             isExpanded = isExpanded,
                             isBangla = isBangla,
+                            currencySymbol = currencySymbol,
                             onToggleExpand = {
                                 haptics.lightTick()
                                 expandedProductName = if (isExpanded) null else insight.productName
@@ -539,6 +593,7 @@ private fun ProductPriceItemCard(
     insight: ProductPriceInsight,
     isExpanded: Boolean,
     isBangla: Boolean,
+    currencySymbol: String = "৳",
     onToggleExpand: () -> Unit,
     onFetchHistory: (String) -> List<ProductPriceRecord>
 ) {
@@ -618,16 +673,25 @@ private fun ProductPriceItemCard(
                     )
                 }
 
-                // Right: Current Rate & Trend Pill
+                // Right: Sparkline, Current Rate & Trend Pill
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = insight.formatUnitRate(),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.5.sp
-                        ),
-                        color = appColors.accent
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        ProductPriceSparkline(
+                            insight = insight,
+                            modifier = Modifier.size(width = 44.dp, height = 20.dp)
+                        )
+                        Text(
+                            text = insight.formatUnitRate(),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.5.sp
+                            ),
+                            color = appColors.accent
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(2.dp))
 
@@ -660,6 +724,87 @@ private fun ProductPriceItemCard(
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = appColors.textSecondary
                         )
+                    }
+                }
+            }
+
+            // Visual Min-to-Max Price Range Scale Bar
+            val minRate = insight.minUnitPrice
+            val maxRate = insight.maxUnitPrice
+            val curRate = insight.currentUnitPrice
+
+            if (minRate > 0.0 && maxRate >= minRate) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    val minFormatted = if (minRate % 1.0 == 0.0) minRate.toInt().toString() else "%.1f".format(minRate)
+                    val minText = if (isBangla) convertToBengaliDigits(minFormatted) else minFormatted
+                    val maxFormatted = if (maxRate % 1.0 == 0.0) maxRate.toInt().toString() else "%.1f".format(maxRate)
+                    val maxText = if (isBangla) convertToBengaliDigits(maxFormatted) else maxFormatted
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isBangla) "সর্বনিম্ন: $currencySymbol$minText" else "Min: $currencySymbol$minText",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = appColors.income
+                        )
+                        Text(
+                            text = if (isBangla) "সর্বোচ্চ: $currencySymbol$maxText" else "Max: $currencySymbol$maxText",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = appColors.expense
+                        )
+                    }
+
+                    val fraction = if (maxRate > minRate) {
+                        ((curRate - minRate) / (maxRate - minRate)).coerceIn(0.0, 1.0).toFloat().coerceIn(0.01f, 1.0f)
+                    } else 0.5f
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(appColors.border.copy(alpha = 0.35f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            appColors.income.copy(alpha = 0.45f),
+                                            appColors.accent.copy(alpha = 0.3f),
+                                            appColors.expense.copy(alpha = 0.45f)
+                                        )
+                                    )
+                                )
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(fraction)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when (insight.priceTrend) {
+                                            PriceTrend.UP -> appColors.expense
+                                            PriceTrend.DOWN -> appColors.income
+                                            PriceTrend.STABLE -> appColors.accent
+                                        }
+                                    )
+                            )
+                        }
                     }
                 }
             }
@@ -787,5 +932,91 @@ private fun ProductPriceItemCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * 3-point mini vector sparkline curve (↗ ↘ ➔) representing recent commodity price dynamics.
+ * - Point 1: 30 days prior (or baseline/earliest price)
+ * - Point 2: Immediately preceding unit rate
+ * - Point 3: Current unit rate
+ */
+@Composable
+fun ProductPriceSparkline(
+    insight: ProductPriceInsight,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val strokeColor = when (insight.priceTrend) {
+        PriceTrend.UP -> appColors.expense
+        PriceTrend.DOWN -> appColors.income
+        PriceTrend.STABLE -> appColors.accent
+    }
+    val trendArrow = when (insight.priceTrend) {
+        PriceTrend.UP -> "↗"
+        PriceTrend.DOWN -> "↘"
+        PriceTrend.STABLE -> "➔"
+    }
+
+    val p1 = insight.oneMonthAgoUnitPrice ?: insight.previousUnitPrice ?: insight.minUnitPrice
+    val p2 = insight.previousUnitPrice ?: ((insight.minUnitPrice + insight.maxUnitPrice) / 2.0)
+    val p3 = insight.currentUnitPrice
+
+    val points = listOf(p1, p2, p3)
+    val minP = points.minOrNull() ?: 0.0
+    val maxP = points.maxOrNull() ?: 1.0
+    val span = if (maxP > minP) (maxP - minP) else 1.0
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Canvas(modifier = modifier) {
+            val width = size.width
+            val height = size.height
+            val padY = 3.dp.toPx()
+            val usableHeight = (height - (padY * 2)).coerceAtLeast(1f)
+
+            val isFlat = maxP <= minP
+            val midY = height / 2f
+
+            val x0 = 2.dp.toPx()
+            val y0 = if (isFlat) midY else height - padY - (((p1 - minP) / span) * usableHeight).toFloat()
+
+            val x1 = width / 2f
+            val y1 = if (isFlat) midY else height - padY - (((p2 - minP) / span) * usableHeight).toFloat()
+
+            val x2 = width - 4.dp.toPx()
+            val y2 = if (isFlat) midY else height - padY - (((p3 - minP) / span) * usableHeight).toFloat()
+
+            val path = Path().apply {
+                moveTo(x0, y0)
+                quadraticTo(x1, y1, x2, y2)
+            }
+
+            drawPath(
+                path = path,
+                color = strokeColor,
+                style = Stroke(
+                    width = 2.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            )
+
+            drawCircle(
+                color = strokeColor,
+                radius = 2.5.dp.toPx(),
+                center = Offset(x2, y2)
+            )
+        }
+
+        Text(
+            text = trendArrow,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.5.sp
+            ),
+            color = strokeColor
+        )
     }
 }

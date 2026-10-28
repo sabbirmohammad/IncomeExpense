@@ -49,6 +49,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -62,6 +66,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,8 +102,10 @@ import com.example.expensetracker.ui.dashboard.MarketItemRow
 import com.example.expensetracker.ui.dashboard.MarketPromptAmountDialog
 import com.example.expensetracker.ui.dashboard.MarketSubstituteItemDialog
 import com.example.expensetracker.ui.dashboard.MarketSummarySection
+import com.example.expensetracker.ui.dashboard.MarketTripCompletionSheet
 import com.example.expensetracker.ui.dashboard.ProductPriceInsightsContent
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
+import kotlinx.coroutines.launch
 
 /**
  * Premium, dedicated full-screen Market (বাজার).
@@ -120,10 +127,14 @@ fun MarketScreen(
 
     val activeMarketLists by dashboardViewModel.activeMarketLists.collectAsStateWithLifecycle()
     val activeMarketList by dashboardViewModel.activeMarketList.collectAsStateWithLifecycle()
+    val accounts by dashboardViewModel.accounts.collectAsStateWithLifecycle()
     val lastPurchasedRates by dashboardViewModel.lastPurchasedRates.collectAsStateWithLifecycle()
     val productPriceInsights by dashboardViewModel.productPriceInsights.collectAsStateWithLifecycle()
     val stapleProducts by dashboardViewModel.stapleProducts.collectAsStateWithLifecycle()
     val userProfile by dashboardViewModel.userProfile.collectAsStateWithLifecycle()
+
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val isBangla = strings.isBangla
     val currencySymbol = userProfile.currencySymbol
@@ -162,15 +173,20 @@ fun MarketScreen(
     var itemToSubstitute by remember { mutableStateOf<MarketItem?>(null) }
     var showForgotStaplesDialog by remember { mutableStateOf(false) }
     var listToDeleteConfirmId by remember { mutableStateOf<Long?>(null) }
+    var tripForCompletionSheet by remember { mutableStateOf<MarketListWithItems?>(null) }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(appColors.background)
-            .statusBarsPadding()
     ) {
-        // 1. Top Bar Header
-        MarketTopBar(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            // 1. Top Bar Header
+            MarketTopBar(
             isBangla = isBangla,
             selectedTab = selectedTab,
             searchQuery = priceSearchQuery,
@@ -217,7 +233,20 @@ fun MarketScreen(
                         dashboardViewModel.addMarketItem(newItem, targetListId)
                     },
                     onUpdateItem = { item -> dashboardViewModel.updateMarketItem(item) },
-                    onDeleteItemClick = { item -> itemToDeleteConfirm = item },
+                    onDeleteItemClick = { item ->
+                        val listId = currentViewingList?.list?.id ?: item.listId
+                        dashboardViewModel.deleteMarketItem(item.id)
+                        coroutineScope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = if (isBangla) "'${item.name}' মুছে ফেলা হয়েছে" else "'${item.name}' deleted",
+                                actionLabel = if (isBangla) "পূর্বাবস্থায় আনুন" else "Undo",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                dashboardViewModel.addMarketItem(item, listId)
+                            }
+                        }
+                    },
                     onUnitClick = { item -> itemForUnitDialog = item },
                     onSubstituteClick = { item -> itemToSubstitute = item },
                     onPromptAmount = { item -> promptAmountForItem = item },
@@ -233,8 +262,7 @@ fun MarketScreen(
                         if (!hasStaplePurchased && items.size >= 3) {
                             showForgotStaplesDialog = true
                         } else if (currentViewingList != null) {
-                            dashboardViewModel.completeActiveMarketList(currentViewingList.list.id)
-                            selectedListId = null
+                            tripForCompletionSheet = currentViewingList
                         }
                     },
                     onDeleteListClick = { listId -> listToDeleteConfirmId = listId }
@@ -266,11 +294,21 @@ fun MarketScreen(
                         selectedTab = 0
                         selectedListId = null
                     },
+                    priceInsights = productPriceInsights,
+                    currencySymbol = currencySymbol,
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
     }
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(bottom = 76.dp, start = 16.dp, end = 16.dp)
+    )
+}
 
     // Dialogs
     // 1. Unit & Quantity Dialog
@@ -350,8 +388,7 @@ fun MarketScreen(
                 Button(
                     onClick = {
                         showForgotStaplesDialog = false
-                        dashboardViewModel.completeActiveMarketList(currentViewingList.list.id)
-                        selectedListId = null
+                        tripForCompletionSheet = currentViewingList
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.income),
                     shape = RoundedCornerShape(10.dp)
@@ -400,8 +437,20 @@ fun MarketScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        dashboardViewModel.deleteMarketItem(itemToDelete.id)
+                        val deletedItem = itemToDelete
+                        val listId = currentViewingList?.list?.id ?: deletedItem.listId
+                        dashboardViewModel.deleteMarketItem(deletedItem.id)
                         itemToDeleteConfirm = null
+                        coroutineScope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = if (isBangla) "'${deletedItem.name}' মুছে ফেলা হয়েছে" else "'${deletedItem.name}' deleted",
+                                actionLabel = if (isBangla) "পূর্বাবস্থায় আনুন" else "Undo",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                dashboardViewModel.addMarketItem(deletedItem, listId)
+                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.expense),
                     shape = RoundedCornerShape(10.dp)
@@ -465,6 +514,25 @@ fun MarketScreen(
             },
             shape = RoundedCornerShape(16.dp),
             containerColor = appColors.surface
+        )
+    }
+
+    // 7. Shopping Trip Completion Sheet (Digital Receipt)
+    if (tripForCompletionSheet != null) {
+        val tripToComplete = tripForCompletionSheet!!
+        MarketTripCompletionSheet(
+            trip = tripToComplete,
+            accounts = accounts,
+            currencySymbol = currencySymbol,
+            isBangla = isBangla,
+            productPriceInsights = productPriceInsights,
+            onDismiss = { tripForCompletionSheet = null },
+            onConfirmComplete = { selectedAccountId ->
+                dashboardViewModel.completeActiveMarketList(tripToComplete.list.id, accountId = selectedAccountId) {
+                    selectedListId = null
+                    tripForCompletionSheet = null
+                }
+            }
         )
     }
 }

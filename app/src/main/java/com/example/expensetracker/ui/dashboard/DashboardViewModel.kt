@@ -189,10 +189,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun completeActiveMarketList(
         listId: Long,
         rollOverItems: List<MarketItem> = emptyList(),
+        accountId: Long? = null,
         onCompleted: ((com.example.expensetracker.data.model.MarketCompletionResult) -> Unit)? = null
     ) {
         viewModelScope.launch(coroutineExceptionHandler) {
-            val result = repository.completeActiveMarketList(listId)
+            val result = repository.completeActiveMarketList(listId, accountId = accountId)
             if (rollOverItems.isNotEmpty()) {
                 val newItems = rollOverItems.map {
                     it.copy(id = 0, listId = 0, isPurchased = false, amount = null)
