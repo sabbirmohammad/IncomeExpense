@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
@@ -158,12 +159,11 @@ fun AppUpdateDialog(
                         )
                     }
                     is UpdateState.Downloading -> {
-                        val mbDownloaded = state.downloadedBytes / (1024f * 1024f)
-                        val mbTotal = state.totalBytes / (1024f * 1024f)
                         Text(
-                            text = String.format(Locale.US, "%.1f MB / %.1f MB (%.0f%%)", mbDownloaded, mbTotal, state.progress * 100),
+                            text = if (isBangla) "নতুন সংস্করণের ফাইল ডাউনলোড হচ্ছে..." else "Downloading update package...",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                            color = appColors.textSecondary
+                            color = appColors.textSecondary,
+                            textAlign = TextAlign.Center
                         )
                     }
                     else -> Unit
@@ -357,20 +357,9 @@ fun AppUpdateDialog(
                     }
 
                     is UpdateState.Downloading -> {
-                        LinearProgressIndicator(
-                            progress = { state.progress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = appColors.accent,
-                            trackColor = appColors.accent.copy(alpha = 0.2f)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = if (isBangla) "অনুগ্রহ করে অপেক্ষা করুন..." else "Please wait...",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = appColors.textMuted
+                        DownloadProgressSection(
+                            state = state,
+                            isBangla = isBangla
                         )
                     }
 
@@ -459,13 +448,130 @@ fun AppUpdateDialog(
 }
 
 @Composable
+private fun DownloadProgressSection(
+    state: UpdateState.Downloading,
+    isBangla: Boolean
+) {
+    val appColors = LocalAppColors.current
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = state.progress.coerceIn(0f, 1f),
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "downloadProgressAnim"
+    )
+
+    val percent = (state.progress * 100).toInt().coerceIn(0, 100)
+    val percentDisplay = if (isBangla) "${convertToBengaliDigits(percent.toString())}%" else "$percent%"
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = appColors.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = if (isBangla) "ডাউনলোড অগ্রগতি" else "Download Progress",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = appColors.textMuted
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = percentDisplay,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 24.sp
+                        ),
+                        color = appColors.accent
+                    )
+                }
+
+                val mbDownloaded = state.downloadedBytes / (1024f * 1024f)
+                val mbTotal = state.totalBytes / (1024f * 1024f)
+                val sizeText = if (state.totalBytes > 0) {
+                    val raw = String.format(Locale.US, "%.1f / %.1f MB", mbDownloaded, mbTotal)
+                    if (isBangla) convertToBengaliDigits(raw) else raw
+                } else {
+                    val raw = String.format(Locale.US, "%.1f MB", mbDownloaded)
+                    if (isBangla) "${convertToBengaliDigits(raw)} ডাউনলোড হয়েছে" else "$raw downloaded"
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = appColors.accent.copy(alpha = 0.12f)
+                ) {
+                    Text(
+                        text = sizeText,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = appColors.accent
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            if (state.totalBytes > 0) {
+                LinearProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = appColors.accent,
+                    trackColor = appColors.accent.copy(alpha = 0.2f)
+                )
+            } else {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = appColors.accent,
+                    trackColor = appColors.accent.copy(alpha = 0.2f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = if (isBangla) {
+                    "নতুন সংস্করণ ডাউনলোড শেষে স্বয়ংক্রিয়ভাবে ইনস্টলেশন শুরু হবে..."
+                } else {
+                    "Installation will prompt automatically when download finishes..."
+                },
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                color = appColors.textMuted,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun AnimatedUpdateHeaderIcon(
     updateState: UpdateState
 ) {
     val appColors = LocalAppColors.current
 
-    val scaleAnim = remember { Animatable(0.7f) }
-    LaunchedEffect(updateState) {
+    // Key entrance animation strictly by state category to prevent continuous cancel/restart during downloads
+    val stateKey = updateState::class
+    val scaleAnim = remember { Animatable(0.75f) }
+    LaunchedEffect(stateKey) {
+        scaleAnim.snapTo(0.75f)
         scaleAnim.animateTo(
             targetValue = 1f,
             animationSpec = spring(
@@ -478,21 +584,33 @@ private fun AnimatedUpdateHeaderIcon(
     val infiniteTransition = rememberInfiniteTransition(label = "pulseGlow")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.12f,
-        targetValue = 0.28f,
+        targetValue = 0.32f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1400, easing = FastOutSlowInEasing),
+            animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseAlpha"
     )
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1.0f,
-        targetValue = 1.10f,
+        targetValue = 1.12f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1400, easing = FastOutSlowInEasing),
+            animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseScale"
+    )
+
+    // Dedicated smooth download bounce animation
+    val downloadTransition = rememberInfiniteTransition(label = "downloadTransition")
+    val downloadBobY by downloadTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(650, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "downloadBobY"
     )
 
     val iconColor = when (updateState) {
@@ -505,8 +623,8 @@ private fun AnimatedUpdateHeaderIcon(
         contentAlignment = Alignment.Center,
         modifier = Modifier.size(76.dp)
     ) {
-        // Pulsing background ring for UpToDate or ReadyToInstall
-        if (updateState is UpdateState.UpToDate || updateState is UpdateState.ReadyToInstall) {
+        // Pulsing background ring for UpToDate, ReadyToInstall AND Downloading
+        if (updateState is UpdateState.UpToDate || updateState is UpdateState.ReadyToInstall || updateState is UpdateState.Downloading) {
             Box(
                 modifier = Modifier
                     .size(68.dp)
@@ -548,7 +666,9 @@ private fun AnimatedUpdateHeaderIcon(
                     imageVector = Icons.Outlined.CloudDownload,
                     contentDescription = null,
                     tint = iconColor,
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier
+                        .size(34.dp)
+                        .offset(y = downloadBobY.dp)
                 )
                 else -> Icon(
                     imageVector = Icons.Outlined.SystemUpdate,

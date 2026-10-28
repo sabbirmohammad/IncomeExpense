@@ -47,22 +47,22 @@ class AppUpdateManagerTest {
 
     @Test
     fun testAppConstantsVersionSync() {
-        assertEquals("v6.4", AppConstants.APP_VERSION)
-        assertEquals("v6.4", AppConstants.getAppVersion(null))
-        assertEquals("6.4", AppConstants.getAppVersionClean(null))
+        assertEquals("v6.5", AppConstants.APP_VERSION)
+        assertEquals("v6.5", AppConstants.getAppVersion(null))
+        assertEquals("6.5", AppConstants.getAppVersionClean(null))
     }
 
     @Test
-    fun testIsNewerVersion_withCurrentV6_3AndV6_4() {
-        // Old v6.3 will see v6.4 as newer
-        assertTrue(AppUpdateManager.isNewerVersion(current = "6.3", remote = "v6.4"))
-        assertTrue(AppUpdateManager.isNewerVersion(current = "v6.3", remote = "6.4"))
+    fun testIsNewerVersion_withCurrentV6_4AndV6_5() {
+        // v6.4 will see v6.5 as newer
+        assertTrue(AppUpdateManager.isNewerVersion(current = "6.4", remote = "v6.5"))
+        assertTrue(AppUpdateManager.isNewerVersion(current = "v6.4", remote = "6.5"))
 
-        // Once on v6.4, it won't see v6.4 as newer
-        assertFalse(AppUpdateManager.isNewerVersion(current = "6.4", remote = "v6.4"))
-        assertFalse(AppUpdateManager.isNewerVersion(current = "v6.4", remote = "6.4"))
-        assertFalse(AppUpdateManager.isNewerVersion(current = "6.4", remote = "6.3"))
-        assertTrue(AppUpdateManager.isNewerVersion(current = "6.4", remote = "6.5"))
+        // Once on v6.5, it won't see v6.5 as newer
+        assertFalse(AppUpdateManager.isNewerVersion(current = "6.5", remote = "v6.5"))
+        assertFalse(AppUpdateManager.isNewerVersion(current = "v6.5", remote = "6.5"))
+        assertFalse(AppUpdateManager.isNewerVersion(current = "6.5", remote = "6.4"))
+        assertTrue(AppUpdateManager.isNewerVersion(current = "6.5", remote = "6.6"))
     }
 
     @Test

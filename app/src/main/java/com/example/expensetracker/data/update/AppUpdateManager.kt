@@ -44,7 +44,7 @@ object AppUpdateManager {
     private const val GITHUB_EXPANDED_ASSETS_BASE = "https://github.com/sabbirmohammad/IncomeExpense/releases/expanded_assets/"
     private const val PREFS_NAME = "app_update_prefs"
     private const val KEY_LAST_CHECK_TIME = "last_auto_check_timestamp"
-    private const val AUTO_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
+    private const val AUTO_CHECK_INTERVAL_MS = 2 * 60 * 60 * 1000L // 2 hours (reduced for responsive updates)
 
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
@@ -62,7 +62,7 @@ object AppUpdateManager {
     suspend fun checkForUpdates(context: Context, isManualCheck: Boolean = false) {
         if (_updateState.value is UpdateState.Downloading) return
 
-        // For automatic background checks, enforce a 24-hour cooldown to avoid rate limits
+        // For automatic background checks, enforce cooldown to avoid rate limits
         if (!isManualCheck) {
             try {
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -223,6 +223,19 @@ object AppUpdateManager {
                     Log.w(TAG, "Expanded assets check fallback to default apk url pattern: ${e.message}")
                 }
 
+                // Attempt lightweight HEAD probe to determine APK size in advance
+                try {
+                    val headConn = openConnectionWithRedirects(apkUrl)
+                    val headerLen = headConn.getHeaderField("Content-Length")?.toLongOrNull() ?: -1L
+                    val resolvedLen = if (headConn.contentLengthLong > 0) headConn.contentLengthLong else headerLen
+                    if (resolvedLen > 0) {
+                        apkSize = resolvedLen
+                    }
+                    headConn.disconnect()
+                } catch (e: Exception) {
+                    Log.w(TAG, "HEAD probe for apk size failed: ${e.message}")
+                }
+
                 return AppUpdateInfo(
                     latestVersion = tagName,
                     releaseNotes = "নতুন ফিচার এবং বাগ ফিক্স অন্তর্ভুক্ত।",
@@ -249,8 +262,13 @@ object AppUpdateManager {
                 var currentUrl = downloadUrl
                 var connection = openConnectionWithRedirects(currentUrl)
 
-                val totalBytes = if (connection.contentLengthLong > 0) connection.contentLengthLong else expectedSize
+                val headerLen = connection.getHeaderField("Content-Length")?.toLongOrNull() ?: -1L
+                val connLen = if (connection.contentLengthLong > 0) connection.contentLengthLong else headerLen
+                val totalBytes = if (connLen > 0) connLen else expectedSize
                 var downloadedBytes = 0L
+
+                var lastEmitTime = 0L
+                var lastEmittedProgress = -1f
 
                 connection.inputStream.use { input ->
                     targetFile.outputStream().use { output ->
@@ -262,12 +280,21 @@ object AppUpdateManager {
                             val progress = if (totalBytes > 0) {
                                 (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
                             } else 0f
-                            _updateState.value = UpdateState.Downloading(progress, downloadedBytes, totalBytes)
+
+                            val now = System.currentTimeMillis()
+                            // Throttle progress emissions: at most once every 60ms or if progress shifted by >= 0.5%
+                            if (now - lastEmitTime >= 60L || Math.abs(progress - lastEmittedProgress) >= 0.005f || (totalBytes > 0 && downloadedBytes >= totalBytes)) {
+                                lastEmitTime = now
+                                lastEmittedProgress = progress
+                                _updateState.value = UpdateState.Downloading(progress, downloadedBytes, totalBytes)
+                            }
                         }
                         output.flush()
                     }
                 }
 
+                // Final download state emission before install
+                _updateState.value = UpdateState.Downloading(1f, downloadedBytes, if (totalBytes > 0) totalBytes else downloadedBytes)
                 _updateState.value = UpdateState.ReadyToInstall(targetFile)
 
                 // Trigger install directly once download is complete
@@ -291,6 +318,7 @@ object AppUpdateManager {
                 readTimeout = 30000
                 instanceFollowRedirects = false
                 setRequestProperty("User-Agent", "ExpenseTracker-Android")
+                setRequestProperty("Accept-Encoding", "identity") // Prevents OkHttp from stripping Content-Length
             }
             val status = conn.responseCode
             if (status in 300..399) {
@@ -306,6 +334,7 @@ object AppUpdateManager {
             connectTimeout = 15000
             readTimeout = 30000
             setRequestProperty("User-Agent", "ExpenseTracker-Android")
+            setRequestProperty("Accept-Encoding", "identity")
         }
     }
 
