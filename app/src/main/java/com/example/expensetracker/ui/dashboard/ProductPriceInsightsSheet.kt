@@ -32,20 +32,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -146,28 +139,22 @@ fun ProductPriceInsightsContent(
     }
 
     var selectedFilter by remember { mutableStateOf<PriceTrend?>(null) } // null = All
-    var selectedDepartment by remember { mutableStateOf<String?>(null) } // null = All departments
     var expandedProductName by remember { mutableStateOf<String?>(null) }
-
-    var showDeptMenu by remember { mutableStateOf(false) }
-    var showTrendMenu by remember { mutableStateOf(false) }
 
     val allInsights = remember(priceInsights) { priceInsights.values.toList() }
 
-    val filteredInsights = remember(allInsights, effectiveSearchQuery, selectedFilter, selectedDepartment) {
+    val filteredInsights = remember(allInsights, effectiveSearchQuery, selectedFilter) {
         allInsights.filter { insight ->
             val matchesQuery = effectiveSearchQuery.isBlank() ||
                 insight.productName.contains(effectiveSearchQuery.trim().lowercase()) ||
                 insight.baseUnit.contains(effectiveSearchQuery.trim().lowercase())
             val matchesFilter = selectedFilter == null || insight.priceTrend == selectedFilter
-            val matchesDept = selectedDepartment == null || getMarketItemCategory(insight.productName) == selectedDepartment
-            matchesQuery && matchesFilter && matchesDept
+            matchesQuery && matchesFilter
         }.sortedByDescending { it.lastPurchasedTimestamp }
     }
 
     val priceUpCount = remember(allInsights) { allInsights.count { it.priceTrend == PriceTrend.UP } }
     val priceDownCount = remember(allInsights) { allInsights.count { it.priceTrend == PriceTrend.DOWN } }
-    val priceStableCount = remember(allInsights) { allInsights.count { it.priceTrend == PriceTrend.STABLE } }
 
     Column(
         modifier = modifier
@@ -413,421 +400,7 @@ fun ProductPriceInsightsContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Two compact filter dropdowns in a single Row: Department & Price Trend
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 1. Department Filter Dropdown
-                Box(modifier = Modifier.weight(1f)) {
-                    val isDeptActive = selectedDepartment != null
-                    val currentDept = remember(selectedDepartment) {
-                        ALL_DEPARTMENTS.find { it.key == selectedDepartment }
-                    }
-                    val deptLabel = if (currentDept != null) {
-                        if (isBangla) currentDept.titleBn else currentDept.titleEn
-                    } else {
-                        if (isBangla) "সব বিভাগ" else "All Depts"
-                    }
-
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            showDeptMenu = true
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isDeptActive) appColors.accent.copy(alpha = 0.12f) else appColors.surface,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isDeptActive) appColors.accent.copy(alpha = 0.5f) else appColors.border
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (currentDept != null) {
-                                Text(
-                                    text = currentDept.icon,
-                                    fontSize = 13.sp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Outlined.Category,
-                                    contentDescription = null,
-                                    tint = if (isDeptActive) appColors.accent else appColors.textSecondary,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = deptLabel,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isDeptActive) FontWeight.SemiBold else FontWeight.Normal
-                                ),
-                                color = if (isDeptActive) appColors.accent else appColors.textSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Filled.ArrowDropDown,
-                                contentDescription = null,
-                                tint = if (isDeptActive) appColors.accent else appColors.textMuted,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = showDeptMenu,
-                        onDismissRequest = { showDeptMenu = false },
-                        modifier = Modifier.background(appColors.surface)
-                    ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = if (isBangla) "সব বিভাগ" else "All Departments",
-                                    color = if (selectedDepartment == null) appColors.accent else appColors.textPrimary,
-                                    fontWeight = if (selectedDepartment == null) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Category,
-                                    contentDescription = null,
-                                    tint = if (selectedDepartment == null) appColors.accent else appColors.textSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            trailingIcon = if (selectedDepartment == null) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Check,
-                                        contentDescription = null,
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            } else null,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedDepartment = null
-                                showDeptMenu = false
-                            }
-                        )
-
-                        ALL_DEPARTMENTS.forEach { dept ->
-                            val isSelected = selectedDepartment == dept.key
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = if (isBangla) dept.titleBn else dept.titleEn,
-                                        color = if (isSelected) appColors.accent else appColors.textPrimary,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                leadingIcon = {
-                                    Text(
-                                        text = dept.icon,
-                                        fontSize = 16.sp
-                                    )
-                                },
-                                trailingIcon = if (isSelected) {
-                                    {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Check,
-                                            contentDescription = null,
-                                            tint = appColors.accent,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                } else null,
-                                onClick = {
-                                    haptics.lightTick()
-                                    selectedDepartment = dept.key
-                                    showDeptMenu = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // 2. Price Trend Filter Dropdown
-                Box(modifier = Modifier.weight(1f)) {
-                    val isTrendActive = selectedFilter != null
-                    val trendColor = when (selectedFilter) {
-                        PriceTrend.UP -> appColors.expense
-                        PriceTrend.DOWN -> appColors.income
-                        PriceTrend.STABLE -> appColors.accent
-                        null -> appColors.accent
-                    }
-                    val trendLabel = when (selectedFilter) {
-                        PriceTrend.UP -> if (isBangla) "দাম বেড়েছে" else "Price Up"
-                        PriceTrend.DOWN -> if (isBangla) "সাশ্রয়ী হয়েছে" else "Price Down"
-                        PriceTrend.STABLE -> if (isBangla) "অপরিবর্তিত" else "Stable"
-                        null -> if (isBangla) "সব দরদাম" else "All Trends"
-                    }
-
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            showTrendMenu = true
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isTrendActive) trendColor.copy(alpha = 0.12f) else appColors.surface,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isTrendActive) trendColor.copy(alpha = 0.5f) else appColors.border
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            when (selectedFilter) {
-                                PriceTrend.UP -> Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
-                                    contentDescription = null,
-                                    tint = appColors.expense,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                PriceTrend.DOWN -> Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.TrendingDown,
-                                    contentDescription = null,
-                                    tint = appColors.income,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                PriceTrend.STABLE -> Icon(
-                                    imageVector = Icons.Filled.Remove,
-                                    contentDescription = null,
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                null -> Icon(
-                                    imageVector = Icons.Outlined.FilterList,
-                                    contentDescription = null,
-                                    tint = appColors.textSecondary,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = trendLabel,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isTrendActive) FontWeight.SemiBold else FontWeight.Normal
-                                ),
-                                color = if (isTrendActive) trendColor else appColors.textSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Filled.ArrowDropDown,
-                                contentDescription = null,
-                                tint = if (isTrendActive) trendColor else appColors.textMuted,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = showTrendMenu,
-                        onDismissRequest = { showTrendMenu = false },
-                        modifier = Modifier.background(appColors.surface)
-                    ) {
-                        // All Trends
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = if (isBangla) "সব দরদাম" else "All Trends",
-                                    color = if (selectedFilter == null) appColors.accent else appColors.textPrimary,
-                                    fontWeight = if (selectedFilter == null) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.FilterList,
-                                    contentDescription = null,
-                                    tint = if (selectedFilter == null) appColors.accent else appColors.textSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            trailingIcon = if (selectedFilter == null) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Check,
-                                        contentDescription = null,
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            } else null,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedFilter = null
-                                showTrendMenu = false
-                            }
-                        )
-
-                        // Price Up
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = if (isBangla) "দাম বেড়েছে" else "Price Up",
-                                        color = appColors.expense,
-                                        fontWeight = if (selectedFilter == PriceTrend.UP) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                    if (priceUpCount > 0) {
-                                        Text(
-                                            text = if (isBangla) "${convertToBengaliDigits(priceUpCount.toString())}টি" else "$priceUpCount",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                            color = appColors.expense.copy(alpha = 0.8f)
-                                        )
-                                    }
-                                }
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
-                                    contentDescription = null,
-                                    tint = appColors.expense,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            trailingIcon = if (selectedFilter == PriceTrend.UP) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Check,
-                                        contentDescription = null,
-                                        tint = appColors.expense,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            } else null,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedFilter = PriceTrend.UP
-                                showTrendMenu = false
-                            }
-                        )
-
-                        // Price Down
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = if (isBangla) "সাশ্রয়ী হয়েছে" else "Price Down",
-                                        color = appColors.income,
-                                        fontWeight = if (selectedFilter == PriceTrend.DOWN) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                    if (priceDownCount > 0) {
-                                        Text(
-                                            text = if (isBangla) "${convertToBengaliDigits(priceDownCount.toString())}টি" else "$priceDownCount",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                            color = appColors.income.copy(alpha = 0.8f)
-                                        )
-                                    }
-                                }
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.TrendingDown,
-                                    contentDescription = null,
-                                    tint = appColors.income,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            trailingIcon = if (selectedFilter == PriceTrend.DOWN) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Check,
-                                        contentDescription = null,
-                                        tint = appColors.income,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            } else null,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedFilter = PriceTrend.DOWN
-                                showTrendMenu = false
-                            }
-                        )
-
-                        // Stable
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = if (isBangla) "অপরিবর্তিত" else "Stable",
-                                        color = if (selectedFilter == PriceTrend.STABLE) appColors.accent else appColors.textPrimary,
-                                        fontWeight = if (selectedFilter == PriceTrend.STABLE) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                    if (priceStableCount > 0) {
-                                        Text(
-                                            text = if (isBangla) "${convertToBengaliDigits(priceStableCount.toString())}টি" else "$priceStableCount",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                            color = appColors.textSecondary
-                                        )
-                                    }
-                                }
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Remove,
-                                    contentDescription = null,
-                                    tint = if (selectedFilter == PriceTrend.STABLE) appColors.accent else appColors.textSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            trailingIcon = if (selectedFilter == PriceTrend.STABLE) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Check,
-                                        contentDescription = null,
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            } else null,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedFilter = PriceTrend.STABLE
-                                showTrendMenu = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Products List
             if (filteredInsights.isEmpty()) {
@@ -843,8 +416,6 @@ fun ProductPriceInsightsContent(
                                 if (isBangla) "এখনো কোনো পণ্যের দর রেকর্ড হয়নি" else "No price records tracked yet"
                             } else if (effectiveSearchQuery.isNotBlank()) {
                                 if (isBangla) "'${effectiveSearchQuery.trim()}' নামে কোনো পণ্য পাওয়া যায়নি" else "No items found matching '${effectiveSearchQuery.trim()}'"
-                            } else if (selectedDepartment != null) {
-                                if (isBangla) "নির্বাচিত বিভাগে কোনো পণ্য পাওয়া যায়নি" else "No items found in selected department"
                             } else {
                                 if (isBangla) "নির্বাচিত ফিল্টারে কোনো পণ্য পাওয়া যায়নি" else "No items found matching filter"
                             },

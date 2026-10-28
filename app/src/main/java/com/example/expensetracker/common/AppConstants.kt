@@ -6,7 +6,7 @@ import android.content.Context
  * Global constants for the Expense Tracker application.
  */
 object AppConstants {
-    const val APP_VERSION = "v6.6"
+    const val APP_VERSION = "v6.7"
     const val APP_NAME = "Expense Tracker"
 
     /**
