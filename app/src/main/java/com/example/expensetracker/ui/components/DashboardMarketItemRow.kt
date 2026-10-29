@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -69,11 +67,19 @@ fun DashboardMarketItemRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                // Circular Checkbox with minimum 48dp touch target
+                // Circular Checkbox
                 Box(
                     modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (item.isPurchased) appColors.income else LocalAppColors.current.surface
+                        )
+                        .border(
+                            width = 1.2.dp,
+                            color = if (item.isPurchased) appColors.income else LocalAppColors.current.border,
+                            shape = CircleShape
+                        )
                         .clickable {
                             haptics.lightTick()
                             if (item.isPurchased) {
@@ -84,28 +90,13 @@ fun DashboardMarketItemRow(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (item.isPurchased) appColors.income else LocalAppColors.current.surface
-                            )
-                            .border(
-                                width = 1.2.dp,
-                                color = if (item.isPurchased) appColors.income else LocalAppColors.current.border,
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (item.isPurchased) {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
+                    if (item.isPurchased) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
                     }
                 }
 

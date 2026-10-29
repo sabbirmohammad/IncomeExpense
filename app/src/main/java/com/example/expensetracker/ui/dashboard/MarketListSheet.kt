@@ -6,11 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,7 +32,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.ProductPriceInsight
@@ -257,28 +254,15 @@ fun MarketListSheet(
                         }
                     }
 
-                    var collapsedDepartments by rememberSaveable { mutableStateOf(setOf<String>()) }
-                    val itemsByDept = remember(filteredItems) {
-                        filteredItems.groupBy { getMarketItemCategory(it.name) }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            // Summary Section
-                            MarketSummarySection(
-                                totalCount = totalCount,
-                                purchasedCount = purchasedCount,
-                                totalSpent = totalSpent,
-                                currencySymbol = currencySymbol,
-                                isBangla = isBangla,
-                                estimatedBudget = if (totalEstimatedBudget > 0) totalEstimatedBudget else null
-                            )
+                    // Summary Section
+                    MarketSummarySection(
+                        totalCount = totalCount,
+                        purchasedCount = purchasedCount,
+                        totalSpent = totalSpent,
+                        currencySymbol = currencySymbol,
+                        isBangla = isBangla,
+                        estimatedBudget = if (totalEstimatedBudget > 0) totalEstimatedBudget else null
+                    )
 
                     if (items.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
@@ -382,7 +366,6 @@ fun MarketListSheet(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth(),
-                        contentPadding = PaddingValues(bottom = if (items.isNotEmpty()) 100.dp else 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         if (items.isEmpty()) {
@@ -433,74 +416,46 @@ fun MarketListSheet(
                             }
                         }
 
-                        for (dept in MarketDepartment.entries) {
-                            val deptItems = itemsByDept[dept.id] ?: continue
-                            if (deptItems.isEmpty()) continue
+                        itemsIndexed(filteredItems, key = { _, itm -> itm.id }) { _, item ->
+                            val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
+                            val lastRateText = if (!item.isPurchased && lastRate != null) {
+                                val (rate, unit) = lastRate
+                                val rateStr = if (rate % 1.0 == 0.0) rate.toInt().toString() else "%.1f".format(rate)
+                                if (isBangla) "গতবার: ৳${convertToBengaliDigits(rateStr)}/$unit"
+                                else "Last: ৳$rateStr/$unit"
+                            } else null
 
-                            val isCollapsed = collapsedDepartments.contains(dept.id)
-                            val totalInDept = deptItems.size
-                            val purchasedInDept = deptItems.count { it.isPurchased }
-
-                            item(key = "sheet_dept_header_${dept.id}") {
-                                MarketDepartmentSectionHeader(
-                                    dept = dept,
-                                    isCollapsed = isCollapsed,
-                                    purchasedCount = purchasedInDept,
-                                    totalCount = totalInDept,
-                                    isBangla = isBangla,
-                                    onToggleCollapse = {
-                                        collapsedDepartments = if (isCollapsed) {
-                                            collapsedDepartments - dept.id
-                                        } else {
-                                            collapsedDepartments + dept.id
-                                        }
+                            MarketItemRow(
+                                item = item,
+                                currencySymbol = currencySymbol,
+                                isBangla = isBangla,
+                                onUnitClick = { itemForUnitDialog = item },
+                                onRowClick = {
+                                    if (item.isPurchased) {
+                                        // Edit price or unmark
+                                        promptAmountForItem = item
+                                    } else {
+                                        // Record price & mark purchased
+                                        promptAmountForItem = item
                                     }
-                                )
-                            }
-
-                            if (!isCollapsed) {
-                                itemsIndexed(deptItems, key = { _, itm -> itm.id }) { _, item ->
-                                    val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
-                                    val lastRateText = if (!item.isPurchased && lastRate != null) {
-                                        val (rate, unit) = lastRate
-                                        val rateStr = if (rate % 1.0 == 0.0) rate.toInt().toString() else "%.1f".format(rate)
-                                        if (isBangla) "গতবার: ৳${convertToBengaliDigits(rateStr)}/$unit"
-                                        else "Last: ৳$rateStr/$unit"
-                                    } else null
-
-                                    MarketItemRow(
-                                        item = item,
-                                        currencySymbol = currencySymbol,
-                                        isBangla = isBangla,
-                                        onUnitClick = { itemForUnitDialog = item },
-                                        onRowClick = {
-                                            if (item.isPurchased) {
-                                                // Edit price or unmark
-                                                promptAmountForItem = item
-                                            } else {
-                                                // Record price & mark purchased
-                                                promptAmountForItem = item
-                                            }
-                                        },
-                                        onTickClick = {
-                                            if (item.isPurchased) {
-                                                haptics.lightTick()
-                                                onUnmarkPurchased(item)
-                                            } else {
-                                                promptAmountForItem = item
-                                            }
-                                        },
-                                        onRequestDelete = {
-                                            itemToDeleteConfirm = item
-                                        },
-                                        onSubstituteClick = {
-                                            itemToSubstitute = item
-                                        },
-                                        lastRateText = lastRateText,
-                                        priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
-                                    )
-                                }
-                            }
+                                },
+                                onTickClick = {
+                                    if (item.isPurchased) {
+                                        haptics.lightTick()
+                                        onUnmarkPurchased(item)
+                                    } else {
+                                        promptAmountForItem = item
+                                    }
+                                },
+                                onRequestDelete = {
+                                    itemToDeleteConfirm = item
+                                },
+                                onSubstituteClick = {
+                                    itemToSubstitute = item
+                                },
+                                lastRateText = lastRateText,
+                                priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
+                            )
                         }
 
                         // Add item row at the end of the list
@@ -546,38 +501,9 @@ fun MarketListSheet(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
-
-                // Docked Persistent Bottom Trip Summary Bar
-                if (items.isNotEmpty()) {
-                    MarketBottomTripSummaryBar(
-                        totalSpent = totalSpent,
-                        purchasedCount = purchasedCount,
-                        totalCount = totalCount,
-                        isBangla = isBangla,
-                        currencySymbol = currencySymbol,
-                        onFinishShopping = {
-                            val purchased = items.filter { it.isPurchased }
-                            val hasStaplePurchased = purchased.any {
-                                val name = it.name.lowercase()
-                                name.contains("মরিচ") || name.contains("লেবু") || name.contains("ধনে") ||
-                                name.contains("আদা") || name.contains("রসুন") || name.contains("chili") || name.contains("lemon")
-                            }
-                            if (!hasStaplePurchased && items.size >= 3) {
-                                showForgotStaplesDialog = true
-                            } else {
-                                onCompleteList(currentViewingList.list.id)
-                                onDismiss()
-                            }
-                        },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 8.dp)
-                    )
-                }
             }
         }
     }
-}
 
     // Dialog 1: Unit & Quantity Dialog
     if (itemForUnitDialog != null) {
@@ -606,17 +532,13 @@ fun MarketListSheet(
             lastRate = lastRate,
             priceInsight = targetInsight,
             onDismiss = { promptAmountForItem = null },
-            onConfirm = { amt, qty, unit ->
-                val updatedItem = targetItem.copy(quantity = qty, unit = unit)
+            onConfirm = { amt ->
                 if (amt > 0) {
-                    onMarkPurchased(updatedItem, amt)
+                    onMarkPurchased(targetItem, amt)
                 } else {
-                    onMarkPurchased(updatedItem, 0.0)
+                    onMarkPurchased(targetItem, 0.0)
                 }
                 promptAmountForItem = null
-            },
-            onUpdateQuantity = { qty, unit ->
-                onUpdateItem(targetItem.copy(quantity = qty, unit = unit))
             }
         )
     }
@@ -794,5 +716,3 @@ fun MarketListSheet(
         )
     }
 }
-}
-

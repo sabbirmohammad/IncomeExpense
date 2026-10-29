@@ -16,7 +16,6 @@ import com.example.expensetracker.data.model.SavingsGoal
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.UserProfile
-import com.example.expensetracker.ui.dashboard.MarketDepartmentClassifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -187,14 +186,8 @@ class ExpenseRepository private constructor(context: Context) {
     }
 
     fun refreshMasterProducts() {
-        val master = dbHelper.getAllMasterProducts()
-        _masterProducts.value = master
+        _masterProducts.value = dbHelper.getAllMasterProducts()
         _stapleProducts.value = dbHelper.getStapleProducts(15)
-        master.forEach { mp ->
-            if (mp.category.isNotBlank()) {
-                MarketDepartmentClassifier.setOverride(mp.normalizedName, mp.category)
-            }
-        }
     }
 
     fun refreshAll() {

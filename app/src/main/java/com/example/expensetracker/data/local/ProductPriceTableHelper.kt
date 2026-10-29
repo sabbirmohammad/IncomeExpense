@@ -135,8 +135,6 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
             else -> PriceTrend.STABLE
         }
 
-        val pricePoints = history.take(10).reversed().map { it.unitPrice }
-
         return ProductPriceInsight(
             productName = cleanName,
             currentUnitPrice = currentRate,
@@ -151,8 +149,7 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
             maxUnitPrice = maxRate,
             purchaseCount = history.size,
             lastPurchasedTimestamp = latest.timestamp,
-            priceTrend = trend,
-            recentPricePoints = pricePoints
+            priceTrend = trend
         )
     }
 

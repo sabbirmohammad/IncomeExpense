@@ -96,7 +96,6 @@ suspend fun ExpenseRepository.markMarketItemPurchased(
     )
 
     val txId = dbHelper.insertTransaction(newTx)
-    dbHelper.updateMarketItem(item.copy(isPurchased = true, amount = amount, transactionId = txId))
     dbHelper.updateMarketItemPurchased(item.id, isPurchased = true, amount = amount, transactionId = txId)
     dbHelper.recordProductPrice(
         productName = item.name,

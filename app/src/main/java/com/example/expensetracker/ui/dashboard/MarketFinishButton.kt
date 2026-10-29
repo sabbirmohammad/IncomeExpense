@@ -30,8 +30,7 @@ fun MarketFinishButton(
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
-    // Semantic contrast reference: if (appColors.isDark) appColors.background else Color.White
-    val contentColor = if (appColors.isDark) appColors.background else Color.White
+    val contentColor = if (appColors.isDark) Color(0xFF052B14) else Color.White
 
     Button(
         onClick = {

@@ -75,13 +75,13 @@ fun ActiveMarketListDashboardCard(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(appColors.accent.copy(alpha = 0.15f)),
+                            .background(Color(0xFF2EC4B6).copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ShoppingCart,
                             contentDescription = null,
-                            tint = appColors.accent,
+                            tint = Color(0xFF2EC4B6),
                             modifier = Modifier.size(20.dp)
                         )
                     }

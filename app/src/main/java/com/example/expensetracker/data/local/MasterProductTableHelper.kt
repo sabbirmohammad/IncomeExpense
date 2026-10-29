@@ -102,33 +102,6 @@ internal class MasterProductTableHelper(private val dbHelper: ExpenseDatabaseHel
     }
 
     /**
-     * Updates an existing master product's department category or creates it if not present.
-     */
-    fun updateProductCategory(productName: String, newCategory: String): Boolean {
-        val cleanName = UnitConverterEngine.normalizeProductName(productName)
-        if (cleanName.isBlank()) return false
-        val db = dbHelper.writableDatabase
-        val cv = ContentValues().apply {
-            put(COL_MP_CATEGORY, newCategory)
-        }
-        val rows = db.update(TABLE_MASTER_PRODUCTS, cv, "$COL_MP_NORMALIZED_NAME = ?", arrayOf(cleanName))
-        if (rows == 0) {
-            cv.apply {
-                put(COL_MP_NAME, productName.trim())
-                put(COL_MP_NORMALIZED_NAME, cleanName)
-                put(COL_MP_DEFAULT_UNIT, "কেজি")
-                put(COL_MP_LATEST_UNIT_PRICE, 0.0)
-                put(COL_MP_PURCHASE_COUNT, 0)
-                put(COL_MP_IS_STAPLE, 0)
-                put(COL_MP_FIRST_PURCHASED_AT, System.currentTimeMillis())
-                put(COL_MP_LAST_PURCHASED_AT, System.currentTimeMillis())
-            }
-            db.insert(TABLE_MASTER_PRODUCTS, null, cv)
-        }
-        return true
-    }
-
-    /**
      * Retrieves all products in the catalog ordered by recency of purchase.
      */
     fun getAllMasterProducts(): List<MasterProduct> {

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,7 +57,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -99,14 +97,9 @@ import com.example.expensetracker.ui.components.MarketSearchBar
 import com.example.expensetracker.ui.components.UnitAndQuantityDialog
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.expensetracker.ui.dashboard.ActiveMarketListsHubView
 import com.example.expensetracker.ui.dashboard.CreateMarketListSection
 import com.example.expensetracker.ui.dashboard.MarketAddNewItemRow
-import com.example.expensetracker.ui.dashboard.MarketBottomTripSummaryBar
-import com.example.expensetracker.ui.dashboard.MarketDepartment
-import com.example.expensetracker.ui.dashboard.MarketDepartmentSectionHeader
 import com.example.expensetracker.ui.dashboard.MarketFinishButton
 import com.example.expensetracker.ui.dashboard.MarketItemRow
 import com.example.expensetracker.ui.dashboard.MarketPromptAmountDialog
@@ -115,7 +108,6 @@ import com.example.expensetracker.ui.dashboard.MarketSummarySection
 import com.example.expensetracker.ui.dashboard.MarketTripCompletionSheet
 import com.example.expensetracker.ui.dashboard.ProductPriceInsightsContent
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
-import com.example.expensetracker.ui.dashboard.getMarketItemCategory
 import kotlinx.coroutines.launch
 
 /**
@@ -166,13 +158,11 @@ fun MarketScreen(
         }
     }
 
-    // Selected list ID in Hub view (collected from ViewModel StateFlow, defaults to single active list)
-    val selectedListId by dashboardViewModel.selectedMarketListId.collectAsStateWithLifecycle()
-
-    LaunchedEffect(effectiveActiveLists) {
-        if (effectiveActiveLists.size == 1) {
-            dashboardViewModel.selectMarketList(effectiveActiveLists.first().list.id)
-        }
+    // Selected list ID in Hub view (if single list, default to it)
+    var selectedListId by remember(effectiveActiveLists.size) {
+        mutableStateOf<Long?>(
+            if (effectiveActiveLists.size == 1) effectiveActiveLists.first().list.id else null
+        )
     }
 
     val currentViewingList = remember(effectiveActiveLists, selectedListId) {
@@ -237,9 +227,9 @@ fun MarketScreen(
                     lastPurchasedRates = lastPurchasedRates,
                     productPriceInsights = productPriceInsights,
                     stapleProducts = stapleProducts,
-                    onSelectList = { listWithItems -> dashboardViewModel.selectMarketList(listWithItems.list.id) },
+                    onSelectList = { listWithItems -> selectedListId = listWithItems.list.id },
                     onBackToAllLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) {
-                        { dashboardViewModel.selectMarketList(null) }
+                        { selectedListId = null }
                     } else null,
                     onCreateNewClick = { selectedTab = 2 },
                     onAddItem = { newItem, targetListId ->
@@ -294,14 +284,10 @@ fun MarketScreen(
                     onListCreated = { title, items ->
                         dashboardViewModel.createMarketListWithBulk(title, items)
                         selectedTab = 0
-                        dashboardViewModel.selectMarketList(null)
+                        selectedListId = null
                     },
                     priceInsights = productPriceInsights,
                     currencySymbol = currencySymbol,
-                    stapleProducts = stapleProducts,
-                    onUpdateProductCategory = { name, cat ->
-                        dashboardViewModel.updateProductCategory(name, cat)
-                    },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
@@ -344,17 +330,13 @@ fun MarketScreen(
             lastRate = lastRate,
             priceInsight = targetInsight,
             onDismiss = { promptAmountForItem = null },
-            onConfirm = { amt, qty, unit ->
-                val updatedItem = targetItem.copy(quantity = qty, unit = unit)
+            onConfirm = { amt ->
                 if (amt > 0) {
-                    dashboardViewModel.markMarketItemPurchased(updatedItem, amt)
+                    dashboardViewModel.markMarketItemPurchased(targetItem, amt)
                 } else {
-                    dashboardViewModel.markMarketItemPurchased(updatedItem, 0.0)
+                    dashboardViewModel.markMarketItemPurchased(targetItem, 0.0)
                 }
                 promptAmountForItem = null
-            },
-            onUpdateQuantity = { qty, unit ->
-                dashboardViewModel.updateMarketItem(targetItem.copy(quantity = qty, unit = unit))
             }
         )
     }
@@ -507,7 +489,7 @@ fun MarketScreen(
                     onClick = {
                         dashboardViewModel.deleteActiveMarketList(listId)
                         if (selectedListId == listId) {
-                            dashboardViewModel.selectMarketList(null)
+                            selectedListId = null
                         }
                         listToDeleteConfirmId = null
                     },
@@ -539,7 +521,7 @@ fun MarketScreen(
             onDismiss = { tripForCompletionSheet = null },
             onConfirmComplete = { selectedAccountId ->
                 dashboardViewModel.completeActiveMarketList(tripToComplete.list.id, accountId = selectedAccountId) {
-                    dashboardViewModel.selectMarketList(null)
+                    selectedListId = null
                     tripForCompletionSheet = null
                 }
             }
@@ -804,161 +786,6 @@ private fun MarketTabPill(
 }
 
 /**
- * Horizontal list switcher chip row for 1-tap switching between active shopping lists.
- */
-@Composable
-fun MarketHorizontalListSwitcher(
-    activeLists: List<MarketListWithItems>,
-    selectedListId: Long?,
-    onSelectList: (Long?) -> Unit,
-    onCreateNewClick: () -> Unit,
-    isBangla: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val appColors = LocalAppColors.current
-    val haptics = rememberAppHaptics()
-
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Chip 0: Overview / Hub Directory Chip
-        item(key = "switcher_all") {
-            val isAllSelected = selectedListId == null
-            Surface(
-                onClick = {
-                    haptics.lightTick()
-                    onSelectList(null)
-                },
-                shape = RoundedCornerShape(10.dp),
-                color = if (isAllSelected) appColors.accent else appColors.surface,
-                border = BorderStroke(1.dp, if (isAllSelected) appColors.accent else appColors.border),
-                modifier = Modifier
-                    .height(38.dp)
-                    .minimumInteractiveComponentSize()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "📁",
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = if (isBangla) "সকল (${convertToBengaliDigits(activeLists.size.toString())})" else "All (${activeLists.size})",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = if (isAllSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 12.sp
-                        ),
-                        color = if (isAllSelected) Color.White else appColors.textPrimary
-                    )
-                }
-            }
-        }
-
-        // Active List Chips
-        items(activeLists, key = { it.list.id }) { listWithItems ->
-            val isSelected = selectedListId == listWithItems.list.id
-            val title = listWithItems.list.title.ifBlank { if (isBangla) "বাজার ফর্দ" else "Market List" }
-            val countText = if (isBangla) {
-                "${convertToBengaliDigits(listWithItems.purchasedItems.toString())}/${convertToBengaliDigits(listWithItems.totalItems.toString())}"
-            } else {
-                "${listWithItems.purchasedItems}/${listWithItems.totalItems}"
-            }
-
-            Surface(
-                onClick = {
-                    haptics.lightTick()
-                    onSelectList(listWithItems.list.id)
-                },
-                shape = RoundedCornerShape(10.dp),
-                color = if (isSelected) appColors.accent else appColors.surface,
-                border = BorderStroke(1.dp, if (isSelected) appColors.accent else appColors.border),
-                modifier = Modifier
-                    .height(38.dp)
-                    .minimumInteractiveComponentSize()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = if (listWithItems.isAllPurchased && listWithItems.totalItems > 0) "✓" else "🛒",
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 12.sp
-                        ),
-                        color = if (isSelected) Color.White else appColors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isSelected) Color.White.copy(alpha = 0.25f) else appColors.accent.copy(alpha = 0.12f)
-                    ) {
-                        Text(
-                            text = countText,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = if (isSelected) Color.White else appColors.accent,
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        // Add New List Action Chip
-        item(key = "switcher_add_new") {
-            Surface(
-                onClick = {
-                    haptics.lightTick()
-                    onCreateNewClick()
-                },
-                shape = RoundedCornerShape(10.dp),
-                color = appColors.accent.copy(alpha = 0.1f),
-                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f)),
-                modifier = Modifier
-                    .height(38.dp)
-                    .minimumInteractiveComponentSize()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = null,
-                        tint = appColors.accent,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = if (isBangla) "নতুন" else "New",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.5.sp
-                        ),
-                        color = appColors.accent
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
  * Tab 0: Active Market Lists & Shopping Checklist View.
  */
 @Composable
@@ -1058,144 +885,61 @@ private fun MarketListsTabContent(
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+        }
+    } else if (effectiveActiveLists.size > 1 && currentViewingList == null) {
+        // Multi-List Directory View
+        ActiveMarketListsHubView(
+            activeLists = effectiveActiveLists,
+            currencySymbol = currencySymbol,
+            isBangla = isBangla,
+            onSelectList = onSelectList,
+            onDeleteList = onDeleteListClick,
+            onCreateNewClick = onCreateNewClick,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+    } else if (currentViewingList != null) {
+        // Single List Active Shopping Mode
+        val items = currentViewingList.items
+        var isEditMode by remember(currentViewingList.list.id) { mutableStateOf(items.isEmpty()) }
+        val effectiveEditMode = isEditMode || items.isEmpty()
 
-                // Dynamic Staple Quick-Start Recommendations
-                val quickStaplesList = if (stapleProducts.isNotEmpty()) {
-                    stapleProducts.take(8).map { it.name }
+        val totalCount = items.size
+        val purchasedCount = items.count { it.isPurchased }
+        val totalSpent = items.filter { it.isPurchased }.sumOf { it.amount ?: 0.0 }
+        val totalEstimatedBudget = remember(items, productPriceInsights, lastPurchasedRates) {
+            items.sumOf { itm ->
+                if (itm.isPurchased) {
+                    itm.amount ?: 0.0
                 } else {
-                    if (isBangla) listOf("আলু", "পেঁয়াজ", "ডিম", "সয়াবিন তেল", "কাঁচামরিচ", "চিনি")
-                    else listOf("Potato", "Onion", "Eggs", "Oil", "Chili", "Sugar")
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = if (isBangla) "বা নিয়মিত বাজার পণ্য দিয়ে শুরু করুন:" else "Or quick-start with regular staples:",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = appColors.textSecondary
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp)
-                ) {
-                    items(quickStaplesList) { staple ->
-                        Surface(
-                            onClick = {
-                                haptics.lightTick()
-                                val defaultQty = 1.0
-                                val defaultUnit = if (isBangla) "কেজি" else "kg"
-                                onAddItem(MarketItem(name = staple, quantity = defaultQty, unit = defaultUnit), null)
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            color = appColors.surface,
-                            border = BorderStroke(1.dp, appColors.border),
-                            modifier = Modifier.minimumInteractiveComponentSize()
-                        ) {
-                            Text(
-                                text = "+ $staple",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 11.5.sp
-                                ),
-                                color = appColors.accent,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            )
-                        }
+                    val insight = UnitConverterEngine.findMatchingInsight(itm.name, productPriceInsights)
+                    if (insight != null) {
+                        UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
+                    } else {
+                        val fallback = lastPurchasedRates[itm.name.lowercase().trim()]
+                        if (fallback != null) {
+                            UnitConverterEngine.estimateCost(fallback.first, itm.quantity, itm.unit)
+                        } else 0.0
                     }
                 }
             }
         }
-    } else {
-        Column(modifier = Modifier.fillMaxSize()) {
-            if (effectiveActiveLists.size > 1) {
-                MarketHorizontalListSwitcher(
-                    activeLists = effectiveActiveLists,
-                    selectedListId = currentViewingList?.list?.id,
-                    onSelectList = { listId ->
-                        if (listId == null) {
-                            onBackToAllLists?.invoke()
-                        } else {
-                            val target = effectiveActiveLists.find { it.list.id == listId }
-                            if (target != null) {
-                                onSelectList(target)
-                            }
-                        }
-                    },
-                    onCreateNewClick = onCreateNewClick,
-                    isBangla = isBangla
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+
+        var filterMode by remember { mutableIntStateOf(0) } // 0: All, 1: Remaining, 2: Done
+
+        val filteredItems = remember(items, filterMode) {
+            when (filterMode) {
+                1 -> items.filter { !it.isPurchased }
+                2 -> items.filter { it.isPurchased }
+                else -> items
             }
+        }
 
-            if (effectiveActiveLists.size > 1 && currentViewingList == null) {
-                // Multi-List Directory View
-                ActiveMarketListsHubView(
-                    activeLists = effectiveActiveLists,
-                    currencySymbol = currencySymbol,
-                    isBangla = isBangla,
-                    onSelectList = onSelectList,
-                    onDeleteList = onDeleteListClick,
-                    onCreateNewClick = onCreateNewClick,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
-            } else if (currentViewingList != null) {
-                // Single List Active Shopping Mode
-                val items = currentViewingList.items
-                var isEditMode by remember(currentViewingList.list.id) { mutableStateOf(items.isEmpty()) }
-                val effectiveEditMode = isEditMode || items.isEmpty()
-
-                val totalCount = items.size
-                val purchasedCount = items.count { it.isPurchased }
-                val totalSpent = items.filter { it.isPurchased }.sumOf { it.amount ?: 0.0 }
-                val totalEstimatedBudget = remember(items, productPriceInsights, lastPurchasedRates) {
-                    items.sumOf { itm ->
-                        if (itm.isPurchased) {
-                            itm.amount ?: 0.0
-                        } else {
-                            val insight = UnitConverterEngine.findMatchingInsight(itm.name, productPriceInsights)
-                            if (insight != null) {
-                                UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
-                            } else {
-                                val fallback = lastPurchasedRates[itm.name.lowercase().trim()]
-                                if (fallback != null) {
-                                    UnitConverterEngine.estimateCost(fallback.first, itm.quantity, itm.unit)
-                                } else 0.0
-                            }
-                        }
-                    }
-                }
-
-                var filterMode by remember { mutableIntStateOf(0) } // 0: All, 1: Remaining, 2: Done
-
-                val filteredItems = remember(items, filterMode) {
-                    when (filterMode) {
-                        1 -> items.filter { !it.isPurchased }
-                        2 -> items.filter { it.isPurchased }
-                        else -> items
-                    }
-                }
-
-                var collapsedDepartments by rememberSaveable { mutableStateOf(setOf<String>()) }
-                val itemsByDept = remember(filteredItems) {
-                    filteredItems.groupBy { getMarketItemCategory(it.name) }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp)
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+        ) {
             // Header strip (title, back if multiple lists, and delete action)
             Row(
                 modifier = Modifier
@@ -1460,64 +1204,35 @@ private fun MarketListsTabContent(
             // Items List
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(bottom = 160.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                for (dept in MarketDepartment.entries) {
-                    val deptItems = itemsByDept[dept.id] ?: continue
-                    if (deptItems.isEmpty()) continue
+                itemsIndexed(filteredItems, key = { _, item -> item.id }) { _, item ->
+                    val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
+                    val lastRateText = if (lastRate != null && lastRate.first > 0) {
+                        val rateStr = if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
+                        val rateBengali = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
+                        if (isBangla) "গত দর: ৳$rateBengali / ${lastRate.second}" else "Last: ৳$rateBengali / ${lastRate.second}"
+                    } else null
 
-                    val isCollapsed = collapsedDepartments.contains(dept.id)
-                    val totalInDept = deptItems.size
-                    val purchasedInDept = deptItems.count { it.isPurchased }
-
-                    item(key = "dept_header_${dept.id}") {
-                        MarketDepartmentSectionHeader(
-                            dept = dept,
-                            isCollapsed = isCollapsed,
-                            purchasedCount = purchasedInDept,
-                            totalCount = totalInDept,
-                            isBangla = isBangla,
-                            onToggleCollapse = {
-                                collapsedDepartments = if (isCollapsed) {
-                                    collapsedDepartments - dept.id
-                                } else {
-                                    collapsedDepartments + dept.id
-                                }
+                    MarketItemRow(
+                        item = item,
+                        currencySymbol = currencySymbol,
+                        isBangla = isBangla,
+                        onUnitClick = { onUnitClick(item) },
+                        onTickClick = {
+                            if (!item.isPurchased) {
+                                onPromptAmount(item)
+                            } else {
+                                onUnmarkPurchased(item)
                             }
-                        )
-                    }
-
-                    if (!isCollapsed) {
-                        itemsIndexed(deptItems, key = { _, item -> item.id }) { _, item ->
-                            val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
-                            val lastRateText = if (lastRate != null && lastRate.first > 0) {
-                                val rateStr = if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
-                                val rateBengali = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
-                                if (isBangla) "গত দর: ৳$rateBengali / ${lastRate.second}" else "Last: ৳$rateBengali / ${lastRate.second}"
-                            } else null
-
-                            MarketItemRow(
-                                item = item,
-                                currencySymbol = currencySymbol,
-                                isBangla = isBangla,
-                                onUnitClick = { onUnitClick(item) },
-                                onTickClick = {
-                                    if (!item.isPurchased) {
-                                        onPromptAmount(item)
-                                    } else {
-                                        onUnmarkPurchased(item)
-                                    }
-                                },
-                                onDeleteClick = { onDeleteItemClick(item) },
-                                onRequestDelete = { onDeleteItemClick(item) },
-                                onSubstituteClick = { onSubstituteClick(item) },
-                                isEditMode = effectiveEditMode,
-                                lastRateText = lastRateText,
-                                priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
-                            )
-                        }
-                    }
+                        },
+                        onDeleteClick = { onDeleteItemClick(item) },
+                        onRequestDelete = { onDeleteItemClick(item) },
+                        onSubstituteClick = { onSubstituteClick(item) },
+                        isEditMode = effectiveEditMode,
+                        lastRateText = lastRateText,
+                        priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
+                    )
                 }
 
                 // In Edit Mode: Show MarketAddNewItemRow
@@ -1549,34 +1264,14 @@ private fun MarketListsTabContent(
                             isBangla = isBangla,
                             onComplete = onFinishTripClick
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(84.dp))
                     }
                 } else {
                     item {
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(84.dp))
                     }
                 }
             }
         }
-
-        // Docked Persistent Bottom Trip Summary Bar
-        if (!effectiveEditMode && items.isNotEmpty()) {
-            MarketBottomTripSummaryBar(
-                totalSpent = totalSpent,
-                purchasedCount = purchasedCount,
-                totalCount = totalCount,
-                isBangla = isBangla,
-                currencySymbol = currencySymbol,
-                onFinishShopping = onFinishTripClick,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(start = 20.dp, end = 20.dp, bottom = 80.dp, top = 8.dp)
-            )
-        }
     }
 }
-}
-}
-}
-
-
