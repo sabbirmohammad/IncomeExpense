@@ -675,10 +675,13 @@ fun MarketNativeContent(
             lastRate = lastRate,
             priceInsight = curInsight,
             onDismiss = { promptAmountForItem = null },
-            onConfirm = { amt ->
+            onConfirm = { amt, qty, unit ->
                 haptics.mediumClick()
-                onMarkPurchased(curItem, amt)
+                onMarkPurchased(curItem.copy(quantity = qty, unit = unit), amt)
                 promptAmountForItem = null
+            },
+            onUpdateQuantity = { qty, unit ->
+                onUpdateItem(curItem.copy(quantity = qty, unit = unit))
             }
         )
     }

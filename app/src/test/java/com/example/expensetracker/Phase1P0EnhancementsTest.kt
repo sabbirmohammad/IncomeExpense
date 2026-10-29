@@ -70,6 +70,7 @@ class Phase1P0EnhancementsTest {
 
         assertTrue(
             "MarketFinishButton must declare adaptive contentColor for dark mode contrast",
+            content.contains("if (appColors.isDark) appColors.background else Color.White") ||
             content.contains("if (appColors.isDark) Color(0xFF052B14) else Color.White")
         )
         assertTrue(

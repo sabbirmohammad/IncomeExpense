@@ -240,3 +240,54 @@ Integrity mode: development
 - [ ] `./gradlew compileDebugKotlin` completes without compilation errors or unresolved references.
 - [ ] `GoogleDriveSyncManager` unit/logic tests remain fully operational.
 - [ ] No dead code, unused imports, or orphaned ViewModel methods related to the removed manual export buttons remain.
+
+
+## 2026-10-28T19:19:04Z
+
+Modernize the UI/UX of the Expense Tracker app's Market (বাজার) section to deliver a world-class, ergonomic, and aesthetically delightful shopping and price intelligence experience.
+
+Working directory: /Users/sabbir/Dev/ExpenseTracker
+Integrity mode: development
+
+## Requirements
+
+### R1. Modern In-Store Shopping Experience & Thumb-Friendly Ergonomics
+Create a high-visibility, one-handed checklist experience optimized for physical shopping trips in crowded markets. The interface must provide fluid item check-off interactions, tactile haptic feedback, clear visual state differentiation for purchased vs pending items, and a persistent bottom trip summary bar showing running spend total, progress percentage, and single-tap checkout.
+
+### R2. Frictionless Price & Quantity Logging
+Streamline the price logging flow when marking items as purchased. Instead of disruptive modal dialogs, provide a swift, thumb-zone bottom sheet / inline numerical entry mechanism with smart preset unit multipliers, auto-suggestions based on last purchased rate, and instant visual indicators for price changes (cheaper/expensive compared to last purchase).
+
+### R3. Smart Department Categorization & Visual Hierarchy
+Enhance item organization with structured department grouping (কাঁচাবাজার/সবজি, মাছ/মাংস, মুদি/মসলা, ইত্যাদি), collapsible department sections with live progress indicators (e.g., "৪/৫ টি সম্পন্ন"), and modern Material 3 expressive card styling with refined typography, subtle tonal accents, and clean spacing.
+
+### R4. Commodity Price Intelligence & Inflation Trend Visuals
+Elevate the Market Price Intelligence tab with modern cards showing price trends, percentage fluctuations, historical purchase sparklines, and an instant search/filter experience that helps users track market inflation and fair commodity rates.
+
+### R5. Multi-List Hub & WhatsApp Bulk List Flow
+Refine the active multi-list switcher and the WhatsApp / natural language bulk list creator with instant item tag previews, quick category corrections, and clean empty states with intelligent staple recommendations.
+
+## Acceptance Criteria
+
+### In-Store Checklist & Ergonomics
+- [ ] Active shopping checklist displays items organized with clear visual status (purchased vs pending) and haptic feedback.
+- [ ] Persistent bottom trip summary bar dynamically updates total spent, item count progress, and enables direct trip completion.
+- [ ] Price entry flow operates smoothly via a bottom sheet / keypad without disorienting fullscreen dialog interruptions.
+
+### Visual Polish & Hierarchy
+- [ ] Items are intuitively grouped by market department with department-level completion counters.
+- [ ] Material 3 Expressive styling, color tokens, and typography align with both Light and Dark themes.
+
+### Price Intelligence & List Creation
+- [ ] Price intelligence tab displays price trend badges (higher/lower/stable) and historical rates accurately.
+- [ ] WhatsApp/Bulk paste interface allows instant editing and preview before committing to a list.
+
+### Quality & Regression Verification
+- [ ] All unit tests pass cleanly via `./gradlew testDebugUnitTest`.
+- [ ] Debug build succeeds without errors via `./gradlew compileDebugKotlin`.
+- [ ] Zero regression in existing database operations, trip saving, and transaction recording.
+- [ ] Respect repository guidelines in GEMINI.md for verification and version bumping prior to any git push.
+
+
+## 2026-10-29T03:46:28Z
+
+Resume work on market UI/UX modernization.

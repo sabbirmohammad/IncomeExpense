@@ -156,7 +156,7 @@ fun MarketItemRow(
         }
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(14.dp),
             color = if (item.isPurchased) appColors.income.copy(alpha = 0.08f) else appColors.surface,
             border = BorderStroke(
                 1.dp,
@@ -165,10 +165,15 @@ fun MarketItemRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    haptics.lightTick()
                     if (isEditMode) {
+                        haptics.lightTick()
                         onUnitClick()
                     } else {
+                        if (!item.isPurchased) {
+                            haptics.successFeedback()
+                        } else {
+                            haptics.lightTick()
+                        }
                         onRowClick()
                     }
                 }
@@ -180,13 +185,17 @@ fun MarketItemRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // 1. Circular Checkbox
+                // 1. Circular Checkbox with minimum 48dp touch target
                 Box(
                     modifier = Modifier
                         .minimumInteractiveComponentSize()
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .clickable(enabled = !isEditMode) {
-                            haptics.lightTick()
+                            if (!item.isPurchased) {
+                                haptics.successFeedback()
+                            } else {
+                                haptics.lightTick()
+                            }
                             onTickClick()
                         },
                     contentAlignment = Alignment.Center
@@ -208,7 +217,7 @@ fun MarketItemRow(
                         if (item.isPurchased || checkScale > 0.05f) {
                             Icon(
                                 imageVector = Icons.Filled.Check,
-                                contentDescription = "Purchased",
+                                contentDescription = if (item.isPurchased) (if (isBangla) "কেনা সম্পন্ন - বাতিল করতে ট্যাপ করুন" else "Purchased - Tap to uncheck") else (if (isBangla) "কেনা চিহ্নিত করুন" else "Mark as purchased"),
                                 tint = Color.White,
                                 modifier = Modifier
                                     .size(15.dp)
@@ -376,37 +385,43 @@ fun MarketItemRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.weight(1f, fill = false)
                         ) {
-                            // Quantity pill
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            // Quantity pill with minimum 48dp touch target
+                            Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        if (item.isPurchased) appColors.background
-                                        else appColors.accent.copy(alpha = 0.10f)
-                                    )
+                                    .minimumInteractiveComponentSize()
                                     .clickable(enabled = !item.isPurchased) {
                                         haptics.lightTick()
                                         onUnitClick()
-                                    }
-                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                                    },
+                                contentAlignment = Alignment.CenterStart
                             ) {
-                                Text(
-                                    text = item.formatQuantity(),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = if (item.isPurchased) appColors.textSecondary else appColors.accent
-                                )
-                                if (!item.isPurchased) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Edit,
-                                        contentDescription = "Edit quantity",
-                                        tint = appColors.accent.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(10.dp)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            if (item.isPurchased) appColors.background
+                                            else appColors.accent.copy(alpha = 0.10f)
+                                        )
+                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = item.formatQuantity(),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = if (item.isPurchased) appColors.textSecondary else appColors.accent
                                     )
+                                    if (!item.isPurchased) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Edit,
+                                            contentDescription = "Edit quantity",
+                                            tint = appColors.accent.copy(alpha = 0.8f),
+                                            modifier = Modifier.size(10.dp)
+                                        )
+                                    }
                                 }
                             }
 
@@ -430,52 +445,59 @@ fun MarketItemRow(
                             }
                         }
 
-                        // Right side of Row 2: Substitute item quick button (কার্ডের একদম শেষে)
+                        // Right side of Row 2: Substitute item quick button (কার্ডের একদম শেষে) with 48dp touch target
                         if (!isEditMode && !item.isPurchased && onSubstituteClick != null) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = appColors.accent.copy(alpha = 0.08f),
-                                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f)),
+                            Box(
                                 modifier = Modifier
                                     .padding(start = 6.dp)
+                                    .minimumInteractiveComponentSize()
                                     .clickable {
                                         haptics.lightTick()
                                         onSubstituteClick()
-                                    }
+                                    },
+                                contentAlignment = Alignment.CenterEnd
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.5.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = appColors.accent.copy(alpha = 0.08f),
+                                    border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f))
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.SwapHoriz,
-                                        contentDescription = "Substitute item",
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(11.dp)
-                                    )
-                                    Text(
-                                        text = if (isBangla) "বিকল্প" else "Alt",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        color = appColors.accent
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.SwapHoriz,
+                                            contentDescription = "Substitute item",
+                                            tint = appColors.accent,
+                                            modifier = Modifier.size(11.dp)
+                                        )
+                                        Text(
+                                            text = if (isBangla) "বিকল্প" else "Alt",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 9.5.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            ),
+                                            color = appColors.accent
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                // 3. Right: In Edit Mode, show Delete item button
+                // 3. Right: In Edit Mode, show Delete item button with minimum 48dp touch target
                 if (isEditMode) {
                     IconButton(
                         onClick = {
                             haptics.mediumClick()
                             onRequestDelete()
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(48.dp)
                     ) {
                         Box(
                             modifier = Modifier

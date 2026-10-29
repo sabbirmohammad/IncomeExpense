@@ -52,6 +52,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val masterProducts: StateFlow<List<com.example.expensetracker.data.model.MasterProduct>> = repository.masterProducts
     val stapleProducts: StateFlow<List<com.example.expensetracker.data.model.MasterProduct>> = repository.stapleProducts
 
+    private val _selectedMarketListId = MutableStateFlow<Long?>(null)
+    val selectedMarketListId: StateFlow<Long?> = _selectedMarketListId.asStateFlow()
+
+    fun selectMarketList(listId: Long?) {
+        _selectedMarketListId.value = listId
+    }
+
+    fun updateProductCategory(productName: String, newCategory: String) {
+        MarketDepartmentClassifier.setOverride(productName, newCategory)
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.dbHelper.masterProductHelper.updateProductCategory(productName, newCategory)
+        }
+    }
+
     private val _summary = MutableStateFlow(FinancialSummary())
     val summary: StateFlow<FinancialSummary> = _summary.asStateFlow()
 

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
@@ -43,6 +44,8 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +54,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -69,8 +74,10 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.MarketListParser
 import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.MarketItem
+import com.example.expensetracker.data.model.MasterProduct
 import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.UnitAndQuantityDialog
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
@@ -83,6 +90,138 @@ enum class CreateMarketListStep {
     TITLE,      // Step 1: ফর্দের নাম ও দ্রুত সাজেশন
     METHOD,     // Step 2: মাধ্যম নির্বাচন (সরাসরি লিখবেন নাকি হোয়াটসঅ্যাপ পেস্ট)
     ITEMS       // Step 3: সরাসরি পণ্য এন্ট্রি অথবা হোয়াটসঅ্যাপ পেস্ট
+}
+
+@Composable
+fun MarketParsedTagChip(
+    item: MarketItem,
+    isBangla: Boolean,
+    onEditQuantity: () -> Unit,
+    onDelete: () -> Unit,
+    onDepartmentSelected: (MarketDepartment) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val haptics = rememberAppHaptics()
+    var showDeptMenu by remember { mutableStateOf(false) }
+
+    val currentDept = MarketDepartment.fromItemName(item.name)
+
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = Color(0xFF25D366).copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.35f)),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // 1. Department Emoji Icon with 1-Tap Reclassification Dropdown
+            Box {
+                Surface(
+                    onClick = {
+                        haptics.lightTick()
+                        showDeptMenu = true
+                    },
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.White.copy(alpha = 0.6f),
+                    modifier = Modifier.minimumInteractiveComponentSize()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(text = currentDept.icon, fontSize = 12.sp)
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Change Department",
+                            tint = appColors.textSecondary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = showDeptMenu,
+                    onDismissRequest = { showDeptMenu = false }
+                ) {
+                    MarketDepartment.entries.forEach { dept ->
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(dept.icon, fontSize = 15.sp)
+                                    Text(
+                                        text = if (isBangla) dept.titleBn else dept.titleEn,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = if (dept == currentDept) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    )
+                                }
+                            },
+                            onClick = {
+                                haptics.lightTick()
+                                showDeptMenu = false
+                                onDepartmentSelected(dept)
+                            }
+                        )
+                    }
+                }
+            }
+
+            // 2. Item Name & Clickable Quantity/Unit Pill
+            Text(
+                text = item.name,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = appColors.textPrimary
+            )
+
+            Surface(
+                onClick = {
+                    haptics.lightTick()
+                    onEditQuantity()
+                },
+                shape = RoundedCornerShape(6.dp),
+                color = Color(0xFF25D366).copy(alpha = 0.22f)
+            ) {
+                Text(
+                    text = item.formatQuantity(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = Color(0xFF1E824C),
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                )
+            }
+
+            // 3. 1-Tap Remove Button ('✕')
+            IconButton(
+                onClick = {
+                    haptics.lightTick()
+                    onDelete()
+                },
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Remove",
+                    tint = appColors.expense,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -99,7 +238,9 @@ fun CreateMarketListSection(
     onListCreated: (title: String, items: List<MarketItem>) -> Unit,
     modifier: Modifier = Modifier,
     priceInsights: Map<String, ProductPriceInsight> = emptyMap(),
-    currencySymbol: String = "৳"
+    currencySymbol: String = "৳",
+    stapleProducts: List<MasterProduct> = emptyList(),
+    onUpdateProductCategory: ((productName: String, newCategory: String) -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -133,8 +274,15 @@ fun CreateMarketListSection(
 
     // Bulk paste state
     var bulkInputText by remember { mutableStateOf("") }
-    val parsedBulkItems = remember(bulkInputText) {
-        if (bulkInputText.isNotBlank()) MarketListParser.parseBulkText(bulkInputText) else emptyList()
+    val editableBulkItems = remember { mutableStateOf<List<MarketItem>>(emptyList()) }
+    var itemToEditIndex by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(bulkInputText) {
+        if (bulkInputText.isNotBlank()) {
+            editableBulkItems.value = MarketListParser.parseBulkText(bulkInputText)
+        } else {
+            editableBulkItems.value = emptyList()
+        }
     }
 
     // Manual items state
@@ -161,32 +309,30 @@ fun CreateMarketListSection(
         )
     }
 
-    val quickStaples = if (isBangla) {
-        listOf(
-            "আলু ১ কেজি",
-            "পেঁয়াজ ১ কেজি",
-            "ডিম ১ ডজন",
-            "সয়াবিন তেল ১ লিটার",
-            "কাঁচামরিচ ২৫০ গ্রাম",
-            "চিনি ১ কেজি",
-            "মুরগি ১ কেজি",
-            "দুধ ১ লিটার",
-            "রসুন ২৫০ গ্রাম",
-            "আদা ২৫০ গ্রাম"
-        )
-    } else {
-        listOf(
-            "Potato 1kg",
-            "Onion 1kg",
-            "Eggs 12pcs",
-            "Oil 1L",
-            "Chili 250g",
-            "Sugar 1kg",
-            "Chicken 1kg",
-            "Milk 1L",
-            "Garlic 250g"
-        )
+    val dynamicStaples = remember(stapleProducts, isBangla) {
+        if (stapleProducts.isNotEmpty()) {
+            stapleProducts.map { mp ->
+                val defaultQty = when (mp.defaultUnit) {
+                    "গ্রাম", "gm", "g" -> 250.0
+                    "ডজন", "dozen" -> 1.0
+                    else -> 1.0
+                }
+                val qtyStr = if (defaultQty % 1.0 == 0.0) defaultQty.toInt().toString() else defaultQty.toString()
+                val qtyBengali = if (isBangla) convertToBengaliDigits(qtyStr) else qtyStr
+                "${mp.name} $qtyBengali ${mp.defaultUnit}"
+            }
+        } else {
+            if (isBangla) listOf(
+                "আলু ১ কেজি", "পেঁয়াজ ১ কেজি", "ডিম ১ ডজন", "সয়াবিন তেল ১ লিটার",
+                "কাঁচামরিচ ২৫০ গ্রাম", "চিনি ১ কেজি", "মুরগি ১ কেজি", "দুধ ১ লিটার",
+                "রসুন ২৫০ গ্রাম", "আদা ২৫০ গ্রাম"
+            ) else listOf(
+                "Potato 1kg", "Onion 1kg", "Eggs 12pcs", "Oil 1L",
+                "Chili 250g", "Sugar 1kg", "Chicken 1kg", "Milk 1L", "Garlic 250g"
+            )
+        }
     }
+    val quickStaples = dynamicStaples
 
     val quickQuantities = if (isBangla) {
         listOf("১ কেজি", "২ কেজি", "৫০০ গ্রাম", "২৫০ গ্রাম", "১ ডজন", "১ লিটার", "১ প্যাকেট", "১ হালি")
@@ -222,7 +368,7 @@ fun CreateMarketListSection(
         }
     }
 
-    val effectiveItems = if (inputMode == 0) parsedBulkItems else manualItems.value
+    val effectiveItems = if (inputMode == 0) editableBulkItems.value else manualItems.value
 
     val liveEstimatedBudget = remember(effectiveItems, priceInsights) {
         effectiveItems.sumOf { item ->
@@ -898,7 +1044,7 @@ fun CreateMarketListSection(
                         }
 
                         // Live Item Counter Badge
-                        val totalCount = if (inputMode == 1) manualItems.value.size else parsedBulkItems.size
+                        val totalCount = if (inputMode == 1) manualItems.value.size else editableBulkItems.value.size
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = if (totalCount > 0) appColors.accent.copy(alpha = 0.14f) else appColors.background,
@@ -1005,7 +1151,7 @@ fun CreateMarketListSection(
                             shape = RoundedCornerShape(12.dp)
                         )
 
-                        if (parsedBulkItems.isNotEmpty()) {
+                        if (editableBulkItems.value.isNotEmpty()) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
                                 color = Color(0xFF25D366).copy(alpha = 0.1f),
@@ -1014,13 +1160,13 @@ fun CreateMarketListSection(
                             ) {
                                 Column(
                                     modifier = Modifier.padding(10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
                                         text = if (isBangla)
-                                            "✓ ${convertToBengaliDigits(parsedBulkItems.size.toString())}টি পণ্য সফলভাবে শনাক্ত করা হয়েছে"
+                                            "✓ ${convertToBengaliDigits(editableBulkItems.value.size.toString())}টি পণ্য সফলভাবে শনাক্ত করা হয়েছে"
                                         else
-                                            "✓ ${parsedBulkItems.size} items detected successfully",
+                                            "✓ ${editableBulkItems.value.size} items detected successfully",
                                         style = MaterialTheme.typography.bodySmall.copy(
                                             fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold
@@ -1030,36 +1176,26 @@ fun CreateMarketListSection(
 
                                     FlowRow(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        parsedBulkItems.take(10).forEach { item ->
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = Color(0xFF25D366).copy(alpha = 0.15f)
-                                            ) {
-                                                Text(
-                                                    text = "${item.name} (${item.formatQuantity()})",
-                                                    style = MaterialTheme.typography.bodySmall.copy(
-                                                        fontSize = 10.5.sp,
-                                                        fontWeight = FontWeight.Medium
-                                                    ),
-                                                    color = appColors.textPrimary,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                                )
-                                            }
-                                        }
-                                        if (parsedBulkItems.size > 10) {
-                                            Text(
-                                                text = if (isBangla)
-                                                    "+ আরও ${convertToBengaliDigits((parsedBulkItems.size - 10).toString())}টি..."
-                                                else
-                                                    "+ ${parsedBulkItems.size - 10} more...",
-                                                style = MaterialTheme.typography.bodySmall.copy(
-                                                    fontSize = 10.5.sp,
-                                                    color = appColors.textSecondary
-                                                ),
-                                                modifier = Modifier.padding(vertical = 3.dp)
+                                        editableBulkItems.value.forEachIndexed { index, item ->
+                                            MarketParsedTagChip(
+                                                item = item,
+                                                isBangla = isBangla,
+                                                onEditQuantity = { itemToEditIndex = index },
+                                                onDelete = {
+                                                    val current = editableBulkItems.value.toMutableList()
+                                                    current.removeAt(index)
+                                                    editableBulkItems.value = current
+                                                },
+                                                onDepartmentSelected = { dept ->
+                                                    MarketDepartmentClassifier.setOverride(item.name, dept.id)
+                                                    onUpdateProductCategory?.invoke(item.name, dept.id)
+                                                    val current = editableBulkItems.value.toMutableList()
+                                                    current[index] = current[index].copy()
+                                                    editableBulkItems.value = current
+                                                }
                                             )
                                         }
                                     }
@@ -1368,12 +1504,18 @@ fun CreateMarketListSection(
                                 )
                             }
 
+                            val addedNames = remember(manualItems.value) { manualItems.value.map { it.name.trim().lowercase() }.toSet() }
+                            val filteredStaples = dynamicStaples.filter { stapleStr ->
+                                val namePart = MarketListParser.parseSingleLine(stapleStr)?.name?.trim()?.lowercase()
+                                    ?: stapleStr.split(" ").firstOrNull()?.trim()?.lowercase() ?: ""
+                                namePart.isBlank() || namePart !in addedNames
+                            }
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                quickStaples.forEach { staple ->
+                                filteredStaples.forEach { staple ->
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
                                         color = appColors.background,
@@ -1481,6 +1623,7 @@ fun CreateMarketListSection(
                             val finalTitle = listTitle.trim().ifBlank { defaultInitialTitle }
                             onListCreated(finalTitle, effectiveItems)
                             bulkInputText = ""
+                            editableBulkItems.value = emptyList()
                             manualItems.value = mutableListOf()
                             currentStep = CreateMarketListStep.TITLE
                         }
@@ -1525,5 +1668,21 @@ fun CreateMarketListSection(
         item {
             Spacer(modifier = Modifier.height(84.dp))
         }
+    }
+
+    if (itemToEditIndex != null && itemToEditIndex!! in editableBulkItems.value.indices) {
+        val editingItem = editableBulkItems.value[itemToEditIndex!!]
+        UnitAndQuantityDialog(
+            initialQuantity = editingItem.quantity,
+            initialUnit = editingItem.unit,
+            isBangla = isBangla,
+            onDismiss = { itemToEditIndex = null },
+            onConfirm = { newQty, newUnit ->
+                val current = editableBulkItems.value.toMutableList()
+                current[itemToEditIndex!!] = editingItem.copy(quantity = newQty, unit = newUnit)
+                editableBulkItems.value = current
+                itemToEditIndex = null
+            }
+        )
     }
 }

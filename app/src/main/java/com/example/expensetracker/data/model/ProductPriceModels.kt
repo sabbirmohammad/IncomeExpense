@@ -38,7 +38,8 @@ data class ProductPriceInsight(
     val maxUnitPrice: Double = currentUnitPrice,
     val purchaseCount: Int = 1,
     val lastPurchasedTimestamp: Long = System.currentTimeMillis(),
-    val priceTrend: PriceTrend = PriceTrend.STABLE
+    val priceTrend: PriceTrend = PriceTrend.STABLE,
+    val recentPricePoints: List<Double> = emptyList()
 ) {
     val isPriceUp: Boolean get() = priceTrend == PriceTrend.UP
     val isPriceDown: Boolean get() = priceTrend == PriceTrend.DOWN
