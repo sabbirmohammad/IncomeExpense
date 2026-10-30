@@ -110,6 +110,7 @@ fun CreateMarketListSection(
     val clipboardManager = LocalClipboardManager.current
 
     var clipboardText by remember { mutableStateOf("") }
+    var isClipboardDismissed by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         try {
             clipboardText = clipboardManager.getText()?.text ?: ""
@@ -210,7 +211,7 @@ fun CreateMarketListSection(
                 val parsed = MarketListParser.parseSingleLine(clean)
                 listOf(parsed ?: MarketItem(name = clean, quantity = 1.0, unit = if (isBangla) "কেজি" else "kg"))
             }
-            manualItems.value = (itemsToAdd + manualItems.value).toMutableList()
+            manualItems.value = (manualItems.value + itemsToAdd).toMutableList()
             manualItemName = ""
             if (itemsToAdd.size > 1) {
                 lastBulkAddedCount = itemsToAdd.size
@@ -255,6 +256,7 @@ fun CreateMarketListSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (currentStep != CreateMarketListStep.TITLE) {
+                        // STEP 2 CONSOLIDATED TOP BAR: Back Navigation + Market Title & Edit + Live Item Counter Badge
                         Surface(
                             onClick = {
                                 haptics.lightTick()
@@ -265,7 +267,7 @@ fun CreateMarketListSection(
                             border = BorderStroke(1.dp, appColors.border)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
@@ -285,7 +287,79 @@ fun CreateMarketListSection(
                                 )
                             }
                         }
+
+                        // Middle: Current List Title with Quick Edit Indicator
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable {
+                                    haptics.lightTick()
+                                    currentStep = CreateMarketListStep.TITLE
+                                },
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = listTitle.ifBlank { defaultInitialTitle },
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp
+                                    ),
+                                    color = appColors.textPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                Icon(
+                                    imageVector = Icons.Outlined.Edit,
+                                    contentDescription = "Edit title",
+                                    tint = appColors.accent,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                            Text(
+                                text = if (isBangla) "ধাপ ২/২ • পণ্যের তালিকা" else "Step 2/2 • Market Items",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                color = appColors.textSecondary
+                            )
+                        }
+
+                        // Right: Live Item Counter Badge
+                        val totalCount = manualItems.value.size
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (totalCount > 0) appColors.accent.copy(alpha = 0.14f) else appColors.surface,
+                            border = BorderStroke(
+                                1.dp,
+                                if (totalCount > 0) appColors.accent.copy(alpha = 0.4f) else appColors.border
+                            )
+                        ) {
+                            Text(
+                                text = if (isBangla) {
+                                    if (totalCount > 0) "${convertToBengaliDigits(totalCount.toString())}টি পণ্য যুক্ত"
+                                    else "০টি পণ্য"
+                                } else {
+                                    if (totalCount > 0) "$totalCount items"
+                                    else "0 items"
+                                },
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = if (totalCount > 0) appColors.accent else appColors.textSecondary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                            )
+                        }
                     } else {
+                        // STEP 1 TOP BAR
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -315,28 +389,23 @@ fun CreateMarketListSection(
                                 color = appColors.textPrimary
                             )
                         }
-                    }
 
-                    // Step Indicator Pill
-                    val stepLabel = when (currentStep) {
-                        CreateMarketListStep.TITLE -> if (isBangla) "ধাপ ১/২: নাম" else "Step 1/2: Name"
-                        else -> if (isBangla) "ধাপ ২/২: পণ্য" else "Step 2/2: Items"
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = appColors.accent.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f))
-                    ) {
-                        Text(
-                            text = stepLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            color = appColors.accent,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
+                        // Step Indicator Pill
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = appColors.accent.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = if (isBangla) "ধাপ ১/২: নাম" else "Step 1/2: Name",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp
+                                ),
+                                color = appColors.accent,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
                     }
                 }
 
@@ -560,142 +629,50 @@ fun CreateMarketListSection(
         // Step 2: ITEMS ENTRY (Smart Omnibox with Auto Bulk Paste Detection)
         // -------------------------------------------------------------
         if (currentStep == CreateMarketListStep.ITEMS) {
-            // Clean Summary Header (Focused on list title & live item count)
-            item {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = appColors.surface,
-                    border = BorderStroke(1.dp, appColors.border),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(appColors.accent.copy(alpha = 0.12f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.ShoppingCart,
-                                    contentDescription = null,
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = listTitle.ifBlank { defaultInitialTitle },
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.5.sp
-                                    ),
-                                    color = appColors.textPrimary
-                                )
-                                TextButton(
-                                    onClick = {
-                                        haptics.lightTick()
-                                        currentStep = CreateMarketListStep.TITLE
-                                    },
-                                    contentPadding = PaddingValues(0.dp),
-                                    modifier = Modifier.height(18.dp)
-                                ) {
-                                    Text(
-                                        text = if (isBangla) "নাম পরিবর্তন" else "Change Title",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        color = appColors.accent
-                                    )
-                                }
-                            }
-                        }
-
-                        // Live Item Counter Badge
-                        val totalCount = manualItems.value.size
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (totalCount > 0) appColors.accent.copy(alpha = 0.14f) else appColors.background,
-                            border = BorderStroke(
-                                1.dp,
-                                if (totalCount > 0) appColors.accent.copy(alpha = 0.4f) else appColors.border
-                            )
-                        ) {
-                            Text(
-                                text = if (isBangla) {
-                                    if (totalCount > 0) "${convertToBengaliDigits(totalCount.toString())}টি পণ্য যুক্ত"
-                                    else "০টি পণ্য"
-                                } else {
-                                    if (totalCount > 0) "$totalCount items"
-                                    else "0 items"
-                                },
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = if (totalCount > 0) appColors.accent else appColors.textSecondary,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Mode Content: Manual Entry (inputMode == 1)
-            // Mode Content: Bulk Paste (inputMode == 0)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // Clipboard Quick Suggestion Banner (Instant 1-tap bulk paste)
-                    if (hasClipboardText) {
+                    // Clipboard Quick Suggestion Banner (Dismissible 1-tap bulk paste)
+                    if (hasClipboardText && !isClipboardDismissed) {
                         Surface(
-                            onClick = {
-                                haptics.lightTick()
-                                addManualItem(clipboardText)
-                                clipboardText = ""
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            color = Color(0xFF25D366).copy(alpha = 0.10f),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF25D366).copy(alpha = 0.09f),
                             border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            haptics.lightTick()
+                                            addManualItem(clipboardText)
+                                            clipboardText = ""
+                                            isClipboardDismissed = true
+                                        }
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(24.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF25D366).copy(alpha = 0.2f)),
+                                            .background(Color(0xFF25D366).copy(alpha = 0.18f)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.ContentPaste,
                                             contentDescription = null,
                                             tint = Color(0xFF25D366),
-                                            modifier = Modifier.size(13.dp)
+                                            modifier = Modifier.size(14.dp)
                                         )
                                     }
                                     Column {
                                         Text(
-                                            text = if (isBangla) "ক্লিপবোর্ডে ফর্দ রয়েছে" else "List detected on clipboard",
+                                            text = if (isBangla) "ক্লিপবোর্ডে ফর্দ শনাক্ত হয়েছে" else "List detected on clipboard",
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 11.5.sp,
                                                 fontWeight = FontWeight.Bold
@@ -705,108 +682,55 @@ fun CreateMarketListSection(
                                         Text(
                                             text = if (isBangla) "এক ট্যাপে সবগুলো পণ্য স্বয়ংক্রিয়ভাবে যোগ করুন"
                                             else "Tap to auto-parse and add all items",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.5.sp),
-                                            color = appColors.textSecondary
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                            color = appColors.textSecondary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
 
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = Color(0xFF25D366),
-                                    modifier = Modifier.padding(start = 6.dp)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Text(
-                                        text = if (isBangla) "যোগ করুন" else "Paste",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
-                                        ),
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // 1. Input Row with Add Button (Universal Omnibox)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = manualItemName,
-                            onValueChange = { newText ->
-                                // Auto-detect bulk paste: if pasted text has newlines or multiple lines, instantly parse & add!
-                                if (newText.contains("\n") || newText.contains("\r")) {
-                                    addManualItem(newText)
-                                } else {
-                                    manualItemName = newText
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            placeholder = {
-                                Text(
-                                    text = if (isBangla) "পণ্যের নাম ও পরিমাণ লিখুন বা ফর্দ পেস্ট করুন..."
-                                    else "Item & qty or paste list...",
-                                    fontSize = 12.sp,
-                                    color = appColors.textSecondary.copy(alpha = 0.5f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            },
-                            trailingIcon = {
-                                if (manualItemName.isNotBlank()) {
-                                    IconButton(onClick = { manualItemName = "" }) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Close,
-                                            contentDescription = "Clear",
-                                            tint = appColors.textSecondary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                } else if (hasClipboardText) {
-                                    IconButton(
+                                    Surface(
                                         onClick = {
                                             haptics.lightTick()
                                             addManualItem(clipboardText)
                                             clipboardText = ""
-                                        }
+                                            isClipboardDismissed = true
+                                        },
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFF25D366)
+                                    ) {
+                                        Text(
+                                            text = if (isBangla) "যোগ করুন" else "Paste",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            haptics.lightTick()
+                                            isClipboardDismissed = true
+                                        },
+                                        modifier = Modifier.size(28.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Filled.ContentPaste,
-                                            contentDescription = "Paste Clipboard",
-                                            tint = Color(0xFF25D366),
-                                            modifier = Modifier.size(16.dp)
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Dismiss",
+                                            tint = appColors.textSecondary,
+                                            modifier = Modifier.size(15.dp)
                                         )
                                     }
                                 }
-                            },
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(onDone = { addManualItem(manualItemName) }),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = appColors.accent,
-                                unfocusedBorderColor = appColors.border,
-                                focusedContainerColor = appColors.surface,
-                                unfocusedContainerColor = appColors.surface
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-
-                        Button(
-                            onClick = { addManualItem(manualItemName) },
-                            enabled = manualItemName.isNotBlank(),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = "Add",
-                                modifier = Modifier.size(16.dp)
-                            )
+                            }
                         }
                     }
 
@@ -861,7 +785,282 @@ fun CreateMarketListSection(
                         }
                     }
 
-                        // 2. Quick Quantity Presets Row (Attached under input)
+                    // 1. Added Items Section (Chat-Style Stream - Placed ABOVE the writing box)
+                    if (manualItems.value.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = appColors.surface,
+                            border = BorderStroke(1.dp, appColors.border),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Outlined.ListAlt,
+                                            contentDescription = null,
+                                            tint = appColors.accent,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = if (isBangla) "যুক্ত করা পণ্যসমূহ" else "Added Items",
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = appColors.textPrimary
+                                        )
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = appColors.accent.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = if (isBangla)
+                                                    "${convertToBengaliDigits(manualItems.value.size.toString())}টি"
+                                                else
+                                                    "${manualItems.value.size}",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 10.5.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                color = appColors.accent,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+
+                                    if (manualItems.value.size >= 2) {
+                                        Text(
+                                            text = if (isBangla) "সব মুছুন" else "Clear All",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            ),
+                                            color = appColors.expense,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .clickable {
+                                                    haptics.lightTick()
+                                                    manualItems.value = mutableListOf()
+                                                }
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    manualItems.value.forEachIndexed { idx, itm ->
+                                        val isLatestItem = idx == manualItems.value.size - 1
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (isLatestItem) appColors.accent.copy(alpha = 0.10f) else appColors.background,
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (isLatestItem) appColors.accent.copy(alpha = 0.45f) else appColors.border
+                                            ),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    // Serial number badge
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = if (isLatestItem) appColors.accent else appColors.surface,
+                                                        border = BorderStroke(
+                                                            1.dp,
+                                                            if (isLatestItem) appColors.accent else appColors.border
+                                                        )
+                                                    ) {
+                                                        Text(
+                                                            text = if (isBangla) convertToBengaliDigits((idx + 1).toString()) else "${idx + 1}",
+                                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontSize = 11.sp
+                                                            ),
+                                                            color = if (isLatestItem) Color.White else appColors.textSecondary,
+                                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                        )
+                                                    }
+
+                                                    // Product Name
+                                                    Text(
+                                                        text = itm.name,
+                                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                                            fontSize = 13.5.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        ),
+                                                        color = appColors.textPrimary,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    // Quantity Badge
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = appColors.accent.copy(alpha = 0.16f)
+                                                    ) {
+                                                        Text(
+                                                            text = itm.formatQuantity(),
+                                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                                fontSize = 11.sp,
+                                                                fontWeight = FontWeight.Bold
+                                                            ),
+                                                            color = appColors.accent,
+                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                        )
+                                                    }
+
+                                                    // Delete Button
+                                                    IconButton(
+                                                        onClick = {
+                                                            haptics.lightTick()
+                                                            val updated = manualItems.value.toMutableList()
+                                                            updated.removeAt(idx)
+                                                            manualItems.value = updated
+                                                        },
+                                                        modifier = Modifier.size(26.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Filled.Close,
+                                                            contentDescription = "Remove",
+                                                            tint = appColors.expense,
+                                                            modifier = Modifier.size(15.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = appColors.surface,
+                            border = BorderStroke(1.dp, appColors.border),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ShoppingCart,
+                                    contentDescription = null,
+                                    tint = appColors.textSecondary.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = if (isBangla) "ফর্দে কোনো পণ্য যুক্ত করা হয়নি" else "No items added yet",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    ),
+                                    color = appColors.textPrimary
+                                )
+                                Text(
+                                    text = if (isBangla)
+                                        "নিচের বক্সে লিখুন বা দ্রুত জনপ্রিয় সাজেশন থেকে ট্যাপ করুন"
+                                    else
+                                        "Type in the box below or tap popular suggestions",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    color = appColors.textSecondary.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+
+                    // 2. Quick Staples Pills (Popular Suggestions - Placed below Added Items)
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ShoppingCart,
+                                contentDescription = null,
+                                tint = appColors.textSecondary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = if (isBangla) "দ্রুত যোগ করুন (জনপ্রিয় পণ্য):" else "Quick suggestions:",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = appColors.textSecondary
+                            )
+                        }
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            quickStaples.forEach { staple ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.background,
+                                    border = BorderStroke(1.dp, appColors.border),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { addManualItem(staple) }
+                                ) {
+                                    Text(
+                                        text = "+ $staple",
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = appColors.accent,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Quick Quantity Presets Row (Attached directly above the writing box)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = if (isBangla) "পরিমাণ যোগ করুন:" else "Add quantity:",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = appColors.textSecondary
+                        )
                         LazyRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(5.dp)
@@ -892,253 +1091,87 @@ fun CreateMarketListSection(
                                 }
                             }
                         }
+                    }
 
-                        // 3. Added Items Section (Placed at the top, directly below input & quantities)
-                        if (manualItems.value.isNotEmpty()) {
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = appColors.surface,
-                                border = BorderStroke(1.dp, appColors.border),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Outlined.ListAlt,
-                                                contentDescription = null,
-                                                tint = appColors.accent,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Text(
-                                                text = if (isBangla) "যুক্ত করা পণ্যসমূহ" else "Added Items",
-                                                style = MaterialTheme.typography.titleSmall.copy(
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                ),
-                                                color = appColors.textPrimary
-                                            )
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = appColors.accent.copy(alpha = 0.15f)
-                                            ) {
-                                                Text(
-                                                    text = if (isBangla)
-                                                        "${convertToBengaliDigits(manualItems.value.size.toString())}টি"
-                                                    else
-                                                        "${manualItems.value.size}",
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontSize = 10.5.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    ),
-                                                    color = appColors.accent,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
-
-                                        if (manualItems.value.size >= 2) {
-                                            Text(
-                                                text = if (isBangla) "সব মুছুন" else "Clear All",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.SemiBold
-                                                ),
-                                                color = appColors.expense,
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(4.dp))
-                                                    .clickable {
-                                                        haptics.lightTick()
-                                                        manualItems.value = mutableListOf()
-                                                    }
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        manualItems.value.forEachIndexed { idx, itm ->
-                                            val isLatestItem = idx == 0
-                                            Surface(
-                                                shape = RoundedCornerShape(10.dp),
-                                                color = if (isLatestItem) appColors.accent.copy(alpha = 0.12f) else appColors.background,
-                                                border = BorderStroke(
-                                                    1.dp,
-                                                    if (isLatestItem) appColors.accent else appColors.border
-                                                ),
-                                                modifier = Modifier.fillMaxWidth()
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.SpaceBetween
-                                                ) {
-                                                    Row(
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                                        modifier = Modifier.weight(1f)
-                                                    ) {
-                                                        // Serial number badge
-                                                        Surface(
-                                                            shape = RoundedCornerShape(6.dp),
-                                                            color = if (isLatestItem) appColors.accent else appColors.surface,
-                                                            border = BorderStroke(
-                                                                1.dp,
-                                                                if (isLatestItem) appColors.accent else appColors.border
-                                                            )
-                                                        ) {
-                                                            Text(
-                                                                text = if (isBangla) convertToBengaliDigits((idx + 1).toString()) else "${idx + 1}",
-                                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                                    fontWeight = FontWeight.Bold,
-                                                                    fontSize = 11.sp
-                                                                ),
-                                                                color = if (isLatestItem) Color.White else appColors.textSecondary,
-                                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                                            )
-                                                        }
-
-                                                        // Product Name
-                                                        Text(
-                                                            text = itm.name,
-                                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                                fontSize = 13.5.sp,
-                                                                fontWeight = FontWeight.Bold
-                                                            ),
-                                                            color = appColors.textPrimary,
-                                                            maxLines = 1,
-                                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                                        )
-                                                    }
-
-                                                    Row(
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                    ) {
-                                                        // Quantity Badge
-                                                        Surface(
-                                                            shape = RoundedCornerShape(6.dp),
-                                                            color = appColors.accent.copy(alpha = 0.16f)
-                                                        ) {
-                                                            Text(
-                                                                text = itm.formatQuantity(),
-                                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                                    fontSize = 11.sp,
-                                                                    fontWeight = FontWeight.Bold
-                                                                ),
-                                                                color = appColors.accent,
-                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                                            )
-                                                        }
-
-                                                        // Delete Button
-                                                        IconButton(
-                                                            onClick = {
-                                                                haptics.lightTick()
-                                                                val updated = manualItems.value.toMutableList()
-                                                                updated.removeAt(idx)
-                                                                manualItems.value = updated
-                                                            },
-                                                            modifier = Modifier.size(26.dp)
-                                                        ) {
-                                                            Icon(
-                                                                imageVector = Icons.Filled.Close,
-                                                                contentDescription = "Remove",
-                                                                tint = appColors.expense,
-                                                                modifier = Modifier.size(15.dp)
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                    // 4. Input Composer Row (Writing Box + Add Button - Modern Redesigned Dock)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = manualItemName,
+                            onValueChange = { newText ->
+                                if (newText.contains("\n") || newText.contains("\r")) {
+                                    addManualItem(newText)
+                                } else {
+                                    manualItemName = newText
                                 }
-                            }
-                        } else {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = appColors.background,
-                                border = BorderStroke(1.dp, appColors.border),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            placeholder = {
                                 Text(
-                                    text = if (isBangla)
-                                        "এখনো কোনো পণ্য যুক্ত করা হয়নি। উপরের বক্সে লিখুন বা নিচের সাজেশন থেকে বেছে নিন।"
-                                    else
-                                        "No items added yet. Type above or choose from suggestions below.",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                    color = appColors.textSecondary.copy(alpha = 0.8f),
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                                    text = if (isBangla) "পণ্যের নাম ও পরিমাণ লিখুন..."
+                                    else "Type item & quantity...",
+                                    fontSize = 12.sp,
+                                    color = appColors.textSecondary.copy(alpha = 0.5f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
-                            }
-                        }
-
-                        // 4. Quick Staples Pills (Popular Suggestions - Placed below Added Items)
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
+                            },
+                            leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.ShoppingCart,
                                     contentDescription = null,
-                                    tint = appColors.textSecondary,
-                                    modifier = Modifier.size(14.dp)
+                                    tint = if (manualItemName.isNotBlank()) appColors.accent else appColors.textSecondary.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Text(
-                                    text = if (isBangla) "দ্রুত যোগ করুন (জনপ্রিয় পণ্য):" else "Quick suggestions:",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    color = appColors.textSecondary
-                                )
-                            }
-
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                quickStaples.forEach { staple ->
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = appColors.background,
-                                        border = BorderStroke(1.dp, appColors.border),
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable { addManualItem(staple) }
-                                    ) {
-                                        Text(
-                                            text = "+ $staple",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                                            color = appColors.accent,
-                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                            },
+                            trailingIcon = {
+                                if (manualItemName.isNotBlank()) {
+                                    IconButton(onClick = { manualItemName = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Clear",
+                                            tint = appColors.textSecondary,
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
-                            }
+                            },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { addManualItem(manualItemName) }),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = appColors.accent,
+                                unfocusedBorderColor = appColors.border,
+                                focusedContainerColor = appColors.surface,
+                                unfocusedContainerColor = appColors.surface
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        Button(
+                            onClick = { addManualItem(manualItemName) },
+                            enabled = manualItemName.isNotBlank(),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.size(50.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = appColors.accent,
+                                disabledContainerColor = appColors.accent.copy(alpha = 0.35f)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = "Add",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
                     }
                 }
+            }
 
             // Live Budget Estimator Card
             if (effectiveItems.isNotEmpty()) {

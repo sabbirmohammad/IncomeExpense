@@ -172,10 +172,10 @@ class MultiMarketListAndItemUxTest {
     fun testCreateMarketListManualEntryUxRefinements() {
         val content = readFile("com/example/expensetracker/ui/dashboard/CreateMarketListSection.kt")
 
-        // 1. Newly added items must be added to the top (prepended)
+        // 1. Newly added items must be appended in chat-style order so latest items appear right above composer
         assertTrue(
-            "Newly added items must be prepended so latest items appear at the top",
-            content.contains("manualItems.value = (itemsToAdd + manualItems.value).toMutableList()")
+            "Newly added items must be appended so latest items appear right above the composer dock",
+            content.contains("manualItems.value = (manualItems.value + itemsToAdd).toMutableList()")
         )
 
         // 2. Step 2 header must show clean item counter badge
@@ -200,15 +200,21 @@ class MultiMarketListAndItemUxTest {
             content.contains("convertToBengaliDigits((idx + 1).toString())")
         )
 
-        // 5. Verify prepending behavior on an actual list
+        // 5. Verify chat-style appending behavior on an actual list
         val existingItems = listOf(
             com.example.expensetracker.data.model.MarketItem(name = "আলু", quantity = 1.0, unit = "কেজি"),
             com.example.expensetracker.data.model.MarketItem(name = "পেঁয়াজ", quantity = 2.0, unit = "কেজি")
         )
         val newItem = listOf(com.example.expensetracker.data.model.MarketItem(name = "ডিম", quantity = 12.0, unit = "পিস"))
-        val updated = (newItem + existingItems)
-        assertEquals("Latest item must be at index 0 (top of list)", "ডিম", updated.first().name)
-        assertEquals("Previous first item must shift down", "আলু", updated[1].name)
+        val updated = (existingItems + newItem)
+        assertEquals("Latest item must be at bottom right above composer dock", "ডিম", updated.last().name)
+        assertEquals("Previous first item remains first", "আলু", updated.first().name)
+
+        // 6. Dismissible clipboard banner support
+        assertTrue(
+            "CreateMarketListSection must support dismissible clipboard banner",
+            content.contains("isClipboardDismissed")
+        )
     }
 
     @Test
