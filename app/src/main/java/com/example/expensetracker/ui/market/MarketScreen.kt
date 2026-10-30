@@ -49,6 +49,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -96,6 +97,7 @@ import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.MarketSearchBar
 import com.example.expensetracker.ui.components.UnitAndQuantityDialog
 import com.example.expensetracker.ui.components.convertToBengaliDigits
+import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.ActiveMarketListsHubView
 import com.example.expensetracker.ui.dashboard.CreateMarketListSection
@@ -940,183 +942,31 @@ private fun MarketListsTabContent(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
         ) {
-            // Header strip (title, back if multiple lists, and delete action)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    if (effectiveActiveLists.size > 1 && onBackToAllLists != null) {
-                        Surface(
-                            onClick = onBackToAllLists,
-                            shape = RoundedCornerShape(8.dp),
-                            color = appColors.surfaceVariant
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = appColors.textSecondary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (isBangla) "সকল (${convertToBengaliDigits(effectiveActiveLists.size.toString())})" else "All (${effectiveActiveLists.size})",
-                                    fontSize = 11.sp,
-                                    color = appColors.textSecondary,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-
-                    Text(
-                        text = currentViewingList.list.title.ifBlank { if (isBangla) "বাজার ফর্দ" else "Market Checklist" },
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
-                        ),
-                        color = appColors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                if (!effectiveEditMode) {
-                    // Normal / Shopping Mode: Show "Edit" button
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            isEditMode = true
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        color = appColors.accent.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Edit,
-                                contentDescription = if (isBangla) "ফর্দ সম্পাদনা" else "Edit List",
-                                tint = appColors.accent,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Text(
-                                text = if (isBangla) "এডিট" else "Edit",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = appColors.accent
-                            )
-                        }
-                    }
-                } else {
-                    // Edit Mode: Show "Delete List" and "Done" button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        // Delete current list action (only in Edit Mode!)
-                        Surface(
-                            onClick = {
-                                haptics.mediumClick()
-                                onDeleteListClick(currentViewingList.list.id)
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            color = appColors.expense.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.3f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.DeleteOutline,
-                                    contentDescription = if (isBangla) "ফর্দ মুছুন" else "Delete List",
-                                    tint = appColors.expense,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = if (isBangla) "মুছুন" else "Delete",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = appColors.expense
-                                )
-                            }
-                        }
-
-                        // Done button to exit Edit Mode (only if list is not empty)
-                        if (items.isNotEmpty()) {
-                            Surface(
-                                onClick = {
-                                    haptics.lightTick()
-                                    isEditMode = false
-                                },
-                                shape = RoundedCornerShape(8.dp),
-                                color = appColors.income,
-                                shadowElevation = 1.dp
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Check,
-                                        contentDescription = if (isBangla) "সম্পন্ন" else "Done",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Text(
-                                        text = if (isBangla) "সম্পন্ন" else "Done",
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontSize = 11.5.sp,
-                                            fontWeight = FontWeight.Bold
-                                        ),
-                                        color = Color.White
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Summary Section
-            MarketSummarySection(
+            // Unified Compact Shopping HUD (Replaces redundant "Morning Market" title & large summary card)
+            MarketShoppingHeaderHUD(
                 totalCount = totalCount,
                 purchasedCount = purchasedCount,
                 totalSpent = totalSpent,
+                estimatedBudget = if (totalEstimatedBudget > 0) totalEstimatedBudget else null,
                 currencySymbol = currencySymbol,
                 isBangla = isBangla,
-                estimatedBudget = if (totalEstimatedBudget > 0) totalEstimatedBudget else null
+                isEditMode = effectiveEditMode,
+                hasMultipleLists = effectiveActiveLists.size > 1,
+                listTitle = currentViewingList.list.title,
+                onBackToAllLists = onBackToAllLists,
+                onEnterEditMode = { isEditMode = true },
+                onExitEditMode = { isEditMode = false },
+                onDeleteList = { onDeleteListClick(currentViewingList.list.id) }
             )
 
             if (items.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 // Filter Pills: All | Remaining | Done
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val remainingCount = totalCount - purchasedCount
@@ -1271,6 +1121,296 @@ private fun MarketListsTabContent(
                         Spacer(modifier = Modifier.height(84.dp))
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Ultra-Compact, High-Density Shopping Control HUD.
+ * Replaces the redundant list title ("Morning Market") and bulky summary card.
+ * Integrates:
+ * - Real-time progress (bought/total + percentage)
+ * - Financial intelligence (total spent + estimated budget)
+ * - Single-row action controls (Edit / Delete / Done)
+ * - Multi-list fast return chip when applicable
+ * - Sleek 3dp integrated progress track
+ */
+@Composable
+private fun MarketShoppingHeaderHUD(
+    totalCount: Int,
+    purchasedCount: Int,
+    totalSpent: Double,
+    estimatedBudget: Double?,
+    currencySymbol: String,
+    isBangla: Boolean,
+    isEditMode: Boolean,
+    hasMultipleLists: Boolean,
+    listTitle: String,
+    onBackToAllLists: (() -> Unit)?,
+    onEnterEditMode: () -> Unit,
+    onExitEditMode: () -> Unit,
+    onDeleteList: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val haptics = rememberAppHaptics()
+    val progress = if (totalCount > 0) purchasedCount.toFloat() / totalCount.toFloat() else 0f
+    val percent = (progress * 100).toInt()
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = appColors.surface,
+        border = BorderStroke(1.dp, appColors.border),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // LEFT: Progress, Status & Metrics
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    if (hasMultipleLists && onBackToAllLists != null) {
+                        Surface(
+                            onClick = {
+                                haptics.lightTick()
+                                onBackToAllLists()
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = appColors.surfaceVariant
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = appColors.textSecondary,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = if (isBangla) "সকল" else "All",
+                                    fontSize = 10.5.sp,
+                                    color = appColors.textSecondary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(if (progress >= 1f && totalCount > 0) appColors.income else appColors.accent)
+                            )
+
+                            Text(
+                                text = if (totalCount == 0) {
+                                    if (isBangla) "ফর্দে কোনো পণ্য নেই" else "No items in list"
+                                } else if (isEditMode) {
+                                    if (isBangla) "ফর্দ সম্পাদনা (${convertToBengaliDigits(totalCount.toString())}টি পণ্য)"
+                                    else "Edit List ($totalCount items)"
+                                } else {
+                                    if (isBangla)
+                                        "${convertToBengaliDigits(purchasedCount.toString())}/${convertToBengaliDigits(totalCount.toString())}টি কেনা (${convertToBengaliDigits(percent.toString())}%)"
+                                    else
+                                        "$purchasedCount/$totalCount bought ($percent%)"
+                                },
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = appColors.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        // Metrics (Spent & Estimated Budget)
+                        if (totalCount > 0) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = if (isBangla) "খরচ: ${formatCurrency(totalSpent, currencySymbol)}"
+                                           else "Spent: ${formatCurrency(totalSpent, currencySymbol)}",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = appColors.income,
+                                    maxLines = 1
+                                )
+
+                                if (estimatedBudget != null && estimatedBudget > 0) {
+                                    Text(
+                                        text = "•",
+                                        fontSize = 11.sp,
+                                        color = appColors.textSecondary.copy(alpha = 0.5f)
+                                    )
+                                    Text(
+                                        text = if (isBangla) "বাজেট: ${formatCurrency(estimatedBudget, currencySymbol)}"
+                                               else "Est: ${formatCurrency(estimatedBudget, currencySymbol)}",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        color = appColors.textSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = if (isBangla) "নিচে নতুন পণ্য যোগ করুন" else "Add new items below",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                color = appColors.textSecondary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // RIGHT: Actions (Edit button OR Delete List & Done buttons)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (!isEditMode) {
+                        Surface(
+                            onClick = {
+                                haptics.lightTick()
+                                onEnterEditMode()
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = appColors.accent.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Edit,
+                                    contentDescription = if (isBangla) "ফর্দ সম্পাদনা" else "Edit List",
+                                    tint = appColors.accent,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = if (isBangla) "এডিট" else "Edit",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = appColors.accent
+                                )
+                            }
+                        }
+                    } else {
+                        // Delete List button
+                        Surface(
+                            onClick = {
+                                haptics.mediumClick()
+                                onDeleteList()
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = appColors.expense.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.25f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteOutline,
+                                    contentDescription = if (isBangla) "মুছুন" else "Delete",
+                                    tint = appColors.expense,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = if (isBangla) "মুছুন" else "Delete",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    color = appColors.expense
+                                )
+                            }
+                        }
+
+                        // Done button (only if items is not empty)
+                        if (totalCount > 0) {
+                            Surface(
+                                onClick = {
+                                    haptics.lightTick()
+                                    onExitEditMode()
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                color = appColors.income,
+                                shadowElevation = 1.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = if (isBangla) "সম্পন্ন" else "Done",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = if (isBangla) "সম্পন্ন" else "Done",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bottom Progress bar inside card
+            if (totalCount > 0) {
+                Spacer(modifier = Modifier.height(7.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(1.5.dp)),
+                    color = appColors.income,
+                    trackColor = appColors.border.copy(alpha = 0.5f)
+                )
             }
         }
     }

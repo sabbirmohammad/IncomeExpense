@@ -560,4 +560,29 @@ class MultiMarketListAndItemUxTest {
             itemRowContent.contains("onRequestDelete()")
         )
     }
+
+    @Test
+    fun testMarketScreenUnifiedCompactHeaderHud() {
+        val screenContent = readFile("com/example/expensetracker/ui/market/MarketScreen.kt")
+
+        // 1. Unified HUD is used
+        assertTrue(
+            "MarketScreen must use MarketShoppingHeaderHUD for compact, modern header layout",
+            screenContent.contains("MarketShoppingHeaderHUD(")
+        )
+
+        // 2. Redundant title header row is eliminated
+        assertFalse(
+            "MarketScreen must eliminate standalone list title header row to conserve vertical space",
+            screenContent.contains("currentViewingList.list.title.ifBlank")
+        )
+
+        // 3. Compact HUD integrates progress, spent, estimated budget, and actions
+        assertTrue(
+            "HUD must support estimated budget and action controls",
+            screenContent.contains("onEnterEditMode = { isEditMode = true }") &&
+            screenContent.contains("onExitEditMode = { isEditMode = false }") &&
+            screenContent.contains("onDeleteList = { onDeleteListClick(currentViewingList.list.id) }")
+        )
+    }
 }
