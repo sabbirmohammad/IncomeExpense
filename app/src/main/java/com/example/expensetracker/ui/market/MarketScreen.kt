@@ -271,7 +271,7 @@ fun MarketScreen(
                     searchQuery = priceSearchQuery,
                     onSearchQueryChange = { priceSearchQuery = it },
                     showInternalSearchBar = false,
-                    showHeader = true,
+                    showHeader = false,
                     onOpenSearch = { isPriceSearchActive = true },
                     isSearchActive = isPriceSearchActive,
                     modifier = Modifier.fillMaxSize()

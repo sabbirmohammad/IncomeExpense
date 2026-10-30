@@ -119,6 +119,29 @@ class ProductPriceIntelligenceTest {
         assertTrue(insight.formatDiff().contains("20.0%"))
     }
 
+    @Test
+    fun testProductPriceInsightAvgUnitPriceAndFormatting() {
+        val insight = ProductPriceInsight(
+            productName = "পেঁয়াজ",
+            currentUnitPrice = 120.0,
+            previousUnitPrice = 110.0,
+            baseUnit = "কেজি",
+            priceDiff = 10.0,
+            percentDiff = 9.09,
+            minUnitPrice = 90.0,
+            maxUnitPrice = 130.0,
+            avgUnitPrice = 105.0,
+            purchaseCount = 5,
+            priceTrend = PriceTrend.UP
+        )
+
+        assertEquals("৳120/কেজি", insight.formatUnitRate())
+        assertEquals("৳105/কেজি", insight.formatAvgRate())
+        assertEquals(5, insight.purchaseCount)
+        assertEquals(90.0, insight.minUnitPrice, 0.001)
+        assertEquals(130.0, insight.maxUnitPrice, 0.001)
+    }
+
     private fun readFile(relativePath: String): String {
         val file = java.io.File("src/main/java/$relativePath")
         assertTrue("Expected file to exist: ${file.absolutePath}", file.exists())

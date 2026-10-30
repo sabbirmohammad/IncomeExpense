@@ -36,6 +36,7 @@ data class ProductPriceInsight(
     val oneMonthPercentDiff: Double? = null,
     val minUnitPrice: Double = currentUnitPrice,
     val maxUnitPrice: Double = currentUnitPrice,
+    val avgUnitPrice: Double = currentUnitPrice,
     val purchaseCount: Int = 1,
     val lastPurchasedTimestamp: Long = System.currentTimeMillis(),
     val priceTrend: PriceTrend = PriceTrend.STABLE
@@ -49,6 +50,15 @@ data class ProductPriceInsight(
             currentUnitPrice.toInt().toString()
         } else {
             "%.1f".format(currentUnitPrice)
+        }
+        return "৳$rateFormatted/$baseUnit"
+    }
+
+    fun formatAvgRate(): String {
+        val rateFormatted = if (avgUnitPrice % 1.0 == 0.0) {
+            avgUnitPrice.toInt().toString()
+        } else {
+            "%.1f".format(avgUnitPrice)
         }
         return "৳$rateFormatted/$baseUnit"
     }

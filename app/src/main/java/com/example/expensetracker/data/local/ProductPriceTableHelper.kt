@@ -128,6 +128,15 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
 
         val minRate = history.minOf { it.unitPrice }
         val maxRate = history.maxOf { it.unitPrice }
+        val totalAmountSum = history.sumOf { it.totalAmount }
+        val totalBaseQtySum = history.sumOf { it.baseQuantity }
+        val avgRate = if (totalBaseQtySum > 0.0) {
+            totalAmountSum / totalBaseQtySum
+        } else if (history.isNotEmpty()) {
+            history.map { it.unitPrice }.average()
+        } else {
+            currentRate
+        }
 
         val trend = when {
             percentDiff > 1.0 -> PriceTrend.UP
@@ -147,6 +156,7 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
             oneMonthPercentDiff = oneMonthPercent,
             minUnitPrice = minRate,
             maxUnitPrice = maxRate,
+            avgUnitPrice = avgRate,
             purchaseCount = history.size,
             lastPurchasedTimestamp = latest.timestamp,
             priceTrend = trend
