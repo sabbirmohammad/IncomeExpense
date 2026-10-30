@@ -64,9 +64,21 @@ object MarketListParser {
         for (rawLine in lines) {
             val cleaned = cleanLine(rawLine)
             if (cleaned.isNotBlank()) {
-                val item = parseSingleLine(cleaned)
-                if (item != null) {
-                    items.add(item)
+                // If a line contains commas separating items (e.g. "আলু ১ কেজি, পেঁয়াজ ২ কেজি")
+                if (cleaned.contains(",") && !cleaned.matches(Regex(".*\\d+,\\d+.*"))) {
+                    val subParts = cleaned.split(",")
+                    for (part in subParts) {
+                        val subCleaned = cleanLine(part)
+                        if (subCleaned.isNotBlank()) {
+                            val item = parseSingleLine(subCleaned) ?: MarketItem(name = subCleaned, quantity = 1.0, unit = "কেজি")
+                            items.add(item)
+                        }
+                    }
+                } else {
+                    val item = parseSingleLine(cleaned)
+                    if (item != null) {
+                        items.add(item)
+                    }
                 }
             }
         }
@@ -76,7 +88,7 @@ object MarketListParser {
     /**
      * Cleans list prefixes such as "1.", "1)", "-", "*", "[ ]", etc.
      */
-    private fun cleanLine(line: String): String {
+    internal fun cleanLine(line: String): String {
         var result = line.trim()
         // Remove markdown or list bullets
         result = result.replace(Regex("^([\\-\\*\\•\\+\\>\\–\\—\\✔\\✓\\☑\\[\\]\\(\\)]|\\d+[\\.\\)\\:\\-]|[০-৯]+[\\.\\)\\:\\-])\\s*"), "")
@@ -99,7 +111,7 @@ object MarketListParser {
         var unitFound = false
 
         // 1. Check for special fraction words first (যেমন: দেড়, আড়াই, হাফ, পোয়া)
-        for ((fractionWord, fracValue) in FRACTION_MAP) {
+        for ((fractionWord, fracValue) in FRACTION_MAP.entries.sortedByDescending { it.key.length }) {
             if (workingLine.contains(fractionWord)) {
                 detectedQuantity = fracValue
                 quantityFound = true

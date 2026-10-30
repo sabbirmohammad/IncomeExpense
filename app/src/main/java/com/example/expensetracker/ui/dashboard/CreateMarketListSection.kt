@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -64,6 +66,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.MarketListParser
@@ -81,15 +84,15 @@ import java.util.Calendar
  */
 enum class CreateMarketListStep {
     TITLE,      // Step 1: ফর্দের নাম ও দ্রুত সাজেশন
-    METHOD,     // Step 2: মাধ্যম নির্বাচন (সরাসরি লিখবেন নাকি হোয়াটসঅ্যাপ পেস্ট)
-    ITEMS       // Step 3: সরাসরি পণ্য এন্ট্রি অথবা হোয়াটসঅ্যাপ পেস্ট
+    METHOD,     // Legacy step for compatibility
+    ITEMS       // Step 2: স্মার্ট পণ্য তালিকা (একক এন্ট্রি ও অটো-ডিটেকটিং বাল্ক পেস্ট)
 }
 
 /**
  * Dedicated Section for Creating New Market Lists.
- * - Step-by-Step Modern Guided Wizard (Title -> Method -> Items).
+ * - 2-Step Modern Streamlined Wizard (Title -> Smart Items Omnibox).
  * - Time-aware smart title suggestions (সকালের কাঁচাবাজার, বিকালের মুদি সদাই).
- * - Interactive method selector cards (Direct Manual Entry vs WhatsApp Bulk Paste).
+ * - Unified Smart Omnibox combining single-item entry with instant WhatsApp multi-line bulk auto-parsing.
  * - Live item counter, quick quantity presets, and staple suggestions.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -130,6 +133,7 @@ fun CreateMarketListSection(
     var currentStep by remember { mutableStateOf(CreateMarketListStep.TITLE) }
     var listTitle by remember { mutableStateOf(defaultInitialTitle) }
     var inputMode by remember { mutableIntStateOf(1) } // 1: Add Items Manually, 0: Bulk Paste
+    var lastBulkAddedCount by remember { mutableIntStateOf(0) }
 
     // Bulk paste state
     var bulkInputText by remember { mutableStateOf("") }
@@ -198,31 +202,23 @@ fun CreateMarketListSection(
     val addManualItem = { rawText: String ->
         if (rawText.isNotBlank()) {
             haptics.lightTick()
-            val trimmed = rawText.trim()
-            val normalized = trimmed.replace(";", "\n").replace("।", "\n")
-            val rawParts = if (normalized.contains("\n")) {
-                normalized.lines().flatMap { line ->
-                    if (line.contains(",")) line.split(",") else listOf(line)
-                }
-            } else if (trimmed.contains(",")) {
-                trimmed.split(",")
+            val parsedList = MarketListParser.parseBulkText(rawText)
+            val itemsToAdd = if (parsedList.isNotEmpty()) {
+                parsedList
             } else {
-                listOf(trimmed)
-            }
-            val itemsToAdd = rawParts.mapNotNull { part ->
-                val cleanPart = part.trim()
-                if (cleanPart.isNotBlank()) {
-                    val parsed = MarketListParser.parseSingleLine(cleanPart)
-                    parsed?.let { MarketItem(name = it.name, quantity = it.quantity, unit = it.unit) }
-                        ?: MarketItem(name = cleanPart, quantity = 1.0, unit = if (isBangla) "কেজি" else "kg")
-                } else null
+                val clean = rawText.trim()
+                val parsed = MarketListParser.parseSingleLine(clean)
+                listOf(parsed ?: MarketItem(name = clean, quantity = 1.0, unit = if (isBangla) "কেজি" else "kg"))
             }
             manualItems.value = (itemsToAdd + manualItems.value).toMutableList()
             manualItemName = ""
+            if (itemsToAdd.size > 1) {
+                lastBulkAddedCount = itemsToAdd.size
+            }
         }
     }
 
-    val effectiveItems = if (inputMode == 0) parsedBulkItems else manualItems.value
+    val effectiveItems = manualItems.value
 
     val liveEstimatedBudget = remember(effectiveItems, priceInsights) {
         effectiveItems.sumOf { item ->
@@ -262,11 +258,7 @@ fun CreateMarketListSection(
                         Surface(
                             onClick = {
                                 haptics.lightTick()
-                                currentStep = when (currentStep) {
-                                    CreateMarketListStep.ITEMS -> CreateMarketListStep.METHOD
-                                    CreateMarketListStep.METHOD -> CreateMarketListStep.TITLE
-                                    CreateMarketListStep.TITLE -> CreateMarketListStep.TITLE
-                                }
+                                currentStep = CreateMarketListStep.TITLE
                             },
                             shape = RoundedCornerShape(8.dp),
                             color = appColors.surface,
@@ -326,15 +318,9 @@ fun CreateMarketListSection(
                     }
 
                     // Step Indicator Pill
-                    val stepNumber = when (currentStep) {
-                        CreateMarketListStep.TITLE -> 1
-                        CreateMarketListStep.METHOD -> 2
-                        CreateMarketListStep.ITEMS -> 3
-                    }
                     val stepLabel = when (currentStep) {
-                        CreateMarketListStep.TITLE -> if (isBangla) "ধাপ ১/৩: নাম" else "Step 1/3: Name"
-                        CreateMarketListStep.METHOD -> if (isBangla) "ধাপ ২/৩: মাধ্যম" else "Step 2/3: Method"
-                        CreateMarketListStep.ITEMS -> if (isBangla) "ধাপ ৩/৩: পণ্য" else "Step 3/3: Items"
+                        CreateMarketListStep.TITLE -> if (isBangla) "ধাপ ১/২: নাম" else "Step 1/2: Name"
+                        else -> if (isBangla) "ধাপ ২/২: পণ্য" else "Step 2/2: Items"
                     }
 
                     Surface(
@@ -363,9 +349,8 @@ fun CreateMarketListSection(
                         .background(appColors.border.copy(alpha = 0.4f))
                 ) {
                     val progressFraction = when (currentStep) {
-                        CreateMarketListStep.TITLE -> 0.33f
-                        CreateMarketListStep.METHOD -> 0.66f
-                        CreateMarketListStep.ITEMS -> 1f
+                        CreateMarketListStep.TITLE -> 0.5f
+                        else -> 1f
                     }
                     Box(
                         modifier = Modifier
@@ -469,7 +454,7 @@ fun CreateMarketListSection(
                                 keyboardActions = KeyboardActions(onNext = {
                                     if (listTitle.isNotBlank()) {
                                         haptics.mediumClick()
-                                        currentStep = CreateMarketListStep.METHOD
+                                        currentStep = CreateMarketListStep.ITEMS
                                     }
                                 }),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -533,7 +518,7 @@ fun CreateMarketListSection(
                             onClick = {
                                 if (listTitle.isNotBlank()) {
                                     haptics.mediumClick()
-                                    currentStep = CreateMarketListStep.METHOD
+                                    currentStep = CreateMarketListStep.ITEMS
                                 }
                             },
                             enabled = listTitle.isNotBlank(),
@@ -551,7 +536,7 @@ fun CreateMarketListSection(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = if (isBangla) "পরবর্তী ধাপ: মাধ্যম নির্বাচন" else "Next: Choose Method",
+                                    text = if (isBangla) "পরবর্তী: পণ্য যোগ করুন" else "Next: Add Items",
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold
@@ -572,275 +557,7 @@ fun CreateMarketListSection(
         }
 
         // -------------------------------------------------------------
-        // Step 2: METHOD CHOICE (Direct Entry vs WhatsApp Bulk Paste)
-        // -------------------------------------------------------------
-        if (currentStep == CreateMarketListStep.METHOD) {
-            item {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = appColors.surface,
-                    border = BorderStroke(1.dp, appColors.border),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        // Current List Title Banner with Edit Shortcut
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = appColors.background,
-                            border = BorderStroke(1.dp, appColors.border),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.ShoppingCart,
-                                        contentDescription = null,
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Column {
-                                        Text(
-                                            text = if (isBangla) "ফর্দের নাম" else "List Title",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                            color = appColors.textSecondary
-                                        )
-                                        Text(
-                                            text = listTitle.ifBlank { defaultInitialTitle },
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 13.5.sp
-                                            ),
-                                            color = appColors.textPrimary
-                                        )
-                                    }
-                                }
-
-                                TextButton(
-                                    onClick = {
-                                        haptics.lightTick()
-                                        currentStep = CreateMarketListStep.TITLE
-                                    }
-                                ) {
-                                    Text(
-                                        text = if (isBangla) "নাম পরিবর্তন" else "Change",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp
-                                        ),
-                                        color = appColors.accent
-                                    )
-                                }
-                            }
-                        }
-
-                        // Title & Subtitle for Method Choice
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                text = if (isBangla) "ফর্দ তৈরির মাধ্যম বেছে নিন" else "Choose How to Build List",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = appColors.textPrimary
-                            )
-                            Text(
-                                text = if (isBangla) "নিচের যেকোনো একটি উপায় নির্বাচন করুন:"
-                                else "Select your preferred entry method:",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                                color = appColors.textSecondary
-                            )
-                        }
-
-                        // Option 1: Direct Manual Entry Card
-                        Surface(
-                            onClick = {
-                                haptics.mediumClick()
-                                inputMode = 1
-                                currentStep = CreateMarketListStep.ITEMS
-                            },
-                            shape = RoundedCornerShape(14.dp),
-                            color = appColors.background,
-                            border = BorderStroke(1.5.dp, appColors.accent.copy(alpha = 0.5f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(appColors.accent.copy(alpha = 0.12f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Outlined.ListAlt,
-                                        contentDescription = null,
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = if (isBangla) "সরাসরি পণ্য লিখুন" else "Add Items Manually",
-                                            style = MaterialTheme.typography.titleMedium.copy(
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            color = appColors.textPrimary
-                                        )
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = appColors.accent.copy(alpha = 0.12f)
-                                        ) {
-                                            Text(
-                                                text = if (isBangla) "জনপ্রিয়" else "Popular",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 10.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                ),
-                                                color = appColors.accent,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = if (isBangla) "একটি একটি করে নাম ও পরিমাণ লিখুন বা কুইক শর্টকাট থেকে সহজে যোগ করুন"
-                                        else "Type items one by one or tap quick shortcut staples",
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                                        color = appColors.textSecondary
-                                    )
-                                }
-
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                                    contentDescription = null,
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-
-                        // Option 2: WhatsApp Bulk Paste Card
-                        Surface(
-                            onClick = {
-                                haptics.mediumClick()
-                                inputMode = 0
-                                if (bulkInputText.isBlank() && hasClipboardText) {
-                                    bulkInputText = clipboardText
-                                }
-                                currentStep = CreateMarketListStep.ITEMS
-                            },
-                            shape = RoundedCornerShape(14.dp),
-                            color = Color(0xFF25D366).copy(alpha = 0.06f),
-                            border = BorderStroke(1.5.dp, Color(0xFF25D366).copy(alpha = 0.4f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(44.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF25D366).copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.ContentPaste,
-                                            contentDescription = null,
-                                            tint = Color(0xFF25D366),
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = if (isBangla) "হোয়াটসঅ্যাপ পেস্ট" else "Bulk Paste",
-                                            style = MaterialTheme.typography.titleMedium.copy(
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            color = appColors.textPrimary
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = if (isBangla) "হোয়াটসঅ্যাপ বা নোটবুক থেকে কপি করা ফর্দ এক ক্লিকে পেস্ট করুন"
-                                            else "Paste WhatsApp message or checklist to auto-parse",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                                            color = appColors.textSecondary
-                                        )
-                                    }
-
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                                        contentDescription = null,
-                                        tint = Color(0xFF25D366),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-
-                                if (hasClipboardText) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFF25D366).copy(alpha = 0.15f),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.Check,
-                                                contentDescription = null,
-                                                tint = Color(0xFF25D366),
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                            Text(
-                                                text = if (isBangla) "✓ ক্লিপবোর্ডে কপি করা ফর্দ রয়েছে! ট্যাপ করলেই পেস্ট হবে"
-                                                else "✓ Copied text detected on clipboard! Tap to auto-paste",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 10.5.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                ),
-                                                color = Color(0xFF25D366)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // -------------------------------------------------------------
-        // Step 3: ITEMS ENTRY (Direct Manual Entry OR Bulk Paste)
+        // Step 2: ITEMS ENTRY (Smart Omnibox with Auto Bulk Paste Detection)
         // -------------------------------------------------------------
         if (currentStep == CreateMarketListStep.ITEMS) {
             // Clean Summary Header (Focused on list title & live item count)
@@ -885,20 +602,28 @@ fun CreateMarketListSection(
                                     ),
                                     color = appColors.textPrimary
                                 )
-                                Text(
-                                    text = if (inputMode == 1) {
-                                        if (isBangla) "সরাসরি পণ্য তালিকা" else "Manual Item Entry"
-                                    } else {
-                                        if (isBangla) "হোয়াটসঅ্যাপ পেস্ট মোড" else "Bulk Paste Mode"
+                                TextButton(
+                                    onClick = {
+                                        haptics.lightTick()
+                                        currentStep = CreateMarketListStep.TITLE
                                     },
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = appColors.textSecondary
-                                )
+                                    contentPadding = PaddingValues(0.dp),
+                                    modifier = Modifier.height(18.dp)
+                                ) {
+                                    Text(
+                                        text = if (isBangla) "নাম পরিবর্তন" else "Change Title",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        color = appColors.accent
+                                    )
+                                }
                             }
                         }
 
                         // Live Item Counter Badge
-                        val totalCount = if (inputMode == 1) manualItems.value.size else parsedBulkItems.size
+                        val totalCount = manualItems.value.size
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = if (totalCount > 0) appColors.accent.copy(alpha = 0.14f) else appColors.background,
@@ -927,49 +652,193 @@ fun CreateMarketListSection(
                 }
             }
 
+            // Mode Content: Manual Entry (inputMode == 1)
             // Mode Content: Bulk Paste (inputMode == 0)
-            if (inputMode == 0) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Clipboard Quick Suggestion Banner (Instant 1-tap bulk paste)
+                    if (hasClipboardText) {
+                        Surface(
+                            onClick = {
+                                haptics.lightTick()
+                                addManualItem(clipboardText)
+                                clipboardText = ""
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFF25D366).copy(alpha = 0.10f),
+                            border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = if (isBangla) "হোয়াটসঅ্যাপ বা নোটবুক থেকে কপি করা ফর্দ এখানে পেস্ট করুন:"
-                                else "Paste your copied market list below:",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = appColors.textSecondary,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            // Quick Clipboard Paste Button
-                            Surface(
-                                onClick = {
-                                    haptics.lightTick()
-                                    val clip = clipboardManager.getText()?.text
-                                    if (!clip.isNullOrBlank()) {
-                                        bulkInputText = clip
-                                    }
-                                },
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFF25D366).copy(alpha = 0.12f),
-                                border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.3f))
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF25D366).copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.ContentPaste,
+                                            contentDescription = null,
+                                            tint = Color(0xFF25D366),
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                    Column {
+                                        Text(
+                                            text = if (isBangla) "ক্লিপবোর্ডে ফর্দ রয়েছে" else "List detected on clipboard",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = appColors.textPrimary
+                                        )
+                                        Text(
+                                            text = if (isBangla) "এক ট্যাপে সবগুলো পণ্য স্বয়ংক্রিয়ভাবে যোগ করুন"
+                                            else "Tap to auto-parse and add all items",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.5.sp),
+                                            color = appColors.textSecondary
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0xFF25D366),
+                                    modifier = Modifier.padding(start = 6.dp)
+                                ) {
+                                    Text(
+                                        text = if (isBangla) "যোগ করুন" else "Paste",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // 1. Input Row with Add Button (Universal Omnibox)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = manualItemName,
+                            onValueChange = { newText ->
+                                // Auto-detect bulk paste: if pasted text has newlines or multiple lines, instantly parse & add!
+                                if (newText.contains("\n") || newText.contains("\r")) {
+                                    addManualItem(newText)
+                                } else {
+                                    manualItemName = newText
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            placeholder = {
+                                Text(
+                                    text = if (isBangla) "পণ্যের নাম ও পরিমাণ লিখুন বা ফর্দ পেস্ট করুন..."
+                                    else "Item & qty or paste list...",
+                                    fontSize = 12.sp,
+                                    color = appColors.textSecondary.copy(alpha = 0.5f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            trailingIcon = {
+                                if (manualItemName.isNotBlank()) {
+                                    IconButton(onClick = { manualItemName = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Clear",
+                                            tint = appColors.textSecondary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                } else if (hasClipboardText) {
+                                    IconButton(
+                                        onClick = {
+                                            haptics.lightTick()
+                                            addManualItem(clipboardText)
+                                            clipboardText = ""
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.ContentPaste,
+                                            contentDescription = "Paste Clipboard",
+                                            tint = Color(0xFF25D366),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { addManualItem(manualItemName) }),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = appColors.accent,
+                                unfocusedBorderColor = appColors.border,
+                                focusedContainerColor = appColors.surface,
+                                unfocusedContainerColor = appColors.surface
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        Button(
+                            onClick = { addManualItem(manualItemName) },
+                            enabled = manualItemName.isNotBlank(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = "Add",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    // Bulk Addition Feedback Banner
+                    if (lastBulkAddedCount > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF25D366).copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.weight(1f)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.ContentPaste,
+                                        imageVector = Icons.Filled.CheckCircle,
                                         contentDescription = null,
                                         tint = Color(0xFF25D366),
-                                        modifier = Modifier.size(13.dp)
+                                        modifier = Modifier.size(14.dp)
                                     )
                                     Text(
-                                        text = if (isBangla) "পেস্ট করুন" else "Paste",
+                                        text = if (isBangla)
+                                            "✓ ${convertToBengaliDigits(lastBulkAddedCount.toString())}টি পণ্য সফলভাবে তালিকায় যোগ করা হয়েছে"
+                                        else
+                                            "✓ $lastBulkAddedCount items successfully added to list",
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
@@ -977,144 +846,20 @@ fun CreateMarketListSection(
                                         color = Color(0xFF25D366)
                                     )
                                 }
-                            }
-                        }
-
-                        OutlinedTextField(
-                            value = bulkInputText,
-                            onValueChange = { bulkInputText = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(130.dp),
-                            placeholder = {
-                                Text(
-                                    text = if (isBangla)
-                                        "যেমন:\n১. আলু ২ কেজি\n২. পেঁয়াজ ১ কেজি\n৩. সয়াবিন তেল ২ লিটার\n৪. ডিম ১ ডজন"
-                                    else
-                                        "e.g.\nPotato 2kg\nOnion 1kg\nOil 2L\nEggs 12pcs",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                    color = appColors.textSecondary.copy(alpha = 0.5f)
-                                )
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF25D366),
-                                unfocusedBorderColor = appColors.border,
-                                focusedContainerColor = appColors.background,
-                                unfocusedContainerColor = appColors.background
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-
-                        if (parsedBulkItems.isNotEmpty()) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = Color(0xFF25D366).copy(alpha = 0.1f),
-                                border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.3f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                IconButton(
+                                    onClick = { lastBulkAddedCount = 0 },
+                                    modifier = Modifier.size(20.dp)
                                 ) {
-                                    Text(
-                                        text = if (isBangla)
-                                            "✓ ${convertToBengaliDigits(parsedBulkItems.size.toString())}টি পণ্য সফলভাবে শনাক্ত করা হয়েছে"
-                                        else
-                                            "✓ ${parsedBulkItems.size} items detected successfully",
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 11.5.sp,
-                                            fontWeight = FontWeight.Bold
-                                        ),
-                                        color = Color(0xFF25D366)
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Dismiss",
+                                        tint = Color(0xFF25D366),
+                                        modifier = Modifier.size(13.dp)
                                     )
-
-                                    FlowRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                        verticalArrangement = Arrangement.spacedBy(5.dp)
-                                    ) {
-                                        parsedBulkItems.take(10).forEach { item ->
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = Color(0xFF25D366).copy(alpha = 0.15f)
-                                            ) {
-                                                Text(
-                                                    text = "${item.name} (${item.formatQuantity()})",
-                                                    style = MaterialTheme.typography.bodySmall.copy(
-                                                        fontSize = 10.5.sp,
-                                                        fontWeight = FontWeight.Medium
-                                                    ),
-                                                    color = appColors.textPrimary,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                                )
-                                            }
-                                        }
-                                        if (parsedBulkItems.size > 10) {
-                                            Text(
-                                                text = if (isBangla)
-                                                    "+ আরও ${convertToBengaliDigits((parsedBulkItems.size - 10).toString())}টি..."
-                                                else
-                                                    "+ ${parsedBulkItems.size - 10} more...",
-                                                style = MaterialTheme.typography.bodySmall.copy(
-                                                    fontSize = 10.5.sp,
-                                                    color = appColors.textSecondary
-                                                ),
-                                                modifier = Modifier.padding(vertical = 3.dp)
-                                            )
-                                        }
-                                    }
                                 }
                             }
                         }
                     }
-                }
-            } else {
-                // Mode Content: Manual Entry (inputMode == 1)
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // 1. Input Row with Add Button
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            OutlinedTextField(
-                                value = manualItemName,
-                                onValueChange = { manualItemName = it },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                                placeholder = {
-                                    Text(
-                                        text = if (isBangla) "পণ্যের নাম ও পরিমাণ (যেমন: আলু ২ কেজি)"
-                                        else "Item & qty (e.g. Potato 2kg)",
-                                        fontSize = 12.sp,
-                                        color = appColors.textSecondary.copy(alpha = 0.5f)
-                                    )
-                                },
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(onDone = { addManualItem(manualItemName) }),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = appColors.accent,
-                                    unfocusedBorderColor = appColors.border,
-                                    focusedContainerColor = appColors.surface,
-                                    unfocusedContainerColor = appColors.surface
-                                ),
-                                shape = RoundedCornerShape(10.dp)
-                            )
-
-                            Button(
-                                onClick = { addManualItem(manualItemName) },
-                                enabled = manualItemName.isNotBlank(),
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Add,
-                                    contentDescription = "Add",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
 
                         // 2. Quick Quantity Presets Row (Attached under input)
                         LazyRow(
@@ -1394,7 +1139,6 @@ fun CreateMarketListSection(
                         }
                     }
                 }
-            }
 
             // Live Budget Estimator Card
             if (effectiveItems.isNotEmpty()) {
@@ -1471,7 +1215,7 @@ fun CreateMarketListSection(
                 }
             }
 
-            // Save and Start Market List Button (Step 3 Action)
+            // Save and Start Market List Button (Step 2 Action)
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(
@@ -1482,6 +1226,8 @@ fun CreateMarketListSection(
                             onListCreated(finalTitle, effectiveItems)
                             bulkInputText = ""
                             manualItems.value = mutableListOf()
+                            manualItemName = ""
+                            lastBulkAddedCount = 0
                             currentStep = CreateMarketListStep.TITLE
                         }
                     },
@@ -1491,8 +1237,8 @@ fun CreateMarketListSection(
                         .height(50.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (inputMode == 0) Color(0xFF25D366) else appColors.accent,
-                        disabledContainerColor = (if (inputMode == 0) Color(0xFF25D366) else appColors.accent).copy(alpha = 0.35f)
+                        containerColor = appColors.accent,
+                        disabledContainerColor = appColors.accent.copy(alpha = 0.35f)
                     )
                 ) {
                     Row(

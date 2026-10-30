@@ -98,4 +98,26 @@ class MarketListParserTest {
         assertEquals(2.0, parsed[4].quantity, 0.01)
         assertEquals("পিস", parsed[4].unit)
     }
+
+    @Test
+    fun testParseCommaSeparatedBulkText() {
+        val commaText = "আলু ২ কেজি, ডিম ১ ডজন, সয়াবিন তেল ১ লিটার, কাঁচামরিচ ২৫০ গ্রাম"
+        val parsed = MarketListParser.parseBulkText(commaText)
+        assertEquals(4, parsed.size)
+        assertEquals("আলু", parsed[0].name)
+        assertEquals(2.0, parsed[0].quantity, 0.01)
+        assertEquals("কেজি", parsed[0].unit)
+
+        assertEquals("ডিম", parsed[1].name)
+        assertEquals(1.0, parsed[1].quantity, 0.01)
+        assertEquals("ডজন", parsed[1].unit)
+
+        assertEquals("সয়াবিন তেল", parsed[2].name)
+        assertEquals(1.0, parsed[2].quantity, 0.01)
+        assertEquals("লিটার", parsed[2].unit)
+
+        assertEquals("কাঁচামরিচ", parsed[3].name)
+        assertEquals(250.0, parsed[3].quantity, 0.01)
+        assertEquals("গ্রাম", parsed[3].unit)
+    }
 }

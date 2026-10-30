@@ -136,10 +136,9 @@ class MultiMarketListAndItemUxTest {
 
         // 1. Stepped wizard architecture
         assertTrue(
-            "CreateMarketListSection must define CreateMarketListStep enum with TITLE, METHOD, ITEMS",
+            "CreateMarketListSection must define CreateMarketListStep enum with TITLE, ITEMS",
             content.contains("enum class CreateMarketListStep") &&
             content.contains("TITLE") &&
-            content.contains("METHOD") &&
             content.contains("ITEMS")
         )
 
@@ -149,19 +148,14 @@ class MultiMarketListAndItemUxTest {
             content.contains("সকালের কাঁচাবাজার") && content.contains("বিকালের মুদি")
         )
 
-        // 3. Method selection cards and back navigation
+        // 3. Smart Omnibox combining manual entry and WhatsApp bulk paste
         assertTrue(
-            "CreateMarketListSection must offer clear method chooser with back navigation",
-            content.contains("CreateMarketListStep.METHOD") &&
-            content.contains("সরাসরি পণ্য লিখুন") &&
-            content.contains("হোয়াটসঅ্যাপ পেস্ট")
+            "CreateMarketListSection must support unified omnibox with bulk parser",
+            content.contains("MarketListParser.parseBulkText") &&
+            content.contains("addManualItem")
         )
 
-        // 4. Both input modes: WhatsApp bulk paste and manual item entry
-        assertTrue(
-            "CreateMarketListSection must support WhatsApp paste mode",
-            content.contains("MarketListParser.parseBulkText(bulkInputText)")
-        )
+        // 4. Quick staples assistant
         assertTrue(
             "CreateMarketListSection must support manual item addition with quick staples",
             content.contains("quickStaples") && content.contains("addManualItem")
@@ -184,47 +178,29 @@ class MultiMarketListAndItemUxTest {
             content.contains("manualItems.value = (itemsToAdd + manualItems.value).toMutableList()")
         )
 
-        // 2. Step 3 summary header must NOT contain 'Switch to Paste' button
-        assertFalse(
-            "Step 3 summary header must not distract user with 'Switch to Paste'",
-            content.contains("Switch to Paste") || content.contains("পেস্ট মোডে যান")
-        )
-
-        // 3. Step 3 header must show clean item counter badge
+        // 2. Step 2 header must show clean item counter badge
         assertTrue(
-            "Step 3 header must display clean item counter badge",
+            "Step 2 header must display clean item counter badge",
             content.contains("Live Item Counter Badge") &&
             content.contains("টি পণ্য যুক্ত")
         )
 
-        // 4. In manual entry mode, ambient clipboard detection banner must NOT be present
-        val manualEntryIndex = content.indexOf("Mode Content: Manual Entry (inputMode == 1)")
-        val bulkPasteIndex = content.indexOf("Mode Content: Bulk Paste (inputMode == 0)")
-        assertTrue(manualEntryIndex > 0 && bulkPasteIndex > 0)
-        
-        val manualEntryContent = content.substring(manualEntryIndex)
-        assertFalse(
-            "Manual entry mode must not show clipboard detection banner",
-            manualEntryContent.contains("ক্লিপবোর্ডে কপি করা ফর্দ পাওয়া গেছে") ||
-            manualEntryContent.contains("Shopping list detected on clipboard")
-        )
-
-        // 5. Added Items section must be placed ABOVE the quick staples section in manual entry
-        val addedItemsIndex = manualEntryContent.indexOf("Added Items Section")
-        val quickStaplesIndex = manualEntryContent.indexOf("Quick Staples Pills")
+        // 3. Added Items section must be placed ABOVE the quick staples section in manual entry
+        val addedItemsIndex = content.indexOf("Added Items Section")
+        val quickStaplesIndex = content.indexOf("Quick Staples Pills")
         assertTrue(
             "Added Items section must appear before Quick Staples pills in manual entry",
             addedItemsIndex in 1 until quickStaplesIndex
         )
 
-        // 6. Added items must be rendered as a vertical itemized list with serial numbers
+        // 4. Added items must be rendered as a vertical itemized list with serial numbers
         assertTrue(
             "Added items must display as an itemized list row with serial numbers",
-            manualEntryContent.contains("Serial number badge") &&
-            manualEntryContent.contains("convertToBengaliDigits((idx + 1).toString())")
+            content.contains("Serial number badge") &&
+            content.contains("convertToBengaliDigits((idx + 1).toString())")
         )
 
-        // 7. Verify prepending behavior on an actual list
+        // 5. Verify prepending behavior on an actual list
         val existingItems = listOf(
             com.example.expensetracker.data.model.MarketItem(name = "আলু", quantity = 1.0, unit = "কেজি"),
             com.example.expensetracker.data.model.MarketItem(name = "পেঁয়াজ", quantity = 2.0, unit = "কেজি")
@@ -233,6 +209,39 @@ class MultiMarketListAndItemUxTest {
         val updated = (newItem + existingItems)
         assertEquals("Latest item must be at index 0 (top of list)", "ডিম", updated.first().name)
         assertEquals("Previous first item must shift down", "আলু", updated[1].name)
+    }
+
+    @Test
+    fun testSmartOmniboxBulkPasteDetectionAndParsing() {
+        val sampleWhatsApp = """
+            - আলু ২ কেজি
+            - পেঁয়াজ ১ কেজি
+            - আড়াই কেজি চিনি
+            - ১ পোয়া কাঁচামরিচ
+            - সয়াবিন তেল ২ লিটার
+        """.trimIndent()
+
+        val parsed = MarketListParser.parseBulkText(sampleWhatsApp)
+        assertEquals(5, parsed.size)
+        assertEquals("আলু", parsed[0].name)
+        assertEquals(2.0, parsed[0].quantity, 0.01)
+        assertEquals("কেজি", parsed[0].unit)
+
+        assertEquals("পেঁয়াজ", parsed[1].name)
+        assertEquals(1.0, parsed[1].quantity, 0.01)
+        assertEquals("কেজি", parsed[1].unit)
+
+        assertEquals("চিনি", parsed[2].name)
+        assertEquals(2.5, parsed[2].quantity, 0.01)
+        assertEquals("কেজি", parsed[2].unit)
+
+        assertEquals("কাঁচামরিচ", parsed[3].name)
+        assertEquals(250.0, parsed[3].quantity, 0.01)
+        assertEquals("গ্রাম", parsed[3].unit)
+
+        assertEquals("সয়াবিন তেল", parsed[4].name)
+        assertEquals(2.0, parsed[4].quantity, 0.01)
+        assertEquals("লিটার", parsed[4].unit)
     }
 
     @Test
