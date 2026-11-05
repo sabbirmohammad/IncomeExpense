@@ -3,6 +3,9 @@ package com.example.expensetracker.ui.market
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -598,7 +601,7 @@ private fun MarketTopBar(
                             keyboardController?.hide()
                             onSearchActiveChange(false)
                         },
-                        modifier = Modifier.size(38.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
@@ -623,7 +626,7 @@ private fun MarketTopBar(
                         color = appColors.textPrimary
                     )
 
-                    // In Tab 1 (Price Intelligence / বাজার দর): Simple, clean Outlined Search button
+                    // In Tab 1 (Price Intelligence / বাজার দর): Simple, clean Outlined Search button with 44dp hit area
                     if (selectedTab == 1) {
                         val hasQuery = searchQuery.isNotBlank()
                         IconButton(
@@ -631,7 +634,7 @@ private fun MarketTopBar(
                                 haptics.lightTick()
                                 onSearchActiveChange(true)
                             },
-                            modifier = Modifier.size(38.dp)
+                            modifier = Modifier.size(44.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Search,
@@ -651,6 +654,7 @@ private fun MarketTopBar(
  * Segmented Pill Tab Bar for Market.
  * Uses exact uniform height (42.dp container with 3.dp padding) and fillMaxHeight so active tab
  * background always seamlessly covers 100% of the pill area across all tabs.
+ * Concentric radius: container 14.dp = inner pill 11.dp + 3.dp padding.
  */
 @Composable
 private fun MarketSegmentedPills(
@@ -729,7 +733,7 @@ private fun MarketTabPill(
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(11.dp),
         color = pillBackground,
         modifier = modifier.fillMaxHeight()
     ) {
@@ -776,7 +780,8 @@ private fun MarketTabPill(
                         text = badge,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = if (isSelected) Color.White else appColors.accent,
                         maxLines = 1
@@ -966,83 +971,116 @@ private fun MarketListsTabContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp),
+                        .padding(vertical = 3.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val remainingCount = totalCount - purchasedCount
 
+                    val allBg by animateColorAsState(
+                        targetValue = if (filterMode == 0) appColors.accent.copy(alpha = 0.15f) else Color.Transparent,
+                        animationSpec = tween(150),
+                        label = "filterAllBg"
+                    )
+                    val allBorder by animateColorAsState(
+                        targetValue = if (filterMode == 0) appColors.accent else appColors.border,
+                        animationSpec = tween(150),
+                        label = "filterAllBorder"
+                    )
                     // Filter 0: All
                     Surface(
                         onClick = {
                             haptics.lightTick()
                             filterMode = 0
                         },
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (filterMode == 0) appColors.accent.copy(alpha = 0.15f) else Color.Transparent,
-                        border = BorderStroke(1.dp, if (filterMode == 0) appColors.accent else appColors.border),
+                        shape = RoundedCornerShape(10.dp),
+                        color = allBg,
+                        border = BorderStroke(1.dp, allBorder),
                         modifier = Modifier.weight(1f)
                     ) {
                         Box(
-                            modifier = Modifier.padding(vertical = 6.dp),
+                            modifier = Modifier.padding(vertical = 7.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (isBangla) "সব (${convertToBengaliDigits(totalCount.toString())})" else "All ($totalCount)",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = 12.sp,
-                                    fontWeight = if (filterMode == 0) FontWeight.Bold else FontWeight.Normal
+                                    fontWeight = if (filterMode == 0) FontWeight.Bold else FontWeight.Normal,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = if (filterMode == 0) appColors.accent else appColors.textSecondary
                             )
                         }
                     }
 
+                    val leftBg by animateColorAsState(
+                        targetValue = if (filterMode == 1) appColors.warning.copy(alpha = 0.15f) else Color.Transparent,
+                        animationSpec = tween(150),
+                        label = "filterLeftBg"
+                    )
+                    val leftBorder by animateColorAsState(
+                        targetValue = if (filterMode == 1) appColors.warning else appColors.border,
+                        animationSpec = tween(150),
+                        label = "filterLeftBorder"
+                    )
                     // Filter 1: Remaining
                     Surface(
                         onClick = {
                             haptics.lightTick()
                             filterMode = 1
                         },
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (filterMode == 1) appColors.warning.copy(alpha = 0.15f) else Color.Transparent,
-                        border = BorderStroke(1.dp, if (filterMode == 1) appColors.warning else appColors.border),
+                        shape = RoundedCornerShape(10.dp),
+                        color = leftBg,
+                        border = BorderStroke(1.dp, leftBorder),
                         modifier = Modifier.weight(1f)
                     ) {
                         Box(
-                            modifier = Modifier.padding(vertical = 6.dp),
+                            modifier = Modifier.padding(vertical = 7.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (isBangla) "বাকি (${convertToBengaliDigits(remainingCount.toString())})" else "Left ($remainingCount)",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = 12.sp,
-                                    fontWeight = if (filterMode == 1) FontWeight.Bold else FontWeight.Normal
+                                    fontWeight = if (filterMode == 1) FontWeight.Bold else FontWeight.Normal,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = if (filterMode == 1) appColors.warning else appColors.textSecondary
                             )
                         }
                     }
 
+                    val doneBg by animateColorAsState(
+                        targetValue = if (filterMode == 2) appColors.income.copy(alpha = 0.15f) else Color.Transparent,
+                        animationSpec = tween(150),
+                        label = "filterDoneBg"
+                    )
+                    val doneBorder by animateColorAsState(
+                        targetValue = if (filterMode == 2) appColors.income else appColors.border,
+                        animationSpec = tween(150),
+                        label = "filterDoneBorder"
+                    )
                     // Filter 2: Purchased
                     Surface(
                         onClick = {
                             haptics.lightTick()
                             filterMode = 2
                         },
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (filterMode == 2) appColors.income.copy(alpha = 0.15f) else Color.Transparent,
-                        border = BorderStroke(1.dp, if (filterMode == 2) appColors.income else appColors.border),
+                        shape = RoundedCornerShape(10.dp),
+                        color = doneBg,
+                        border = BorderStroke(1.dp, doneBorder),
                         modifier = Modifier.weight(1f)
                     ) {
                         Box(
-                            modifier = Modifier.padding(vertical = 6.dp),
+                            modifier = Modifier.padding(vertical = 7.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (isBangla) "কেনা হয়েছে (${convertToBengaliDigits(purchasedCount.toString())})" else "Done ($purchasedCount)",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = 12.sp,
-                                    fontWeight = if (filterMode == 2) FontWeight.Bold else FontWeight.Normal
+                                    fontWeight = if (filterMode == 2) FontWeight.Bold else FontWeight.Normal,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = if (filterMode == 2) appColors.income else appColors.textSecondary
                             )
@@ -1157,15 +1195,20 @@ private fun MarketShoppingHeaderHUD(
     val haptics = rememberAppHaptics()
     val progress = if (totalCount > 0) purchasedCount.toFloat() / totalCount.toFloat() else 0f
     val percent = (progress * 100).toInt()
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "hudProgress"
+    )
 
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         color = appColors.surface,
         border = BorderStroke(1.dp, appColors.border),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1185,10 +1228,11 @@ private fun MarketShoppingHeaderHUD(
                                 onBackToAllLists()
                             },
                             shape = RoundedCornerShape(8.dp),
-                            color = appColors.surfaceVariant
+                            color = appColors.surfaceVariant,
+                            modifier = Modifier.defaultMinSize(minHeight = 32.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -1234,7 +1278,8 @@ private fun MarketShoppingHeaderHUD(
                                 },
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = appColors.textPrimary,
                                 maxLines = 1,
@@ -1253,7 +1298,8 @@ private fun MarketShoppingHeaderHUD(
                                            else "Spent: ${formatCurrency(totalSpent, currencySymbol)}",
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        fontFeatureSettings = "tnum"
                                     ),
                                     color = appColors.income,
                                     maxLines = 1
@@ -1270,7 +1316,8 @@ private fun MarketShoppingHeaderHUD(
                                                else "Est: ${formatCurrency(estimatedBudget, currencySymbol)}",
                                         style = MaterialTheme.typography.bodySmall.copy(
                                             fontSize = 11.sp,
-                                            fontWeight = FontWeight.Medium
+                                            fontWeight = FontWeight.Medium,
+                                            fontFeatureSettings = "tnum"
                                         ),
                                         color = appColors.textSecondary,
                                         maxLines = 1,
@@ -1304,9 +1351,10 @@ private fun MarketShoppingHeaderHUD(
                                 haptics.lightTick()
                                 onEnterEditMode()
                             },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(9.dp),
                             color = appColors.accent.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
+                            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                            modifier = Modifier.defaultMinSize(minHeight = 34.dp)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -1336,9 +1384,10 @@ private fun MarketShoppingHeaderHUD(
                                 haptics.mediumClick()
                                 onDeleteList()
                             },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(9.dp),
                             color = appColors.expense.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.25f))
+                            border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.25f)),
+                            modifier = Modifier.defaultMinSize(minHeight = 34.dp)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
@@ -1369,9 +1418,10 @@ private fun MarketShoppingHeaderHUD(
                                     haptics.lightTick()
                                     onExitEditMode()
                                 },
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(9.dp),
                                 color = appColors.income,
-                                shadowElevation = 1.dp
+                                shadowElevation = 1.dp,
+                                modifier = Modifier.defaultMinSize(minHeight = 34.dp)
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -1401,13 +1451,13 @@ private fun MarketShoppingHeaderHUD(
 
             // Bottom Progress bar inside card
             if (totalCount > 0) {
-                Spacer(modifier = Modifier.height(7.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
-                    progress = { progress },
+                    progress = { animatedProgress },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(1.5.dp)),
+                        .height(3.5.dp)
+                        .clip(RoundedCornerShape(2.dp)),
                     color = appColors.income,
                     trackColor = appColors.border.copy(alpha = 0.5f)
                 )

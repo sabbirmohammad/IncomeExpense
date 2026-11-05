@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -172,13 +173,15 @@ fun MarketSubstituteItemDialog(
                         val isSelected = substituteName.trim() == suggestion
                         Box(
                             modifier = Modifier
+                                .defaultMinSize(minHeight = 34.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isSelected) appColors.accent else LocalAppColors.current.background)
                                 .clickable {
                                     haptics.lightTick()
                                     substituteName = suggestion
                                 }
-                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = suggestion,
@@ -201,8 +204,10 @@ fun MarketSubstituteItemDialog(
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, LocalAppColors.current.border)
                     ) {
                         Text(
@@ -215,8 +220,10 @@ fun MarketSubstituteItemDialog(
                     Button(
                         onClick = submit,
                         enabled = substituteName.isNotBlank(),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
                     ) {
                         Text(

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -39,8 +40,12 @@ fun MarketFinishButton(
         },
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp),
-        shape = RoundedCornerShape(12.dp),
+            .height(50.dp),
+        shape = RoundedCornerShape(14.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 0.dp
+        ),
         colors = ButtonDefaults.buttonColors(
             containerColor = appColors.income,
             contentColor = contentColor
@@ -53,12 +58,13 @@ fun MarketFinishButton(
             Icon(
                 imageVector = Icons.Filled.Check,
                 contentDescription = null,
-                tint = contentColor
+                tint = contentColor,
+                modifier = Modifier.size(18.dp)
             )
             Text(
                 text = if (isBangla) "বাজার সম্পন্ন করুন" else "Finish Shopping",
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 14.sp,
+                    fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold
                 ),
                 color = contentColor

@@ -1,5 +1,8 @@
 package com.example.expensetracker.ui.dashboard
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,20 +98,22 @@ fun ActiveMarketListsHubView(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = appColors.accent.copy(alpha = 0.12f),
-                    modifier = Modifier.clickable {
-                        haptics.lightTick()
-                        onCreateNewClick()
-                    }
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = 36.dp)
+                        .clickable {
+                            haptics.lightTick()
+                            onCreateNewClick()
+                        }
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = appColors.accent, modifier = Modifier.size(14.dp))
                         Text(
                             text = if (isBangla) "নতুন ফর্দ" else "New List",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
                             color = appColors.accent
                         )
                     }
@@ -120,6 +127,11 @@ fun ActiveMarketListsHubView(
             val purchasedItems = listWithItems.purchasedItems
             val totalSpent = listWithItems.totalSpent
             val progress = listWithItems.progress
+            val animatedProgress by animateFloatAsState(
+                targetValue = progress,
+                animationSpec = spring(stiffness = Spring.StiffnessLow),
+                label = "hubListProgress"
+            )
 
             AppCard(
                 modifier = Modifier
@@ -182,7 +194,7 @@ fun ActiveMarketListsHubView(
                                 haptics.lightTick()
                                 onDeleteList(list.id)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(44.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Delete,
@@ -197,7 +209,7 @@ fun ActiveMarketListsHubView(
 
                     // Progress bar
                     LinearProgressIndicator(
-                        progress = { progress },
+                        progress = { animatedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(5.dp)
@@ -224,7 +236,8 @@ fun ActiveMarketListsHubView(
                             text = statText,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = appColors.textSecondary
                         )

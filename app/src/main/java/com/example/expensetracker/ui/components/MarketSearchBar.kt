@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -138,24 +139,30 @@ fun MarketSearchBar(
         )
 
         if (query.isNotEmpty()) {
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Box(
                 modifier = Modifier
-                    .size(22.dp)
-                    .clip(CircleShape)
-                    .background(appColors.surfaceVariant.copy(alpha = 0.7f))
+                    .defaultMinSize(minWidth = 38.dp, minHeight = 38.dp)
                     .clickable {
                         onQueryChange("")
                         onClear?.invoke()
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Clear",
-                    tint = appColors.textSecondary,
-                    modifier = Modifier.size(13.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(appColors.surfaceVariant.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear",
+                        tint = appColors.textSecondary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
             }
         }
     }

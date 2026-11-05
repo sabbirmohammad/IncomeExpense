@@ -230,7 +230,8 @@ fun MarketTripCompletionSheet(
                                 text = formatCurrency(totalSpent, currencySymbol),
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 24.sp
+                                    fontSize = 24.sp,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = appColors.accent
                             )
@@ -247,7 +248,8 @@ fun MarketTripCompletionSheet(
                                     "${allItems.size} items",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 11.5.sp
+                                    fontSize = 11.5.sp,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = appColors.accent,
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
@@ -285,7 +287,8 @@ fun MarketTripCompletionSheet(
                                         text = formatCurrency(calculatedSavings, currencySymbol),
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
+                                            fontSize = 14.sp,
+                                            fontFeatureSettings = "tnum"
                                         ),
                                         color = appColors.income
                                     )
@@ -352,7 +355,8 @@ fun MarketTripCompletionSheet(
                                                else (if (isBangla) "মূল্য ছাড়া" else "No price"),
                                         style = MaterialTheme.typography.bodySmall.copy(
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp
+                                            fontSize = 12.sp,
+                                            fontFeatureSettings = "tnum"
                                         ),
                                         color = if (itemAmt > 0) appColors.textPrimary else appColors.textSecondary.copy(alpha = 0.6f)
                                     )
@@ -522,8 +526,10 @@ fun MarketTripCompletionSheet(
             ) {
                 OutlinedButton(
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, appColors.border)
                 ) {
                     Text(
@@ -543,8 +549,14 @@ fun MarketTripCompletionSheet(
                         }
                     },
                     enabled = !isSubmitting,
-                    modifier = Modifier.weight(1.4f),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1.4f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 2.dp,
+                        pressedElevation = 0.dp
+                    ),
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.income)
                 ) {
                     Row(

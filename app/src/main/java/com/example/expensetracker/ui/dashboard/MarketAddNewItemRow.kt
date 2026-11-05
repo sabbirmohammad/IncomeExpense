@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -97,7 +98,7 @@ fun MarketAddNewItemRow(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             color = LocalAppColors.current.surface,
             border = BorderStroke(1.dp, LocalAppColors.current.border),
             modifier = Modifier.fillMaxWidth()
@@ -151,7 +152,8 @@ fun MarketAddNewItemRow(
                             text = "$qtyDisplay $newProductUnit",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 11.5.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = appColors.accent,
                             maxLines = 1,
@@ -217,7 +219,7 @@ fun MarketAddNewItemRow(
 
             Spacer(modifier = Modifier.height(4.dp))
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = if (matchedInsight.isPriceUp && matchedInsight.percentDiff >= 20.0) appColors.expense.copy(alpha = 0.08f) else appColors.accent.copy(alpha = 0.08f),
                 border = BorderStroke(1.dp, if (matchedInsight.isPriceUp && matchedInsight.percentDiff >= 20.0) appColors.expense.copy(alpha = 0.35f) else appColors.accent.copy(alpha = 0.25f)),
                 modifier = Modifier.fillMaxWidth()
@@ -230,12 +232,19 @@ fun MarketAddNewItemRow(
                     ) {
                         Text(
                             text = if (isBangla) "পূর্বের দর: $currencySymbol$rateNum/${matchedInsight.baseUnit}" else "Last rate: $currencySymbol$rateNum/${matchedInsight.baseUnit}",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontFeatureSettings = "tnum"
+                            ),
                             color = appColors.textSecondary
                         )
                         Text(
                             text = if (isBangla) "সম্ভাব্য: $currencySymbol$estText" else "Est: $currencySymbol$estText",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.5.sp,
+                                fontFeatureSettings = "tnum"
+                            ),
                             color = appColors.accent
                         )
                     }
@@ -249,7 +258,8 @@ fun MarketAddNewItemRow(
                             text = if (isBangla) "সতর্কতা: গতবারের চেয়ে দর $pctNum% বেশি ছিল" else "Notice: Prior rate jumped by $pctNum%",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 10.5.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = appColors.expense
                         )
@@ -319,13 +329,15 @@ fun MarketAddNewItemRow(
                         shape = RoundedCornerShape(8.dp),
                         color = appColors.surfaceVariant.copy(alpha = 0.6f),
                         border = BorderStroke(1.dp, appColors.border),
-                        modifier = Modifier.clickable {
-                            haptics.lightTick()
-                            onAddItem(MarketItem(listId = listId, name = sugName, quantity = sugQty, unit = sugUnit))
-                        }
+                        modifier = Modifier
+                            .defaultMinSize(minHeight = 32.dp)
+                            .clickable {
+                                haptics.lightTick()
+                                onAddItem(MarketItem(listId = listId, name = sugName, quantity = sugQty, unit = sugUnit))
+                            }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -337,7 +349,10 @@ fun MarketAddNewItemRow(
                             )
                             Text(
                                 text = "$sugName (${if (sugQty % 1.0 == 0.0) sugQty.toInt() else sugQty} $sugUnit)",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontFeatureSettings = "tnum"
+                                ),
                                 color = appColors.textPrimary
                             )
                         }

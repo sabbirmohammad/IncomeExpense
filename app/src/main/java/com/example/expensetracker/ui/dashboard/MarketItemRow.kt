@@ -1,5 +1,10 @@
 package com.example.expensetracker.ui.dashboard
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,9 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Delete
@@ -117,6 +120,17 @@ fun MarketItemRow(
         }
     }
 
+    val cardBg by animateColorAsState(
+        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.08f) else appColors.surface,
+        animationSpec = tween(180),
+        label = "marketItemCardBg"
+    )
+    val cardBorder by animateColorAsState(
+        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.25f) else appColors.border,
+        animationSpec = tween(180),
+        label = "marketItemCardBorder"
+    )
+
     SwipeToDismissBox(
         state = dismissState,
         modifier = modifier.fillMaxWidth(),
@@ -128,7 +142,7 @@ fun MarketItemRow(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(appColors.expense)
                         .padding(horizontal = 20.dp),
                     contentAlignment = Alignment.CenterEnd
@@ -156,12 +170,9 @@ fun MarketItemRow(
         }
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = if (item.isPurchased) appColors.income.copy(alpha = 0.08f) else appColors.surface,
-            border = BorderStroke(
-                1.dp,
-                if (item.isPurchased) appColors.income.copy(alpha = 0.25f) else appColors.border
-            ),
+            shape = RoundedCornerShape(16.dp),
+            color = cardBg,
+            border = BorderStroke(1.dp, cardBorder),
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
@@ -266,7 +277,8 @@ fun MarketItemRow(
                                             text = "$trendIcon$diffText",
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 9.5.sp,
-                                                fontWeight = FontWeight.SemiBold
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontFeatureSettings = "tnum"
                                             ),
                                             color = trendColor,
                                             maxLines = 1
@@ -282,7 +294,8 @@ fun MarketItemRow(
                                             text = if (amt > 0) formatCurrency(amt, currencySymbol) else (if (isBangla) "কেনা হয়েছে" else "Done"),
                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                 fontSize = 12.5.sp,
-                                                fontWeight = FontWeight.Bold
+                                                fontWeight = FontWeight.Bold,
+                                                fontFeatureSettings = "tnum"
                                             ),
                                             color = appColors.income,
                                             modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
@@ -310,7 +323,8 @@ fun MarketItemRow(
                                             text = lastRateResolved,
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 10.sp,
-                                                fontWeight = FontWeight.Medium
+                                                fontWeight = FontWeight.Medium,
+                                                fontFeatureSettings = "tnum"
                                             ),
                                             color = appColors.textSecondary.copy(alpha = 0.85f),
                                             maxLines = 1,
@@ -337,7 +351,8 @@ fun MarketItemRow(
                                                     text = estBadgeText,
                                                     style = MaterialTheme.typography.labelSmall.copy(
                                                         fontSize = 11.5.sp,
-                                                        fontWeight = FontWeight.Bold
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontFeatureSettings = "tnum"
                                                     ),
                                                     color = appColors.accent,
                                                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp),
@@ -352,7 +367,8 @@ fun MarketItemRow(
                                         text = lastRateText,
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontSize = 10.sp,
-                                            fontWeight = FontWeight.Medium
+                                            fontWeight = FontWeight.Medium,
+                                            fontFeatureSettings = "tnum"
                                         ),
                                         color = appColors.textSecondary.copy(alpha = 0.85f),
                                         maxLines = 1,
@@ -381,22 +397,24 @@ fun MarketItemRow(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(
                                         if (item.isPurchased) appColors.background
                                         else appColors.accent.copy(alpha = 0.10f)
                                     )
+                                    .defaultMinSize(minHeight = 28.dp)
                                     .clickable(enabled = !item.isPurchased) {
                                         haptics.lightTick()
                                         onUnitClick()
                                     }
-                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
                                 Text(
                                     text = item.formatQuantity(),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        fontFeatureSettings = "tnum"
                                     ),
                                     color = if (item.isPurchased) appColors.textSecondary else appColors.accent
                                 )
@@ -413,7 +431,7 @@ fun MarketItemRow(
                             // Department indicator pill (e.g. 🥬 কাঁচাবাজার / 🧂 মুদি সদাই / 🥛 দুধ ও বেকারি)
                             val dept = getDepartmentMeta(getMarketItemCategory(item.name))
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = appColors.surfaceVariant.copy(alpha = 0.5f)
                             ) {
                                 Text(
@@ -425,7 +443,7 @@ fun MarketItemRow(
                                     color = if (item.isPurchased) appColors.textSecondary.copy(alpha = 0.7f) else appColors.textSecondary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                 )
                             }
                         }
@@ -433,26 +451,27 @@ fun MarketItemRow(
                         // Right side of Row 2: Substitute item quick button (কার্ডের একদম শেষে)
                         if (!isEditMode && !item.isPurchased && onSubstituteClick != null) {
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = appColors.accent.copy(alpha = 0.08f),
                                 border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f)),
                                 modifier = Modifier
                                     .padding(start = 6.dp)
+                                    .defaultMinSize(minHeight = 28.dp)
                                     .clickable {
                                         haptics.lightTick()
                                         onSubstituteClick()
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.5.dp),
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.SwapHoriz,
                                         contentDescription = "Substitute item",
                                         tint = appColors.accent,
-                                        modifier = Modifier.size(11.dp)
+                                        modifier = Modifier.size(12.dp)
                                     )
                                     Text(
                                         text = if (isBangla) "বিকল্প" else "Alt",
@@ -468,18 +487,18 @@ fun MarketItemRow(
                     }
                 }
 
-                // 3. Right: In Edit Mode, show Delete item button
+                // 3. Right: In Edit Mode, show Delete item button with minimum 44x44 touch target
                 if (isEditMode) {
                     IconButton(
                         onClick = {
                             haptics.mediumClick()
                             onRequestDelete()
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(30.dp)
+                                .size(32.dp)
                                 .clip(CircleShape)
                                 .background(appColors.expense.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
@@ -488,7 +507,7 @@ fun MarketItemRow(
                                 imageVector = Icons.Outlined.Delete,
                                 contentDescription = if (isBangla) "পণ্য মুছুন" else "Delete",
                                 tint = appColors.expense,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(17.dp)
                             )
                         }
                     }

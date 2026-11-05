@@ -1,5 +1,8 @@
 package com.example.expensetracker.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,6 +25,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,7 +118,10 @@ fun ActiveMarketListDashboardCard(
                         }
                         Text(
                             text = subText,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.sp,
+                                fontFeatureSettings = "tnum"
+                            ),
                             color = appColors.textSecondary
                         )
                     }
@@ -121,10 +129,13 @@ fun ActiveMarketListDashboardCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable {
-                        haptics.lightTick()
-                        onOpenFullList()
-                    }
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = 36.dp)
+                        .clickable {
+                            haptics.lightTick()
+                            onOpenFullList()
+                        }
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = if (isBangla) "সব দেখুন" else "View All",
@@ -145,9 +156,15 @@ fun ActiveMarketListDashboardCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
+            val animatedProgress by animateFloatAsState(
+                targetValue = progress,
+                animationSpec = spring(stiffness = Spring.StiffnessLow),
+                label = "dashboardMarketProgress"
+            )
+
             // Progress bar
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(5.dp)

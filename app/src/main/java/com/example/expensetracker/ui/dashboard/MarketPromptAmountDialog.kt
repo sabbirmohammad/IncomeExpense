@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -309,7 +310,8 @@ fun MarketPromptAmountDialog(
                             text = "= $currencySymbol ${if (isBangla) convertToBengaliDigits(evalStr) else evalStr}",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.5.sp
+                                fontSize = 13.5.sp,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = appColors.accent
                         )
@@ -333,13 +335,13 @@ fun MarketPromptAmountDialog(
 
                 // 1. Calculated Unit Price Badge
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = appColors.accent.copy(alpha = 0.08f),
                     border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -350,7 +352,11 @@ fun MarketPromptAmountDialog(
                         )
                         Text(
                             text = "৳$rateText/$baseUnit",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                fontFeatureSettings = "tnum"
+                            ),
                             color = appColors.accent
                         )
                     }
@@ -370,15 +376,19 @@ fun MarketPromptAmountDialog(
                     when {
                         percentDiff >= 1.0 -> {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 color = appColors.expense.copy(alpha = 0.12f),
                                 border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.3f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
+                                Column(modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)) {
                                     Text(
                                         text = if (isBangla) "🔺 গতবারের চেয়ে ৳$diffText/$baseUnit বেশি (+$pctText%)" else "🔺 ৳$diffText/$baseUnit higher than last time (+$pctText%)",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            fontFeatureSettings = "tnum"
+                                        ),
                                         color = appColors.expense
                                     )
                                     priceInsight?.oneMonthPercentDiff?.let { mPct ->
@@ -387,7 +397,10 @@ fun MarketPromptAmountDialog(
                                         val mSign = if (mPct > 0) "+" else "-"
                                         Text(
                                             text = if (isBangla) "📅 গত ১ মাসে পরিবর্তন: $mSign$mPctText%" else "📅 30-day change: $mSign$mPctText%",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.sp,
+                                                fontFeatureSettings = "tnum"
+                                            ),
                                             color = appColors.textSecondary
                                         )
                                     }
@@ -396,22 +409,26 @@ fun MarketPromptAmountDialog(
                         }
                         percentDiff <= -1.0 -> {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 color = appColors.income.copy(alpha = 0.12f),
                                 border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.3f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     text = if (isBangla) "🔻 গতবারের চেয়ে ৳$diffText/$baseUnit সাশ্রয়ী (-$pctText%)" else "🔻 ৳$diffText/$baseUnit cheaper than last time (-$pctText%)",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        fontFeatureSettings = "tnum"
+                                    ),
                                     color = appColors.income,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
                                 )
                             }
                         }
                         else -> {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 color = appColors.surface,
                                 border = BorderStroke(1.dp, appColors.border),
                                 modifier = Modifier.fillMaxWidth()
@@ -420,7 +437,7 @@ fun MarketPromptAmountDialog(
                                     text = if (isBangla) "➖ পূর্বের দরেই কেনা হচ্ছে" else "➖ Same rate as last purchase",
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                                     color = appColors.textSecondary,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
                                 )
                             }
                         }
@@ -439,14 +456,15 @@ fun MarketPromptAmountDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
+                            .defaultMinSize(minHeight = 40.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(appColors.accent.copy(alpha = 0.08f))
-                            .border(1.dp, appColors.accent.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                            .border(1.dp, appColors.accent.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
                             .clickable {
                                 haptics.lightTick()
                                 promptAmountText = "$promptAmountText$actualOp"
                             }
-                            .padding(vertical = 6.dp),
+                            .padding(vertical = 7.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -473,9 +491,10 @@ fun MarketPromptAmountDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
+                            .defaultMinSize(minHeight = 40.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(appColors.background)
-                            .border(1.dp, appColors.border, RoundedCornerShape(8.dp))
+                            .border(1.dp, appColors.border, RoundedCornerShape(10.dp))
                             .clickable { addQuickAmount(chipValue) }
                             .padding(vertical = 7.dp),
                         contentAlignment = Alignment.Center
@@ -485,7 +504,8 @@ fun MarketPromptAmountDialog(
                             text = chipText,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = appColors.accent
                         )
@@ -502,27 +522,31 @@ fun MarketPromptAmountDialog(
             ) {
                 OutlinedButton(
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, appColors.border)
                 ) {
                     Text(
                         text = if (isBangla) "বাতিল" else "Cancel",
                         color = appColors.textSecondary,
-                        fontSize = 13.sp
+                        fontSize = 13.5.sp
                     )
                 }
 
                 Button(
                     onClick = submitAmount,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
                 ) {
                     Text(
                         text = if (isBangla) "যুক্ত করুন" else "Save Price",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 13.5.sp
                     )
                 }
             }
