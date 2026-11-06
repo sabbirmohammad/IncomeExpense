@@ -6,9 +6,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +40,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,7 +74,7 @@ import com.example.expensetracker.ui.components.rememberAppHaptics
  * - Minimum 48dp touch targets on interactive controls.
  * - Zero artificial generic elements.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MarketItemRow(
     item: MarketItem,
@@ -90,16 +97,37 @@ fun MarketItemRow(
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
-            if (dismissValue == SwipeToDismissBoxValue.EndToStart && isEditMode) {
-                haptics.mediumClick()
-                onRequestDelete()
-                // Return false so item doesn't disappear until confirmed in dialog
-                false
-            } else {
-                false
+            when (dismissValue) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    haptics.successFeedback()
+                    onTickClick()
+                    // Return false so row smoothly snaps back into place; state updates in place
+                    false
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    if (isEditMode) {
+                        haptics.mediumClick()
+                        onRequestDelete()
+                        // Return false so item doesn't disappear until confirmed in dialog
+                        false
+                    } else {
+                        false
+                    }
+                }
+                SwipeToDismissBoxValue.Settled -> false
             }
         }
     )
+
+    // Progressive drag threshold tactile feedback (lightTick upon crossing threshold)
+    val isThresholdPassed = dismissState.targetValue != SwipeToDismissBoxValue.Settled
+    var wasThresholdPassed by remember { mutableStateOf(false) }
+    LaunchedEffect(isThresholdPassed) {
+        if (isThresholdPassed != wasThresholdPassed) {
+            haptics.lightTick()
+            wasThresholdPassed = isThresholdPassed
+        }
+    }
 
     val checkScale by animateFloatAsState(
         targetValue = if (item.isPurchased) 1f else 0f,
@@ -146,59 +174,114 @@ fun MarketItemRow(
         label = "marketItemCardBorder"
     )
 
-    SwipeToDismissBox(
-        state = dismissState,
-        modifier = modifier.fillMaxWidth(),
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = isEditMode,
-        backgroundContent = {
-            val direction = dismissState.dismissDirection
-            if (direction == SwipeToDismissBoxValue.EndToStart && isEditMode) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(appColors.expense)
-                        .padding(horizontal = 20.dp),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = if (isBangla) "মুছে ফেলুন" else "Delete",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        )
-                        Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Delete",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
+    Column(modifier = modifier.fillMaxWidth()) {
+        SwipeToDismissBox(
+            state = dismissState,
+            modifier = Modifier.fillMaxWidth(),
+            enableDismissFromStartToEnd = true,
+            enableDismissFromEndToStart = isEditMode,
+            backgroundContent = {
+                val direction = dismissState.dismissDirection
+                when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> {
+                        // Progressive emerald reveal with checkmark icon when swiping from start to end
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(appColors.income)
+                                .padding(horizontal = 20.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = if (isBangla) "কেনা হয়েছে" else "Purchased",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Text(
+                                    text = if (item.isPurchased) {
+                                        if (isBangla) "অসম্পূর্ণ রাখুন" else "Revert"
+                                    } else {
+                                        if (isBangla) "কেনা হয়েছে" else "Done"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontSize = 13.sp,
+                                        fontFeatureSettings = "tnum"
+                                    )
+                                )
+                            }
+                        }
                     }
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        if (isEditMode) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(appColors.expense)
+                                    .padding(horizontal = 20.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = if (isBangla) "মুছে ফেলুন" else "Delete",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 13.sp,
+                                            fontFeatureSettings = "tnum"
+                                        )
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Outlined.Delete,
+                                        contentDescription = "Delete",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    SwipeToDismissBoxValue.Settled -> Unit
                 }
             }
-        }
-    ) {
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = cardBg,
-            border = BorderStroke(HairlineInkStroke, cardBorder),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    haptics.lightTick()
-                    if (isEditMode) {
-                        onUnitClick()
-                    } else {
-                        onRowClick()
-                    }
-                }
         ) {
+            Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = cardBg,
+                    border = BorderStroke(HairlineInkStroke, cardBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // Ruled pocket notepad item click & long-press handler (clickable { ... })
+                        .combinedClickable(
+                            onClick = {
+                                haptics.lightTick()
+                                if (isEditMode) {
+                                    onUnitClick()
+                                } else {
+                                    onRowClick()
+                                }
+                            },
+                            onLongClick = {
+                                haptics.longPressFeedback()
+                                if (!item.isPurchased && onSubstituteClick != null) {
+                                    onSubstituteClick()
+                                } else if (isEditMode) {
+                                    onUnitClick()
+                                }
+                            }
+                        )
+                ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -549,5 +632,15 @@ fun MarketItemRow(
                 }
             }
         }
+    }
+
+        // Ruled pocket notebook baseline divider (LocalAppColors.current.divider)
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+            thickness = HairlineInkStroke,
+            color = appColors.divider.copy(alpha = 0.5f)
+        )
     }
 }

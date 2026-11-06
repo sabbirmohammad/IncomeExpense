@@ -37,7 +37,11 @@
 | 11 | Structural & Ergonomic Invariant Preservation | Retain all test string matches (`SwipeToDismissBox`, `isEditMode`, `Icons.Filled.Check`), >=48dp touch targets, no AI sparkles | M2, M3, M4 | Survey (explorer_survey_6_3) |
 | 12 | StateFlow & Transaction Preservation | 100% preservation of `DashboardViewModel` StateFlows and atomic SQLite transaction boundaries | M2, M3, M4 | Survey (explorer_survey_6_3) |
 | 13 | Comprehensive Regression Suite | Unit tests verifying all redesigned components, layout invariants, and zero regressions | M5 | Survey (explorer_survey_6_3) |
-| 14 | GEMINI.md Release Compliance | Minor version bump to `v6.17`, git tag, and origin main push | M5 | GEMINI.md |
+| 14 | GEMINI.md Release Compliance | Minor version bump to `v6.18`, git tag, and origin main push | M5 | GEMINI.md |
+| 15 | Natural Finger Gestures (1-Swipe Check-off) | 1-Swipe right (`StartToEnd`) check-off with emerald reveal, spring snap-back, and threshold haptics in `MarketItemRow.kt` | MG1 | Survey (explorer_gesture_1) |
+| 16 | Horizontal Pager Tab Navigation | Fluid horizontal swipe navigation between Market tabs in `MarketScreen.kt` synchronized with segmented pills | MG1 | Survey (explorer_gesture_1) |
+| 17 | Handcrafted Tactile Notebook Details | Ruled notebook baseline, tactile tally dots in `MarketBottomTripSummaryBar`, and serrated receipt tear edge in `MarketTripCompletionSheet` | MG1 | Survey (explorer_market_ux_2) |
+| 18 | Gesture Verification & Production Release | Automated unit tests for gestures, 430+ regression pass, version bump to `v6.19`, git tag and origin main push | MG2 | GEMINI.md |
 
 ---
 
@@ -45,10 +49,12 @@
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|:------------:|:------:|
 | M1 | Living Ledger Design System Tokens | Implement warm living color palette, extended tabular typography, and hairline rule tokens in `Color.kt`, `Theme.kt`, `Type.kt` | none | **DONE** (Gate Passed, 338 tests pass) |
-| M2 | Handcrafted Market Checklist & In-Store Dock | Redesign `MarketItemRow.kt`, `MarketScreen.kt`, implement `MarketDepartmentSectionHeader.kt` and `MarketBottomTripSummaryBar.kt` | M1 | **DONE** (Gate Passed, 356 tests pass across 34 suites) |
-| M3 | List Creation, Price Logging & Tally Slip | Overhaul `CreateMarketListSection.kt`, `MarketPromptAmountDialog.kt`, `MarketTripCompletionSheet.kt`, `MarketParsedTagChip.kt` | M1, M2 | PLANNED |
-| M4 | Price Intelligence & Inflation Trends | Overhaul `ProductPriceInsightsSheet.kt` with living ledger styling and historical sparklines | M1 | PLANNED |
-| M5 | Regression Verification & Release | Run full test suite, add overhaul unit tests, execute `./scripts/bump_version.sh minor`, push to GitHub | M1, M2, M3, M4 | PLANNED |
+| M2 | Handcrafted Market Checklist & In-Store Dock | Redesign `MarketItemRow.kt`, `MarketScreen.kt`, implement `MarketDepartmentSectionHeader.kt` and `MarketBottomTripSummaryBar.kt` | M1 | **DONE** (Gate Passed, 356 tests pass) |
+| M3 | List Creation, Price Logging & Tally Slip | Overhaul `CreateMarketListSection.kt`, `MarketPromptAmountDialog.kt`, `MarketTripCompletionSheet.kt`, `MarketParsedTagChip.kt` | M1, M2 | **DONE** (Gate Passed, 361 tests pass) |
+| M4 | Price Intelligence & Inflation Trends | Overhaul `ProductPriceInsightsSheet.kt` with living ledger styling and historical sparklines | M1 | **DONE** (Gate Passed, 416 tests pass) |
+| M5 | Regression Verification & Release v6.18 | Run full test suite, execute `./scripts/bump_version.sh minor`, push to GitHub | M1..M4 | **DONE** (Gate Passed, v6.18 live on main) |
+| MG1 | Market Natural Finger Gestures & Tactile Polish | 1-Swipe check-off, `HorizontalPager` tab gestures, threshold haptics, ruled baseline, tally dots, serrated tear edge | M1..M5 | **DONE** (Gate Passed, 461 tests pass) |
+| MG2 | Production Verification & Release v6.19 | Run 461 unit tests, bump version to `v6.19`, tag and push to GitHub | MG1 | **DONE** (Gate Passed, v6.19 live on main) |
 
 ---
 

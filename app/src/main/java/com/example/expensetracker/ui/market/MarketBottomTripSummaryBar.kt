@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -106,7 +109,7 @@ fun MarketBottomTripSummaryBar(
                     )
                 }
 
-                // Progress Ratio Pill
+                // Progress Ratio Pill with Tactile Tally Dots
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = if (isAllDone) appColors.income.copy(alpha = 0.12f) else appColors.accent.copy(alpha = 0.10f),
@@ -115,16 +118,52 @@ fun MarketBottomTripSummaryBar(
                         if (isAllDone) appColors.income.copy(alpha = 0.3f) else appColors.accent.copy(alpha = 0.25f)
                     )
                 ) {
-                    Text(
-                        text = progressText,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = if (isAllDone) appColors.income else appColors.accent,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                    )
+                    ) {
+                        // Tactile tally dots / tick marks representing completed vs remaining items
+                        if (totalCount > 0) {
+                            val maxVisibleDots = 6
+                            val displayTotal = minOf(totalCount, maxVisibleDots)
+                            val displayPurchased = if (totalCount <= maxVisibleDots) {
+                                purchasedCount
+                            } else {
+                                ((purchasedCount.toFloat() / totalCount.toFloat()) * maxVisibleDots).toInt()
+                            }
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                for (i in 0 until displayTotal) {
+                                    val isCompleted = i < displayPurchased
+                                    Box(
+                                        modifier = Modifier
+                                            .size(5.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (isCompleted) {
+                                                    if (isAllDone) appColors.income else appColors.accent
+                                                } else {
+                                                    appColors.divider.copy(alpha = 0.8f)
+                                                }
+                                            )
+                                    )
+                                }
+                            }
+                        }
+
+                        Text(
+                            text = progressText,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFeatureSettings = "tnum"
+                            ),
+                            color = if (isAllDone) appColors.income else appColors.accent
+                        )
+                    }
                 }
             }
 

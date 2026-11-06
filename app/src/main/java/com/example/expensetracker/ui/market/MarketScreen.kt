@@ -30,6 +30,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -152,8 +154,19 @@ fun MarketScreen(
 
     // 0: Market Lists (Checklist & Trips), 1: Price Intelligence (বাজার দর), 2: Create New List
     var selectedTab by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
     var priceSearchQuery by remember { mutableStateOf("") }
     var isPriceSearchActive by remember { mutableStateOf(false) }
+
+    // Bidirectional sync: swiping pages updates the active tab and search state
+    LaunchedEffect(pagerState.currentPage) {
+        if (selectedTab != pagerState.currentPage) {
+            selectedTab = pagerState.currentPage
+            if (pagerState.currentPage != 1) {
+                isPriceSearchActive = false
+            }
+        }
+    }
 
     // Consolidated active lists
     val effectiveActiveLists = remember(activeMarketLists, activeMarketList) {
@@ -198,109 +211,124 @@ fun MarketScreen(
         ) {
             // 1. Top Bar Header
             MarketTopBar(
-            isBangla = isBangla,
-            selectedTab = selectedTab,
-            searchQuery = priceSearchQuery,
-            onSearchQueryChange = { priceSearchQuery = it },
-            isSearchActive = isPriceSearchActive,
-            onSearchActiveChange = { isPriceSearchActive = it }
-        )
+                isBangla = isBangla,
+                selectedTab = pagerState.currentPage,
+                searchQuery = priceSearchQuery,
+                onSearchQueryChange = { priceSearchQuery = it },
+                isSearchActive = isPriceSearchActive,
+                onSearchActiveChange = { isPriceSearchActive = it }
+            )
 
-        // 2. Segmented Pill Tabs
-        MarketSegmentedPills(
-            selectedTab = selectedTab,
-            onTabSelected = {
-                haptics.lightTick()
-                selectedTab = it
-                if (it != 1) {
-                    isPriceSearchActive = false
+            // 2. Segmented Pill Tabs synchronized bidirectionally with HorizontalPager
+            MarketSegmentedPills(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { targetTab ->
+                    haptics.lightTick()
+                    selectedTab = targetTab
+                    if (targetTab != 1) {
+                        isPriceSearchActive = false
+                    }
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(targetTab)
+                    }
+                },
+                isBangla = isBangla,
+                activeListsCount = effectiveActiveLists.size,
+                priceInsightsCount = productPriceInsights.size
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // 3. Tab Content via HorizontalPager (enables natural horizontal finger swipe gestures)
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                beyondViewportPageCount = 1
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        // TAB 0: Active Market Lists & Shopping Checklist
+                        MarketListsTabContent(
+                            effectiveActiveLists = effectiveActiveLists,
+                            currentViewingList = currentViewingList,
+                            currencySymbol = currencySymbol,
+                            isBangla = isBangla,
+                            lastPurchasedRates = lastPurchasedRates,
+                            productPriceInsights = productPriceInsights,
+                            stapleProducts = stapleProducts,
+                            onSelectList = { listWithItems -> selectedListId = listWithItems.list.id },
+                            onBackToAllLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) {
+                                { selectedListId = null }
+                            } else null,
+                            onCreateNewClick = {
+                                selectedTab = 2
+                                coroutineScope.launch { pagerState.animateScrollToPage(2) }
+                            },
+                            onAddItem = { newItem, targetListId ->
+                                dashboardViewModel.addMarketItem(newItem, targetListId)
+                            },
+                            onUpdateItem = { item -> dashboardViewModel.updateMarketItem(item) },
+                            onDeleteItemClick = { item ->
+                                itemToDeleteConfirm = item
+                            },
+                            onUnitClick = { item -> itemForUnitDialog = item },
+                            onSubstituteClick = { item -> itemToSubstitute = item },
+                            onPromptAmount = { item -> promptAmountForItem = item },
+                            onUnmarkPurchased = { item -> dashboardViewModel.unmarkMarketItemPurchased(item) },
+                            onFinishTripClick = {
+                                val items = currentViewingList?.items ?: emptyList()
+                                val purchased = items.filter { it.isPurchased }
+                                val hasStaplePurchased = purchased.any {
+                                    val name = it.name.lowercase()
+                                    name.contains("মরিচ") || name.contains("লেবু") || name.contains("ধনে") ||
+                                    name.contains("আদা") || name.contains("রসুন") || name.contains("chili") || name.contains("lemon")
+                                }
+                                if (!hasStaplePurchased && items.size >= 3) {
+                                    showForgotStaplesDialog = true
+                                } else if (currentViewingList != null) {
+                                    tripForCompletionSheet = currentViewingList
+                                }
+                            },
+                            onDeleteListClick = { listId -> listToDeleteConfirmId = listId }
+                        )
+                    }
+                    1 -> {
+                        // TAB 1: Market Price Intelligence & Trends
+                        ProductPriceInsightsContent(
+                            priceInsights = productPriceInsights,
+                            onFetchHistory = { productName -> dashboardViewModel.getProductPriceHistory(productName) },
+                            isBangla = isBangla,
+                            currencySymbol = currencySymbol,
+                            onClose = null,
+                            searchQuery = priceSearchQuery,
+                            onSearchQueryChange = { priceSearchQuery = it },
+                            showInternalSearchBar = false,
+                            showHeader = false,
+                            onOpenSearch = { isPriceSearchActive = true },
+                            isSearchActive = isPriceSearchActive,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    2 -> {
+                        // TAB 2: Create New Market List (WhatsApp Paste or Manual)
+                        CreateMarketListSection(
+                            isBangla = isBangla,
+                            onListCreated = { title, items ->
+                                dashboardViewModel.createMarketListWithBulk(title, items)
+                                selectedTab = 0
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                                selectedListId = null
+                            },
+                            priceInsights = productPriceInsights,
+                            currencySymbol = currencySymbol,
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                    }
                 }
-            },
-            isBangla = isBangla,
-            activeListsCount = effectiveActiveLists.size,
-            priceInsightsCount = productPriceInsights.size
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // 3. Tab Content
-        when (selectedTab) {
-            0 -> {
-                // TAB 0: Active Market Lists & Shopping Checklist
-                MarketListsTabContent(
-                    effectiveActiveLists = effectiveActiveLists,
-                    currentViewingList = currentViewingList,
-                    currencySymbol = currencySymbol,
-                    isBangla = isBangla,
-                    lastPurchasedRates = lastPurchasedRates,
-                    productPriceInsights = productPriceInsights,
-                    stapleProducts = stapleProducts,
-                    onSelectList = { listWithItems -> selectedListId = listWithItems.list.id },
-                    onBackToAllLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) {
-                        { selectedListId = null }
-                    } else null,
-                    onCreateNewClick = { selectedTab = 2 },
-                    onAddItem = { newItem, targetListId ->
-                        dashboardViewModel.addMarketItem(newItem, targetListId)
-                    },
-                    onUpdateItem = { item -> dashboardViewModel.updateMarketItem(item) },
-                    onDeleteItemClick = { item ->
-                        itemToDeleteConfirm = item
-                    },
-                    onUnitClick = { item -> itemForUnitDialog = item },
-                    onSubstituteClick = { item -> itemToSubstitute = item },
-                    onPromptAmount = { item -> promptAmountForItem = item },
-                    onUnmarkPurchased = { item -> dashboardViewModel.unmarkMarketItemPurchased(item) },
-                    onFinishTripClick = {
-                        val items = currentViewingList?.items ?: emptyList()
-                        val purchased = items.filter { it.isPurchased }
-                        val hasStaplePurchased = purchased.any {
-                            val name = it.name.lowercase()
-                            name.contains("মরিচ") || name.contains("লেবু") || name.contains("ধনে") ||
-                            name.contains("আদা") || name.contains("রসুন") || name.contains("chili") || name.contains("lemon")
-                        }
-                        if (!hasStaplePurchased && items.size >= 3) {
-                            showForgotStaplesDialog = true
-                        } else if (currentViewingList != null) {
-                            tripForCompletionSheet = currentViewingList
-                        }
-                    },
-                    onDeleteListClick = { listId -> listToDeleteConfirmId = listId }
-                )
-            }
-            1 -> {
-                // TAB 1: Market Price Intelligence & Trends
-                ProductPriceInsightsContent(
-                    priceInsights = productPriceInsights,
-                    onFetchHistory = { productName -> dashboardViewModel.getProductPriceHistory(productName) },
-                    isBangla = isBangla,
-                    currencySymbol = currencySymbol,
-                    onClose = null,
-                    searchQuery = priceSearchQuery,
-                    onSearchQueryChange = { priceSearchQuery = it },
-                    showInternalSearchBar = false,
-                    showHeader = false,
-                    onOpenSearch = { isPriceSearchActive = true },
-                    isSearchActive = isPriceSearchActive,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            2 -> {
-                // TAB 2: Create New Market List (WhatsApp Paste or Manual)
-                CreateMarketListSection(
-                    isBangla = isBangla,
-                    onListCreated = { title, items ->
-                        dashboardViewModel.createMarketListWithBulk(title, items)
-                        selectedTab = 0
-                        selectedListId = null
-                    },
-                    priceInsights = productPriceInsights,
-                    currencySymbol = currencySymbol,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
             }
         }
-    }
 
     SnackbarHost(
         hostState = snackbarHostState,

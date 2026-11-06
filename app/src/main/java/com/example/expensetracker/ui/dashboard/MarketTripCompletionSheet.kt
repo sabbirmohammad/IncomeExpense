@@ -60,7 +60,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -417,6 +420,35 @@ fun MarketTripCompletionSheet(
                                 }
                             }
                         }
+                    }
+
+                    // Serrated zig-zag tear-off edge along the bottom of the digital tally slip (Canvas path triangles)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    val tearEdgeColor = appColors.divider
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                    ) {
+                        val toothWidth = 12.dp.toPx()
+                        val toothHeight = size.height
+                        val teethCount = (size.width / toothWidth).toInt() + 1
+                        val zigZagPath = Path().apply {
+                            moveTo(0f, 0f)
+                            for (i in 0 until teethCount) {
+                                val x = i * toothWidth
+                                lineTo(x + toothWidth / 2f, toothHeight)
+                                lineTo(x + toothWidth, 0f)
+                            }
+                        }
+                        drawPath(
+                            path = zigZagPath,
+                            color = tearEdgeColor,
+                            style = Stroke(
+                                width = 1.5f,
+                                cap = StrokeCap.Round
+                            )
+                        )
                     }
                 }
             }
