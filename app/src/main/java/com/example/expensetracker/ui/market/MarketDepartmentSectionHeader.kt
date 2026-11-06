@@ -130,8 +130,8 @@ fun MarketDepartmentSectionHeader(
                 ) {
                     Text(
                         text = progressText,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             fontFeatureSettings = "tnum"
                         ),

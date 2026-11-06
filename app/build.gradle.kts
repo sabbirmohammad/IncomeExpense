@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.expensetracker"
         minSdk = 24
         targetSdk = 35
-        versionCode = 81
-        versionName = "6.17"
+        versionCode = 82
+        versionName = "6.18"
     }
 
     signingConfigs {

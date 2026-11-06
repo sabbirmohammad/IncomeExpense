@@ -306,7 +306,7 @@ fun MarketItemRow(
                                         Text(
                                             text = "$trendIcon$diffText",
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 9.5.sp,
+                                                fontSize = 12.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 fontFeatureSettings = "tnum"
                                             ),
@@ -352,7 +352,7 @@ fun MarketItemRow(
                                         Text(
                                             text = lastRateResolved,
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.sp,
+                                                fontSize = 12.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 fontFeatureSettings = "tnum"
                                             ),
@@ -380,7 +380,7 @@ fun MarketItemRow(
                                                 Text(
                                                     text = estBadgeText,
                                                     style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontSize = 11.5.sp,
+                                                        fontSize = 12.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         fontFeatureSettings = "tnum"
                                                     ),
@@ -396,7 +396,7 @@ fun MarketItemRow(
                                     Text(
                                         text = lastRateText,
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium,
                                             fontFeatureSettings = "tnum"
                                         ),
@@ -443,7 +443,7 @@ fun MarketItemRow(
                                 Text(
                                     text = item.formatQuantity(),
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFeatureSettings = "tnum"
                                     ),
@@ -469,7 +469,7 @@ fun MarketItemRow(
                                 Text(
                                     text = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 10.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium
                                     ),
                                     color = if (item.isPurchased) appColors.textSecondary.copy(alpha = 0.7f) else appColors.textSecondary,
@@ -509,7 +509,7 @@ fun MarketItemRow(
                                     Text(
                                         text = if (isBangla) "বিকল্প" else "Alt",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.SemiBold
                                         ),
                                         color = appColors.accent

@@ -89,8 +89,8 @@ fun MarketBottomTripSummaryBar(
                 ) {
                     Text(
                         text = if (isBangla) "চলতি মোট খরচ" else "Running Total",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         ),
                         color = appColors.textSecondary

@@ -772,8 +772,8 @@ private fun MarketTabPill(
                 Spacer(modifier = Modifier.width(3.dp))
                 Box(
                     modifier = Modifier
-                        .height(16.dp)
-                        .defaultMinSize(minWidth = 16.dp)
+                        .height(18.dp)
+                        .defaultMinSize(minWidth = 18.dp)
                         .clip(CircleShape)
                         .background(if (isSelected) Color.White.copy(alpha = 0.25f) else appColors.accent.copy(alpha = 0.15f))
                         .padding(horizontal = 4.dp),
@@ -782,7 +782,7 @@ private fun MarketTabPill(
                     Text(
                         text = badge,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 9.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum"
                         ),
@@ -1309,9 +1309,11 @@ private fun MarketShoppingHeaderHUD(
                                 Spacer(modifier = Modifier.width(3.dp))
                                 Text(
                                     text = if (isBangla) "সকল" else "All",
-                                    fontSize = 10.5.sp,
-                                    color = appColors.textSecondary,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    color = appColors.textSecondary
                                 )
                             }
                         }
@@ -1362,7 +1364,7 @@ private fun MarketShoppingHeaderHUD(
                                     text = if (isBangla) "খরচ: ${formatCurrency(totalSpent, currencySymbol)}"
                                            else "Spent: ${formatCurrency(totalSpent, currencySymbol)}",
                                     style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 11.5.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFeatureSettings = "tnum"
                                     ),
@@ -1373,14 +1375,14 @@ private fun MarketShoppingHeaderHUD(
                                 if (estimatedBudget != null && estimatedBudget > 0) {
                                     Text(
                                         text = "•",
-                                        fontSize = 11.sp,
+                                        fontSize = 12.sp,
                                         color = appColors.textSecondary.copy(alpha = 0.5f)
                                     )
                                     Text(
                                         text = if (isBangla) "বাজেট: ${formatCurrency(estimatedBudget, currencySymbol)}"
                                                else "Est: ${formatCurrency(estimatedBudget, currencySymbol)}",
                                         style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 11.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium,
                                             fontFeatureSettings = "tnum"
                                         ),
@@ -1394,7 +1396,7 @@ private fun MarketShoppingHeaderHUD(
                             Text(
                                 text = if (isBangla) "নিচে নতুন পণ্য যোগ করুন" else "Add new items below",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 11.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Normal
                                 ),
                                 color = appColors.textSecondary
@@ -1435,7 +1437,7 @@ private fun MarketShoppingHeaderHUD(
                                 Text(
                                     text = if (isBangla) "এডিট" else "Edit",
                                     style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = 11.5.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     ),
                                     color = appColors.accent
@@ -1468,7 +1470,7 @@ private fun MarketShoppingHeaderHUD(
                                 Text(
                                     text = if (isBangla) "মুছুন" else "Delete",
                                     style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = 11.5.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold
                                     ),
                                     color = appColors.expense
@@ -1502,7 +1504,7 @@ private fun MarketShoppingHeaderHUD(
                                     Text(
                                         text = if (isBangla) "সম্পন্ন" else "Done",
                                         style = MaterialTheme.typography.labelMedium.copy(
-                                            fontSize = 11.5.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold
                                         ),
                                         color = Color.White
