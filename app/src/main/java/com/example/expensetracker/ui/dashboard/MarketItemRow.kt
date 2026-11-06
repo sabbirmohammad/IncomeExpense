@@ -41,7 +41,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -50,17 +53,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.ProductPriceInsight
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 /**
- * Clean & modern Market Checklist Item Card:
- * - Shows: Circular Checkbox, Item Name, Quantity Badge.
- * - Clicking row or checkbox triggers price entry or completion.
- * - Purchased items display the logged price in a green pill.
- * - Swipe left to delete with a safety confirmation dialog.
+ * Handcrafted Tactile Bazaar Pocket Notepad Item Row:
+ * - 2-line clean hierarchy on Living Ledger surface with hairline divider.
+ * - Circular checkbox with tactile feedback (AppHaptics.mediumClick()).
+ * - Spring-animated pencil strikethrough upon check-off.
+ * - Minimum 48dp touch targets on interactive controls.
+ * - Zero artificial generic elements.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,6 +115,16 @@ fun MarketItemRow(
         label = "checkAlpha"
     )
 
+    // Spring-animated strikethrough upon check-off
+    val strikeProgress by animateFloatAsState(
+        targetValue = if (item.isPurchased) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "strikeProgress"
+    )
+
     // Helper for amount input and price clear
     val handleAmountChange: (String) -> Unit = {
         if (it.isBlank()) {
@@ -121,12 +136,12 @@ fun MarketItemRow(
     }
 
     val cardBg by animateColorAsState(
-        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.08f) else appColors.surface,
+        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.06f) else appColors.cardBackground,
         animationSpec = tween(180),
         label = "marketItemCardBg"
     )
     val cardBorder by animateColorAsState(
-        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.25f) else appColors.border,
+        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.22f) else appColors.divider,
         animationSpec = tween(180),
         label = "marketItemCardBorder"
     )
@@ -142,7 +157,7 @@ fun MarketItemRow(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(appColors.expense)
                         .padding(horizontal = 20.dp),
                     contentAlignment = Alignment.CenterEnd
@@ -170,9 +185,9 @@ fun MarketItemRow(
         }
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             color = cardBg,
-            border = BorderStroke(1.dp, cardBorder),
+            border = BorderStroke(HairlineInkStroke, cardBorder),
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
@@ -191,13 +206,13 @@ fun MarketItemRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // 1. Circular Checkbox
+                // 1. Circular Checkbox with Tactile Feedback and 48dp Touch Target
                 Box(
                     modifier = Modifier
                         .minimumInteractiveComponentSize()
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .clickable(enabled = !isEditMode) {
-                            haptics.lightTick()
+                            haptics.mediumClick()
                             onTickClick()
                         },
                     contentAlignment = Alignment.Center
@@ -233,17 +248,18 @@ fun MarketItemRow(
                     }
                 }
 
-                // 2. Product Name, Quantity & Badges (2-Row Balanced Layout)
+                // 2. Product Name, Quantity & Badges (2-Line Balanced Layout)
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Row 1: Product Name (Left) + Last Rate & Estimated Cost / Purchased Price (Right)
+                    // Line 1: Product Name (Left) + Estimated Cost / Purchased Price Badge (Right)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val strikethroughColor = appColors.textSecondary.copy(alpha = 0.7f)
                         Text(
                             text = item.name,
                             style = MaterialTheme.typography.bodyMedium.copy(
@@ -254,10 +270,24 @@ fun MarketItemRow(
                             color = if (item.isPurchased) appColors.textSecondary else appColors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .drawWithContent {
+                                    drawContent()
+                                    if (strikeProgress > 0.01f) {
+                                        val y = size.height / 2f
+                                        drawLine(
+                                            color = strikethroughColor,
+                                            start = Offset(0f, y),
+                                            end = Offset(size.width * strikeProgress, y),
+                                            strokeWidth = 2.dp.toPx(),
+                                            cap = StrokeCap.Round
+                                        )
+                                    }
+                                }
                         )
 
-                        // First Row End: Last Rate + Estimated Cost (Unpurchased) OR Trend + Price Badge (Purchased)
+                        // Line 1 End: Last Rate + Estimated Cost (Unpurchased) OR Trend + Price Badge (Purchased)
                         if (!isEditMode) {
                             if (item.isPurchased) {
                                 val amt = item.amount ?: 0.0
@@ -288,7 +318,7 @@ fun MarketItemRow(
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
                                         color = appColors.income.copy(alpha = 0.12f),
-                                        border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.3f))
+                                        border = BorderStroke(HairlineInkStroke, appColors.income.copy(alpha = 0.3f))
                                     ) {
                                         Text(
                                             text = if (amt > 0) formatCurrency(amt, currencySymbol) else (if (isBangla) "কেনা হয়েছে" else "Done"),
@@ -345,7 +375,7 @@ fun MarketItemRow(
                                             Surface(
                                                 shape = RoundedCornerShape(8.dp),
                                                 color = appColors.accent.copy(alpha = 0.10f),
-                                                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
+                                                border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f))
                                             ) {
                                                 Text(
                                                     text = estBadgeText,
@@ -380,34 +410,35 @@ fun MarketItemRow(
                         }
                     }
 
-                    // Row 2: Quantity + Department (Left) + Substitute Button (Card End)
+                    // Line 2: Quantity Badge + Department Tag Chip (Left) + Substitute Trigger (Right)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Left side of Row 2: Quantity & Department pills
+                        // Left side of Line 2: Quantity & Department pills
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.weight(1f, fill = false)
                         ) {
-                            // Quantity pill
+                            // Quantity pill with 48dp touch target accessibility
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                                 modifier = Modifier
+                                    .minimumInteractiveComponentSize()
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(
                                         if (item.isPurchased) appColors.background
                                         else appColors.accent.copy(alpha = 0.10f)
                                     )
-                                    .defaultMinSize(minHeight = 28.dp)
+                                    .defaultMinSize(minHeight = 32.dp)
                                     .clickable(enabled = !item.isPurchased) {
                                         haptics.lightTick()
                                         onUnitClick()
                                     }
-                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Text(
                                     text = item.formatQuantity(),
@@ -432,7 +463,8 @@ fun MarketItemRow(
                             val dept = getDepartmentMeta(getMarketItemCategory(item.name))
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = appColors.surfaceVariant.copy(alpha = 0.5f)
+                                color = appColors.surfaceVariant.copy(alpha = 0.5f),
+                                border = BorderStroke(HairlineInkStroke, appColors.divider.copy(alpha = 0.5f))
                             ) {
                                 Text(
                                     text = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}",
@@ -448,22 +480,23 @@ fun MarketItemRow(
                             }
                         }
 
-                        // Right side of Row 2: Substitute item quick button (কার্ডের একদম শেষে)
+                        // Right side of Line 2: Substitute item quick button
                         if (!isEditMode && !item.isPurchased && onSubstituteClick != null) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = appColors.accent.copy(alpha = 0.08f),
-                                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.2f)),
+                                border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.2f)),
                                 modifier = Modifier
                                     .padding(start = 6.dp)
-                                    .defaultMinSize(minHeight = 28.dp)
+                                    .minimumInteractiveComponentSize()
+                                    .defaultMinSize(minHeight = 32.dp)
                                     .clickable {
                                         haptics.lightTick()
                                         onSubstituteClick()
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
@@ -487,18 +520,20 @@ fun MarketItemRow(
                     }
                 }
 
-                // 3. Right: In Edit Mode, show Delete item button with minimum 44x44 touch target
+                // 3. Right: In Edit Mode, show Delete item button with minimum 48dp touch target
                 if (isEditMode) {
                     IconButton(
                         onClick = {
                             haptics.mediumClick()
                             onRequestDelete()
                         },
-                        modifier = Modifier.size(44.dp)
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(48.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(34.dp)
                                 .clip(CircleShape)
                                 .background(appColors.expense.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
@@ -507,7 +542,7 @@ fun MarketItemRow(
                                 imageVector = Icons.Outlined.Delete,
                                 contentDescription = if (isBangla) "পণ্য মুছুন" else "Delete",
                                 tint = appColors.expense,
-                                modifier = Modifier.size(17.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }

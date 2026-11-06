@@ -90,8 +90,8 @@ object MarketListParser {
      */
     internal fun cleanLine(line: String): String {
         var result = line.trim()
-        // Remove markdown or list bullets
-        result = result.replace(Regex("^([\\-\\*\\•\\+\\>\\–\\—\\✔\\✓\\☑\\[\\]\\(\\)]|\\d+[\\.\\)\\:\\-]|[০-৯]+[\\.\\)\\:\\-])\\s*"), "")
+        // Remove markdown or list bullets (e.g. "[ ]", "(৭)", "1.", "-", etc.)
+        result = result.replace(Regex("^(\\[[^\\]]*\\]|\\([^\\)]*\\)|[\\-\\*\\•\\+\\>\\–\\—\\✔\\✓\\☑]|\\d+[\\.\\)\\:\\-]|[০-৯]+[\\.\\)\\:\\-])+\\s*"), "")
         // Remove trailing commas, dashes, colons
         result = result.replace(Regex("[,;\\-\\:]+$"), "").trim()
         return result

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -53,7 +54,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -73,10 +76,12 @@ import com.example.expensetracker.common.MarketListParser
 import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.ProductPriceInsight
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.ui.market.MarketParsedTagChip
 import java.util.Calendar
 
 /**
@@ -89,11 +94,13 @@ enum class CreateMarketListStep {
 }
 
 /**
- * Dedicated Section for Creating New Market Lists.
- * - 2-Step Modern Streamlined Wizard (Title -> Smart Items Omnibox).
- * - Time-aware smart title suggestions (সকালের কাঁচাবাজার, বিকালের মুদি সদাই).
- * - Unified Smart Omnibox combining single-item entry with instant WhatsApp multi-line bulk auto-parsing.
- * - Live item counter, quick quantity presets, and staple suggestions.
+ * Handcrafted Living Ledger & Tactile Bazaar Section for Creating New Market Lists.
+ * - Tactile physical lined notepad / bazaar docket (বাজারের ফর্দ / হিসাব খাতা) aesthetic.
+ * - Warm paper surfaces (cardBackground), 0.5dp ink dividers (HairlineInkStroke), ruled notepad item rows.
+ * - Interactive bulk WhatsApp tag inspector using MarketParsedTagChip.
+ * - Guaranteed >= 48dp touch targets on quick staples, quantity presets, clipboard dismiss, and item delete buttons.
+ * - Minimum 12sp typography on all Bengali metadata with tabular numbers ("tnum").
+ * - Strictly zero artificial AI sparkles or tropes.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -111,7 +118,7 @@ fun CreateMarketListSection(
 
     var clipboardText by remember { mutableStateOf("") }
     var isClipboardDismissed by remember { mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) {
         try {
             clipboardText = clipboardManager.getText()?.text ?: ""
         } catch (_: Exception) {}
@@ -136,11 +143,9 @@ fun CreateMarketListSection(
     var inputMode by remember { mutableIntStateOf(1) } // 1: Add Items Manually, 0: Bulk Paste
     var lastBulkAddedCount by remember { mutableIntStateOf(0) }
 
-    // Bulk paste state
+    // Bulk paste inspector state
     var bulkInputText by remember { mutableStateOf("") }
-    val parsedBulkItems = remember(bulkInputText) {
-        if (bulkInputText.isNotBlank()) MarketListParser.parseBulkText(bulkInputText) else emptyList()
-    }
+    var parsedBulkItems by remember { mutableStateOf<List<MarketItem>>(emptyList()) }
 
     // Manual items state
     var manualItemName by remember { mutableStateOf("") }
@@ -263,11 +268,14 @@ fun CreateMarketListSection(
                                 currentStep = CreateMarketListStep.TITLE
                             },
                             shape = RoundedCornerShape(8.dp),
-                            color = appColors.surface,
-                            border = BorderStroke(1.dp, appColors.border)
+                            color = appColors.cardBackground,
+                            border = BorderStroke(HairlineInkStroke, appColors.divider),
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 44.dp)
+                                .minimumInteractiveComponentSize()
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
@@ -275,12 +283,12 @@ fun CreateMarketListSection(
                                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                     contentDescription = "Back",
                                     tint = appColors.textPrimary,
-                                    modifier = Modifier.size(15.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Text(
                                     text = if (isBangla) "পেছনে" else "Back",
                                     style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = 11.5.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold
                                     ),
                                     color = appColors.textPrimary
@@ -308,7 +316,7 @@ fun CreateMarketListSection(
                                     text = listTitle.ifBlank { defaultInitialTitle },
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.5.sp
+                                        fontSize = 14.sp
                                     ),
                                     color = appColors.textPrimary,
                                     maxLines = 1,
@@ -319,13 +327,13 @@ fun CreateMarketListSection(
                                     imageVector = Icons.Outlined.Edit,
                                     contentDescription = "Edit title",
                                     tint = appColors.accent,
-                                    modifier = Modifier.size(12.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                             }
                             Text(
                                 text = if (isBangla) "ধাপ ২/২ • পণ্যের তালিকা" else "Step 2/2 • Market Items",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Normal
                                 ),
                                 color = appColors.textSecondary
@@ -336,11 +344,14 @@ fun CreateMarketListSection(
                         val totalCount = manualItems.value.size
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (totalCount > 0) appColors.accent.copy(alpha = 0.14f) else appColors.surface,
+                            color = if (totalCount > 0) appColors.accent.copy(alpha = 0.14f) else appColors.cardBackground,
                             border = BorderStroke(
-                                1.dp,
-                                if (totalCount > 0) appColors.accent.copy(alpha = 0.4f) else appColors.border
-                            )
+                                HairlineInkStroke,
+                                if (totalCount > 0) appColors.accent.copy(alpha = 0.4f) else appColors.divider
+                            ),
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 44.dp)
+                                .minimumInteractiveComponentSize()
                         ) {
                             Text(
                                 text = if (isBangla) {
@@ -351,11 +362,12 @@ fun CreateMarketListSection(
                                     else "0 items"
                                 },
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = if (totalCount > 0) appColors.accent else appColors.textSecondary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp)
                             )
                         }
                     } else {
@@ -366,7 +378,7 @@ fun CreateMarketListSection(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(24.dp)
+                                    .size(26.dp)
                                     .clip(CircleShape)
                                     .background(appColors.accent.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
@@ -375,7 +387,7 @@ fun CreateMarketListSection(
                                     text = if (isBangla) "১" else "1",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp
+                                        fontSize = 12.sp
                                     ),
                                     color = appColors.accent
                                 )
@@ -384,7 +396,7 @@ fun CreateMarketListSection(
                                 text = if (isBangla) "নতুন ফর্দ তৈরি" else "Create New List",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
+                                    fontSize = 15.sp
                                 ),
                                 color = appColors.textPrimary
                             )
@@ -394,16 +406,16 @@ fun CreateMarketListSection(
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = appColors.accent.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.3f))
+                            border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.3f))
                         ) {
                             Text(
                                 text = if (isBangla) "ধাপ ১/২: নাম" else "Step 1/2: Name",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
+                                    fontSize = 12.sp
                                 ),
                                 color = appColors.accent,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -415,7 +427,7 @@ fun CreateMarketListSection(
                         .fillMaxWidth()
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(appColors.border.copy(alpha = 0.4f))
+                        .background(appColors.divider.copy(alpha = 0.5f))
                 ) {
                     val progressFraction = when (currentStep) {
                         CreateMarketListStep.TITLE -> 0.5f
@@ -438,8 +450,8 @@ fun CreateMarketListSection(
             item {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = appColors.surface,
-                    border = BorderStroke(1.dp, appColors.border),
+                    color = appColors.cardBackground,
+                    border = BorderStroke(HairlineInkStroke, appColors.divider),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -478,7 +490,7 @@ fun CreateMarketListSection(
                                 Text(
                                     text = if (isBangla) "নিচের সাজেশন থেকে বেছে নিন অথবা কাস্টম নাম লিখুন:"
                                     else "Pick from quick suggestions or type custom title:",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                     color = appColors.textSecondary
                                 )
                             }
@@ -489,7 +501,7 @@ fun CreateMarketListSection(
                             Text(
                                 text = if (isBangla) "ফর্দের নাম (কিসের বাজার):" else "List Title:",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 12.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
                                 color = appColors.textPrimary
@@ -509,7 +521,10 @@ fun CreateMarketListSection(
                                 },
                                 trailingIcon = {
                                     if (listTitle.isNotBlank()) {
-                                        IconButton(onClick = { listTitle = "" }) {
+                                        IconButton(
+                                            onClick = { listTitle = "" },
+                                            modifier = Modifier.minimumInteractiveComponentSize()
+                                        ) {
                                             Icon(
                                                 imageVector = Icons.Filled.Close,
                                                 contentDescription = "Clear",
@@ -528,7 +543,7 @@ fun CreateMarketListSection(
                                 }),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = appColors.accent,
-                                    unfocusedBorderColor = appColors.border,
+                                    unfocusedBorderColor = appColors.divider,
                                     focusedContainerColor = appColors.background,
                                     unfocusedContainerColor = appColors.background
                                 ),
@@ -536,12 +551,12 @@ fun CreateMarketListSection(
                             )
                         }
 
-                        // Suggestion Chips
+                        // Suggestion Chips (Guaranteed >= 48dp touch targets)
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
                                 text = if (isBangla) "দ্রুত বাছাই করুন:" else "Suggested titles:",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = appColors.textSecondary
@@ -564,19 +579,26 @@ fun CreateMarketListSection(
                                         shape = RoundedCornerShape(8.dp),
                                         color = if (isSelected) appColors.accent.copy(alpha = 0.15f) else appColors.background,
                                         border = BorderStroke(
-                                            1.dp,
-                                            if (isSelected) appColors.accent else appColors.border
-                                        )
+                                            HairlineInkStroke,
+                                            if (isSelected) appColors.accent else appColors.divider
+                                        ),
+                                        modifier = Modifier
+                                            .defaultMinSize(minHeight = 48.dp)
+                                            .minimumInteractiveComponentSize()
                                     ) {
-                                        Text(
-                                            text = titleOption,
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontSize = 11.5.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                            ),
-                                            color = if (isSelected) appColors.accent else appColors.textSecondary,
-                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
-                                        )
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = titleOption,
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontSize = 12.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                ),
+                                                color = if (isSelected) appColors.accent else appColors.textSecondary
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -631,16 +653,16 @@ fun CreateMarketListSection(
         if (currentStep == CreateMarketListStep.ITEMS) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // Clipboard Quick Suggestion Banner (Dismissible 1-tap bulk paste)
+                    // Clipboard Quick Suggestion Banner (Dismissible 1-tap bulk paste with >= 48dp targets)
                     if (hasClipboardText && !isClipboardDismissed) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF25D366).copy(alpha = 0.09f),
-                            border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.35f)),
+                            color = appColors.income.copy(alpha = 0.09f),
+                            border = BorderStroke(HairlineInkStroke, appColors.income.copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 6.dp),
+                                modifier = Modifier.padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -655,26 +677,27 @@ fun CreateMarketListSection(
                                             clipboardText = ""
                                             isClipboardDismissed = true
                                         }
+                                        .padding(vertical = 4.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(28.dp)
+                                            .size(32.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF25D366).copy(alpha = 0.18f)),
+                                            .background(appColors.income.copy(alpha = 0.18f)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.ContentPaste,
                                             contentDescription = null,
-                                            tint = Color(0xFF25D366),
-                                            modifier = Modifier.size(14.dp)
+                                            tint = appColors.income,
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                     Column {
                                         Text(
                                             text = if (isBangla) "ক্লিপবোর্ডে ফর্দ শনাক্ত হয়েছে" else "List detected on clipboard",
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 11.5.sp,
+                                                fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold
                                             ),
                                             color = appColors.textPrimary
@@ -682,7 +705,7 @@ fun CreateMarketListSection(
                                         Text(
                                             text = if (isBangla) "এক ট্যাপে সবগুলো পণ্য স্বয়ংক্রিয়ভাবে যোগ করুন"
                                             else "Tap to auto-parse and add all items",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                             color = appColors.textSecondary,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
@@ -702,17 +725,24 @@ fun CreateMarketListSection(
                                             isClipboardDismissed = true
                                         },
                                         shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFF25D366)
+                                        color = appColors.income,
+                                        modifier = Modifier
+                                            .defaultMinSize(minHeight = 48.dp)
+                                            .minimumInteractiveComponentSize()
                                     ) {
-                                        Text(
-                                            text = if (isBangla) "যোগ করুন" else "Paste",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            color = Color.White,
-                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = if (isBangla) "যোগ করুন" else "Paste",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                color = Color.White
+                                            )
+                                        }
                                     }
 
                                     IconButton(
@@ -720,13 +750,15 @@ fun CreateMarketListSection(
                                             haptics.lightTick()
                                             isClipboardDismissed = true
                                         },
-                                        modifier = Modifier.size(28.dp)
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .minimumInteractiveComponentSize()
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.Close,
                                             contentDescription = "Dismiss",
                                             tint = appColors.textSecondary,
-                                            modifier = Modifier.size(15.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
@@ -738,8 +770,8 @@ fun CreateMarketListSection(
                     if (lastBulkAddedCount > 0) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF25D366).copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.35f)),
+                            color = appColors.income.copy(alpha = 0.12f),
+                            border = BorderStroke(HairlineInkStroke, appColors.income.copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -755,8 +787,8 @@ fun CreateMarketListSection(
                                     Icon(
                                         imageVector = Icons.Filled.CheckCircle,
                                         contentDescription = null,
-                                        tint = Color(0xFF25D366),
-                                        modifier = Modifier.size(14.dp)
+                                        tint = appColors.income,
+                                        modifier = Modifier.size(16.dp)
                                     )
                                     Text(
                                         text = if (isBangla)
@@ -764,22 +796,97 @@ fun CreateMarketListSection(
                                         else
                                             "✓ $lastBulkAddedCount items successfully added to list",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFeatureSettings = "tnum"
                                         ),
-                                        color = Color(0xFF25D366)
+                                        color = appColors.income
                                     )
                                 }
                                 IconButton(
                                     onClick = { lastBulkAddedCount = 0 },
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .minimumInteractiveComponentSize()
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Close,
                                         contentDescription = "Dismiss",
-                                        tint = Color(0xFF25D366),
-                                        modifier = Modifier.size(13.dp)
+                                        tint = appColors.income,
+                                        modifier = Modifier.size(15.dp)
                                     )
+                                }
+                            }
+                        }
+                    }
+
+                    // Interactive Bulk Tag Inspector (when bulk input has parsed items)
+                    if (parsedBulkItems.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = appColors.cardBackground,
+                            border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.3f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (isBangla) "📝 চিহ্নিত ট্যাগসমূহ (${convertToBengaliDigits(parsedBulkItems.size.toString())}টি):"
+                                               else "📝 Detected Tags (${parsedBulkItems.size}):",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.5.sp,
+                                            fontFeatureSettings = "tnum"
+                                        ),
+                                        color = appColors.accent
+                                    )
+
+                                    TextButton(
+                                        onClick = {
+                                            val toAdd = parsedBulkItems
+                                            manualItems.value = (manualItems.value + toAdd).toMutableList()
+                                            parsedBulkItems = emptyList()
+                                            bulkInputText = ""
+                                            lastBulkAddedCount = toAdd.size
+                                        },
+                                        modifier = Modifier.minimumInteractiveComponentSize()
+                                    ) {
+                                        Text(
+                                            text = if (isBangla) "সবগুলো যোগ করুন" else "Add All",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            ),
+                                            color = appColors.accent
+                                        )
+                                    }
+                                }
+
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    parsedBulkItems.forEachIndexed { pIdx, pItem ->
+                                        MarketParsedTagChip(
+                                            item = pItem,
+                                            isBangla = isBangla,
+                                            onRemove = {
+                                                val updated = parsedBulkItems.toMutableList()
+                                                updated.removeAt(pIdx)
+                                                parsedBulkItems = updated
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -789,8 +896,8 @@ fun CreateMarketListSection(
                     if (manualItems.value.isNotEmpty()) {
                         Surface(
                             shape = RoundedCornerShape(14.dp),
-                            color = appColors.surface,
-                            border = BorderStroke(1.dp, appColors.border),
+                            color = appColors.cardBackground,
+                            border = BorderStroke(HairlineInkStroke, appColors.divider),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(
@@ -817,7 +924,7 @@ fun CreateMarketListSection(
                                         Text(
                                             text = if (isBangla) "যুক্ত করা পণ্যসমূহ" else "Added Items",
                                             style = MaterialTheme.typography.titleSmall.copy(
-                                                fontSize = 13.sp,
+                                                fontSize = 13.5.sp,
                                                 fontWeight = FontWeight.Bold
                                             ),
                                             color = appColors.textPrimary
@@ -832,8 +939,9 @@ fun CreateMarketListSection(
                                                 else
                                                     "${manualItems.value.size}",
                                                 style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 10.5.sp,
-                                                    fontWeight = FontWeight.Bold
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontFeatureSettings = "tnum"
                                                 ),
                                                 color = appColors.accent,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -845,7 +953,7 @@ fun CreateMarketListSection(
                                         Text(
                                             text = if (isBangla) "সব মুছুন" else "Clear All",
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 11.sp,
+                                                fontSize = 12.sp,
                                                 fontWeight = FontWeight.SemiBold
                                             ),
                                             color = appColors.expense,
@@ -855,7 +963,7 @@ fun CreateMarketListSection(
                                                     haptics.lightTick()
                                                     manualItems.value = mutableListOf()
                                                 }
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                .padding(horizontal = 6.dp, vertical = 4.dp)
                                         )
                                     }
                                 }
@@ -868,17 +976,17 @@ fun CreateMarketListSection(
                                         val isLatestItem = idx == manualItems.value.size - 1
                                         Surface(
                                             shape = RoundedCornerShape(10.dp),
-                                            color = if (isLatestItem) appColors.accent.copy(alpha = 0.10f) else appColors.background,
+                                            color = if (isLatestItem) appColors.accent.copy(alpha = 0.08f) else appColors.background,
                                             border = BorderStroke(
-                                                1.dp,
-                                                if (isLatestItem) appColors.accent.copy(alpha = 0.45f) else appColors.border
+                                                HairlineInkStroke,
+                                                if (isLatestItem) appColors.accent.copy(alpha = 0.45f) else appColors.divider
                                             ),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
@@ -890,20 +998,21 @@ fun CreateMarketListSection(
                                                     // Serial number badge
                                                     Surface(
                                                         shape = RoundedCornerShape(6.dp),
-                                                        color = if (isLatestItem) appColors.accent else appColors.surface,
+                                                        color = if (isLatestItem) appColors.accent else appColors.cardBackground,
                                                         border = BorderStroke(
-                                                            1.dp,
-                                                            if (isLatestItem) appColors.accent else appColors.border
+                                                            HairlineInkStroke,
+                                                            if (isLatestItem) appColors.accent else appColors.divider
                                                         )
                                                     ) {
                                                         Text(
                                                             text = if (isBangla) convertToBengaliDigits((idx + 1).toString()) else "${idx + 1}",
                                                             style = MaterialTheme.typography.labelSmall.copy(
                                                                 fontWeight = FontWeight.Bold,
-                                                                fontSize = 11.sp
+                                                                fontSize = 12.sp,
+                                                                fontFeatureSettings = "tnum"
                                                             ),
                                                             color = if (isLatestItem) Color.White else appColors.textSecondary,
-                                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                                                         )
                                                     }
 
@@ -922,7 +1031,7 @@ fun CreateMarketListSection(
 
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
                                                     // Quantity Badge
                                                     Surface(
@@ -932,29 +1041,34 @@ fun CreateMarketListSection(
                                                         Text(
                                                             text = itm.formatQuantity(),
                                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                                fontSize = 11.sp,
-                                                                fontWeight = FontWeight.Bold
+                                                                fontSize = 12.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontFeatureSettings = "tnum"
                                                             ),
                                                             color = appColors.accent,
-                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                                         )
                                                     }
 
-                                                    // Delete Button
-                                                    IconButton(
-                                                        onClick = {
-                                                            haptics.lightTick()
-                                                            val updated = manualItems.value.toMutableList()
-                                                            updated.removeAt(idx)
-                                                            manualItems.value = updated
-                                                        },
-                                                        modifier = Modifier.size(26.dp)
+                                                    // Delete Button (Guaranteed >= 48dp touch target)
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(48.dp)
+                                                            .minimumInteractiveComponentSize()
+                                                            .clip(CircleShape)
+                                                            .clickable {
+                                                                haptics.lightTick()
+                                                                val updated = manualItems.value.toMutableList()
+                                                                updated.removeAt(idx)
+                                                                manualItems.value = updated
+                                                            },
+                                                        contentAlignment = Alignment.Center
                                                     ) {
                                                         Icon(
                                                             imageVector = Icons.Filled.Close,
                                                             contentDescription = "Remove",
                                                             tint = appColors.expense,
-                                                            modifier = Modifier.size(15.dp)
+                                                            modifier = Modifier.size(16.dp)
                                                         )
                                                     }
                                                 }
@@ -967,8 +1081,8 @@ fun CreateMarketListSection(
                     } else {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = appColors.surface,
-                            border = BorderStroke(1.dp, appColors.border),
+                            color = appColors.cardBackground,
+                            border = BorderStroke(HairlineInkStroke, appColors.divider),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(
@@ -988,7 +1102,7 @@ fun CreateMarketListSection(
                                     text = if (isBangla) "ফর্দে কোনো পণ্য যুক্ত করা হয়নি" else "No items added yet",
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
+                                        fontSize = 13.5.sp
                                     ),
                                     color = appColors.textPrimary
                                 )
@@ -997,7 +1111,7 @@ fun CreateMarketListSection(
                                         "নিচের বক্সে লিখুন বা দ্রুত জনপ্রিয় সাজেশন থেকে ট্যাপ করুন"
                                     else
                                         "Type in the box below or tap popular suggestions",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                     color = appColors.textSecondary.copy(alpha = 0.8f)
                                 )
                             }
@@ -1014,12 +1128,12 @@ fun CreateMarketListSection(
                                 imageVector = Icons.Outlined.ShoppingCart,
                                 contentDescription = null,
                                 tint = appColors.textSecondary,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                             Text(
                                 text = if (isBangla) "দ্রুত যোগ করুন (জনপ্রিয় পণ্য):" else "Quick suggestions:",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = appColors.textSecondary
@@ -1034,18 +1148,24 @@ fun CreateMarketListSection(
                             quickStaples.forEach { staple ->
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = appColors.background,
-                                    border = BorderStroke(1.dp, appColors.border),
+                                    color = appColors.cardBackground,
+                                    border = BorderStroke(HairlineInkStroke, appColors.divider),
                                     modifier = Modifier
+                                        .defaultMinSize(minHeight = 48.dp)
+                                        .minimumInteractiveComponentSize()
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable { addManualItem(staple) }
                                 ) {
-                                    Text(
-                                        text = "+ $staple",
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                        color = appColors.accent,
-                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "+ $staple",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                            color = appColors.accent
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1056,14 +1176,14 @@ fun CreateMarketListSection(
                         Text(
                             text = if (isBangla) "পরিমাণ যোগ করুন:" else "Add quantity:",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.5.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
                             ),
                             color = appColors.textSecondary
                         )
                         LazyRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             items(quickQuantities) { qty ->
                                 Surface(
@@ -1075,19 +1195,26 @@ fun CreateMarketListSection(
                                             manualItemName = qty
                                         }
                                     },
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(8.dp),
                                     color = appColors.accent.copy(alpha = 0.08f),
-                                    border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
+                                    border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f)),
+                                    modifier = Modifier
+                                        .defaultMinSize(minHeight = 48.dp)
+                                        .minimumInteractiveComponentSize()
                                 ) {
-                                    Text(
-                                        text = "+ $qty",
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 10.5.sp,
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        color = appColors.accent,
-                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "+ $qty",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium
+                                            ),
+                                            color = appColors.accent
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1103,7 +1230,13 @@ fun CreateMarketListSection(
                             value = manualItemName,
                             onValueChange = { newText ->
                                 if (newText.contains("\n") || newText.contains("\r")) {
-                                    addManualItem(newText)
+                                    val parsed = MarketListParser.parseBulkText(newText)
+                                    if (parsed.size > 1) {
+                                        parsedBulkItems = parsed
+                                        manualItemName = ""
+                                    } else {
+                                        addManualItem(newText)
+                                    }
                                 } else {
                                     manualItemName = newText
                                 }
@@ -1114,7 +1247,7 @@ fun CreateMarketListSection(
                                 Text(
                                     text = if (isBangla) "পণ্যের নাম ও পরিমাণ লিখুন..."
                                     else "Type item & quantity...",
-                                    fontSize = 12.sp,
+                                    fontSize = 12.5.sp,
                                     color = appColors.textSecondary.copy(alpha = 0.5f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -1125,12 +1258,15 @@ fun CreateMarketListSection(
                                     imageVector = Icons.Outlined.ShoppingCart,
                                     contentDescription = null,
                                     tint = if (manualItemName.isNotBlank()) appColors.accent else appColors.textSecondary.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             },
                             trailingIcon = {
                                 if (manualItemName.isNotBlank()) {
-                                    IconButton(onClick = { manualItemName = "" }) {
+                                    IconButton(
+                                        onClick = { manualItemName = "" },
+                                        modifier = Modifier.minimumInteractiveComponentSize()
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Filled.Close,
                                             contentDescription = "Clear",
@@ -1144,9 +1280,9 @@ fun CreateMarketListSection(
                             keyboardActions = KeyboardActions(onDone = { addManualItem(manualItemName) }),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = appColors.accent,
-                                unfocusedBorderColor = appColors.border,
-                                focusedContainerColor = appColors.surface,
-                                unfocusedContainerColor = appColors.surface
+                                unfocusedBorderColor = appColors.divider,
+                                focusedContainerColor = appColors.cardBackground,
+                                unfocusedContainerColor = appColors.cardBackground
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -1155,7 +1291,9 @@ fun CreateMarketListSection(
                             onClick = { addManualItem(manualItemName) },
                             enabled = manualItemName.isNotBlank(),
                             shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.size(50.dp),
+                            modifier = Modifier
+                                .size(50.dp)
+                                .minimumInteractiveComponentSize(),
                             contentPadding = PaddingValues(0.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = appColors.accent,
@@ -1179,7 +1317,7 @@ fun CreateMarketListSection(
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = appColors.accent.copy(alpha = 0.08f),
-                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                        border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -1195,7 +1333,7 @@ fun CreateMarketListSection(
                                     Text(
                                         text = if (isBangla) "সম্ভাব্য মোট বাজেট" else "Estimated Budget",
                                         style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 12.sp,
+                                            fontSize = 12.5.sp,
                                             fontWeight = FontWeight.Bold
                                         ),
                                         color = appColors.textPrimary
@@ -1211,11 +1349,12 @@ fun CreateMarketListSection(
                                                 else
                                                     "$estimatedItemsCount/${effectiveItems.size} priced",
                                                 style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 9.5.sp,
-                                                    fontWeight = FontWeight.Bold
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontFeatureSettings = "tnum"
                                                 ),
                                                 color = appColors.accent,
-                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                             )
                                         }
                                     }
@@ -1226,7 +1365,7 @@ fun CreateMarketListSection(
                                     } else {
                                         if (isBangla) "দর তথ্য পাওয়া গেলে স্বয়ংক্রিয় প্রাক্কলন হবে" else "Matches with commodity price database"
                                     },
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                                     color = appColors.textSecondary
                                 )
                             }
@@ -1239,7 +1378,8 @@ fun CreateMarketListSection(
                                 },
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
+                                    fontSize = 16.sp,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = if (liveEstimatedBudget > 0.0) appColors.accent else appColors.textSecondary
                             )
@@ -1258,6 +1398,7 @@ fun CreateMarketListSection(
                             val finalTitle = listTitle.trim().ifBlank { defaultInitialTitle }
                             onListCreated(finalTitle, effectiveItems)
                             bulkInputText = ""
+                            parsedBulkItems = emptyList()
                             manualItems.value = mutableListOf()
                             manualItemName = ""
                             lastBulkAddedCount = 0
@@ -1285,7 +1426,8 @@ fun CreateMarketListSection(
                                 "Create & Start List (${effectiveItems.size} items)",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontSize = 14.5.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = Color.White
                         )

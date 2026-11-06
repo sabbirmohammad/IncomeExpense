@@ -6,72 +6,91 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Typography specification: system sans-serif, two weights only — 400 regular, 500 medium.
+// =========================================================================
+// TABULAR BILINGUAL TYPOGRAPHY SCALE ("The Living Ledger")
+// =========================================================================
+
+const val TabularNumFeature = "tnum"
+
+// Explicit font weight tokens (400, 500, 600, 700)
+val WeightRegular   = FontWeight.Normal   // 400
+val WeightMedium    = FontWeight.Medium   // 500
+val WeightSemiBold  = FontWeight.SemiBold // 600
+val WeightBold      = FontWeight.Bold     // 700
+
 val Typography = Typography(
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium, // 500
+        fontWeight = WeightBold, // 700
         fontSize = 32.sp,
         lineHeight = 38.sp,
-        fontFeatureSettings = "tnum"
+        letterSpacing = (-0.5).sp,
+        fontFeatureSettings = TabularNumFeature
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium, // 500
+        fontWeight = WeightSemiBold, // 600
         fontSize = 24.sp,
         lineHeight = 30.sp,
-        fontFeatureSettings = "tnum"
+        fontFeatureSettings = TabularNumFeature
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium, // 500
-        fontSize = 18.sp, // Screen title: 18px / 500
+        fontWeight = WeightSemiBold, // 600
+        fontSize = 18.sp, // Screen title: 18sp / 600
         lineHeight = 24.sp,
-        fontFeatureSettings = "tnum"
+        fontFeatureSettings = TabularNumFeature
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium, // 500
-        fontSize = 16.sp, // Card value: 15-20px / 500
+        fontWeight = WeightSemiBold, // 600
+        fontSize = 15.sp, // Card value: 15sp / 600
         lineHeight = 22.sp,
-        fontFeatureSettings = "tnum"
+        fontFeatureSettings = TabularNumFeature
     ),
     titleSmall = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium, // 500
+        fontWeight = WeightMedium, // 500
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontFeatureSettings = "tnum"
+        fontFeatureSettings = TabularNumFeature
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal, // 400
+        fontWeight = WeightRegular, // 400
         fontSize = 14.sp,
-        lineHeight = 20.sp
+        lineHeight = 20.sp,
+        fontFeatureSettings = TabularNumFeature
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal, // 400
-        fontSize = 13.sp, // Body / list text: 13px / 400
-        lineHeight = 18.sp
+        fontWeight = WeightRegular, // 400
+        fontSize = 13.5.sp, // Body / list text: 13.5sp / 400
+        lineHeight = 19.sp,
+        fontFeatureSettings = TabularNumFeature
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal, // 400
-        fontSize = 12.sp, // Screen subtitle: 12px / 400
-        lineHeight = 16.sp
+        fontWeight = WeightRegular, // 400
+        fontSize = 12.sp, // Screen subtitle: 12sp / 400
+        lineHeight = 17.sp,
+        fontFeatureSettings = TabularNumFeature
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium, // 500
-        fontSize = 12.sp,
-        lineHeight = 16.sp
+        fontWeight = WeightSemiBold, // 600
+        fontSize = 12.sp, // Minimum safe readability size for Bengali
+        lineHeight = 16.sp,
+        fontFeatureSettings = TabularNumFeature
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal, // 400
-        fontSize = 11.sp, // Caption / meta: 11px / 400
-        lineHeight = 14.sp
+        fontWeight = WeightMedium, // 500
+        fontSize = 12.sp, // Constrained to >= 12sp and line height >= 16sp for Bengali metadata
+        lineHeight = 16.sp,
+        fontFeatureSettings = TabularNumFeature
     )
 )
+
+val LivingTypography = Typography
 

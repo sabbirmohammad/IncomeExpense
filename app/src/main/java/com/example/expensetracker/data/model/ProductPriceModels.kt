@@ -39,7 +39,8 @@ data class ProductPriceInsight(
     val avgUnitPrice: Double = currentUnitPrice,
     val purchaseCount: Int = 1,
     val lastPurchasedTimestamp: Long = System.currentTimeMillis(),
-    val priceTrend: PriceTrend = PriceTrend.STABLE
+    val priceTrend: PriceTrend = PriceTrend.STABLE,
+    val recentPricePoints: List<Double> = emptyList()
 ) {
     val isPriceUp: Boolean get() = priceTrend == PriceTrend.UP
     val isPriceDown: Boolean get() = priceTrend == PriceTrend.DOWN
@@ -70,7 +71,8 @@ data class ProductPriceInsight(
         } else {
             "%.1f".format(diffAbs)
         }
-        val pctFormatted = "%.1f".format(kotlin.math.abs(percentDiff))
+        val safePct = if (percentDiff.isNaN() || percentDiff.isInfinite()) 0.0 else kotlin.math.abs(percentDiff)
+        val pctFormatted = "%.1f".format(safePct)
         return if (priceDiff > 0) {
             "+৳$diffFormatted ($pctFormatted%)"
         } else if (priceDiff < 0) {

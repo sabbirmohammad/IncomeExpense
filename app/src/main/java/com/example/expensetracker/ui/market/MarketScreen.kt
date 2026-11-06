@@ -103,7 +103,9 @@ import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.ActiveMarketListsHubView
+import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
 import com.example.expensetracker.ui.dashboard.CreateMarketListSection
+import com.example.expensetracker.ui.dashboard.getMarketItemCategory
 import com.example.expensetracker.ui.dashboard.MarketAddNewItemRow
 import com.example.expensetracker.ui.dashboard.MarketFinishButton
 import com.example.expensetracker.ui.dashboard.MarketItemRow
@@ -113,6 +115,7 @@ import com.example.expensetracker.ui.dashboard.MarketSummarySection
 import com.example.expensetracker.ui.dashboard.MarketTripCompletionSheet
 import com.example.expensetracker.ui.dashboard.ProductPriceInsightsContent
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
+import androidx.compose.runtime.mutableStateMapOf
 import kotlinx.coroutines.launch
 
 /**
@@ -941,6 +944,7 @@ private fun MarketListsTabContent(
                 else -> items
             }
         }
+        val collapsedDepts = remember(currentViewingList.list.id) { mutableStateMapOf<String, Boolean>() }
 
         Column(
             modifier = Modifier
@@ -1089,38 +1093,96 @@ private fun MarketListsTabContent(
                 }
             }
 
-            // Items List
+            // Items List Grouped by Department Stalls
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(filteredItems, key = { _, item -> item.id }) { _, item ->
-                    val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
-                    val lastRateText = if (lastRate != null && lastRate.first > 0) {
-                        val rateStr = if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
-                        val rateBengali = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
-                        if (isBangla) "গত দর: ৳$rateBengali / ${lastRate.second}" else "Last: ৳$rateBengali / ${lastRate.second}"
-                    } else null
+                val itemsByDept = filteredItems.groupBy { getMarketItemCategory(it.name) }
 
-                    MarketItemRow(
-                        item = item,
-                        currencySymbol = currencySymbol,
-                        isBangla = isBangla,
-                        onUnitClick = { onUnitClick(item) },
-                        onTickClick = {
-                            if (!item.isPurchased) {
-                                onPromptAmount(item)
-                            } else {
-                                onUnmarkPurchased(item)
-                            }
-                        },
-                        onDeleteClick = { onDeleteItemClick(item) },
-                        onRequestDelete = { onDeleteItemClick(item) },
-                        onSubstituteClick = { onSubstituteClick(item) },
-                        isEditMode = effectiveEditMode,
-                        lastRateText = lastRateText,
-                        priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
-                    )
+                for (dept in ALL_DEPARTMENTS) {
+                    val deptItems = itemsByDept[dept.key] ?: continue
+                    if (deptItems.isEmpty()) continue
+
+                    val purchasedInDept = deptItems.count { it.isPurchased }
+                    val isCollapsed = collapsedDepts[dept.key] == true
+
+                    item(key = "dept_header_${dept.key}") {
+                        MarketDepartmentSectionHeader(
+                            dept = dept,
+                            completedCount = purchasedInDept,
+                            totalCount = deptItems.size,
+                            isExpanded = !isCollapsed,
+                            onToggleExpand = {
+                                collapsedDepts[dept.key] = !isCollapsed
+                            },
+                            isBangla = isBangla
+                        )
+                    }
+
+                    if (!isCollapsed) {
+                        itemsIndexed(deptItems, key = { _, item -> item.id }) { _, item ->
+                            val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
+                            val lastRateText = if (lastRate != null && lastRate.first > 0) {
+                                val rateStr = if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
+                                val rateBengali = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
+                                if (isBangla) "গত দর: ৳$rateBengali / ${lastRate.second}" else "Last: ৳$rateBengali / ${lastRate.second}"
+                            } else null
+
+                            MarketItemRow(
+                                item = item,
+                                currencySymbol = currencySymbol,
+                                isBangla = isBangla,
+                                onUnitClick = { onUnitClick(item) },
+                                onTickClick = {
+                                    if (!item.isPurchased) {
+                                        onPromptAmount(item)
+                                    } else {
+                                        onUnmarkPurchased(item)
+                                    }
+                                },
+                                onDeleteClick = { onDeleteItemClick(item) },
+                                onRequestDelete = { onDeleteItemClick(item) },
+                                onSubstituteClick = { onSubstituteClick(item) },
+                                isEditMode = effectiveEditMode,
+                                lastRateText = lastRateText,
+                                priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
+                            )
+                        }
+                    }
+                }
+
+                // Any items outside canonical departments
+                val otherItems = filteredItems.filter { item -> ALL_DEPARTMENTS.none { it.key == getMarketItemCategory(item.name) } }
+                if (otherItems.isNotEmpty()) {
+                    itemsIndexed(otherItems, key = { _, item -> item.id }) { _, item ->
+                        val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
+                        val lastRateText = if (lastRate != null && lastRate.first > 0) {
+                            val rateStr = if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
+                            val rateBengali = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
+                            if (isBangla) "গত দর: ৳$rateBengali / ${lastRate.second}" else "Last: ৳$rateBengali / ${lastRate.second}"
+                        } else null
+
+                        MarketItemRow(
+                            item = item,
+                            currencySymbol = currencySymbol,
+                            isBangla = isBangla,
+                            onUnitClick = { onUnitClick(item) },
+                            onTickClick = {
+                                if (!item.isPurchased) {
+                                    onPromptAmount(item)
+                                } else {
+                                    onUnmarkPurchased(item)
+                                }
+                            },
+                            onDeleteClick = { onDeleteItemClick(item) },
+                            onRequestDelete = { onDeleteItemClick(item) },
+                            onSubstituteClick = { onSubstituteClick(item) },
+                            isEditMode = effectiveEditMode,
+                            lastRateText = lastRateText,
+                            priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
+                        )
+                    }
                 }
 
                 // In Edit Mode: Show MarketAddNewItemRow
@@ -1142,23 +1204,26 @@ private fun MarketListsTabContent(
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
+            }
 
-                // Finish Trip Button inside scroll list (Only in View Mode when items are present)
-                if (items.isNotEmpty() && !effectiveEditMode) {
-                    item {
+            // Persistent In-Store Shopping Dock pinned at bottom
+            if (items.isNotEmpty() && !effectiveEditMode) {
+                MarketBottomTripSummaryBar(
+                    totalSpent = totalSpent,
+                    totalCount = totalCount,
+                    purchasedCount = purchasedCount,
+                    currencySymbol = currencySymbol,
+                    isBangla = isBangla,
+                    onFinishShopping = onFinishTripClick,
+                    finishButton = {
                         MarketFinishButton(
                             isBangla = isBangla,
                             onComplete = onFinishTripClick
                         )
-                        Spacer(modifier = Modifier.height(84.dp))
                     }
-                } else {
-                    item {
-                        Spacer(modifier = Modifier.height(84.dp))
-                    }
-                }
+                )
             }
         }
     }

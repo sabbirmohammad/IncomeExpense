@@ -40,12 +40,13 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.CardCornerRadius
 import com.example.expensetracker.theme.CardPadding
 import com.example.expensetracker.theme.HairlineDividerStroke
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 
 /**
- * Standard Surface Card per specification:
- * #141826 surface, 16px corner radius, 16px padding, #232838 border.
+ * Standard Surface Card per Living Ledger specification:
+ * Sheet surface, corner radius, hairline ink border.
  */
 @Composable
 fun AppCard(
@@ -54,11 +55,14 @@ fun AppCard(
     borderColor: Color = Color.Unspecified,
     cornerRadius: Dp = CardCornerRadius,
     padding: Dp = CardPadding,
+    borderStrokeWidth: Dp = HairlineInkStroke,
+    borderStroke: BorderStroke? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val resolvedBg = if (backgroundColor != Color.Unspecified) backgroundColor else LocalAppColors.current.surface
     val resolvedBorder = if (borderColor != Color.Unspecified) borderColor else LocalAppColors.current.border
+    val resolvedBorderStroke = borderStroke ?: if (borderStrokeWidth > 0.dp) BorderStroke(borderStrokeWidth, resolvedBorder) else null
 
     Card(
         modifier = modifier
@@ -66,7 +70,7 @@ fun AppCard(
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(cornerRadius),
         colors = CardDefaults.cardColors(containerColor = resolvedBg),
-        border = BorderStroke(1.dp, resolvedBorder),
+        border = resolvedBorderStroke,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.padding(padding)) {
@@ -81,6 +85,7 @@ fun OneUiCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
+    borderStrokeWidth: Dp = HairlineInkStroke,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
@@ -88,6 +93,7 @@ fun OneUiCard(
         modifier = modifier,
         backgroundColor = backgroundColor,
         borderColor = borderColor,
+        borderStrokeWidth = borderStrokeWidth,
         onClick = onClick,
         content = content
     )
@@ -99,12 +105,13 @@ fun OneUiCard(
 @Composable
 fun HairlineDivider(
     modifier: Modifier = Modifier,
+    thickness: Dp = HairlineInkStroke,
     color: Color = Color.Unspecified
 ) {
     val resolvedColor = if (color != Color.Unspecified) color else LocalAppColors.current.border
     HorizontalDivider(
         modifier = modifier.fillMaxWidth(),
-        thickness = HairlineDividerStroke,
+        thickness = thickness,
         color = resolvedColor
     )
 }

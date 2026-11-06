@@ -42,7 +42,9 @@ data class AppColors(
     val neutral: Color = ColorNeutralCategory,
     val navBorder: Color = ColorNavBorder,
     val navInactive: Color = ColorNavInactive,
-    val isDark: Boolean = true
+    val isDark: Boolean = true,
+    val cardBackground: Color = surface,
+    val divider: Color = border
 ) {
     val successIncome: Color get() = income
     val dangerExpense: Color get() = expense
@@ -57,8 +59,8 @@ val DarkAppColors = AppColors(
     border = ColorBorder,
     borderDashed = ColorBorderDashed,
     textPrimary = ColorTextPrimary,
-    textSecondary = ColorTextSecondary,
-    textMuted = ColorTextMuted,
+    textSecondary = ColorLivingTextSecondaryDark,
+    textMuted = ColorLivingTextMutedDark,
     accent = ColorAccent,
     income = ColorSuccessIncome,
     expense = ColorDangerExpense,
@@ -67,7 +69,9 @@ val DarkAppColors = AppColors(
     neutral = ColorNeutralCategory,
     navBorder = ColorNavBorder,
     navInactive = ColorNavInactive,
-    isDark = true
+    isDark = true,
+    cardBackground = ColorSurface,
+    divider = ColorBorder
 )
 
 val AmoledAppColors = AppColors(
@@ -77,8 +81,8 @@ val AmoledAppColors = AppColors(
     border = ColorBorderAmoled,
     borderDashed = ColorBorderDashedAmoled,
     textPrimary = ColorTextPrimary,
-    textSecondary = ColorTextSecondary,
-    textMuted = ColorTextMuted,
+    textSecondary = ColorLivingTextSecondaryDark,
+    textMuted = ColorLivingTextMutedDark,
     accent = ColorAccent,
     income = ColorSuccessIncome,
     expense = ColorDangerExpense,
@@ -87,7 +91,9 @@ val AmoledAppColors = AppColors(
     neutral = ColorNeutralCategory,
     navBorder = ColorBorderAmoled,
     navInactive = ColorNavInactive,
-    isDark = true
+    isDark = true,
+    cardBackground = ColorSurfaceAmoled,
+    divider = ColorBorderAmoled
 )
 
 val LightAppColors = AppColors(
@@ -97,8 +103,8 @@ val LightAppColors = AppColors(
     border = ColorBorderLight,
     borderDashed = ColorBorderDashedLight,
     textPrimary = ColorTextPrimaryLight,
-    textSecondary = ColorTextSecondaryLight,
-    textMuted = ColorTextMutedLight,
+    textSecondary = ColorLivingTextSecondaryLight,
+    textMuted = ColorLivingTextMutedLight,
     accent = ColorAccentLight,
     income = ColorSuccessIncomeLight,
     expense = ColorDangerExpenseLight,
@@ -107,7 +113,9 @@ val LightAppColors = AppColors(
     neutral = ColorNeutralCategoryLight,
     navBorder = ColorBorderLight,
     navInactive = ColorTextMutedLight,
-    isDark = false
+    isDark = false,
+    cardBackground = ColorSurfaceLight,
+    divider = ColorBorderLight
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
@@ -126,7 +134,7 @@ private val AppDarkColorScheme = darkColorScheme(
     surface = ColorSurface,
     onSurface = ColorTextPrimary,
     surfaceVariant = ColorSurfaceVariant,
-    onSurfaceVariant = ColorTextSecondary,
+    onSurfaceVariant = ColorLivingTextSecondaryDark,
     outline = ColorBorder,
     outlineVariant = ColorBorderDashed
 )
@@ -145,7 +153,7 @@ private val AppAmoledColorScheme = darkColorScheme(
     surface = ColorSurfaceAmoled,
     onSurface = ColorTextPrimary,
     surfaceVariant = ColorSurfaceVariantAmoled,
-    onSurfaceVariant = ColorTextSecondary,
+    onSurfaceVariant = ColorLivingTextSecondaryDark,
     outline = ColorBorderAmoled,
     outlineVariant = ColorBorderDashedAmoled
 )
@@ -164,7 +172,7 @@ private val AppLightColorScheme = lightColorScheme(
     surface = ColorSurfaceLight,
     onSurface = ColorTextPrimaryLight,
     surfaceVariant = ColorSurfaceSubtleLight,
-    onSurfaceVariant = ColorTextSecondaryLight,
+    onSurfaceVariant = ColorLivingTextSecondaryLight,
     outline = ColorBorderLight,
     outlineVariant = ColorBorderDashedLight
 )

@@ -7,6 +7,13 @@ package com.example.expensetracker.ui.dashboard
  * - dairy_bakery (দুধ, ডিম, বেকারি) - e.g. দুধ, ডিম, পাউরুটি, মাখন
  * - groceries (চাল, ডাল, তেল, মশলা ও অন্যান্য মুদি) - e.g. সয়াবিন তেল, সরিষার তেল, চাল, মসুর ডাল, লবণ
  */
+private val SPICE_POWDER_REGEX = Regex("(?<!ব)(গুঁড়া|গুড়া|গুঁড়ো|গুড়ো|পাউডার|powder)", RegexOption.IGNORE_CASE)
+
+private fun isSpicePowder(lower: String): Boolean {
+    return SPICE_POWDER_REGEX.containsMatchIn(lower) &&
+           !lower.contains("দুধ") && !lower.contains("milk") && !lower.contains("দই")
+}
+
 fun getMarketItemCategory(name: String): String {
     val lower = name.lowercase().trim()
     return when {
@@ -19,7 +26,7 @@ fun getMarketItemCategory(name: String): String {
         lower.contains("আটা") || lower.contains("ময়দা") || lower.contains("ময়দা") || lower.contains("সুজি") ||
         lower.contains("flour") || lower.contains("চা পাতা") || lower.contains("tea") || lower.contains("হলুদ") ||
         lower.contains("জিরা") || lower.contains("ধনিয়া") || lower.contains("এলাচ") || lower.contains("দারুচিনি") ||
-        lower.contains("তেজপাতা") || lower.contains("গুঁড়া") || lower.contains("গুড়া") || lower.contains("powder") ||
+        lower.contains("তেজপাতা") || isSpicePowder(lower) ||
         lower.contains("সস") || lower.contains("sauce") || lower.contains("ভিনেগার") || lower.contains("vinegar") ||
         lower.contains("নুডলস") || lower.contains("noodles") || lower.contains("পাস্তা") || lower.contains("pasta") -> "groceries"
 

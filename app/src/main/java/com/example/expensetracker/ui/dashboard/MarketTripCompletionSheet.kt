@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -45,6 +47,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,9 +58,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,20 +74,21 @@ import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.AccountType
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.ProductPriceInsight
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 /**
- * Modern Digital Receipt Bottom Sheet for Market Trip Completion.
+ * Handcrafted Living Ledger & Tactile Bazaar Digital Tally Slip for Market Trip Completion.
  * Presented when completing a shopping trip ("বাজার সম্পন্ন করুন").
- * - Digital receipt style card layout.
- * - Total cost highlight and item count.
- * - Savings summary comparing actual costs vs prior purchase insights.
- * - Payment account selector (Cash/Bkash/Bank).
- * - Celebration feedback on confirmation.
+ * - Thermal receipt styling with warm paper cardBackground and 0.5dp ink dividers.
+ * - Perforated dashed divider line simulating torn receipt paper.
+ * - Monospace items ledger with tabular numbers and dot leaders.
+ * - Celebratory rubber ink stamp (PAID / পরিশোধিত) rotated at -12 degrees.
+ * - Payment account selector with guaranteed >= 48dp touch targets.
+ * - Minimum 12sp typography for all Bengali text.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,14 +145,14 @@ fun MarketTripCompletionSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        containerColor = appColors.surface,
+        containerColor = appColors.cardBackground,
         dragHandle = {
             Box(
                 modifier = Modifier
                     .padding(vertical = 10.dp)
                     .size(width = 38.dp, height = 4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(appColors.border.copy(alpha = 0.8f))
+                    .background(appColors.divider)
             )
         }
     ) {
@@ -202,11 +209,11 @@ fun MarketTripCompletionSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Digital Receipt Card
+            // Digital Receipt Card (Thermal Receipt Styling)
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = appColors.background,
-                border = BorderStroke(1.dp, appColors.border),
+                border = BorderStroke(HairlineInkStroke, appColors.divider),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -214,7 +221,7 @@ fun MarketTripCompletionSheet(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    // Total Cost Section
+                    // Total Cost Section with Celebratory Ink Stamp
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -237,23 +244,48 @@ fun MarketTripCompletionSheet(
                             )
                         }
 
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = appColors.accent.copy(alpha = 0.12f)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = if (isBangla)
-                                    "${convertToBengaliDigits(allItems.size.toString())}টি পণ্যের ফর্দ"
-                                else
-                                    "${allItems.size} items",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.5.sp,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = appColors.accent,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                            )
+                            // Rotated Celebratory Ink Stamp
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = appColors.income.copy(alpha = 0.08f),
+                                border = BorderStroke(1.5.dp, appColors.income.copy(alpha = 0.85f)),
+                                modifier = Modifier.graphicsLayer { rotationZ = -12f }
+                            ) {
+                                Text(
+                                    text = if (isBangla) "পরিশোধিত" else "PAID",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 12.sp,
+                                        letterSpacing = 1.sp
+                                    ),
+                                    color = appColors.income,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = appColors.accent.copy(alpha = 0.12f),
+                                border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f))
+                            ) {
+                                Text(
+                                    text = if (isBangla)
+                                        "${convertToBengaliDigits(allItems.size.toString())}টি পণ্যের ফর্দ"
+                                    else
+                                        "${allItems.size} items",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        fontFeatureSettings = "tnum"
+                                    ),
+                                    color = appColors.accent,
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                )
+                            }
                         }
                     }
 
@@ -263,7 +295,7 @@ fun MarketTripCompletionSheet(
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = appColors.income.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.income.copy(alpha = 0.35f)),
+                            border = BorderStroke(HairlineInkStroke, appColors.income.copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -280,7 +312,7 @@ fun MarketTripCompletionSheet(
                                 Column {
                                     Text(
                                         text = if (isBangla) "🎉 চমৎকার! আনুমানিক সাশ্রয়:" else "🎉 Estimated Savings:",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                                         color = appColors.income
                                     )
                                     Text(
@@ -298,8 +330,8 @@ fun MarketTripCompletionSheet(
                     } else {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = appColors.surface,
-                            border = BorderStroke(1.dp, appColors.border),
+                            color = appColors.cardBackground,
+                            border = BorderStroke(HairlineInkStroke, appColors.divider),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -309,20 +341,37 @@ fun MarketTripCompletionSheet(
                             ) {
                                 Text(
                                     text = if (isBangla) "💡 সুপরিকল্পিত ও গোছানো বাজার সম্পন্ন হচ্ছে" else "💡 Well-planned shopping trip completed",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                     color = appColors.textSecondary
                                 )
                             }
                         }
                     }
 
-                    // Itemized Receipt Lines (Scrollable preview)
+                    // Perforated Dashed Divider Line (Simulating torn receipt paper)
                     Spacer(modifier = Modifier.height(12.dp))
+                    val dashColor = appColors.divider
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                    ) {
+                        drawLine(
+                            color = dashColor,
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 2f,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Itemized Receipt Lines (Monospace items ledger)
                     Text(
                         text = if (isBangla) "ক্রয়কৃত পণ্যের বিবরণ:" else "Purchased Items Breakdown:",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 11.sp
+                            fontSize = 12.sp
                         ),
                         color = appColors.textSecondary
                     )
@@ -342,8 +391,12 @@ fun MarketTripCompletionSheet(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "• ${item.name} (${item.formatQuantity()})",
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                        text = "• ${item.name} (${item.formatQuantity()}) · · ·",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontFeatureSettings = "tnum"
+                                        ),
                                         color = appColors.textPrimary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
@@ -356,6 +409,7 @@ fun MarketTripCompletionSheet(
                                         style = MaterialTheme.typography.bodySmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
+                                            fontFamily = FontFamily.Monospace,
                                             fontFeatureSettings = "tnum"
                                         ),
                                         color = if (itemAmt > 0) appColors.textPrimary else appColors.textSecondary.copy(alpha = 0.6f)
@@ -369,7 +423,7 @@ fun MarketTripCompletionSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Payment Account Selector
+            // Payment Account Selector (Touch targets >= 48dp)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -378,7 +432,7 @@ fun MarketTripCompletionSheet(
                     text = if (isBangla) "যে অ্যাকাউন্ট থেকে খরচ পরিশোধ হবে:" else "Select Payment Account:",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.5.sp
+                        fontSize = 12.sp
                     ),
                     color = appColors.textSecondary
                 )
@@ -388,8 +442,11 @@ fun MarketTripCompletionSheet(
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = appColors.accent.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, appColors.accent),
-                        modifier = Modifier.fillMaxWidth()
+                        border = BorderStroke(HairlineInkStroke, appColors.accent),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 48.dp)
+                            .minimumInteractiveComponentSize()
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -400,13 +457,13 @@ fun MarketTripCompletionSheet(
                                 imageVector = Icons.Filled.Payments,
                                 contentDescription = null,
                                 tint = appColors.accent,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                             Text(
                                 text = if (isBangla) "নগদ (Cash)" else "Cash",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
+                                    fontSize = 12.5.sp
                                 ),
                                 color = appColors.accent
                             )
@@ -433,27 +490,30 @@ fun MarketTripCompletionSheet(
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) appColors.accent.copy(alpha = 0.14f) else appColors.background,
                                 border = BorderStroke(
-                                    if (isSelected) 1.5.dp else 1.dp,
-                                    if (isSelected) appColors.accent else appColors.border
+                                    if (isSelected) 1.5.dp else HairlineInkStroke,
+                                    if (isSelected) appColors.accent else appColors.divider
                                 ),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .minimumInteractiveComponentSize()
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Icon(
                                         imageVector = accountIcon,
                                         contentDescription = null,
                                         tint = if (isSelected) appColors.accent else appColors.textSecondary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = acc.name,
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            fontSize = 11.sp
+                                            fontSize = 12.sp
                                         ),
                                         color = if (isSelected) appColors.accent else appColors.textPrimary,
                                         maxLines = 1,
@@ -484,27 +544,30 @@ fun MarketTripCompletionSheet(
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) appColors.accent.copy(alpha = 0.14f) else appColors.background,
                                 border = BorderStroke(
-                                    if (isSelected) 1.5.dp else 1.dp,
-                                    if (isSelected) appColors.accent else appColors.border
+                                    if (isSelected) 1.5.dp else HairlineInkStroke,
+                                    if (isSelected) appColors.accent else appColors.divider
                                 ),
-                                modifier = Modifier.width(105.dp)
+                                modifier = Modifier
+                                    .width(115.dp)
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .minimumInteractiveComponentSize()
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Icon(
                                         imageVector = accountIcon,
                                         contentDescription = null,
                                         tint = if (isSelected) appColors.accent else appColors.textSecondary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = acc.name,
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            fontSize = 11.sp
+                                            fontSize = 12.sp
                                         ),
                                         color = if (isSelected) appColors.accent else appColors.textPrimary,
                                         maxLines = 1,
@@ -530,12 +593,12 @@ fun MarketTripCompletionSheet(
                         .weight(1f)
                         .height(50.dp),
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, appColors.border)
+                    border = BorderStroke(HairlineInkStroke, appColors.divider)
                 ) {
                     Text(
                         text = if (isBangla) "ফিরে যান" else "Back",
                         color = appColors.textSecondary,
-                        fontSize = 13.5.sp
+                        fontSize = 14.sp
                     )
                 }
 
@@ -572,7 +635,7 @@ fun MarketTripCompletionSheet(
                         Text(
                             text = if (isBangla) "লেনদেন সম্পন্ন করুন" else "Confirm & Save",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             color = Color.White
                         )
                     }

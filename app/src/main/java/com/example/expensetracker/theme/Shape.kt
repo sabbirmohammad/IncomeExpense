@@ -4,22 +4,34 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
-// Redesign Specification Geometry Tokens
-val CardCornerRadius = 16.dp
-val SmallElementRadius = 10.dp
+// =========================================================================
+// CRAFTED SHAPE & ELEVATION SYSTEM ("The Living Ledger")
+// =========================================================================
+
+val RadiusOuterSheet   = 22.dp // Primary screen cards & bottom sheets
+val RadiusCardGroup    = 16.dp // Grouped ledger lists & trip summaries
+val RadiusActionChip   = 10.dp // Interactive filter pills & action buttons
+val RadiusBadgeTag     = 6.dp  // Compact status tags & item counts
+
+val HairlineInkStroke  = 0.5.dp // Elegant bookkeeper hairline divider
+
+// Backwards-compatible aliases for existing callers
+val CardCornerRadius = RadiusCardGroup
+val SmallElementRadius = RadiusActionChip
 val CardPadding = 16.dp
 val ScreenPaddingHorizontal = 16.dp
 val CardGap = 12.dp
 val ListRowPaddingVertical = 10.dp
-val HairlineDividerStroke = 0.5.dp
+val HairlineDividerStroke = HairlineInkStroke
 
-val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(SmallElementRadius), // 10dp for icon badges, chips
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(14.dp),
-    large = RoundedCornerShape(CardCornerRadius),       // 16dp for cards
-    extraLarge = RoundedCornerShape(24.dp)
+val LivingShapes = Shapes(
+    extraSmall = RoundedCornerShape(RadiusBadgeTag),
+    small = RoundedCornerShape(RadiusActionChip),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(RadiusCardGroup),
+    extraLarge = RoundedCornerShape(RadiusOuterSheet)
 )
 
+val AppShapes = LivingShapes
 val OneUiShapes = AppShapes
 
