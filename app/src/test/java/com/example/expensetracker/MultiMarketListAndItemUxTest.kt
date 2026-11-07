@@ -600,4 +600,91 @@ class MultiMarketListAndItemUxTest {
             screenContent.contains("onDeleteList = { onDeleteListClick(currentViewingList.list.id) }")
         )
     }
+
+    // =========================================================================
+    // MILESTONE M2: ITEM INPUT UX, IME INSETS & SUGGESTIONS RELOCATION SAFEGUARDS
+    // =========================================================================
+
+    @Test
+    fun testCreateMarketListItemInputHierarchyOrder() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/CreateMarketListSection.kt")
+
+        val addedItemsIndex = content.indexOf("Added Items Section")
+        val composerIndex = content.indexOf("Input Composer Row")
+        val quickStaplesIndex = content.indexOf("Quick Staples Pills")
+        val quickQuantitiesIndex = content.indexOf("Quick Quantity Presets Row")
+
+        // 1. All 4 structural anchors must exist in source
+        assertTrue("Added Items Section anchor must be present", addedItemsIndex > 0)
+        assertTrue("Input Composer Row anchor must be present", composerIndex > 0)
+        assertTrue("Quick Staples Pills anchor must be present", quickStaplesIndex > 0)
+        assertTrue("Quick Quantity Presets Row anchor must be present", quickQuantitiesIndex > 0)
+
+        // 2. Exact vertical hierarchy order: Added Items -> Composer -> Staples -> Quantities
+        assertTrue(
+            "Input Composer Row must be positioned below Added Items Section",
+            addedItemsIndex in 1 until composerIndex
+        )
+        assertTrue(
+            "Quick Staples pills must be relocated cleanly below Input Composer Row",
+            composerIndex in 1 until quickStaplesIndex
+        )
+        assertTrue(
+            "Quick Quantity presets must follow Quick Staples pills below composer",
+            quickStaplesIndex in 1 until quickQuantitiesIndex
+        )
+    }
+
+    @Test
+    fun testCreateMarketListImePaddingAndFocusBringIntoView() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/CreateMarketListSection.kt")
+
+        // 1. LazyColumn must have imePadding() applied to avoid keyboard obscuration
+        assertTrue(
+            "CreateMarketListSection LazyColumn must declare .imePadding()",
+            content.contains(".imePadding()")
+        )
+
+        // 2. LazyColumn must be bound to LazyListState
+        assertTrue(
+            "CreateMarketListSection must attach rememberLazyListState to LazyColumn",
+            content.contains("rememberLazyListState()") && content.contains("state = listState")
+        )
+
+        // 3. BringIntoViewRequester must be declared and attached to input composer
+        assertTrue(
+            "CreateMarketListSection must instantiate BringIntoViewRequester",
+            content.contains("BringIntoViewRequester()")
+        )
+        assertTrue(
+            "CreateMarketListSection must attach bringIntoViewRequester modifier to input composer",
+            content.contains(".bringIntoViewRequester(")
+        )
+        assertTrue(
+            "CreateMarketListSection must call bringIntoView() upon textfield focus",
+            content.contains("bringIntoView()") && content.contains("onFocusChanged")
+        )
+    }
+
+    @Test
+    fun testCreateMarketListDynamicBottomNavClearance() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/CreateMarketListSection.kt")
+
+        // Bottom nav spacer must dynamically adjust when keyboard (IME) is visible vs hidden
+        assertTrue(
+            "CreateMarketListSection must dynamically adapt bottom spacer using isImeVisible",
+            content.contains("WindowInsets.isImeVisible") || content.contains("isImeVisible")
+        )
+    }
+
+    @Test
+    fun testCreateMarketListExperimentalFoundationOptIn() {
+        val content = readFile("com/example/expensetracker/ui/dashboard/CreateMarketListSection.kt")
+
+        // BringIntoViewRequester requires ExperimentalFoundationApi
+        assertTrue(
+            "CreateMarketListSection must opt in to ExperimentalFoundationApi for BringIntoViewRequester",
+            content.contains("ExperimentalFoundationApi::class")
+        )
+    }
 }

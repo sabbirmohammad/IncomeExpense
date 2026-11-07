@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 
 @Composable
 fun UpcomingBillsAlertBanner(
@@ -70,8 +72,10 @@ fun UpcomingBillsAlertBanner(
                         fontWeight = FontWeight.Bold,
                         color = appColors.textPrimary
                     )
+                    val isBangla = LocalAppStrings.current.isBangla
+                    val countDisplay = if (isBangla) convertToBengaliDigits(dueCount.toString()) else dueCount.toString()
                     Text(
-                        text = "$dueCount $subtitleText",
+                        text = "$countDisplay $subtitleText",
                         fontSize = 10.sp,
                         color = appColors.textSecondary
                     )

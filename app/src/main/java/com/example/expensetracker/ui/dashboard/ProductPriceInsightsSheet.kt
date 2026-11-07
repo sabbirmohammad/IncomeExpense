@@ -57,14 +57,23 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.expensetracker.data.model.MarketCommodityUiModel
+import com.example.expensetracker.data.model.MasterProduct
+import com.example.expensetracker.data.model.MovementFilter
+import com.example.expensetracker.data.model.PriceTier
 import com.example.expensetracker.data.model.PriceTrend
 import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.data.model.ProductPriceRecord
+import com.example.expensetracker.data.model.buildMarketCommodities
+import com.example.expensetracker.data.model.computeBazaarSentimentPulse
 import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.TabularNumFeature
@@ -134,6 +143,36 @@ fun computeDepartmentInflationKpis(
 }
 
 /**
+ * Computes aggregate inflation index across standard grocery departments from commodity models.
+ */
+fun computeCommodityDepartmentInflationKpis(
+    commodities: Collection<MarketCommodityUiModel>
+): List<DepartmentInflationKpi> {
+    val grouped = commodities.groupBy { it.category }
+    return ALL_DEPARTMENTS.map { dept ->
+        val deptCommodities = grouped[dept.key] ?: emptyList()
+        val withHistory = deptCommodities.filter {
+            !it.isBenchmarkOnly && it.previousPrice != null && it.previousPrice > 0.0 &&
+            !it.percentDiff.isNaN() && !it.percentDiff.isInfinite()
+        }
+        val avgPct = if (withHistory.isNotEmpty()) withHistory.map { it.percentDiff }.average() else null
+        val trend = when {
+            avgPct == null -> PriceTrend.STABLE
+            avgPct > 0.5 -> PriceTrend.UP
+            avgPct < -0.5 -> PriceTrend.DOWN
+            else -> PriceTrend.STABLE
+        }
+        DepartmentInflationKpi(
+            department = dept,
+            trackedItemsCount = deptCommodities.size,
+            itemsWithHistoryCount = withHistory.size,
+            averageInflationPercent = avgPct,
+            trend = trend
+        )
+    }
+}
+
+/**
  * Formats department inflation percentage into localized text.
  */
 fun formatInflationPct(pct: Double?, isBangla: Boolean): String {
@@ -157,7 +196,9 @@ fun formatInflationPct(pct: Double?, isBangla: Boolean): String {
 fun ProductPriceInsightsSheet(
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     priceInsights: Map<String, ProductPriceInsight>,
+    masterProducts: List<MasterProduct> = emptyList(),
     onFetchHistory: (productName: String) -> List<ProductPriceRecord>,
+    onAddCommodityToList: ((MarketCommodityUiModel) -> Unit)? = null,
     isBangla: Boolean = true,
     currencySymbol: String = "৳",
     onDismiss: () -> Unit
@@ -173,7 +214,9 @@ fun ProductPriceInsightsSheet(
     ) {
         ProductPriceInsightsContent(
             priceInsights = priceInsights,
+            masterProducts = masterProducts,
             onFetchHistory = onFetchHistory,
+            onAddCommodityToList = onAddCommodityToList,
             isBangla = isBangla,
             currencySymbol = currencySymbol,
             onClose = onDismiss,
@@ -189,7 +232,9 @@ fun ProductPriceInsightsSheet(
 @Composable
 fun ProductPriceInsightsContent(
     priceInsights: Map<String, ProductPriceInsight>,
+    masterProducts: List<MasterProduct> = emptyList(),
     onFetchHistory: (productName: String) -> List<ProductPriceRecord>,
+    onAddCommodityToList: ((MarketCommodityUiModel) -> Unit)? = null,
     isBangla: Boolean = true,
     currencySymbol: String = "৳",
     onClose: (() -> Unit)? = null,
@@ -214,51 +259,77 @@ fun ProductPriceInsightsContent(
         }
     }
 
-    var selectedFilter by remember { mutableStateOf<PriceTrend?>(null) } // null = All
+    var selectedPriceTier by remember { mutableStateOf(PriceTier.ALL) }
+    var selectedMovementFilter by remember { mutableStateOf(MovementFilter.ALL) }
     var selectedDepartment by remember { mutableStateOf<String?>(null) } // null = All
     var selectedSortOrder by remember { mutableStateOf(PriceSortOrder.RECENT) }
-    var selectedInsightForDetail by remember { mutableStateOf<ProductPriceInsight?>(null) }
+    var selectedCommodityForDetail by remember { mutableStateOf<MarketCommodityUiModel?>(null) }
 
-    val allInsights = remember(priceInsights) { priceInsights.values.toList() }
-    val departmentKpis = remember(allInsights) { computeDepartmentInflationKpis(allInsights) }
+    val allCommodities = remember(masterProducts, priceInsights) {
+        buildMarketCommodities(masterProducts, priceInsights)
+    }
+    val departmentKpis = remember(allCommodities) {
+        computeCommodityDepartmentInflationKpis(allCommodities)
+    }
+    val bazaarSentiment = remember(allCommodities, appColors) {
+        computeBazaarSentimentPulse(allCommodities, appColors)
+    }
 
-    val filteredInsights = remember(allInsights, effectiveSearchQuery, selectedFilter, selectedDepartment, selectedSortOrder) {
-        allInsights.filter { insight ->
-            val matchesQuery = effectiveSearchQuery.isBlank() ||
-                insight.productName.contains(effectiveSearchQuery.trim().lowercase()) ||
-                insight.baseUnit.contains(effectiveSearchQuery.trim().lowercase())
-            val matchesFilter = selectedFilter == null || insight.priceTrend == selectedFilter
-            val matchesDept = selectedDepartment == null || getMarketItemCategory(insight.productName) == selectedDepartment
-            matchesQuery && matchesFilter && matchesDept
+    val budgetTierCount = remember(allCommodities) { allCommodities.count { it.priceTier == PriceTier.BUDGET_UNDER_100 } }
+    val midTierCount = remember(allCommodities) { allCommodities.count { it.priceTier == PriceTier.ESSENTIAL_100_500 } }
+    val premiumTierCount = remember(allCommodities) { allCommodities.count { it.priceTier == PriceTier.PREMIUM_OVER_500 } }
+
+    val priceUpCount = remember(allCommodities) { allCommodities.count { it.isPriceUp } }
+    val priceDownCount = remember(allCommodities) { allCommodities.count { it.isPriceDown } }
+
+    val filteredCommodities = remember(
+        allCommodities,
+        effectiveSearchQuery,
+        selectedPriceTier,
+        selectedMovementFilter,
+        selectedDepartment,
+        selectedSortOrder
+    ) {
+        allCommodities.filter { commodity ->
+            val query = effectiveSearchQuery.trim().lowercase()
+            val matchesQuery = query.isBlank() ||
+                commodity.name.lowercase().contains(query) ||
+                commodity.englishName.lowercase().contains(query) ||
+                commodity.defaultUnit.lowercase().contains(query) ||
+                commodity.category.lowercase().contains(query)
+
+            val matchesTier = selectedPriceTier == PriceTier.ALL || commodity.priceTier == selectedPriceTier
+            val matchesMovement = when (selectedMovementFilter) {
+                MovementFilter.ALL -> true
+                MovementFilter.UP -> commodity.isPriceUp
+                MovementFilter.DOWN -> commodity.isPriceDown
+                MovementFilter.STABLE -> commodity.isPriceStable
+            }
+            val matchesDept = selectedDepartment == null || commodity.category == selectedDepartment
+            matchesQuery && matchesTier && matchesMovement && matchesDept
         }.let { list ->
             when (selectedSortOrder) {
                 PriceSortOrder.RECENT -> list.sortedWith(
-                    compareByDescending<ProductPriceInsight> { it.lastPurchasedTimestamp }
-                        .thenBy { it.productName.lowercase() }
+                    compareByDescending<MarketCommodityUiModel> { it.lastPurchasedTimestamp }
+                        .thenBy { it.name }
                 )
                 PriceSortOrder.HIGHEST_HIKE -> list.sortedWith(
-                    compareByDescending<ProductPriceInsight> { it.percentDiff }
+                    compareByDescending<MarketCommodityUiModel> { it.percentDiff }
                         .thenByDescending { it.priceDiff }
-                        .thenByDescending { it.lastPurchasedTimestamp }
-                        .thenBy { it.productName.lowercase() }
+                        .thenBy { it.name }
                 )
                 PriceSortOrder.BIGGEST_DROP -> list.sortedWith(
-                    compareBy<ProductPriceInsight> { it.percentDiff }
+                    compareBy<MarketCommodityUiModel> { it.percentDiff }
                         .thenBy { it.priceDiff }
-                        .thenByDescending { it.lastPurchasedTimestamp }
-                        .thenBy { it.productName.lowercase() }
+                        .thenBy { it.name }
                 )
                 PriceSortOrder.MOST_PURCHASED -> list.sortedWith(
-                    compareByDescending<ProductPriceInsight> { it.purchaseCount }
-                        .thenByDescending { it.lastPurchasedTimestamp }
-                        .thenBy { it.productName.lowercase() }
+                    compareByDescending<MarketCommodityUiModel> { it.purchaseCount }
+                        .thenBy { it.name }
                 )
             }
         }
     }
-
-    val priceUpCount = remember(allInsights) { allInsights.count { it.priceTrend == PriceTrend.UP } }
-    val priceDownCount = remember(allInsights) { allInsights.count { it.priceTrend == PriceTrend.DOWN } }
 
     Column(
         modifier = modifier
@@ -302,7 +373,160 @@ fun ProductPriceInsightsContent(
             Spacer(modifier = Modifier.height(10.dp))
         }
 
-        // Department Inflation KPI Horizontal Ribbon
+        // 1. Bazaar Pulse & Sentiment Card
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = appColors.cardBackground,
+            border = BorderStroke(HairlineInkStroke, appColors.divider),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(bazaarSentiment.sentimentColor)
+                        )
+                        Text(
+                            text = if (isBangla) bazaarSentiment.sentimentTitleBn else bazaarSentiment.sentimentTitleEn,
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = WeightBold,
+                                fontSize = 13.5.sp
+                            ),
+                            color = appColors.textPrimary
+                        )
+                    }
+
+                    val avgRate = if (bazaarSentiment.averageBasketRate % 1.0 == 0.0) {
+                        bazaarSentiment.averageBasketRate.toInt().toString()
+                    } else "%.0f".format(bazaarSentiment.averageBasketRate)
+                    val avgRateText = if (isBangla) convertToBengaliDigits(avgRate) else avgRate
+                    Text(
+                        text = if (isBangla) "গড় বাজার দর: $currencySymbol$avgRateText" else "Avg Rate: $currencySymbol$avgRateText",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = WeightMedium,
+                            fontFeatureSettings = TabularNumFeature
+                        ),
+                        color = appColors.textSecondary
+                    )
+                }
+
+                // Ticker Highlights: Top Hike & Top Bargain
+                if (bazaarSentiment.topHikeCommodity != null || bazaarSentiment.topBargainCommodity != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (bazaarSentiment.topHikeCommodity != null) {
+                            val hike = bazaarSentiment.topHikeCommodity
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = appColors.expense.copy(alpha = 0.08f),
+                                border = BorderStroke(HairlineInkStroke, appColors.expense.copy(alpha = 0.25f)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
+                                        contentDescription = null,
+                                        tint = appColors.expense,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Column {
+                                        Text(
+                                            text = hike.name,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = WeightBold,
+                                                fontSize = 12.sp
+                                            ),
+                                            color = appColors.textPrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = hike.formatDiff(isBangla),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = WeightMedium,
+                                                fontFeatureSettings = TabularNumFeature
+                                            ),
+                                            color = appColors.expense
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (bazaarSentiment.topBargainCommodity != null) {
+                            val bargain = bazaarSentiment.topBargainCommodity
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = appColors.income.copy(alpha = 0.08f),
+                                border = BorderStroke(HairlineInkStroke, appColors.income.copy(alpha = 0.25f)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Outlined.TrendingDown,
+                                        contentDescription = null,
+                                        tint = appColors.income,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Column {
+                                        Text(
+                                            text = bargain.name,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = WeightBold,
+                                                fontSize = 12.sp
+                                            ),
+                                            color = appColors.textPrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = bargain.formatDiff(isBangla),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = WeightMedium,
+                                                fontFeatureSettings = TabularNumFeature
+                                            ),
+                                            color = appColors.income
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // 2. Department Inflation KPI Horizontal Ribbon
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -333,13 +557,13 @@ fun ProductPriceInsightsContent(
                         .minimumInteractiveComponentSize()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             text = kpi.department.icon,
-                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp)
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp)
                         )
                         Column {
                             Text(
@@ -386,6 +610,7 @@ fun ProductPriceInsightsContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(48.dp)
                 .padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -393,35 +618,36 @@ fun ProductPriceInsightsContent(
             Surface(
                 onClick = {
                     haptics.lightTick()
-                    selectedFilter = null
+                    selectedMovementFilter = MovementFilter.ALL
                 },
                 shape = RoundedCornerShape(10.dp),
-                color = if (selectedFilter == null) appColors.accent.copy(alpha = 0.12f) else appColors.cardBackground,
+                color = if (selectedMovementFilter == MovementFilter.ALL) appColors.accent.copy(alpha = 0.12f) else appColors.cardBackground,
                 border = BorderStroke(
                     HairlineInkStroke,
-                    if (selectedFilter == null) appColors.accent else appColors.divider
+                    if (selectedMovementFilter == MovementFilter.ALL) appColors.accent else appColors.divider
                 ),
                 modifier = Modifier
                     .weight(1f)
                     .defaultMinSize(minHeight = 48.dp)
+                    .height(48.dp)
                     .minimumInteractiveComponentSize()
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(horizontal = 6.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = if (isBangla) "সকল (${convertToBengaliDigits(allInsights.size.toString())})"
-                               else "All (${allInsights.size})",
+                        text = if (isBangla) "সকল (${convertToBengaliDigits(allCommodities.size.toString())})"
+                               else "All (${allCommodities.size})",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontSize = 12.sp,
-                            fontWeight = if (selectedFilter == null) WeightBold else WeightMedium,
+                            fontWeight = if (selectedMovementFilter == MovementFilter.ALL) WeightBold else WeightMedium,
                             fontFeatureSettings = TabularNumFeature
                         ),
-                        color = if (selectedFilter == null) appColors.accent else appColors.textSecondary
+                        color = if (selectedMovementFilter == MovementFilter.ALL) appColors.accent else appColors.textSecondary
                     )
                 }
             }
@@ -430,39 +656,33 @@ fun ProductPriceInsightsContent(
             Surface(
                 onClick = {
                     haptics.lightTick()
-                    selectedFilter = if (selectedFilter == PriceTrend.UP) null else PriceTrend.UP
+                    selectedMovementFilter = if (selectedMovementFilter == MovementFilter.UP) MovementFilter.ALL else MovementFilter.UP
                 },
                 shape = RoundedCornerShape(10.dp),
-                color = appColors.expense.copy(alpha = if (selectedFilter == PriceTrend.UP) 0.16f else 0.07f),
+                color = appColors.expense.copy(alpha = if (selectedMovementFilter == MovementFilter.UP) 0.16f else 0.07f),
                 border = BorderStroke(
                     HairlineInkStroke,
-                    appColors.expense.copy(alpha = if (selectedFilter == PriceTrend.UP) 0.8f else 0.35f)
+                    appColors.expense.copy(alpha = if (selectedMovementFilter == MovementFilter.UP) 0.8f else 0.35f)
                 ),
                 modifier = Modifier
                     .weight(1f)
                     .defaultMinSize(minHeight = 48.dp)
+                    .height(48.dp)
                     .minimumInteractiveComponentSize()
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(horizontal = 6.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.TrendingUp,
-                        contentDescription = null,
-                        tint = appColors.expense,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = if (isBangla) "বেড়েছে (${convertToBengaliDigits(priceUpCount.toString())})"
-                               else "Up (${priceUpCount})",
+                               else "Hiked ($priceUpCount)",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontSize = 12.sp,
-                            fontWeight = if (selectedFilter == PriceTrend.UP) WeightBold else WeightMedium,
+                            fontWeight = if (selectedMovementFilter == MovementFilter.UP) WeightBold else WeightMedium,
                             fontFeatureSettings = TabularNumFeature
                         ),
                         color = appColors.expense
@@ -474,39 +694,33 @@ fun ProductPriceInsightsContent(
             Surface(
                 onClick = {
                     haptics.lightTick()
-                    selectedFilter = if (selectedFilter == PriceTrend.DOWN) null else PriceTrend.DOWN
+                    selectedMovementFilter = if (selectedMovementFilter == MovementFilter.DOWN) MovementFilter.ALL else MovementFilter.DOWN
                 },
                 shape = RoundedCornerShape(10.dp),
-                color = appColors.income.copy(alpha = if (selectedFilter == PriceTrend.DOWN) 0.16f else 0.07f),
+                color = appColors.income.copy(alpha = if (selectedMovementFilter == MovementFilter.DOWN) 0.16f else 0.07f),
                 border = BorderStroke(
                     HairlineInkStroke,
-                    appColors.income.copy(alpha = if (selectedFilter == PriceTrend.DOWN) 0.8f else 0.35f)
+                    appColors.income.copy(alpha = if (selectedMovementFilter == MovementFilter.DOWN) 0.8f else 0.35f)
                 ),
                 modifier = Modifier
                     .weight(1f)
                     .defaultMinSize(minHeight = 48.dp)
+                    .height(48.dp)
                     .minimumInteractiveComponentSize()
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(horizontal = 6.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.TrendingDown,
-                        contentDescription = null,
-                        tint = appColors.income,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = if (isBangla) "সাশ্রয়ী (${convertToBengaliDigits(priceDownCount.toString())})"
-                               else "Down (${priceDownCount})",
+                               else "Dropped ($priceDownCount)",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontSize = 12.sp,
-                            fontWeight = if (selectedFilter == PriceTrend.DOWN) WeightBold else WeightMedium,
+                            fontWeight = if (selectedMovementFilter == MovementFilter.DOWN) WeightBold else WeightMedium,
                             fontFeatureSettings = TabularNumFeature
                         ),
                         color = appColors.income
@@ -515,7 +729,7 @@ fun ProductPriceInsightsContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Department & Sort Chips Row (Scrollable)
         Row(
@@ -534,20 +748,27 @@ fun ProductPriceInsightsContent(
                 },
                 shape = RoundedCornerShape(8.dp),
                 color = if (selectedDepartment == null) appColors.accent.copy(alpha = 0.12f) else appColors.cardBackground,
-                border = BorderStroke(HairlineInkStroke, if (selectedDepartment == null) appColors.accent else appColors.divider),
+                border = BorderStroke(
+                    HairlineInkStroke,
+                    if (selectedDepartment == null) appColors.accent else appColors.divider
+                ),
                 modifier = Modifier
                     .defaultMinSize(minHeight = 48.dp)
                     .minimumInteractiveComponentSize()
             ) {
-                Text(
-                    text = if (isBangla) "সকল বিভাগ" else "All Depts",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 12.sp,
-                        fontWeight = if (selectedDepartment == null) WeightBold else WeightRegular
-                    ),
-                    color = if (selectedDepartment == null) appColors.accent else appColors.textSecondary,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isBangla) "সকল বিভাগ" else "All Depts",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = if (selectedDepartment == null) WeightBold else WeightRegular
+                        ),
+                        color = if (selectedDepartment == null) appColors.accent else appColors.textSecondary
+                    )
+                }
             }
 
             // Department Specific Chips
@@ -560,13 +781,16 @@ fun ProductPriceInsightsContent(
                     },
                     shape = RoundedCornerShape(8.dp),
                     color = if (isSelected) appColors.accent.copy(alpha = 0.12f) else appColors.cardBackground,
-                    border = BorderStroke(HairlineInkStroke, if (isSelected) appColors.accent else appColors.divider),
+                    border = BorderStroke(
+                        HairlineInkStroke,
+                        if (isSelected) appColors.accent else appColors.divider
+                    ),
                     modifier = Modifier
                         .defaultMinSize(minHeight = 48.dp)
                         .minimumInteractiveComponentSize()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -601,7 +825,7 @@ fun ProductPriceInsightsContent(
                         .minimumInteractiveComponentSize()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -619,8 +843,58 @@ fun ProductPriceInsightsContent(
             }
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Price Tier Exploration Row (< ৳100, ৳100-৳500, ৳500+)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val tierList = listOf(
+                PriceTier.ALL to if (isBangla) "সকল টায়ার" else "All Tiers",
+                PriceTier.BUDGET_UNDER_100 to if (isBangla) "< ৳১০০" else "< ৳100",
+                PriceTier.ESSENTIAL_100_500 to if (isBangla) "৳১০০-৫০০" else "৳100-500",
+                PriceTier.PREMIUM_OVER_500 to if (isBangla) "৳৫০০+" else "৳500+"
+            )
+            tierList.forEach { (tier, title) ->
+                val isTierSel = selectedPriceTier == tier
+                Surface(
+                    onClick = {
+                        haptics.lightTick()
+                        selectedPriceTier = tier
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isTierSel) appColors.accent.copy(alpha = 0.14f) else appColors.cardBackground,
+                    border = BorderStroke(HairlineInkStroke, if (isTierSel) appColors.accent else appColors.divider),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp)
+                        .minimumInteractiveComponentSize()
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = if (isTierSel) WeightBold else WeightMedium,
+                                fontFeatureSettings = TabularNumFeature
+                            ),
+                            color = if (isTierSel) appColors.accent else appColors.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+
         if (showInternalSearchBar) {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             MarketSearchBar(
                 query = effectiveSearchQuery,
                 onQueryChange = updateSearchQuery,
@@ -641,8 +915,7 @@ fun ProductPriceInsightsContent(
                 border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .defaultMinSize(minHeight = 48.dp)
-                    .minimumInteractiveComponentSize()
+                    .defaultMinSize(minHeight = 44.dp)
                     .padding(horizontal = 20.dp)
             ) {
                 Row(
@@ -662,8 +935,8 @@ fun ProductPriceInsightsContent(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = if (isBangla) "অনুসন্ধান: \"${effectiveSearchQuery.trim()}\" (${convertToBengaliDigits(filteredInsights.size.toString())}টি পণ্য)"
-                                   else "Search: \"${effectiveSearchQuery.trim()}\" (${filteredInsights.size} items)",
+                            text = if (isBangla) "অনুসন্ধান: \"${effectiveSearchQuery.trim()}\" (${convertToBengaliDigits(filteredCommodities.size.toString())}টি পণ্য)"
+                                   else "Search: \"${effectiveSearchQuery.trim()}\" (${filteredCommodities.size} items)",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 12.sp,
                                 fontWeight = WeightSemiBold,
@@ -701,10 +974,10 @@ fun ProductPriceInsightsContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Products List (Fintech Stock Watchlist Rows)
-        if (filteredInsights.isEmpty()) {
+        // 5. Products List (Fintech Stock Watchlist Rows)
+        if (filteredCommodities.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -713,12 +986,14 @@ fun ProductPriceInsightsContent(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (allInsights.isEmpty()) {
+                        text = if (allCommodities.isEmpty()) {
                             if (isBangla) "এখনো কোনো পণ্যের দর রেকর্ড হয়নি" else "No price records tracked yet"
                         } else if (effectiveSearchQuery.isNotBlank()) {
-                            if (isBangla) "'${effectiveSearchQuery.trim()}' নামে কোনো পণ্য পাওয়া যায়নি" else "No items found matching '${effectiveSearchQuery.trim()}'"
+                            if (isBangla) "'${effectiveSearchQuery.trim()}' নামে কোনো পণ্য পাওয়া যায়নি"
+                            else "No items found matching '${effectiveSearchQuery.trim()}'"
                         } else {
-                            if (isBangla) "নির্বাচিত ফিল্টারে কোনো পণ্য পাওয়া যায়নি" else "No items found matching filter"
+                            if (isBangla) "নির্বাচিত ফিল্টারে কোনো পণ্য পাওয়া যায়নি"
+                            else "No items found matching filter"
                         },
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = WeightSemiBold,
@@ -728,12 +1003,12 @@ fun ProductPriceInsightsContent(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (allInsights.isEmpty()) {
+                        text = if (allCommodities.isEmpty()) {
                             if (isBangla) "বাজারের ফর্দ সম্পন্ন করার পর এখানে পণ্যের দামের তুলনামূলক চিত্র প্রদর্শিত হবে।"
                             else "Complete your market trips to start tracking item price trends."
                         } else {
-                            if (isBangla) "বানান চেক করুন অথবা ফিল্টার পরিবর্তন করে আবার চেষ্টা করুন।"
-                            else "Check spelling or change filter to try again."
+                            if (isBangla) "ফিল্টার পরিবর্তন করুন অথবা অন্য পণ্য অনুসন্ধান করুন।"
+                            else "Try changing the filter or search for other products."
                         },
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         color = appColors.textSecondary.copy(alpha = 0.75f),
@@ -747,14 +1022,17 @@ fun ProductPriceInsightsContent(
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 84.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(filteredInsights, key = { it.productName }) { insight ->
-                    ProductPriceStockRow(
-                        insight = insight,
+                items(filteredCommodities, key = { it.name }) { commodity ->
+                    MarketCommodityStockRow(
+                        commodity = commodity,
                         isBangla = isBangla,
                         currencySymbol = currencySymbol,
+                        onAddToList = onAddCommodityToList?.let { addFn ->
+                            { addFn(commodity) }
+                        },
                         onClick = {
                             haptics.lightTick()
-                            selectedInsightForDetail = insight
+                            selectedCommodityForDetail = commodity
                         }
                     )
                 }
@@ -763,14 +1041,271 @@ fun ProductPriceInsightsContent(
     }
 
     // Detail Bottom Sheet when an item row is tapped
-    if (selectedInsightForDetail != null) {
+    if (selectedCommodityForDetail != null) {
+        val commodity = selectedCommodityForDetail!!
+        val syntheticInsight = commodity.rawInsight ?: ProductPriceInsight(
+            productName = commodity.name,
+            currentUnitPrice = commodity.currentPrice,
+            previousUnitPrice = commodity.previousPrice,
+            avgUnitPrice = commodity.benchmarkPrice,
+            minUnitPrice = commodity.currentPrice,
+            maxUnitPrice = commodity.currentPrice,
+            priceDiff = commodity.priceDiff,
+            percentDiff = commodity.percentDiff,
+            priceTrend = commodity.priceTrend,
+            purchaseCount = commodity.purchaseCount,
+            lastPurchasedTimestamp = commodity.lastPurchasedTimestamp,
+            baseUnit = commodity.defaultUnit,
+            recentPricePoints = commodity.recentPricePoints
+        )
         ProductPriceDetailSheet(
-            insight = selectedInsightForDetail!!,
+            insight = syntheticInsight,
             onFetchHistory = onFetchHistory,
             isBangla = isBangla,
             currencySymbol = currencySymbol,
-            onDismiss = { selectedInsightForDetail = null }
+            onDismiss = { selectedCommodityForDetail = null }
         )
+    }
+}
+
+/**
+ * High-density, professional Fintech Commodity Stock Row (R2).
+ * Displays: Product name, English subtitle, benchmark/purchase count, current rate,
+ * cubic sparkline, trend badge, and actionable "+ Add to List" quick button.
+ */
+@Composable
+fun MarketCommodityStockRow(
+    commodity: MarketCommodityUiModel,
+    isBangla: Boolean,
+    currencySymbol: String = "৳",
+    onAddToList: (() -> Unit)? = null,
+    onClick: () -> Unit
+) {
+    val appColors = LocalAppColors.current
+    val haptics = rememberAppHaptics()
+    var isAddedFeedback by remember { mutableStateOf(false) }
+
+    val currentRateFormatted = if (commodity.currentPrice % 1.0 == 0.0) {
+        commodity.currentPrice.toInt().toString()
+    } else {
+        "%.1f".format(commodity.currentPrice)
+    }
+    val currentRateText = if (isBangla) convertToBengaliDigits(currentRateFormatted) else currentRateFormatted
+
+    val subtitleText = if (commodity.isBenchmarkOnly || commodity.previousPrice == null) {
+        if (isBangla) "বাজার রেফারেন্স রেট • ${commodity.englishName}"
+        else "Market Reference Rate • ${commodity.englishName}"
+    } else {
+        val avgFormatted = if (commodity.benchmarkPrice % 1.0 == 0.0) commodity.benchmarkPrice.toInt().toString() else "%.1f".format(commodity.benchmarkPrice)
+        val avgText = if (isBangla) convertToBengaliDigits(avgFormatted) else avgFormatted
+        val countText = if (isBangla) convertToBengaliDigits(commodity.purchaseCount.toString()) else commodity.purchaseCount.toString()
+        if (isBangla) "$countText বার কেনা • গড় $currencySymbol$avgText/${commodity.defaultUnit}"
+        else "$countText logged • Avg $currencySymbol$avgText/${commodity.defaultUnit}"
+    }
+
+    val deptMeta = getDepartmentMeta(commodity.category)
+
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = appColors.cardBackground,
+        border = BorderStroke(HairlineInkStroke, appColors.divider),
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 48.dp)
+            .minimumInteractiveComponentSize()
+            .clip(RoundedCornerShape(14.dp))
+            .clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Category Icon / Emoji
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(appColors.surfaceVariant.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = deptMeta.icon,
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Middle Column: Product Name, English Subtitle & Meta
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = commodity.name,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = WeightBold,
+                            fontSize = 15.sp
+                        ),
+                        color = appColors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (commodity.isBenchmarkOnly) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = appColors.accent.copy(alpha = 0.12f),
+                            border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = if (isBangla) "বাজার দর" else "Standard",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = WeightBold
+                                ),
+                                color = appColors.accent,
+                                maxLines = 1,
+                                softWrap = false,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = subtitleText,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 12.sp,
+                        fontWeight = WeightRegular,
+                        fontFeatureSettings = TabularNumFeature
+                    ),
+                    color = appColors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Right Column: Sparkline, Rate & Trend Pill, and Quick Add Action
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Sparkline
+                ProductPriceSparkline(
+                    points = commodity.recentPricePoints,
+                    trend = commodity.priceTrend,
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(22.dp)
+                )
+
+                // Rate and Trend
+                Column(horizontalAlignment = Alignment.End) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = "$currencySymbol$currentRateText",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = WeightBold,
+                                fontSize = 14.5.sp,
+                                fontFeatureSettings = TabularNumFeature
+                            ),
+                            color = appColors.textPrimary
+                        )
+                        Text(
+                            text = "/${commodity.defaultUnit}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = WeightMedium
+                            ),
+                            color = appColors.textSecondary,
+                            modifier = Modifier.padding(bottom = 1.dp)
+                        )
+                    }
+
+                    // Trend badge
+                    if (!commodity.isBenchmarkOnly && commodity.previousPrice != null) {
+                        val isUp = commodity.isPriceUp
+                        val isDown = commodity.isPriceDown
+                        val pillColor = if (isUp) appColors.expense else if (isDown) appColors.income else appColors.textSecondary
+                        val pillBg = if (isUp) appColors.expense.copy(alpha = 0.12f)
+                                     else if (isDown) appColors.income.copy(alpha = 0.12f)
+                                     else appColors.surfaceVariant
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = pillBg,
+                            modifier = Modifier.defaultMinSize(minWidth = 52.dp)
+                        ) {
+                            Text(
+                                text = commodity.formatDiff(isBangla),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = WeightBold,
+                                    fontSize = 12.sp,
+                                    fontFeatureSettings = TabularNumFeature
+                                ),
+                                color = pillColor,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = appColors.surfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.defaultMinSize(minWidth = 50.dp)
+                        ) {
+                            Text(
+                                text = commodity.priceTier.titleBn,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = WeightMedium,
+                                    fontSize = 12.sp
+                                ),
+                                color = appColors.textSecondary,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Actionable Quick Add to List Button (F7 / R2)
+                if (onAddToList != null) {
+                    IconButton(
+                        onClick = {
+                            haptics.mediumClick()
+                            onAddToList()
+                            isAddedFeedback = true
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isAddedFeedback) appColors.income.copy(alpha = 0.15f)
+                                else appColors.accent.copy(alpha = 0.12f)
+                            )
+                    ) {
+                        Icon(
+                            imageVector = if (isAddedFeedback) Icons.Filled.Check else Icons.Filled.Add,
+                            contentDescription = "Add to Market List",
+                            tint = if (isAddedFeedback) appColors.income else appColors.accent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1452,30 +1987,26 @@ private fun PriceMetricCard(
  */
 @Composable
 fun ProductPriceSparkline(
-    insight: ProductPriceInsight,
+    points: List<Double>,
+    trend: PriceTrend,
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
-    val strokeColor = when (insight.priceTrend) {
+    val strokeColor = when (trend) {
         PriceTrend.UP -> appColors.expense
         PriceTrend.DOWN -> appColors.income
         PriceTrend.STABLE -> appColors.accent
     }
-    val trendArrow = when (insight.priceTrend) {
+    val trendArrow = when (trend) {
         PriceTrend.UP -> "↗"
         PriceTrend.DOWN -> "↘"
         PriceTrend.STABLE -> "➔"
     }
 
     val rawPoints = when {
-        insight.recentPricePoints.size >= 2 -> insight.recentPricePoints
-        insight.recentPricePoints.size == 1 -> listOf(insight.recentPricePoints[0], insight.recentPricePoints[0])
-        else -> {
-            val p1 = insight.oneMonthAgoUnitPrice ?: insight.previousUnitPrice ?: insight.minUnitPrice
-            val p2 = insight.previousUnitPrice ?: ((insight.minUnitPrice + insight.maxUnitPrice) / 2.0)
-            val p3 = insight.currentUnitPrice
-            listOf(p1, p2, p3)
-        }
+        points.size >= 2 -> points
+        points.size == 1 -> listOf(points[0], points[0])
+        else -> listOf(1.0, 1.0)
     }
 
     val minP = rawPoints.minOrNull() ?: 0.0
@@ -1563,4 +2094,25 @@ fun ProductPriceSparkline(
             color = strokeColor
         )
     }
+}
+
+/**
+ * Multi-Point Cubic Bézier Sparkline: renders smooth trends for product insights.
+ */
+@Composable
+fun ProductPriceSparkline(
+    insight: ProductPriceInsight,
+    modifier: Modifier = Modifier
+) {
+    val rawPoints = when {
+        insight.recentPricePoints.size >= 2 -> insight.recentPricePoints
+        insight.recentPricePoints.size == 1 -> listOf(insight.recentPricePoints[0], insight.recentPricePoints[0])
+        else -> {
+            val p1 = insight.oneMonthAgoUnitPrice ?: insight.previousUnitPrice ?: insight.minUnitPrice
+            val p2 = insight.previousUnitPrice ?: ((insight.minUnitPrice + insight.maxUnitPrice) / 2.0)
+            val p3 = insight.currentUnitPrice
+            listOf(p1, p2, p3)
+        }
+    }
+    ProductPriceSparkline(points = rawPoints, trend = insight.priceTrend, modifier = modifier)
 }

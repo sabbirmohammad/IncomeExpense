@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -113,7 +114,7 @@ fun ReportExportActionsCard(
                     enabled = !isExporting && hasTransactions,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
+                        .defaultMinSize(minHeight = 44.dp),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, appColors.border),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textPrimary)
@@ -132,7 +133,7 @@ fun ReportExportActionsCard(
                     enabled = !isExporting && hasTransactions,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
+                        .defaultMinSize(minHeight = 44.dp),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, appColors.border),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textPrimary)

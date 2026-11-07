@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -166,7 +167,7 @@ fun BillSplitterSheet(
                 onAddFriend = {
                     friends.add(
                         BillSplitFriend(
-                            name = if (strings.isBangla) "বন্ধু ${friends.size + 1}" else "Friend ${friends.size + 1}",
+                            name = if (strings.isBangla) "বন্ধু ${convertToBengaliDigits((friends.size + 1).toString())}" else "Friend ${friends.size + 1}",
                             amount = 0.0
                         )
                     )

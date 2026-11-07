@@ -42,6 +42,7 @@ import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.CategoryIconHelper
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.theme.LocalAppColors
 
@@ -108,8 +109,9 @@ fun RecurringBillCardItem(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             val freqText = if (strings.isBangla) bill.frequency.bnDisplayName else bill.frequency.displayName
+                            val dueDayText = if (strings.isBangla) "${convertToBengaliDigits(bill.dueDay.toString())} তারিখ" else "Day ${bill.dueDay}"
                             Text(
-                                text = "$freqText • ${if (strings.isBangla) "${bill.dueDay} তারিখ" else "Day ${bill.dueDay}"}",
+                                text = "$freqText • $dueDayText",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                                 color = appColors.textMuted,
                                 maxLines = 1,

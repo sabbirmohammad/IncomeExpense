@@ -79,7 +79,7 @@ fun ReceivablesTopBar(
             Text(
                 text = strings.debtsLedgerTitle,
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
                 color = appColors.textPrimary,

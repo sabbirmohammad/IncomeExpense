@@ -1,12 +1,15 @@
 package com.example.expensetracker.ui.dashboard
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,17 +20,23 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -61,10 +70,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +83,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.example.expensetracker.common.MarketListParser
 import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.MarketItem
@@ -102,7 +115,7 @@ enum class CreateMarketListStep {
  * - Minimum 12sp typography on all Bengali metadata with tabular numbers ("tnum").
  * - Strictly zero artificial AI sparkles or tropes.
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun CreateMarketListSection(
     isBangla: Boolean,
@@ -113,6 +126,15 @@ fun CreateMarketListSection(
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val isImeVisible = WindowInsets.isImeVisible
+    val bottomClearance by animateDpAsState(
+        targetValue = if (isImeVisible) 16.dp else 84.dp,
+        animationSpec = tween(durationMillis = 200),
+        label = "marketCreateBottomClearance"
+    )
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
 
@@ -221,6 +243,10 @@ fun CreateMarketListSection(
             if (itemsToAdd.size > 1) {
                 lastBulkAddedCount = itemsToAdd.size
             }
+            coroutineScope.launch {
+                delay(50)
+                bringIntoViewRequester.bringIntoView()
+            }
         }
     }
 
@@ -242,8 +268,10 @@ fun CreateMarketListSection(
     }
 
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -1118,111 +1146,11 @@ fun CreateMarketListSection(
                         }
                     }
 
-                    // 2. Quick Staples Pills (Popular Suggestions - Placed below Added Items)
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ShoppingCart,
-                                contentDescription = null,
-                                tint = appColors.textSecondary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = if (isBangla) "দ্রুত যোগ করুন (জনপ্রিয় পণ্য):" else "Quick suggestions:",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = appColors.textSecondary
-                            )
-                        }
-
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            quickStaples.forEach { staple ->
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = appColors.cardBackground,
-                                    border = BorderStroke(HairlineInkStroke, appColors.divider),
-                                    modifier = Modifier
-                                        .defaultMinSize(minHeight = 48.dp)
-                                        .minimumInteractiveComponentSize()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable { addManualItem(staple) }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "+ $staple",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                            color = appColors.accent
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 3. Quick Quantity Presets Row (Attached directly above the writing box)
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = if (isBangla) "পরিমাণ যোগ করুন:" else "Add quantity:",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = appColors.textSecondary
-                        )
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            items(quickQuantities) { qty ->
-                                Surface(
-                                    onClick = {
-                                        haptics.lightTick()
-                                        if (manualItemName.isNotBlank()) {
-                                            addManualItem("${manualItemName.trim()} $qty")
-                                        } else {
-                                            manualItemName = qty
-                                        }
-                                    },
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = appColors.accent.copy(alpha = 0.08f),
-                                    border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f)),
-                                    modifier = Modifier
-                                        .defaultMinSize(minHeight = 48.dp)
-                                        .minimumInteractiveComponentSize()
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "+ $qty",
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Medium
-                                            ),
-                                            color = appColors.accent
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 4. Input Composer Row (Writing Box + Add Button - Modern Redesigned Dock)
+                    // 2. Input Composer Row (Writing Box + Add Button - Modern Redesigned Dock)
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bringIntoViewRequester(bringIntoViewRequester),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1241,7 +1169,16 @@ fun CreateMarketListSection(
                                     manualItemName = newText
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused) {
+                                        coroutineScope.launch {
+                                            delay(200)
+                                            bringIntoViewRequester.bringIntoView()
+                                        }
+                                    }
+                                },
                             singleLine = true,
                             placeholder = {
                                 Text(
@@ -1306,6 +1243,107 @@ fun CreateMarketListSection(
                                 tint = Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
+                        }
+                    }
+
+                    // 3. Quick Staples Pills - Popular Suggestions (Placed cleanly below the writing box)
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ShoppingCart,
+                                contentDescription = null,
+                                tint = appColors.textSecondary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = if (isBangla) "দ্রুত যোগ করুন (জনপ্রিয় পণ্য):" else "Quick suggestions:",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = appColors.textSecondary
+                            )
+                        }
+
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            items(quickStaples) { staple ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.cardBackground,
+                                    border = BorderStroke(HairlineInkStroke, appColors.divider),
+                                    modifier = Modifier
+                                        .defaultMinSize(minHeight = 48.dp)
+                                        .minimumInteractiveComponentSize()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { addManualItem(staple) }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "+ $staple",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                            color = appColors.accent
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 4. Quick Quantity Presets Row (Attached directly below the suggestions)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = if (isBangla) "পরিমাণ যোগ করুন:" else "Add quantity:",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = appColors.textSecondary
+                        )
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            items(quickQuantities) { qty ->
+                                Surface(
+                                    onClick = {
+                                        haptics.lightTick()
+                                        if (manualItemName.isNotBlank()) {
+                                            addManualItem("${manualItemName.trim()} $qty")
+                                        } else {
+                                            manualItemName = qty
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = appColors.accent.copy(alpha = 0.08f),
+                                    border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f)),
+                                    modifier = Modifier
+                                        .defaultMinSize(minHeight = 48.dp)
+                                        .minimumInteractiveComponentSize()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "+ $qty",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium
+                                            ),
+                                            color = appColors.accent
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1442,9 +1480,9 @@ fun CreateMarketListSection(
             }
         }
 
-        // Bottom nav bar clearance
+        // Bottom nav bar clearance (adapts dynamically when keyboard is shown vs hidden)
         item {
-            Spacer(modifier = Modifier.height(84.dp))
+            Spacer(modifier = Modifier.height(bottomClearance))
         }
     }
 }

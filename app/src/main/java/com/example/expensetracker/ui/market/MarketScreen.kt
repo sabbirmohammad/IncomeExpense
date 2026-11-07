@@ -94,9 +94,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.expensetracker.common.UnitConverterEngine
+import com.example.expensetracker.data.model.MarketCommodityUiModel
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.ProductPriceInsight
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.MarketSearchBar
@@ -144,6 +146,7 @@ fun MarketScreen(
     val lastPurchasedRates by dashboardViewModel.lastPurchasedRates.collectAsStateWithLifecycle()
     val productPriceInsights by dashboardViewModel.productPriceInsights.collectAsStateWithLifecycle()
     val stapleProducts by dashboardViewModel.stapleProducts.collectAsStateWithLifecycle()
+    val masterProducts by dashboardViewModel.masterProducts.collectAsStateWithLifecycle()
     val userProfile by dashboardViewModel.userProfile.collectAsStateWithLifecycle()
 
     val coroutineScope = rememberCoroutineScope()
@@ -258,6 +261,18 @@ fun MarketScreen(
                             lastPurchasedRates = lastPurchasedRates,
                             productPriceInsights = productPriceInsights,
                             stapleProducts = stapleProducts,
+                            onCreateStarterList = { title, starterItems ->
+                                val items = starterItems.map { (name, qtyStr) ->
+                                    val qty = qtyStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 1.0
+                                    val unit = qtyStr.filter { !it.isDigit() && it != '.' }.trim().ifEmpty { "কেজি" }
+                                    MarketItem(
+                                        name = name,
+                                        quantity = qty,
+                                        unit = unit
+                                    )
+                                }
+                                dashboardViewModel.createMarketListWithBulk(title, items)
+                            },
                             onSelectList = { listWithItems -> selectedListId = listWithItems.list.id },
                             onBackToAllLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) {
                                 { selectedListId = null }
@@ -295,10 +310,28 @@ fun MarketScreen(
                         )
                     }
                     1 -> {
-                        // TAB 1: Market Price Intelligence & Trends
+                        // TAB 1: Market Price Intelligence & Trends (R2 Overhaul)
                         ProductPriceInsightsContent(
                             priceInsights = productPriceInsights,
+                            masterProducts = masterProducts,
                             onFetchHistory = { productName -> dashboardViewModel.getProductPriceHistory(productName) },
+                            onAddCommodityToList = { commodity ->
+                                val targetList = currentViewingList ?: effectiveActiveLists.firstOrNull()
+                                val targetListId = targetList?.list?.id
+                                val newItem = MarketItem(
+                                    name = commodity.name,
+                                    quantity = 1.0,
+                                    unit = commodity.defaultUnit,
+                                    listId = targetListId ?: 0L
+                                )
+                                dashboardViewModel.addMarketItem(newItem, targetListId)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = if (isBangla) "'${commodity.name}' ফর্দে যুক্ত হয়েছে" else "'${commodity.name}' added to list",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            },
                             isBangla = isBangla,
                             currencySymbol = currencySymbol,
                             onClose = null,
@@ -835,6 +868,7 @@ private fun MarketListsTabContent(
     lastPurchasedRates: Map<String, Pair<Double, String>>,
     productPriceInsights: Map<String, ProductPriceInsight>,
     stapleProducts: List<com.example.expensetracker.data.model.MasterProduct> = emptyList(),
+    onCreateStarterList: ((String, List<Pair<String, String>>) -> Unit)? = null,
     onSelectList: (MarketListWithItems) -> Unit,
     onBackToAllLists: (() -> Unit)?,
     onCreateNewClick: () -> Unit,
@@ -852,11 +886,11 @@ private fun MarketListsTabContent(
     val haptics = rememberAppHaptics()
 
     if (effectiveActiveLists.isEmpty()) {
-        // Empty State: No active market checklists
+        // Empty State: No active market checklists (World-Class Redesign)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(20.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -865,7 +899,7 @@ private fun MarketListsTabContent(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(64.dp)
                         .clip(CircleShape)
                         .background(appColors.accent.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
@@ -874,35 +908,35 @@ private fun MarketListsTabContent(
                         imageVector = Icons.Outlined.ShoppingBag,
                         contentDescription = null,
                         tint = appColors.accent,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
                     text = if (isBangla) "বর্তমানে কোনো সক্রিয় বাজার ফর্দ নেই" else "No active market checklist",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp
+                        fontSize = 16.sp
                     ),
                     color = appColors.textPrimary
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = if (isBangla)
-                        "সকালের কাঁচাবাজার, সাপ্তাহিক বা মাসিক মুদিবাজারের ফর্দ তৈরি করুন বা হোয়াটসঅ্যাপ টেক্সট পেস্ট করে নিমেষেই শুরু করুন।"
+                        "সকালের কাঁচাবাজার বা সাপ্তাহিক মুদিবাজারের ফর্দ তৈরি করুন অথবা রেডিমেড টেমপ্লেট দিয়ে ১-ট্যাপে শুরু করুন।"
                     else
-                        "Create morning, weekly, or monthly shopping lists or paste text from messaging apps to get started.",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                        "Create shopping lists or choose a quick starter template to get started instantly.",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                     color = appColors.textSecondary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Button(
                     onClick = {
@@ -922,6 +956,114 @@ private fun MarketListsTabContent(
                         text = if (isBangla) "নতুন বাজার ফর্দ তৈরি করুন" else "Create Shopping List",
                         fontWeight = FontWeight.Bold
                     )
+                }
+
+                if (onCreateStarterList != null) {
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = if (isBangla) "বা রেডিমেড টেমপ্লেট দিয়ে শুরু করুন:"
+                               else "Or start with a ready template:",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = appColors.textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val templates = listOf(
+                        Triple(
+                            "সকালের কাঁচাবাজার",
+                            "🥬 কাঁচাবাজার",
+                            listOf(
+                                "আলু" to "১ কেজি",
+                                "দেশি পেঁয়াজ" to "১ কেজি",
+                                "কাঁচামরিচ" to "২৫০ গ্রাম",
+                                "ফার্মের ডিম" to "১ ডজন"
+                            )
+                        ),
+                        Triple(
+                            "সাপ্তাহিক মুদি বাজার",
+                            "🛒 মুদি সদাই",
+                            listOf(
+                                "মিনিকেট চাল" to "৫ কেজি",
+                                "সয়াবিন তেল" to "২ লিটার",
+                                "মসুর ডাল" to "১ কেজি",
+                                "লবণ" to "১ কেজি"
+                            )
+                        ),
+                        Triple(
+                            "মাছ ও মাংসের বাজার",
+                            "🐟 মাছ-মাংস",
+                            listOf(
+                                "ব্রয়লার মুরগি" to "১ কেজি",
+                                "গরুর মাংস" to "১ কেজি",
+                                "রুই মাছ" to "১ কেজি",
+                                "আদা" to "২৫০ গ্রাম"
+                            )
+                        )
+                    )
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        templates.forEach { (title, subtitle, items) ->
+                            Surface(
+                                onClick = {
+                                    haptics.mediumClick()
+                                    onCreateStarterList(title, items)
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                color = appColors.cardBackground,
+                                border = BorderStroke(HairlineInkStroke, appColors.divider),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = title,
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp
+                                            ),
+                                            color = appColors.textPrimary
+                                        )
+                                        Text(
+                                            text = "${items.size}টি প্রয়োজনীয় পণ্য • $subtitle",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontSize = 12.sp
+                                            ),
+                                            color = appColors.textSecondary
+                                        )
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = appColors.accent.copy(alpha = 0.12f)
+                                    ) {
+                                        Text(
+                                            text = if (isBangla) "শুরু করুন" else "Start",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = appColors.accent,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

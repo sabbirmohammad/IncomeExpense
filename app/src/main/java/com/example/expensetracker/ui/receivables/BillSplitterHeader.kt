@@ -117,7 +117,7 @@ fun BillSplitterFriendsSectionHeader(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = addFriendLabel,
+                    text = addFriendLabel.removePrefix("+").trim(),
                     color = appColors.accent,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold

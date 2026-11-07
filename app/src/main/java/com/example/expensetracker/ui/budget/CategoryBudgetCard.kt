@@ -27,6 +27,7 @@ import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.AppProgressBar
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.theme.LocalAppColors
 
@@ -118,8 +119,10 @@ fun CategoryBudgetCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val pctInt = (item.progressPercent * 100).toInt()
+                val pctDisplay = if (strings.isBangla) "${convertToBengaliDigits(pctInt.toString())}% ব্যবহৃত" else "$pctInt% used"
                 Text(
-                    text = if (strings.isBangla) "${(item.progressPercent * 100).toInt()}% ব্যবহৃত" else "${(item.progressPercent * 100).toInt()}% used",
+                    text = pctDisplay,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium

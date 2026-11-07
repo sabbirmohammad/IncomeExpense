@@ -33,6 +33,7 @@ import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.EmptyStateCard
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
@@ -91,8 +92,9 @@ fun BudgetListTabContent(
                             .border(1.dp, appColors.border, RoundedCornerShape(SmallElementRadius))
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
+                        val countDisplay = if (strings.isBangla) "${convertToBengaliDigits(categoryBudgetStatuses.size.toString())}টি সক্রিয়" else "${categoryBudgetStatuses.size} active"
                         Text(
-                            text = if (strings.isBangla) "${categoryBudgetStatuses.size}টি সক্রিয়" else "${categoryBudgetStatuses.size} active",
+                            text = countDisplay,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                             color = appColors.textSecondary
                         )

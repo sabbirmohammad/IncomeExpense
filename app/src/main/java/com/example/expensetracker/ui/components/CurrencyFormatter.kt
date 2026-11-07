@@ -28,6 +28,27 @@ fun convertToBengaliDigits(input: String): String {
     return sb.toString()
 }
 
+fun convertToEnglishDigits(input: String): String {
+    val sb = StringBuilder(input.length)
+    for (ch in input) {
+        when (ch) {
+            '০' -> sb.append('0')
+            '১' -> sb.append('1')
+            '২' -> sb.append('2')
+            '৩' -> sb.append('3')
+            '৪' -> sb.append('4')
+            '৫' -> sb.append('5')
+            '৬' -> sb.append('6')
+            '৭' -> sb.append('7')
+            '৮' -> sb.append('8')
+            '৯' -> sb.append('9')
+            '।', '‚' -> sb.append('.')
+            else -> sb.append(ch)
+        }
+    }
+    return sb.toString()
+}
+
 fun formatCurrency(
     amount: Double,
     symbol: String,

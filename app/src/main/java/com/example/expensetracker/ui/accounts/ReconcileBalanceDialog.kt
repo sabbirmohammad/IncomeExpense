@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
+import com.example.expensetracker.ui.components.convertToEnglishDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.theme.CardCornerRadius
 import com.example.expensetracker.theme.LocalAppColors
@@ -49,7 +50,7 @@ fun ReconcileBalanceDialog(
     var noteText by remember { mutableStateOf("") }
 
     val currentBal = account.currentBalance
-    val parsedNewBal = newBalanceText.toDoubleOrNull()
+    val parsedNewBal = convertToEnglishDigits(newBalanceText.trim()).toDoubleOrNull()
     val diff = if (parsedNewBal != null) parsedNewBal - currentBal else null
 
     AlertDialog(

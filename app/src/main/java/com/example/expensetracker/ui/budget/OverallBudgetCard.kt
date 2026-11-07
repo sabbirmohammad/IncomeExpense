@@ -37,6 +37,7 @@ import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.AppProgressBar
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
 import java.util.Calendar
 import com.example.expensetracker.theme.LocalAppColors
@@ -158,11 +159,13 @@ fun OverallBudgetCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    val overallPctInt = (overallStatus.progressPercent * 100).toInt()
+                    val overallPctDisplay = if (strings.isBangla) "${convertToBengaliDigits(overallPctInt.toString())}% ব্যবহৃত" else "$overallPctInt% used"
                     Text(
                         text = if (overallStatus.isOverBudget)
                             "${strings.overBudgetBy} ${formatCurrency(overallStatus.spentAmount - overallStatus.budget.amount, currencySymbol)}"
                         else
-                            if (strings.isBangla) "${(overallStatus.progressPercent * 100).toInt()}% ব্যবহৃত" else "${(overallStatus.progressPercent * 100).toInt()}% used",
+                            overallPctDisplay,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
