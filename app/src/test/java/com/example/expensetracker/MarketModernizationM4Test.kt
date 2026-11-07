@@ -407,21 +407,40 @@ class MarketModernizationM4Test {
     }
 
     @Test
-    fun testDepartmentFilterChipsPresentInInsightsContent() {
+    fun testStreamlinedTrendAndSortChipsInInsightsContent() {
         val content = readFile("com/example/expensetracker/ui/dashboard/ProductPriceInsightsSheet.kt")
+        val contentBody = content.substringAfter("fun ProductPriceInsightsContent(").substringBefore("fun ProductPriceStockRow(")
 
-        // Department chips row must be present
+        // 1. Unwanted cards and redundant filters must be completely removed
+        assertFalse(
+            "ProductPriceInsightsContent must NOT contain Bazaar Pulse & Sentiment Card",
+            contentBody.contains("Bazaar Pulse & Sentiment Card") || contentBody.contains("bazaarSentiment")
+        )
+        assertFalse(
+            "ProductPriceInsightsContent must NOT contain Department Inflation KPI Horizontal Ribbon",
+            contentBody.contains("Department Inflation KPI Horizontal Ribbon") || contentBody.contains("departmentKpis")
+        )
+        assertFalse(
+            "ProductPriceInsightsContent must NOT contain redundant Department filter chips",
+            contentBody.contains("ALL_DEPARTMENTS.forEach") || contentBody.contains("selectedDepartment")
+        )
+        assertFalse(
+            "ProductPriceInsightsContent must NOT contain Price Tier Exploration Row",
+            contentBody.contains("Price Tier Exploration Row") || contentBody.contains("selectedPriceTier")
+        )
+
+        // 2. Streamlined Trend and Sort controls must be present
         assertTrue(
-            "ProductPriceInsightsSheet must declare ALL_DEPARTMENTS filter chips",
-            content.contains("ALL_DEPARTMENTS.forEach")
+            "ProductPriceInsightsSheet must provide Quick Trend KPI Filter Bar",
+            contentBody.contains("Quick Trend KPI Filter Bar")
         )
         assertTrue(
-            "ProductPriceInsightsSheet must support department filtering",
-            content.contains("selectedDepartment")
+            "ProductPriceInsightsSheet must support movement filtering (All, Up, Down)",
+            contentBody.contains("selectedMovementFilter")
         )
         assertTrue(
-            "ProductPriceInsightsSheet must provide 'সকল বিভাগ' option",
-            content.contains("সকল বিভাগ") || content.contains("All Depts")
+            "ProductPriceInsightsSheet must provide Sort Order chips",
+            contentBody.contains("PriceSortOrder.entries.forEach")
         )
     }
 }
