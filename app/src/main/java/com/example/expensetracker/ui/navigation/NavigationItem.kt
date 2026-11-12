@@ -32,6 +32,7 @@ enum class NavigationItem(
     HOME("Home", Icons.Filled.Home, Icons.Outlined.Home),
     TRANSACTIONS("Transactions", Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong),
     MARKET("Market", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart),
+    MONEY("Money", Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet),
     ANALYTICS("Analytics", Icons.Filled.PieChart, Icons.Outlined.PieChart),
     ACCOUNTS("Accounts & MFS", Icons.Filled.AccountBalance, Icons.Outlined.AccountBalance),
     BILLS("Bills & Subscriptions", Icons.Filled.Payments, Icons.Outlined.Payments),
@@ -47,6 +48,7 @@ fun NavigationItem.getLocalizedTitle(strings: Strings): String = when (this) {
     NavigationItem.HOME -> strings.navHome
     NavigationItem.TRANSACTIONS -> strings.navTransactions
     NavigationItem.MARKET -> strings.navMarket
+    NavigationItem.MONEY -> strings.navMoney
     NavigationItem.ANALYTICS -> strings.navAnalytics
     NavigationItem.ACCOUNTS -> strings.navAccounts
     NavigationItem.BILLS -> strings.navBills

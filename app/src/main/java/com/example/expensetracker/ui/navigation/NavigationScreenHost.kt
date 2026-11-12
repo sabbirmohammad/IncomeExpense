@@ -4,7 +4,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ import com.example.expensetracker.ui.budget.BudgetViewModel
 import com.example.expensetracker.ui.dashboard.DashboardScreen
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
 import com.example.expensetracker.ui.market.MarketScreen
+import com.example.expensetracker.ui.money.MoneyHubScreen
 import com.example.expensetracker.ui.receivables.ReceivablesScreen
 import com.example.expensetracker.ui.receivables.ReceivablesViewModel
 import com.example.expensetracker.ui.reports.ReportsScreen
@@ -33,17 +35,13 @@ import com.example.expensetracker.ui.transactions.TransactionsScreen
 import com.example.expensetracker.ui.transactions.TransactionsViewModel
 
 /**
- * ARCHITECTURAL INVARIANT (NO REDUNDANT TOP-BAR HAMBURGER MENUS):
+ * NavigationScreenHost (v7 Refined Ledger Architecture):
  *
- * The 3D side navigation drawer is exclusively accessed via the bottom navigation bar's
- * 'More' tab (ModernBottomNavBar) or edge swipe gesture.
- *
- * DO NOT pass `onMenuClick` to any screen component (DashboardScreen, TransactionsScreen, etc.):
- * - On primary screens (Dashboard, Transactions), omitting `onMenuClick` keeps a clean,
- *   uncluttered One UI header without duplicate drawer icons.
- * - On secondary screens (Accounts, Bills, Receivables, Budgets, Reports, Settings),
- *   omitting `onMenuClick` allows standard back-arrow navigation (`onNavigateBack`) to return
- *   to Home, rather than displaying an unnecessary duplicate hamburger button.
+ * - 4 Top-level Tabs: HOME, TRANSACTIONS, MARKET, MONEY
+ * - Drill-down screens (ACCOUNTS, BUDGETS, BILLS, RECEIVABLES, ANALYTICS, REPORTS)
+ *   navigate back to their parent: MONEY hub.
+ * - Settings navigates back to HOME (or previous screen).
+ * - Smooth shared-axis horizontal transitions between top tabs, and depth fade for drilldowns.
  */
 @Composable
 fun NavigationScreenHost(
@@ -63,11 +61,24 @@ fun NavigationScreenHost(
     AnimatedContent(
         targetState = selectedItem,
         transitionSpec = {
-            (fadeIn(animationSpec = tween(220, delayMillis = 40)) +
-             scaleIn(initialScale = 0.98f, animationSpec = tween(220, delayMillis = 40)))
-                .togetherWith(
-                    fadeOut(animationSpec = tween(140))
-                )
+            val forward = targetState.ordinal > initialState.ordinal
+            if (targetState.isTopLevel && initialState.isTopLevel) {
+                // Shared-axis X transition between top tabs
+                (slideInHorizontally(
+                    initialOffsetX = { fullWidth -> if (forward) fullWidth / 4 else -fullWidth / 4 },
+                    animationSpec = tween(220)
+                ) + fadeIn(animationSpec = tween(220)))
+                    .togetherWith(
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> if (forward) -fullWidth / 4 else fullWidth / 4 },
+                            animationSpec = tween(180)
+                        ) + fadeOut(animationSpec = tween(180))
+                    )
+            } else {
+                // Drill-down transition
+                (fadeIn(animationSpec = tween(220, delayMillis = 30)))
+                    .togetherWith(fadeOut(animationSpec = tween(150)))
+            }
         },
         label = "ScreenTransition",
         modifier = modifier.fillMaxSize()
@@ -126,6 +137,13 @@ fun NavigationScreenHost(
                     dashboardViewModel = dashboardViewModel
                 )
             }
+            NavigationItem.MONEY -> {
+                MoneyHubScreen(
+                    dashboardViewModel = dashboardViewModel,
+                    onNavigate = onNavigate,
+                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
+                )
+            }
             NavigationItem.ANALYTICS -> {
                 val analyticsViewModel: AnalyticsViewModel = viewModel()
                 AnalyticsScreen(
@@ -135,28 +153,28 @@ fun NavigationScreenHost(
                         onNavigate(NavigationItem.TRANSACTIONS)
                     },
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
             NavigationItem.ACCOUNTS -> {
                 val accountsViewModel: AccountsViewModel = viewModel()
                 AccountsScreen(
                     viewModel = accountsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
             NavigationItem.BILLS -> {
                 val billsViewModel: BillsViewModel = viewModel()
                 BillsScreen(
                     viewModel = billsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
             NavigationItem.RECEIVABLES -> {
                 val receivablesViewModel: ReceivablesViewModel = viewModel()
                 ReceivablesScreen(
                     viewModel = receivablesViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
             NavigationItem.BUDGETS -> {
@@ -164,14 +182,14 @@ fun NavigationScreenHost(
                 BudgetScreen(
                     viewModel = budgetViewModel,
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
             NavigationItem.REPORTS -> {
                 val reportsViewModel: ReportsViewModel = viewModel()
                 ReportsScreen(
                     viewModel = reportsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
             NavigationItem.SETTINGS -> {
@@ -184,3 +202,9 @@ fun NavigationScreenHost(
         }
     }
 }
+
+private val NavigationItem.isTopLevel: Boolean
+    get() = this == NavigationItem.HOME ||
+            this == NavigationItem.TRANSACTIONS ||
+            this == NavigationItem.MARKET ||
+            this == NavigationItem.MONEY

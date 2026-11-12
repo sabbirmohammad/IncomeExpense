@@ -55,14 +55,14 @@ class MarketBottomNavAndRedesignTest {
     }
 
     @Test
-    fun testSideMenuDrawerIncludesAnalytics() {
-        val drawerFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/SideMenuDrawer.kt")
-        assertTrue("SideMenuDrawer.kt must exist", drawerFile.exists())
-        val content = drawerFile.readText()
+    fun testMoneyHubIncludesAnalytics() {
+        val moneyHubFile = findSourceFile("src/main/java/com/example/expensetracker/ui/money/MoneyHubScreen.kt")
+        assertTrue("MoneyHubScreen.kt must exist", moneyHubFile.exists())
+        val content = moneyHubFile.readText()
 
-        // Verify SideMenuDrawer includes Analytics in drawerMenuItems
+        // Verify MoneyHubScreen includes Analytics in hub items (replacing legacy drawer)
         assertTrue(
-            "SideMenuDrawer must include NavigationItem.ANALYTICS in drawerMenuItems",
+            "MoneyHubScreen must include NavigationItem.ANALYTICS in hub items",
             content.contains("NavigationItem.ANALYTICS")
         )
     }

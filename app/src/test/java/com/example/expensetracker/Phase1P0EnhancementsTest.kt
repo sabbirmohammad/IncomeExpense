@@ -237,26 +237,26 @@ class Phase1P0EnhancementsTest {
             content.contains("SettingsScreen(") && content.contains("onMenuClick =")
         )
 
-        // Secondary screens must provide onNavigateBack so users can return to Home smoothly
+        // Secondary screens must provide onNavigateBack to their parent (Money hub) or Home per v7 architecture
         assertTrue(
             "NavigationScreenHost must provide onNavigateBack to AccountsScreen",
-            content.contains("AccountsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
+            content.contains("AccountsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.MONEY) }")
         )
         assertTrue(
             "NavigationScreenHost must provide onNavigateBack to BillsScreen",
-            content.contains("BillsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
+            content.contains("BillsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.MONEY) }")
         )
         assertTrue(
             "NavigationScreenHost must provide onNavigateBack to ReceivablesScreen",
-            content.contains("ReceivablesScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
+            content.contains("ReceivablesScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.MONEY) }")
         )
         assertTrue(
             "NavigationScreenHost must provide onNavigateBack to BudgetScreen",
-            content.contains("BudgetScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
+            content.contains("BudgetScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.MONEY) }")
         )
         assertTrue(
             "NavigationScreenHost must provide onNavigateBack to ReportsScreen",
-            content.contains("ReportsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
+            content.contains("ReportsScreen(") && content.contains("onNavigateBack = { onNavigate(NavigationItem.MONEY) }")
         )
         assertTrue(
             "NavigationScreenHost must provide onNavigateBack to SettingsScreen",
@@ -280,7 +280,7 @@ class Phase1P0EnhancementsTest {
         )
         assertTrue(
             "NavigationScreenHost must provide onNavigateBack to AnalyticsScreen",
-            content.contains("onNavigateBack = { onNavigate(NavigationItem.HOME) }")
+            content.contains("onNavigateBack = { onNavigate(NavigationItem.MONEY) }")
         )
     }
 

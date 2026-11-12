@@ -27,6 +27,7 @@ open class StringsCore(
     val navHome: String get() = if (isBangla) "হোম" else "Home"
     val navTransactions: String get() = if (isBangla) "লেনদেন" else "Transactions"
     val navMarket: String get() = if (isBangla) "বাজার" else "Market"
+    val navMoney: String get() = if (isBangla) "হিসাব" else "Money"
     val navAnalytics: String get() = if (isBangla) "অ্যানালিটিক্স" else "Analytics"
     val navAccounts: String get() = if (isBangla) "অ্যাকাউন্ট ও MFS" else "Accounts & MFS"
     val navReceivables: String get() = if (isBangla) "বকেয়া ও পাওনা টাকা" else "Money Owed"
