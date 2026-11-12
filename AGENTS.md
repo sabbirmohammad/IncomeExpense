@@ -45,3 +45,13 @@
 - [ ] `app/src/main/java/com/example/expensetracker/common/AppConstants.kt`: `APP_VERSION = "vX.Y"` আপডেট হয়েছে।
 - [ ] Git Tag: `vX.Y` ট্যাগ তৈরি হয়েছে এবং `git push origin main --tags` দিয়ে পুশ করা হয়েছে।
 *(উক্ত কাজগুলো `./scripts/bump_version.sh` স্ক্রিপ্ট এক কমান্ডেই স্বয়ংক্রিয়ভাবে নির্ভুলভাবে সম্পন্ন করে।)*
+
+---
+
+## 3. Redesign v7 Guidelines (হিসাব কিতাব v7 রিডিজাইন নীতিমালা)
+
+- **Source of Truth**: The redesign documents located in `docs/redesign/` (`1_REDESIGN_BRIEF.md`, `2_DESIGN_SYSTEM_V7.md`, `3_UX_FLOWS.md`, `4_COMPONENT_SPEC.md`, `5_ANTIGRAVITY_PROMPTS.md`, and `6_SCREENSHOT_FINDINGS_AND_PATCH.md`) represent the definitive source of truth. Where conflicts occur, `6_SCREENSHOT_FINDINGS_AND_PATCH.md` overrides files 1–5.
+- **Branching & Commits**: All redesign work must take place on the `redesign/v7` branch. Never push to `main` during this redesign.
+- **Phase-by-Phase Execution**: Execute one phase at a time. After completing each phase, run tests, summarize changes, list files touched/tests updated, and stop for approval before proceeding to the next phase.
+- **Automatic Push Paused**: The automatic push to `main` rule (Section 1) is temporarily paused for the duration of the v7 redesign until the owner explicitly approves the merge into `main`.
+

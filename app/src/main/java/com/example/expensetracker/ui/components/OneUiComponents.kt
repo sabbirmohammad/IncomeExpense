@@ -45,12 +45,25 @@ import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
 
 /**
- * Standard Surface Card per Living Ledger specification:
- * Sheet surface, corner radius, hairline ink border.
+ * V7 Card Variants: Flat (default), Raised (sheets & heroes), Tinted (colored container).
+ */
+enum class AppCardVariant {
+    Flat,
+    Raised,
+    Tinted
+}
+
+/**
+ * Standard Surface Card per Living Ledger / Refined Ledger v7 specification:
+ * - Flat: Tonal separation in Dark/AMOLED (no border outline per C1); hairline border in Light.
+ * - Raised: Soft elevation + surfaceRaised background.
+ * - Tinted: Container colored surface.
+ * - Corner radius: 16dp (RadiusM) per C1 patch.
  */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
+    variant: AppCardVariant = AppCardVariant.Flat,
     backgroundColor: Color = Color.Unspecified,
     borderColor: Color = Color.Unspecified,
     cornerRadius: Dp = CardCornerRadius,
@@ -60,9 +73,24 @@ fun AppCard(
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val resolvedBg = if (backgroundColor != Color.Unspecified) backgroundColor else LocalAppColors.current.surface
-    val resolvedBorder = if (borderColor != Color.Unspecified) borderColor else LocalAppColors.current.border
-    val resolvedBorderStroke = borderStroke ?: if (borderStrokeWidth > 0.dp) BorderStroke(borderStrokeWidth, resolvedBorder) else null
+    val colors = LocalAppColors.current
+
+    val resolvedBg = when {
+        backgroundColor != Color.Unspecified -> backgroundColor
+        variant == AppCardVariant.Raised -> colors.surfaceRaised
+        variant == AppCardVariant.Tinted -> colors.accentContainer
+        else -> colors.surface
+    }
+
+    val resolvedBorderStroke = when {
+        borderStroke != null -> borderStroke
+        borderColor != Color.Unspecified -> BorderStroke(borderStrokeWidth, borderColor)
+        // C1 Invariant: No outline on cards in Dark/AMOLED. Hairline allowed in Light.
+        variant == AppCardVariant.Flat && !colors.isDark -> BorderStroke(HairlineInkStroke, colors.border)
+        else -> null
+    }
+
+    val resolvedElevation = if (variant == AppCardVariant.Raised) 4.dp else 0.dp
 
     Card(
         modifier = modifier
@@ -71,7 +99,7 @@ fun AppCard(
         shape = RoundedCornerShape(cornerRadius),
         colors = CardDefaults.cardColors(containerColor = resolvedBg),
         border = resolvedBorderStroke,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = resolvedElevation)
     ) {
         Box(modifier = Modifier.padding(padding)) {
             content()

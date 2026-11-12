@@ -44,7 +44,15 @@ data class AppColors(
     val navInactive: Color = ColorNavInactive,
     val isDark: Boolean = true,
     val cardBackground: Color = surface,
-    val divider: Color = border
+    val divider: Color = border,
+    // V7 tokens ("Refined Ledger")
+    val surfaceRaised: Color = if (isDark) ColorSurfaceRaisedDark else ColorSurfaceRaisedLight,
+    val accentContainer: Color = if (isDark) ColorAccentContainerDark else ColorAccentContainerLight,
+    val expenseContainer: Color = if (isDark) ColorExpenseContainerDark else ColorExpenseContainerLight,
+    val warningContainer: Color = if (isDark) ColorWarningContainerDark else ColorWarningContainerLight,
+    val infoContainer: Color = if (isDark) ColorInfoContainerDark else ColorInfoContainerLight,
+    val scrim: Color = if (isDark) ColorScrimDark else ColorScrimLight,
+    val onAccent: Color = if (isDark) ColorOnAccentDark else ColorOnAccentLight
 ) {
     val successIncome: Color get() = income
     val dangerExpense: Color get() = expense
@@ -71,7 +79,14 @@ val DarkAppColors = AppColors(
     navInactive = ColorNavInactive,
     isDark = true,
     cardBackground = ColorSurface,
-    divider = ColorBorder
+    divider = ColorBorder,
+    surfaceRaised = ColorSurfaceRaisedDark,
+    accentContainer = ColorAccentContainerDark,
+    expenseContainer = ColorExpenseContainerDark,
+    warningContainer = ColorWarningContainerDark,
+    infoContainer = ColorInfoContainerDark,
+    scrim = ColorScrimDark,
+    onAccent = ColorOnAccentDark
 )
 
 val AmoledAppColors = AppColors(
@@ -93,7 +108,14 @@ val AmoledAppColors = AppColors(
     navInactive = ColorNavInactive,
     isDark = true,
     cardBackground = ColorSurfaceAmoled,
-    divider = ColorBorderAmoled
+    divider = ColorBorderAmoled,
+    surfaceRaised = ColorSurfaceRaisedAmoled,
+    accentContainer = ColorAccentContainerAmoled,
+    expenseContainer = ColorExpenseContainerAmoled,
+    warningContainer = ColorWarningContainerAmoled,
+    infoContainer = ColorInfoContainerAmoled,
+    scrim = ColorScrimAmoled,
+    onAccent = ColorOnAccentAmoled
 )
 
 val LightAppColors = AppColors(
@@ -115,7 +137,14 @@ val LightAppColors = AppColors(
     navInactive = ColorTextMutedLight,
     isDark = false,
     cardBackground = ColorSurfaceLight,
-    divider = ColorBorderLight
+    divider = ColorBorderLight,
+    surfaceRaised = ColorSurfaceRaisedLight,
+    accentContainer = ColorAccentContainerLight,
+    expenseContainer = ColorExpenseContainerLight,
+    warningContainer = ColorWarningContainerLight,
+    infoContainer = ColorInfoContainerLight,
+    scrim = ColorScrimLight,
+    onAccent = ColorOnAccentLight
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
@@ -205,8 +234,12 @@ fun ExpenseTrackerTheme(
         }
     }
 
+    val motionConfig = rememberSystemMotionConfig()
+
     CompositionLocalProvider(
-        LocalAppColors provides appColors
+        LocalAppColors provides appColors,
+        LocalAppSpacing provides AppSpacing(),
+        LocalMotion provides motionConfig
     ) {
         MaterialTheme(
             colorScheme = scheme,
