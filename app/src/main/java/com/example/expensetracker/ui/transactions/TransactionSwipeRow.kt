@@ -1,7 +1,9 @@
 package com.example.expensetracker.ui.transactions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,6 +29,14 @@ import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.ListRow
 import com.example.expensetracker.ui.components.formatCurrency
 
+/**
+ * V7 TransactionSwipeRow per UX_FLOWS section 4 & Screenshot Patch C5:
+ * - 40dp category circle · title · subtitle (category only if different from title + time)
+ * - Amount right-aligned colored with sign and tnum
+ * - Account pill shown only when multiple accounts or differs from default
+ * - Tap row -> detail sheet / edit
+ * - Swipe left -> delete, Swipe right -> edit
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionSwipeRow(
@@ -36,13 +46,23 @@ fun TransactionSwipeRow(
     useBengaliNumerals: Boolean,
     onEdit: (Transaction) -> Unit,
     onDelete: (Transaction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRowClick: ((Transaction) -> Unit)? = null,
+    showAccountPill: Boolean = false
 ) {
     val appColors = LocalAppColors.current
     val isIncome = transaction.type == TransactionType.INCOME
     val amountFormatted = "${if (isIncome) "+" else "-"} ${formatCurrency(transaction.amount, currencySymbol, useBengaliNumerals || isBangla)}"
     val amountColor = if (isIncome) appColors.income else appColors.expense
-    val meta = "${getLocalizedCategoryName(transaction.categoryName, isBangla)} • ${DateTimeHelper.formatTimeOnly(transaction.dateMillis, isBangla, useBengaliNumerals || isBangla)}"
+
+    // Subtitle = category only if different from title, + time per C5
+    val categoryLocalized = getLocalizedCategoryName(transaction.categoryName, isBangla)
+    val timeFormatted = DateTimeHelper.formatTimeOnly(transaction.dateMillis, isBangla, useBengaliNumerals || isBangla)
+    val meta = if (transaction.title.equals(categoryLocalized, ignoreCase = true) || transaction.title.equals(transaction.categoryName, ignoreCase = true)) {
+        timeFormatted
+    } else {
+        "$categoryLocalized • $timeFormatted"
+    }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
@@ -90,7 +110,7 @@ fun TransactionSwipeRow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(LocalAppColors.current.surface)
+                .background(appColors.surface)
                 .padding(horizontal = 16.dp)
         ) {
             ListRow(
@@ -100,9 +120,15 @@ fun TransactionSwipeRow(
                 meta = meta,
                 amountText = amountFormatted,
                 amountColor = amountColor,
-                onClick = { onEdit(transaction) },
+                onClick = {
+                    if (onRowClick != null) {
+                        onRowClick(transaction)
+                    } else {
+                        onEdit(transaction)
+                    }
+                },
                 paymentMethod = transaction.paymentMethod,
-                paymentMethodName = transaction.accountName?.takeIf { it.isNotBlank() },
+                paymentMethodName = if (showAccountPill) transaction.accountName?.takeIf { it.isNotBlank() } else null,
                 hasReceipt = transaction.receiptImagePath != null
             )
         }

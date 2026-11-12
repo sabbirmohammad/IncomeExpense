@@ -89,7 +89,8 @@ fun TransactionDateGroupHeader(
             text = netText,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 12.5.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontFeatureSettings = "tnum"
             ),
             color = netColor
         )

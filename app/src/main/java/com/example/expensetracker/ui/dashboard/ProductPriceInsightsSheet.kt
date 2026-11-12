@@ -755,17 +755,22 @@ fun MarketCommodityStockRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Category Icon / Emoji
+            // Neutral Item Avatar (first letter on tinted circle per V7 C6)
             Box(
                 modifier = Modifier
                     .size(38.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(appColors.surfaceVariant.copy(alpha = 0.7f)),
+                    .clip(CircleShape)
+                    .background(appColors.accentContainer),
                 contentAlignment = Alignment.Center
             ) {
+                val initialLetter = commodity.name.trim().take(1).uppercase()
                 Text(
-                    text = deptMeta.icon,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
+                    text = initialLetter,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 15.sp,
+                        fontWeight = WeightBold
+                    ),
+                    color = appColors.accent
                 )
             }
 

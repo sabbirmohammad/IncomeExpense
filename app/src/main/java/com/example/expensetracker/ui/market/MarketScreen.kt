@@ -746,9 +746,9 @@ private fun MarketSegmentedPills(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Tab 0: Market Lists (বাজার ফর্দ)
+            // Tab 0: Market Lists (Lists · ফর্দ)
             MarketTabPill(
-                title = if (isBangla) "বাজার ফর্দ" else "Lists",
+                title = if (isBangla) "ফর্দ" else "Lists",
                 badge = if (activeListsCount > 0) (if (isBangla) convertToBengaliDigits(activeListsCount.toString()) else activeListsCount.toString()) else null,
                 icon = Icons.Outlined.Checklist,
                 isSelected = selectedTab == 0,
@@ -756,9 +756,9 @@ private fun MarketSegmentedPills(
                 modifier = Modifier.weight(1f)
             )
 
-            // Tab 1: Price Intelligence (বাজার দর)
+            // Tab 1: Price Intelligence (Prices · দরদাম)
             MarketTabPill(
-                title = if (isBangla) "বাজার দর" else "Price Trends",
+                title = if (isBangla) "দরদাম" else "Prices",
                 badge = if (priceInsightsCount > 0) (if (isBangla) convertToBengaliDigits(priceInsightsCount.toString()) else priceInsightsCount.toString()) else null,
                 icon = Icons.AutoMirrored.Outlined.TrendingUp,
                 isSelected = selectedTab == 1,
@@ -766,9 +766,9 @@ private fun MarketSegmentedPills(
                 modifier = Modifier.weight(1f)
             )
 
-            // Tab 2: Create List (নতুন ফর্দ)
+            // Tab 2: Create List (New · নতুন)
             MarketTabPill(
-                title = if (isBangla) "নতুন ফর্দ" else "New List",
+                title = if (isBangla) "নতুন" else "New",
                 badge = null,
                 icon = Icons.Filled.Add,
                 isSelected = selectedTab == 2,

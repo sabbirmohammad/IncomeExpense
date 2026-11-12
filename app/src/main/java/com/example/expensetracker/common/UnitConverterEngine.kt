@@ -34,12 +34,14 @@ object UnitConverterEngine {
 
     /**
      * Normalizes a product name by canonicalizing Unicode (NFC), trimming, lowercasing,
-     * stripping parenthetical notes, numbers and punctuation.
+     * stripping ZWJ/ZWNJ, parenthetical notes, numbers and punctuation.
      */
     fun normalizeProductName(rawName: String): String {
         val nfc = java.text.Normalizer.normalize(rawName, java.text.Normalizer.Form.NFC)
         val withoutParentheses = nfc.trim()
             .lowercase()
+            .replace("\u200C", "")
+            .replace("\u200D", "")
             .replace(Regex("\\([^)]*\\)"), " ")
             .replace(Regex("\\[[^]]*\\]"), " ")
             .replace(Regex("[\\{\\}\\[\\]\\(\\)\\_\\-\\:\\,\\.\\;\\*\\#\\/\\\\\\|\\!\\?\\+\\=\\d০-৯]+"), " ")
@@ -47,6 +49,14 @@ object UnitConverterEngine {
             .trim()
 
         return withoutParentheses.ifBlank { nfc.trim().lowercase() }
+    }
+
+    /**
+     * Canonical key for commodity deduplication and merging per V7 C6:
+     * Ignores spaces and ZWJ/ZWNJ so "কাঁচা মরিচ" and "কাঁচামরিচ" merge cleanly.
+     */
+    fun canonicalCommodityKey(rawName: String): String {
+        return normalizeProductName(rawName).replace(" ", "")
     }
 
     /**

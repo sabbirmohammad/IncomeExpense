@@ -10,12 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,15 +24,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.TimeFilter
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.AppBottomSheet
 import com.example.expensetracker.ui.components.EmptyStateCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(
     viewModel: TransactionsViewModel,
@@ -49,6 +52,7 @@ fun TransactionsScreen(
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsStateWithLifecycle()
     val selectedAccountId by viewModel.selectedAccountId.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     val selectedTimeFilter by viewModel.selectedTimeFilter.collectAsStateWithLifecycle()
     val isMarketTripsView by viewModel.isMarketTripsView.collectAsStateWithLifecycle()
     val marketLists by viewModel.marketLists.collectAsStateWithLifecycle()
@@ -79,6 +83,10 @@ fun TransactionsScreen(
     var tripToDelete by remember { mutableStateOf<MarketListWithItems?>(null) }
     var isSearchActive by remember { mutableStateOf(searchQuery.isNotBlank()) }
 
+    // V7 bottom sheet states: DetailSheet & FilterSheet
+    var selectedTxForDetail by remember { mutableStateOf<Transaction?>(null) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -93,7 +101,9 @@ fun TransactionsScreen(
                     sharingTargetDateMillis = null
                     showShareSheet = true
                 },
-                onNavigateToSettings = onNavigateToSettings
+                onNavigateToSettings = onNavigateToSettings,
+                onSearchClick = { isSearchActive = !isSearchActive },
+                isSearchActive = isSearchActive
             )
 
             TransactionsFilterBar(
@@ -121,7 +131,8 @@ fun TransactionsScreen(
                     isSearchActive = false
                 },
                 activeFilterCount = activeFilterCount,
-                strings = strings
+                strings = strings,
+                onOpenFilterSheet = { showFilterSheet = true }
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -228,7 +239,9 @@ fun TransactionsScreen(
                                         }
                                     }
                                 },
-                                onDeleteMarketTrip = { tripToDelete = it }
+                                onDeleteMarketTrip = { tripToDelete = it },
+                                onSelectTransaction = { selectedTxForDetail = it },
+                                hasMultipleAccounts = accounts.size > 1
                             )
                         }
                     }
@@ -246,6 +259,75 @@ fun TransactionsScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 80.dp, start = 16.dp, end = 16.dp)
         )
+
+        // Detail Bottom Sheet when tapping a transaction row
+        selectedTxForDetail?.let { tx ->
+            AppBottomSheet(
+                onDismissRequest = { selectedTxForDetail = null }
+            ) {
+                TransactionDetailSheet(
+                    transaction = tx,
+                    currencySymbol = userProfile.currencySymbol,
+                    isBangla = strings.isBangla,
+                    useBengaliNumerals = userProfile.useBengaliNumerals || strings.isBangla,
+                    onEdit = {
+                        selectedTxForDetail = null
+                        onEditTransaction(it)
+                    },
+                    onDelete = { deletedTx ->
+                        selectedTxForDetail = null
+                        viewModel.deleteTransaction(deletedTx)
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = strings.transactionDeleted,
+                                actionLabel = strings.undo,
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.restoreTransaction(deletedTx)
+                            }
+                        }
+                    },
+                    onDismiss = { selectedTxForDetail = null }
+                )
+            }
+        }
+
+        // Filter Bottom Sheet when tapping "Filters"
+        if (showFilterSheet) {
+            AppBottomSheet(
+                onDismissRequest = { showFilterSheet = false }
+            ) {
+                TransactionFilterSheet(
+                    selectedType = selectedType,
+                    onTypeSelected = { viewModel.setTypeFilter(it) },
+                    isMarketTripsView = isMarketTripsView,
+                    onMarketTripsViewChanged = { viewModel.setMarketTripsView(it) },
+                    selectedTimeFilter = selectedTimeFilter,
+                    onTimeFilterSelected = { viewModel.setTimeFilter(it) },
+                    accounts = accounts,
+                    selectedAccountId = selectedAccountId,
+                    onAccountSelected = { viewModel.setAccountFilter(it) },
+                    categories = categories,
+                    selectedCategoryId = selectedCategoryId,
+                    onCategorySelected = { viewModel.setCategoryFilter(it) },
+                    onOpenCustomDateRange = {
+                        showFilterSheet = false
+                        showCustomDateRangeDialog = true
+                    },
+                    onResetAll = {
+                        viewModel.onSearchQueryChanged("")
+                        viewModel.setTypeFilter(null)
+                        viewModel.setCategoryFilter(null)
+                        viewModel.setAccountFilter(null)
+                        viewModel.setTimeFilter(TimeFilter.THIS_MONTH)
+                        viewModel.setMarketTripsView(false)
+                        isSearchActive = false
+                    },
+                    onDismiss = { showFilterSheet = false }
+                )
+            }
+        }
 
         TransactionsDialogs(
             showShareSheet = showShareSheet,

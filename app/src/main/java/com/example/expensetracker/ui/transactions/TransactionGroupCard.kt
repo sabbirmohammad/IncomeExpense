@@ -1,7 +1,10 @@
 package com.example.expensetracker.ui.transactions
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -9,9 +12,15 @@ import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.UserProfile
-import com.example.expensetracker.ui.components.AppCard
+import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
 import com.example.expensetracker.ui.components.HairlineDivider
 
+/**
+ * V7 TransactionGroupCard per UX_FLOWS section 4 & Screenshot Patch C5:
+ * - Grouped day surface with dividers without heavy outlines
+ * - Dispatches tap -> detail sheet, swipe left -> delete, swipe right -> edit
+ */
 @Composable
 fun TransactionGroupCard(
     itemsInGroup: List<Transaction>,
@@ -21,11 +30,17 @@ fun TransactionGroupCard(
     onEditTransaction: (Transaction) -> Unit,
     onDeleteTransaction: (Transaction) -> Unit,
     onDeleteMarketTrip: (MarketListWithItems) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSelectTransaction: ((Transaction) -> Unit)? = null,
+    hasMultipleAccounts: Boolean = false
 ) {
-    AppCard(
-        modifier = modifier,
-        padding = 0.dp
+    val appColors = LocalAppColors.current
+
+    Surface(
+        shape = RoundedCornerShape(RadiusM),
+        color = appColors.surfaceRaised,
+        border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border.copy(alpha = 0.6f)),
+        modifier = modifier
     ) {
         Column {
             val visibleItems = remember(itemsInGroup, marketLists) {
@@ -64,7 +79,15 @@ fun TransactionGroupCard(
                         isBangla = isBangla,
                         useBengaliNumerals = userProfile.useBengaliNumerals || isBangla,
                         onEdit = onEditTransaction,
-                        onDelete = onDeleteTransaction
+                        onDelete = onDeleteTransaction,
+                        onRowClick = {
+                            if (onSelectTransaction != null) {
+                                onSelectTransaction(tx)
+                            } else {
+                                onEditTransaction(tx)
+                            }
+                        },
+                        showAccountPill = hasMultipleAccounts
                     )
                 }
 
