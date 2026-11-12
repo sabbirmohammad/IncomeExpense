@@ -85,7 +85,8 @@ fun AddEditTransactionSheet(
     onOpenMarketList: (() -> Unit)? = null,
     lastPurchasedRates: Map<String, Pair<Double, String>> = emptyMap(),
     productPriceInsights: Map<String, com.example.expensetracker.data.model.ProductPriceInsight> = emptyMap(),
-    onCompleteMarketListWithRollOver: ((listId: Long, rollOverItems: List<MarketItem>) -> Unit)? = null
+    onCompleteMarketListWithRollOver: ((listId: Long, rollOverItems: List<MarketItem>) -> Unit)? = null,
+    onTransfer: ((fromAccountId: Long, toAccountId: Long, amount: Double, note: String) -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -105,7 +106,8 @@ fun AddEditTransactionSheet(
             context = context,
             scope = scope,
             onDismiss = onDismiss,
-            onSave = onSave
+            onSave = onSave,
+            onTransfer = onTransfer
         )
     }
 
@@ -403,7 +405,8 @@ fun AddEditTransactionSheet(
                             state.showDiscardDialog = true
                         } else state.isEditMode = false
                     },
-                    onSaveClick = { state.saveCurrentTransaction() }
+                    onSaveClick = { state.saveCurrentTransaction() },
+                    isTransfer = state.isTransfer
                 )
             }
         }

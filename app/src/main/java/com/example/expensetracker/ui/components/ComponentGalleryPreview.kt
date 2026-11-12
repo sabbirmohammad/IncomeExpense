@@ -255,6 +255,52 @@ fun ComponentGalleryScreen(
                 )
             )
 
+            // --- 9. AMOUNT KEYPAD ---
+            SectionHeader(title = if (isBengali) "৯. টাকার কী-প্যাড (AmountKeypad)" else "9. AmountKeypad (4x4, >=56dp)")
+            var keypadExpression by remember { mutableStateOf("120+85") }
+            AmountKeypad(
+                expression = keypadExpression,
+                onExpressionChange = { keypadExpression = it },
+                isBangla = isBengali
+            )
+
+            // --- 10. CATEGORY PICKER ---
+            SectionHeader(title = if (isBengali) "১০. ক্যাটাগরি চয়নকারী (CategoryPicker)" else "10. CategoryPicker (Inline chips)")
+            val galleryCategories = remember {
+                listOf(
+                    com.example.expensetracker.data.model.Category(1, "Groceries", com.example.expensetracker.data.model.TransactionType.EXPENSE, "ShoppingCart", "#10B981"),
+                    com.example.expensetracker.data.model.Category(2, "Dining", com.example.expensetracker.data.model.TransactionType.EXPENSE, "Restaurant", "#F97316"),
+                    com.example.expensetracker.data.model.Category(3, "Transport", com.example.expensetracker.data.model.TransactionType.EXPENSE, "DirectionsCar", "#0EA5E9"),
+                    com.example.expensetracker.data.model.Category(4, "Rent", com.example.expensetracker.data.model.TransactionType.EXPENSE, "Home", "#8B5CF6"),
+                    com.example.expensetracker.data.model.Category(5, "Bills", com.example.expensetracker.data.model.TransactionType.EXPENSE, "Receipt", "#F59E0B"),
+                    com.example.expensetracker.data.model.Category(6, "Health", com.example.expensetracker.data.model.TransactionType.EXPENSE, "LocalHospital", "#EC4899")
+                )
+            }
+            var selectedGalleryCategory by remember { mutableStateOf<com.example.expensetracker.data.model.Category?>(galleryCategories.first()) }
+            CategoryPicker(
+                categories = galleryCategories,
+                selectedCategory = selectedGalleryCategory,
+                onCategorySelected = { selectedGalleryCategory = it },
+                isBangla = isBengali
+            )
+
+            // --- 11. ACCOUNT CHIP ROW ---
+            SectionHeader(title = if (isBengali) "১১. অ্যাকাউন্ট রো (AccountChipRow)" else "11. AccountChipRow (With balances)")
+            val galleryAccounts = remember {
+                listOf(
+                    com.example.expensetracker.data.model.Account(1, "Cash in Hand", com.example.expensetracker.data.model.AccountType.CASH, currentBalance = 3450.0),
+                    com.example.expensetracker.data.model.Account(2, "Bank Account", com.example.expensetracker.data.model.AccountType.BANK, currentBalance = 45000.0),
+                    com.example.expensetracker.data.model.Account(3, "bKash Personal", com.example.expensetracker.data.model.AccountType.MFS, currentBalance = 12500.0)
+                )
+            }
+            var selectedGalleryAccount by remember { mutableStateOf<com.example.expensetracker.data.model.Account?>(galleryAccounts.first()) }
+            AccountChipRow(
+                accounts = galleryAccounts,
+                selectedAccountId = selectedGalleryAccount?.id,
+                onAccountSelected = { selectedGalleryAccount = it },
+                isBangla = isBengali
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }

@@ -181,7 +181,23 @@ fun NavigationTransactionSheets(
                     )
                 )
             },
-            onOpenMarketList = onOpenMarketList
+            onOpenMarketList = onOpenMarketList,
+            onTransfer = { fromId, toId, amount, note ->
+                dashboardViewModel.transferFunds(fromId, toId, amount, note)
+                onCloseAddSheet()
+                val fromAcc = accounts.find { it.id == fromId }?.name ?: ""
+                val toAcc = accounts.find { it.id == toId }?.name ?: ""
+                val transferSub = if (fromAcc.isNotBlank() && toAcc.isNotBlank()) "$fromAcc → $toAcc" else note
+                feedbackController.show(
+                    TransactionFeedbackData(
+                        type = FeedbackVisualType.TRANSFER,
+                        title = FeedbackStrings.transferSuccess(strings.isBangla),
+                        amount = amount,
+                        currencySymbol = userProfile.currencySymbol,
+                        subtitle = transferSub.ifBlank { null }
+                    )
+                )
+            }
         )
     }
 

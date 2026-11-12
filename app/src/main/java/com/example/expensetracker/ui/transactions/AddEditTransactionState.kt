@@ -12,11 +12,18 @@ import com.example.expensetracker.data.model.PaymentMethod
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.ui.components.AppHaptics
+import com.example.expensetracker.ui.components.CategoryRecommendationEngine
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
 import com.example.expensetracker.utils.ReceiptImageHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+enum class TransactionSheetTab {
+    EXPENSE,
+    INCOME,
+    TRANSFER
+}
 
 class AddEditTransactionState(
     val existingTransaction: Transaction?,
@@ -29,8 +36,16 @@ class AddEditTransactionState(
     val context: Context,
     val scope: CoroutineScope,
     val onDismiss: () -> Unit,
-    val onSave: (Transaction) -> Unit
+    val onSave: (Transaction) -> Unit,
+    val onTransfer: ((fromAccountId: Long, toAccountId: Long, amount: Double, note: String) -> Unit)? = null
 ) {
+    var sheetTab by mutableStateOf(
+        when (existingTransaction?.type ?: initialType) {
+            TransactionType.INCOME -> TransactionSheetTab.INCOME
+            TransactionType.EXPENSE -> TransactionSheetTab.EXPENSE
+        }
+    )
+
     var selectedType by mutableStateOf(existingTransaction?.type ?: initialType)
     var amountText by mutableStateOf(existingTransaction?.amount?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: "")
     var title by mutableStateOf(existingTransaction?.title ?: "")
@@ -41,10 +56,19 @@ class AddEditTransactionState(
     var showFullReceiptPreview by mutableStateOf(false)
 
     var selectedAccountId by mutableStateOf(existingTransaction?.accountId ?: accounts.find { it.isDefault }?.id ?: accounts.firstOrNull()?.id)
+    var toAccountId by mutableStateOf(accounts.getOrNull(1)?.id ?: accounts.firstOrNull()?.id)
+
     val availableCategories: List<Category> get() = categories.filter { it.type == selectedType }
+
     var selectedCategory by mutableStateOf(
-        categories.find { it.id == existingTransaction?.categoryId && it.type == selectedType } ?: categories.firstOrNull { it.type == selectedType }
+        if (existingTransaction != null) {
+            categories.find { it.id == existingTransaction.categoryId && it.type == selectedType }
+                ?: categories.firstOrNull { it.type == selectedType }
+        } else {
+            CategoryRecommendationEngine.findSmartDefaultCategory(categories, selectedType)
+        }
     )
+
     var selectedPaymentMethod by mutableStateOf(existingTransaction?.paymentMethod ?: PaymentMethod.CASH)
     var dateMillis by mutableStateOf(existingTransaction?.dateMillis ?: initialDateMillis ?: System.currentTimeMillis())
 
@@ -62,8 +86,11 @@ class AddEditTransactionState(
 
     var isSaving by mutableStateOf(false)
 
-    val isExpense: Boolean get() = selectedType == TransactionType.EXPENSE
-    val isFormValid: Boolean get() = (amountText.toParsedAmountOrNull() ?: 0.0) > 0.0 && selectedCategory != null
+    val isExpense: Boolean get() = selectedType == TransactionType.EXPENSE && sheetTab != TransactionSheetTab.TRANSFER
+    val isTransfer: Boolean get() = sheetTab == TransactionSheetTab.TRANSFER
+
+    val isFormValid: Boolean get() = (amountText.toParsedAmountOrNull() ?: 0.0) > 0.0 &&
+            (isTransfer || selectedCategory != null)
 
     val isDirty: Boolean
         get() {
@@ -93,6 +120,7 @@ class AddEditTransactionState(
             title = existingTransaction.title
             notes = existingTransaction.notes
             selectedType = existingTransaction.type
+            sheetTab = if (existingTransaction.type == TransactionType.INCOME) TransactionSheetTab.INCOME else TransactionSheetTab.EXPENSE
             selectedCategory = categories.find { it.id == existingTransaction.categoryId }
                 ?: categories.firstOrNull { it.type == existingTransaction.type }
             selectedAccountId = existingTransaction.accountId ?: accounts.firstOrNull()?.id
@@ -103,16 +131,35 @@ class AddEditTransactionState(
         }
     }
 
+    fun handleTabSelected(tab: TransactionSheetTab) {
+        if (sheetTab != tab) {
+            haptics.lightTick()
+            sheetTab = tab
+            when (tab) {
+                TransactionSheetTab.EXPENSE -> handleTypeSelected(TransactionType.EXPENSE)
+                TransactionSheetTab.INCOME -> handleTypeSelected(TransactionType.INCOME)
+                TransactionSheetTab.TRANSFER -> {
+                    if (selectedAccountId == toAccountId) {
+                        val other = accounts.firstOrNull { it.id != selectedAccountId }?.id
+                        if (other != null) toAccountId = other
+                    }
+                }
+            }
+        }
+    }
+
     fun handleTypeSelected(type: TransactionType) {
         if (selectedType != type) {
             haptics.lightTick()
             selectedType = type
-            selectedCategory = categories.firstOrNull { it.type == type }
+            sheetTab = if (type == TransactionType.INCOME) TransactionSheetTab.INCOME else TransactionSheetTab.EXPENSE
+            selectedCategory = CategoryRecommendationEngine.findSmartDefaultCategory(categories, type)
+                ?: categories.firstOrNull { it.type == type }
         }
     }
 
     fun handleAmountChange(newVal: String) {
-        val filtered = newVal.filter { c -> c.isDigit() || c == '.' }
+        val filtered = newVal.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/*−— " }
         amountText = filtered
         if (errorMessage != null) errorMessage = null
     }
@@ -136,6 +183,22 @@ class AddEditTransactionState(
             haptics.warningFeedback()
             return
         }
+
+        if (sheetTab == TransactionSheetTab.TRANSFER) {
+            val fromId = selectedAccountId ?: accounts.firstOrNull()?.id
+            val toId = toAccountId ?: accounts.getOrNull(1)?.id
+            if (fromId == null || toId == null || fromId == toId) {
+                errorMessage = if (strings.isBangla) "উৎস ও গন্তব্য হিসেবে ভিন্ন অ্যাকাউন্ট নির্বাচন করুন" else "Select different source and destination accounts"
+                haptics.warningFeedback()
+                return
+            }
+            isSaving = true
+            haptics.successFeedback()
+            onTransfer?.invoke(fromId, toId, evaluated, notes.ifBlank { title })
+            onDismiss()
+            return
+        }
+
         val cat = selectedCategory
         if (cat == null) {
             errorMessage = strings.selectCategoryPrompt

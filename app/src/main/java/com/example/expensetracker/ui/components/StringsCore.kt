@@ -74,6 +74,11 @@ open class StringsCore(
     val shareImage: String get() = if (isBangla) "ছবি শেয়ার" else "Share Image"
     val sharePdf: String get() = if (isBangla) "PDF শেয়ার" else "Share PDF"
 
+    val transferTab: String get() = if (isBangla) "স্থানান্তর" else "Transfer"
+    val addNote: String get() = if (isBangla) "+ নোট যোগ করুন" else "+ Add note"
+    val pickDate: String get() = if (isBangla) "তারিখ বাছুন" else "Pick date"
+    val saveTransfer: String get() = if (isBangla) "স্থানান্তর করুন" else "Transfer"
+
     // Calculator
     val calculator: String get() = if (isBangla) "ক্যালকুলেটর" else "Calculator"
     val clear: String get() = if (isBangla) "C" else "C"
