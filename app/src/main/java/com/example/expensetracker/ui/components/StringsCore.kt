@@ -37,6 +37,33 @@ open class StringsCore(
     val navMore: String get() = if (isBangla) "মেনু" else "Menu"
 
     // Dashboard
+    fun timeBasedGreeting(hour: Int = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)): String {
+        return if (isBangla) {
+            when (hour) {
+                in 5..11 -> "শুভ সকাল"
+                in 12..16 -> "শুভ দুপুর"
+                in 17..20 -> "শুভ সন্ধ্যা"
+                else -> "শুভ রাত্রি"
+            }
+        } else {
+            when (hour) {
+                in 5..11 -> "Good morning"
+                in 12..16 -> "Good afternoon"
+                in 17..20 -> "Good evening"
+                else -> "Good evening"
+            }
+        }
+    }
+    val safeToSpendToday: String get() = if (isBangla) "আজকের নিরাপদ ব্যয়" else "Safe to spend today"
+    val spendingWalletSuffix: String get() = if (isBangla) "খরচের ওয়ালেটে" else "in spending wallet"
+    val getStartedChecklist: String get() = if (isBangla) "শুরু করার ধাপগুলো" else "Get started"
+    val addAccountTask: String get() = if (isBangla) "অ্যাকাউন্ট যোগ করুন" else "Add account"
+    val addFirstExpenseTask: String get() = if (isBangla) "প্রথম খরচ যোগ করুন" else "Add first expense"
+    val setBudgetTask: String get() = if (isBangla) "বাজেট নির্ধারণ করুন" else "Set monthly budget"
+    val privacyMode: String get() = if (isBangla) "গোপনীয়তা মোড" else "Privacy mode"
+    val notifications: String get() = if (isBangla) "নোটিফিকেশন" else "Notifications"
+    val sevenDaySpend: String get() = if (isBangla) "গত ৭ দিনের খরচ" else "7-day spend"
+    val openText: String get() = if (isBangla) "খুলুন" else "Open"
     val greeting: String get() = if (isBangla) "স্বাগতম" else "Welcome"
     val totalBalance: String get() = if (isBangla) "মোট ব্যালেন্স" else "Total Balance"
     val totalWalletBalance: String get() = if (isBangla) "খরচের ওয়ালেট ব্যালেন্স" else "Spending Wallet Balance"
