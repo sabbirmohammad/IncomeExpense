@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.LocalAppColors
@@ -57,6 +58,7 @@ fun SafeToSpendRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
+            modifier = Modifier.weight(1f, fill = false),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -73,26 +75,31 @@ fun SafeToSpendRow(
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Normal
                 ),
-                color = appColors.textSecondary
-            )
-
-            val amountDisplay = if (!hasBudget) {
-                strings.setBudgetTask
-            } else if (isPrivacyMode) {
-                "••••"
-            } else {
-                formatCurrency(dailySafeAmount, currencySymbol, useBengaliNumerals)
-            }
-
-            Text(
-                text = amountDisplay,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFeatureSettings = "tnum"
-                ),
-                color = if (!hasBudget) appColors.accent else appColors.textPrimary
+                color = appColors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        val amountDisplay = if (!hasBudget) {
+            strings.setBudgetTask
+        } else if (isPrivacyMode) {
+            "••••"
+        } else {
+            formatCurrency(dailySafeAmount, currencySymbol, useBengaliNumerals)
+        }
+
+        Text(
+            text = amountDisplay,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFeatureSettings = "tnum"
+            ),
+            color = if (!hasBudget) appColors.accent else appColors.textPrimary,
+            softWrap = false
+        )
     }
 }

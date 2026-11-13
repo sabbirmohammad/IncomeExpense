@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -94,16 +95,30 @@ fun AccountsHeroCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = formatCurrency(totalNetWorth, currencySymbol, isBn),
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp,
-                    fontFeatureSettings = "tnum"
-                ),
-                color = appColors.textPrimary
-            )
+            val formattedNetWorth = formatCurrency(totalNetWorth, currencySymbol, isBn)
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                val availableWidthDp = maxWidth.value
+                val totalChars = formattedNetWorth.length.coerceAtLeast(1)
+                val calculatedSp = (availableWidthDp / (totalChars * 0.58f))
+                val targetFontSize = calculatedSp.coerceIn(20f, 32f).sp
+
+                Text(
+                    text = formattedNetWorth,
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontSize = targetFontSize,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    color = appColors.textPrimary,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
             Spacer(modifier = Modifier.height(14.dp))
             HairlineDivider(color = appColors.border)

@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
@@ -64,6 +65,7 @@ fun TransactionDateGroupHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
+            modifier = Modifier.weight(1f, fill = false),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -73,12 +75,16 @@ fun TransactionDateGroupHeader(
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = appColors.textPrimary
+                color = appColors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
             )
             Text(
                 text = "• ${DateTimeHelper.formatCounter(itemsCount, isBangla)}${if (isBangla) "টি" else ""}",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                color = appColors.textMuted
+                color = appColors.textMuted,
+                softWrap = false
             )
         }
 
@@ -92,7 +98,8 @@ fun TransactionDateGroupHeader(
                 fontWeight = FontWeight.Bold,
                 fontFeatureSettings = "tnum"
             ),
-            color = netColor
+            color = netColor,
+            softWrap = false
         )
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.LocalAppColors
@@ -107,10 +110,14 @@ fun HeroBalanceCard(
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = appColors.textSecondary
+                    color = appColors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
 
                 if (spendingWalletBalance != null && onToggleWallet != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
@@ -126,7 +133,9 @@ fun HeroBalanceCard(
                                 fontSize = 11.sp,
                                 fontFeatureSettings = "tnum"
                             ),
-                            color = appColors.textMuted
+                            color = appColors.textMuted,
+                            maxLines = 1,
+                            softWrap = false
                         )
                         Icon(
                             imageVector = Icons.Outlined.SwapHoriz,
@@ -140,28 +149,42 @@ fun HeroBalanceCard(
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            // Hero number: DisplayLarge, left-aligned, tabular numbers
-            Text(
-                text = formattedHero,
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFeatureSettings = "tnum"
-                ),
-                color = appColors.textPrimary
-            )
+            // Hero number: DisplayLarge, left-aligned, tabular numbers, auto-scales down on narrow screens/large amounts
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                val availableWidthDp = maxWidth.value
+                val totalChars = formattedHero.length.coerceAtLeast(1)
+                val calculatedSp = (availableWidthDp / (totalChars * 0.58f))
+                val targetFontSize = calculatedSp.coerceIn(20f, 32f).sp
+
+                Text(
+                    text = formattedHero,
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontSize = targetFontSize,
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    color = appColors.textPrimary,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Inline metrics: ▲ Income ৳8,000   ▼ Expense ৳8,077 (single row, no boxes)
+            // Inline metrics: ▲ Income ৳8,000   ▼ Expense ৳8,077 (single row, no boxes, balanced weights)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Income metric
                 Row(
                     modifier = Modifier
+                        .weight(1f)
                         .clip(RoundedCornerShape(6.dp))
                         .then(if (onIncomeClick != null) Modifier.clickable { onIncomeClick() } else Modifier)
                         .padding(vertical = 2.dp),
@@ -180,7 +203,10 @@ fun HeroBalanceCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Normal
                         ),
-                        color = appColors.textSecondary
+                        color = appColors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                     Text(
                         text = formattedIncome,
@@ -189,13 +215,16 @@ fun HeroBalanceCard(
                             fontWeight = FontWeight.SemiBold,
                             fontFeatureSettings = "tnum"
                         ),
-                        color = appColors.accent
+                        color = appColors.accent,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
 
                 // Expense metric
                 Row(
                     modifier = Modifier
+                        .weight(1f)
                         .clip(RoundedCornerShape(6.dp))
                         .then(if (onExpenseClick != null) Modifier.clickable { onExpenseClick() } else Modifier)
                         .padding(vertical = 2.dp),
@@ -214,7 +243,10 @@ fun HeroBalanceCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Normal
                         ),
-                        color = appColors.textSecondary
+                        color = appColors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                     Text(
                         text = formattedExpense,
@@ -223,7 +255,9 @@ fun HeroBalanceCard(
                             fontWeight = FontWeight.SemiBold,
                             fontFeatureSettings = "tnum"
                         ),
-                        color = appColors.expense
+                        color = appColors.expense,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
@@ -249,8 +283,12 @@ fun HeroBalanceCard(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = barColor
+                        color = barColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
                     val spentStr = if (isPrivacyMode) "••••" else formatCurrency(budgetSpent, currencySymbol, useBengaliNumerals)
                     val limitStr = if (isPrivacyMode) "••••" else formatCurrency(budgetAmount, currencySymbol, useBengaliNumerals)
                     Text(
@@ -259,7 +297,9 @@ fun HeroBalanceCard(
                             fontSize = 11.sp,
                             fontFeatureSettings = "tnum"
                         ),
-                        color = appColors.textSecondary
+                        color = appColors.textSecondary,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
 

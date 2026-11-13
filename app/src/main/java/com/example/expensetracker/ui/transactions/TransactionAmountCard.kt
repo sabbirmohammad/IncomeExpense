@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.HairlineInkStroke
@@ -65,7 +66,8 @@ fun TransactionAmountCard(
     amountFocusRequester: FocusRequester,
     strings: Strings,
     modifier: Modifier = Modifier,
-    isTransfer: Boolean = false
+    isTransfer: Boolean = false,
+    onCardClick: (() -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -99,6 +101,12 @@ fun TransactionAmountCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 140.dp)
+                .then(
+                    if (onCardClick != null) Modifier.clickable {
+                        haptics.lightTick()
+                        onCardClick()
+                    } else Modifier
+                )
         ) {
             Column(
                 modifier = Modifier
@@ -159,7 +167,20 @@ fun TransactionAmountCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Big Hero Amount Display (<= 140dp area)
+                // Big Hero Amount Display (<= 140dp area) with responsive dynamic font sizing
+                val amountFontSize = when {
+                    displayAmount.length > 14 -> 20.sp
+                    displayAmount.length > 10 -> 25.sp
+                    displayAmount.length > 7 -> 30.sp
+                    else -> 38.sp
+                }
+                val symbolFontSize = when {
+                    displayAmount.length > 14 -> 18.sp
+                    displayAmount.length > 10 -> 22.sp
+                    displayAmount.length > 7 -> 26.sp
+                    else -> 32.sp
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -173,21 +194,25 @@ fun TransactionAmountCard(
                     Text(
                         text = "$currencySymbol ",
                         style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 32.sp,
+                            fontSize = symbolFontSize,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = typeAccentColor
+                        color = typeAccentColor,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Text(
                         text = displayAmount,
                         style = MaterialTheme.typography.displayMedium.copy(
-                            fontSize = 38.sp,
+                            fontSize = amountFontSize,
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum"
                         ),
                         color = if (amountText.isEmpty()) appColors.textSecondary.copy(alpha = 0.45f) else appColors.textPrimary,
                         textAlign = TextAlign.Start,
-                        maxLines = 1
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 

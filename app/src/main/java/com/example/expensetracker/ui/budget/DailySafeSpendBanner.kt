@@ -17,7 +17,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -53,6 +56,7 @@ fun DailySafeSpendBanner(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
+                modifier = Modifier.weight(1f, fill = false),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -65,9 +69,12 @@ fun DailySafeSpendBanner(
                 Text(
                     text = if (strings.isBangla) "দৈনিক নিরাপদ খরচ:" else "Daily Safe Spend:",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                    color = appColors.textSecondary
+                    color = appColors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = if (overallStatus.isOverBudget)
                     (if (strings.isBangla) "বাজেট শেষ (আর $daysLeft দিন)" else "Exceeded ($daysLeft days left)")
@@ -77,7 +84,9 @@ fun DailySafeSpendBanner(
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = if (overallStatus.isOverBudget) appColors.expense else appColors.income
+                color = if (overallStatus.isOverBudget) appColors.expense else appColors.income,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }

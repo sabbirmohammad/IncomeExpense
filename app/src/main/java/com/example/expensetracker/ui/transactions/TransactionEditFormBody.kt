@@ -1,8 +1,11 @@
 package com.example.expensetracker.ui.transactions
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,11 +13,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,6 +73,7 @@ fun TransactionEditFormBody(
 ) {
     val appColors = LocalAppColors.current
     val parsedAmount = remember(state.amountText) { state.amountText.toParsedAmountOrNull() }
+    var isKeypadExpanded by rememberSaveable { mutableStateOf(true) }
 
     Column(modifier = modifier.fillMaxWidth()) {
         // 1. Segmented Control: [ Expense | Income | Transfer ] (48dp height)
@@ -90,10 +106,71 @@ fun TransactionEditFormBody(
             currencySymbol = currencySymbol,
             errorMessage = state.errorMessage,
             amountFocusRequester = state.amountFocusRequester,
-            strings = state.strings
+            strings = state.strings,
+            onCardClick = { isKeypadExpanded = true }
         )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // 3. Tactile 4x4 Amount Keypad with collapse/expand toggle
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .clickable {
+                    state.haptics.lightTick()
+                    isKeypadExpanded = !isKeypadExpanded
+                }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = if (state.strings.isBangla) "কী-প্যাডে পরিমাণ লিখুন" else "Keypad",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                color = appColors.textSecondary
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = if (isKeypadExpanded) {
+                        if (state.strings.isBangla) "লুকান" else "Hide"
+                    } else {
+                        if (state.strings.isBangla) "দেখান" else "Show"
+                    },
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Medium),
+                    color = appColors.accent
+                )
+                Icon(
+                    imageVector = if (isKeypadExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = appColors.accent,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isKeypadExpanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column {
+                Spacer(modifier = Modifier.height(6.dp))
+                AmountKeypad(
+                    expression = state.amountText,
+                    onExpressionChange = { state.handleAmountChange(it) },
+                    currencySymbol = currencySymbol,
+                    isBangla = state.strings.isBangla,
+                    showPreviewLine = false // Already rendered in TransactionAmountCard above
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 3. Category Picker (only in Expense or Income mode)
         if (!state.isTransfer) {
@@ -211,21 +288,6 @@ fun TransactionEditFormBody(
             Spacer(modifier = Modifier.height(14.dp))
         }
 
-        // 8. AmountKeypad (4x4 tactile keypad with operators and keys >= 56dp)
-        Text(
-            text = if (state.strings.isBangla) "কী-প্যাডে পরিমাণ লিখুন" else "Keypad",
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-            color = appColors.textSecondary
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AmountKeypad(
-            expression = state.amountText,
-            onExpressionChange = { state.handleAmountChange(it) },
-            currencySymbol = currencySymbol,
-            isBangla = state.strings.isBangla,
-            showPreviewLine = false // Already rendered in TransactionAmountCard above
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }

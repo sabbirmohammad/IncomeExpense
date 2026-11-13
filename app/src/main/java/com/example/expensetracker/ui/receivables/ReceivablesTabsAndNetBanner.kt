@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.DebtBookSummary
@@ -162,7 +163,10 @@ fun ReceivablesTabsAndNetBanner(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .size(8.dp)
@@ -177,9 +181,13 @@ fun ReceivablesTabsAndNetBanner(
                     Text(
                         text = strings.netPosition,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = appColors.textSecondary
+                        color = appColors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -200,7 +208,9 @@ fun ReceivablesTabsAndNetBanner(
                         ),
                         color = if (debtBookSummary.netBalance > 0) appColors.income
                         else if (debtBookSummary.netBalance < 0) appColors.expense
-                        else appColors.textPrimary
+                        else appColors.textPrimary,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }

@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -374,7 +375,7 @@ private fun KeypadButton(
             .clip(RoundedCornerShape(RadiusS))
             .background(backgroundColor)
             .then(
-                if (borderStroke != null) Modifier.background(backgroundColor, RoundedCornerShape(RadiusS))
+                if (borderStroke != null) Modifier.border(borderStroke, RoundedCornerShape(RadiusS))
                 else Modifier
             )
             .pointerInput(Unit) {
