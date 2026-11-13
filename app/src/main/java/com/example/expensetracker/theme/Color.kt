@@ -116,29 +116,29 @@ val NeutralGray = ColorNeutralCategory
 
 // --- Dark V7 Tokens ---
 val ColorSurfaceRaisedDark    = Color(0xFF1B212B) // Cards that sit on surface (sheets, hero)
-val ColorAccentContainerDark  = Color(0xFF12302A) // Income chip bg, selected chip bg, positive banners
-val ColorExpenseContainerDark = Color(0xFF3A1820) // Expense chip bg, overspend banners
-val ColorWarningContainerDark = Color(0xFF3A2D12) // Due-soon, 75-99% budget
-val ColorInfoContainerDark    = Color(0xFF1F2147) // Transfers, analytics highlights
-val ColorScrimDark            = Color(0x99000000) // Sheet/dialog scrim (60%)
+val ColorAccentContainerDark  = Color(0xFF0F2A22) // Income chip bg, selected chip bg, positive banners (#0F2A22)
+val ColorExpenseContainerDark = Color(0xFF2C1218) // Expense chip bg, overspend banners (#2C1218)
+val ColorWarningContainerDark = Color(0xFF2E2210) // Due-soon, 75-99% budget (#2E2210)
+val ColorInfoContainerDark    = Color(0xFF1A1C3A) // Transfers, analytics highlights (#1A1C3A)
+val ColorScrimDark            = Color(0x7A000000) // Sheet/dialog scrim (48% alpha per spec)
 val ColorOnAccentDark         = Color(0xFF04130D) // Text/icons on accent buttons
 
 // --- AMOLED V7 Tokens ---
 val ColorSurfaceRaisedAmoled    = Color(0xFF0F131B)
-val ColorAccentContainerAmoled  = Color(0xFF0E2A24)
-val ColorExpenseContainerAmoled = Color(0xFF301219)
-val ColorWarningContainerAmoled = Color(0xFF302410)
-val ColorInfoContainerAmoled    = Color(0xFF181A3A)
-val ColorScrimAmoled            = Color(0xB3000000) // 70%
+val ColorAccentContainerAmoled  = Color(0xFF0B1F19) // #0B1F19 per spec
+val ColorExpenseContainerAmoled = Color(0xFF240E13) // #240E13 per spec
+val ColorWarningContainerAmoled = Color(0xFF241A0C) // #241A0C per spec
+val ColorInfoContainerAmoled    = Color(0xFF14162E) // #14162E per spec
+val ColorScrimAmoled            = Color(0x7A000000) // 48% alpha per spec
 val ColorOnAccentAmoled         = Color(0xFF04130D)
 
 // --- Light V7 Tokens ---
 val ColorSurfaceRaisedLight    = Color(0xFFFFFFFF)
-val ColorAccentContainerLight  = Color(0xFFE3F4EC)
-val ColorExpenseContainerLight = Color(0xFFFCE8EC)
-val ColorWarningContainerLight = Color(0xFFFBF0DC)
-val ColorInfoContainerLight    = Color(0xFFE9E9FB)
-val ColorScrimLight            = Color(0x66000000) // 40%
+val ColorAccentContainerLight  = Color(0xFFE3F3EC) // #E3F3EC per spec
+val ColorExpenseContainerLight = Color(0xFFFBE8EC) // #FBE8EC per spec
+val ColorWarningContainerLight = Color(0xFFFBEFD9) // #FBEFD9 per spec
+val ColorInfoContainerLight    = Color(0xFFE8E9FB) // #E8E9FB per spec
+val ColorScrimLight            = Color(0x7A000000) // 48% alpha per spec
 val ColorOnAccentLight         = Color(0xFFFFFFFF)
 
 // V7 Category Palette (for NEW categories / picker; existing stored colors untouched)

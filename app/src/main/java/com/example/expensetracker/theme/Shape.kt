@@ -23,7 +23,7 @@ val SmallElementRadius = RadiusActionChip
 val CardPadding        = 16.dp
 val ScreenPaddingHorizontal = 16.dp
 val CardGap            = 12.dp
-val ListRowPaddingVertical = 10.dp
+val ListRowPaddingVertical = 12.dp
 val HairlineDividerStroke = HairlineInkStroke
 
 val LivingShapes = Shapes(

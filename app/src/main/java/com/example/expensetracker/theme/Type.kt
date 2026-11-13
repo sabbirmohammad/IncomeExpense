@@ -144,3 +144,24 @@ val Typography = Typography(
 )
 
 val LivingTypography = Typography
+
+// V7 Specific Typography Tokens
+val StyleDisplayAmount = TextStyle(
+    fontFamily = AppFontFamily,
+    fontWeight = WeightBold,
+    fontSize = 40.sp,
+    lineHeight = 46.sp,
+    letterSpacing = (-0.5).sp,
+    fontFeatureSettings = TabularNumFeature
+)
+
+val StyleNumberKeypad = TextStyle(
+    fontFamily = AppFontFamily,
+    fontWeight = WeightMedium,
+    fontSize = 22.sp,
+    lineHeight = 28.sp,
+    fontFeatureSettings = TabularNumFeature
+)
+
+val Typography.displayAmount: TextStyle get() = StyleDisplayAmount
+val Typography.numberKeypad: TextStyle get() = StyleNumberKeypad

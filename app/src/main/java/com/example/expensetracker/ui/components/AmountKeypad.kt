@@ -229,16 +229,16 @@ fun AmountKeypad(
         }
 
         // 4x4 Keypad Grid
-        // Row 1: 1, 2, 3, ÷
+        // Row 1: 7, 8, 9, ÷
         // Row 2: 4, 5, 6, ×
-        // Row 3: 7, 8, 9, −
+        // Row 3: 1, 2, 3, −
         // Row 4: ., 0, ⌫, +
         val keypadRows = remember(isBangla) {
             listOf(
                 listOf(
-                    KeypadItem.Digit('1', if (isBangla) "১" else "1"),
-                    KeypadItem.Digit('2', if (isBangla) "২" else "2"),
-                    KeypadItem.Digit('3', if (isBangla) "৩" else "3"),
+                    KeypadItem.Digit('7', if (isBangla) "৭" else "7"),
+                    KeypadItem.Digit('8', if (isBangla) "৮" else "8"),
+                    KeypadItem.Digit('9', if (isBangla) "৯" else "9"),
                     KeypadItem.Operator('÷', "÷")
                 ),
                 listOf(
@@ -248,9 +248,9 @@ fun AmountKeypad(
                     KeypadItem.Operator('×', "×")
                 ),
                 listOf(
-                    KeypadItem.Digit('7', if (isBangla) "৭" else "7"),
-                    KeypadItem.Digit('8', if (isBangla) "৮" else "8"),
-                    KeypadItem.Digit('9', if (isBangla) "৯" else "9"),
+                    KeypadItem.Digit('1', if (isBangla) "১" else "1"),
+                    KeypadItem.Digit('2', if (isBangla) "২" else "2"),
+                    KeypadItem.Digit('3', if (isBangla) "৩" else "3"),
                     KeypadItem.Operator('−', "−")
                 ),
                 listOf(

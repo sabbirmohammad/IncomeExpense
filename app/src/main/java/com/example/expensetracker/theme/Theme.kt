@@ -52,7 +52,8 @@ data class AppColors(
     val warningContainer: Color = if (isDark) ColorWarningContainerDark else ColorWarningContainerLight,
     val infoContainer: Color = if (isDark) ColorInfoContainerDark else ColorInfoContainerLight,
     val scrim: Color = if (isDark) ColorScrimDark else ColorScrimLight,
-    val onAccent: Color = if (isDark) ColorOnAccentDark else ColorOnAccentLight
+    val onAccent: Color = if (isDark) ColorOnAccentDark else ColorOnAccentLight,
+    val focusRing: Color = accent
 ) {
     val successIncome: Color get() = income
     val dangerExpense: Color get() = expense
@@ -86,7 +87,8 @@ val DarkAppColors = AppColors(
     warningContainer = ColorWarningContainerDark,
     infoContainer = ColorInfoContainerDark,
     scrim = ColorScrimDark,
-    onAccent = ColorOnAccentDark
+    onAccent = ColorOnAccentDark,
+    focusRing = ColorAccent
 )
 
 val AmoledAppColors = AppColors(
@@ -115,7 +117,8 @@ val AmoledAppColors = AppColors(
     warningContainer = ColorWarningContainerAmoled,
     infoContainer = ColorInfoContainerAmoled,
     scrim = ColorScrimAmoled,
-    onAccent = ColorOnAccentAmoled
+    onAccent = ColorOnAccentAmoled,
+    focusRing = ColorAccent
 )
 
 val LightAppColors = AppColors(
@@ -144,7 +147,8 @@ val LightAppColors = AppColors(
     warningContainer = ColorWarningContainerLight,
     infoContainer = ColorInfoContainerLight,
     scrim = ColorScrimLight,
-    onAccent = ColorOnAccentLight
+    onAccent = ColorOnAccentLight,
+    focusRing = ColorAccentLight
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
