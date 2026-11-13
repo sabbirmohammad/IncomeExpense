@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -157,7 +157,7 @@ fun TransactionsScreen(
                     val hasActiveFilters = activeFilterCount > 0
                     val hasAnyTransactions = allTransactions.isNotEmpty()
                     EmptyStateCard(
-                        icon = Icons.Outlined.ReceiptLong,
+                        icon = Icons.AutoMirrored.Outlined.ReceiptLong,
                         headline = when {
                             hasActiveFilters -> strings.noTransactionsFound
                             hasAnyTransactions -> if (strings.isBangla) "চলতি মাসে কোনো লেনদেন নেই" else "No transactions this month"
@@ -246,7 +246,7 @@ fun TransactionsScreen(
                         }
                     }
 
-                    item {
+                    item(key = "bottom_spacer") {
                         Spacer(modifier = Modifier.height(100.dp))
                     }
                 }

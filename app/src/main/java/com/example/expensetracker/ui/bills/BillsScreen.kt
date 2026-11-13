@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -121,7 +121,7 @@ fun BillsScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                item {
+                item(key = "hero_card") {
                     BillsSummaryHeroCard(
                         totalMonthlyCommitments = totalMonthlyCommitments,
                         currencySymbol = userProfile.currencySymbol,
@@ -131,7 +131,7 @@ fun BillsScreen(
                     )
                 }
 
-                item {
+                item(key = "add_button") {
                     AddRecurringBillButton(
                         onClick = {
                             haptics.mediumClick()
@@ -141,7 +141,7 @@ fun BillsScreen(
                     )
                 }
 
-                item {
+                item(key = "segmented_control") {
                     SegmentedControl(
                         items = listOf(strings.tabUpcoming, strings.tabPaid, strings.tabAll),
                         selectedIndex = selectedSegment,
@@ -153,14 +153,14 @@ fun BillsScreen(
                     )
                 }
 
-                item {
+                item(key = "section_header") {
                     BillsSectionHeader(count = filteredBills.size)
                 }
 
                 if (filteredBills.isEmpty()) {
-                    item {
+                    item(key = "empty_state") {
                         EmptyStateCard(
-                            icon = Icons.Outlined.ReceiptLong,
+                            icon = Icons.AutoMirrored.Outlined.ReceiptLong,
                             headline = strings.noRecurringBillsHint,
                             explanation = if (strings.isBangla)
                                 "আপনার নিয়মিত ইউটিলিটি, ইন্টারনেট ও সাবস্ক্রিপশন বিল যোগ করুন।"
@@ -175,7 +175,7 @@ fun BillsScreen(
                     }
 
                     if (bills.isEmpty()) {
-                        item {
+                        item(key = "templates") {
                             Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                                 Text(
                                     text = if (strings.isBangla) "বিল টেমপ্লেট নির্বাচন করুন:" else "Quick bill templates:",

@@ -193,7 +193,7 @@ fun EmptyStateCard(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = headline,
                     tint = appColors.accent,
                     modifier = Modifier.size(24.dp)
                 )

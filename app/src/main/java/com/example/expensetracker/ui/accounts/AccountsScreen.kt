@@ -94,7 +94,7 @@ fun AccountsScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = ScreenPaddingHorizontal)
         ) {
-            item {
+            item(key = "hero_card") {
                 Spacer(modifier = Modifier.height(4.dp))
                 AccountsHeroCard(
                     accounts = accounts,
@@ -106,7 +106,7 @@ fun AccountsScreen(
                 )
             }
 
-            item {
+            item(key = "quick_actions") {
                 Spacer(modifier = Modifier.height(CardGap))
                 AccountsQuickActionsRow(
                     onAddAccountClick = {
@@ -117,7 +117,7 @@ fun AccountsScreen(
                 )
             }
 
-            item {
+            item(key = "accounts_header") {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = if (strings.isBangla) "সকল অ্যাকাউন্ট" else "ALL ACCOUNTS",
@@ -130,7 +130,7 @@ fun AccountsScreen(
             }
 
             if (accounts.isEmpty()) {
-                item {
+                item(key = "empty_state") {
                     AccountsEmptyState(
                         onAddAccountClick = {
                             accountToEdit = null
@@ -158,7 +158,7 @@ fun AccountsScreen(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(100.dp)) }
+            item(key = "bottom_spacer") { Spacer(modifier = Modifier.height(100.dp)) }
         }
     }
 

@@ -159,7 +159,7 @@ fun DashboardScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             // 1. HeroBalanceCard (target <= 200dp, left-aligned, Total balance default, spending wallet secondary line)
-            item {
+            item(key = "hero_balance") {
                 Spacer(modifier = Modifier.height(6.dp))
                 val heroBalance = if (showWalletAsHero && totalWalletBalance > 0) totalWalletBalance else summary.netBalance
                 val secondaryWallet = if (showWalletAsHero) summary.netBalance else (if (totalWalletBalance > 0) totalWalletBalance else null)
@@ -181,7 +181,7 @@ fun DashboardScreen(
             }
 
             // 2. Safe to spend today row
-            item {
+            item(key = "safe_to_spend") {
                 Spacer(modifier = Modifier.height(4.dp))
                 SafeToSpendRow(
                     dailySafeAmount = safeSpendDaily,
@@ -194,7 +194,7 @@ fun DashboardScreen(
             }
 
             // 3. 4 Quick Actions (uniform accentContainer tint, touch targets >= 48dp, no outer container card)
-            item {
+            item(key = "quick_actions") {
                 Spacer(modifier = Modifier.height(8.dp))
                 DashboardQuickActionsDock(
                     isBn = isBn,
@@ -212,7 +212,7 @@ fun DashboardScreen(
 
             // 4. Conditional upcoming bills banner (only if due <= 4 days / overdue)
             if (dueSoonBills.isNotEmpty() && onNavigateToBills != null) {
-                item {
+                item(key = "upcoming_bills") {
                     Spacer(modifier = Modifier.height(10.dp))
                     UpcomingBillsAlertBanner(
                         dueCount = dueSoonBills.size,
@@ -226,7 +226,7 @@ fun DashboardScreen(
             }
 
             // 5. Recent transactions section (at least 3 rows visible above the fold on a 6" screen)
-            item {
+            item(key = "recent_transactions") {
                 Spacer(modifier = Modifier.height(14.dp))
                 DashboardRecentTransactionsSection(
                     transactions = transactions,
@@ -240,7 +240,7 @@ fun DashboardScreen(
 
             // 6. New User "Get started" checklist (only if transactions are empty)
             if (transactions.isEmpty()) {
-                item {
+                item(key = "get_started_checklist") {
                     Spacer(modifier = Modifier.height(CardGap))
                     DashboardGetStartedChecklist(
                         hasAccount = accounts.isNotEmpty(),
@@ -262,7 +262,7 @@ fun DashboardScreen(
 
             // Active Market List collapsible
             if (onOpenMarketList != null && effectiveMarketList != null && effectiveMarketList.items.isNotEmpty()) {
-                item {
+                item(key = "market_list_section") {
                     Spacer(modifier = Modifier.height(CardGap))
                     val marketMetric = "${effectiveMarketList.purchasedItems}/${effectiveMarketList.totalItems} ${if (isBn) "পণ্য" else "items"} · ${if (isPrivacyMode) "••••" else formatCurrency(effectiveMarketList.totalSpent, userProfile.currencySymbol, useBengaliNumerals)}"
 
@@ -349,7 +349,7 @@ fun DashboardScreen(
 
             // Debts snapshot collapsible
             if (debtBookSummary.totalReceivable > 0 || debtBookSummary.totalPayable > 0 || receivablesSummary.remainingDue > 0) {
-                item {
+                item(key = "debts_section") {
                     Spacer(modifier = Modifier.height(CardGap))
                     val netFormatted = if (isPrivacyMode) "••••" else formatCurrency(debtBookSummary.netBalance, userProfile.currencySymbol, useBengaliNumerals)
                     val debtMetric = "${strings.netPosition}: $netFormatted"
@@ -376,7 +376,7 @@ fun DashboardScreen(
 
             // Savings goals collapsible
             if (savingsGoals.isNotEmpty()) {
-                item {
+                item(key = "savings_section") {
                     Spacer(modifier = Modifier.height(CardGap))
                     val completedGoalsCount = savingsGoals.count { it.isCompleted }
                     val savingsMetric = if (isBn) {
@@ -407,7 +407,7 @@ fun DashboardScreen(
 
             // 7-day spend collapsible
             if (recentDailySpends.isNotEmpty()) {
-                item {
+                item(key = "spend_chart_section") {
                     Spacer(modifier = Modifier.height(CardGap))
                     val total7Day = recentDailySpends.sumOf { it.expense }
                     val spend7DayMetric = if (isPrivacyMode) "••••" else formatCurrency(total7Day, userProfile.currencySymbol, useBengaliNumerals)
@@ -453,7 +453,7 @@ fun DashboardScreen(
                 }
             }
 
-            item {
+            item(key = "bottom_spacer") {
                 Spacer(modifier = Modifier.height(100.dp))
             }
         }

@@ -57,7 +57,7 @@ fun BudgetListTabContent(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // Overall Monthly Budget Status Card
-        item {
+        item(key = "overall_card") {
             OverallBudgetCard(
                 overallStatus = overallStatus,
                 currencySymbol = currencySymbol,
@@ -67,7 +67,7 @@ fun BudgetListTabContent(
         }
 
         // Section header: "Category budgets" + "N active" badge + Add button
-        item {
+        item(key = "section_header") {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -114,7 +114,7 @@ fun BudgetListTabContent(
 
         // Category budget cards or Empty State
         if (categoryBudgetStatuses.isEmpty()) {
-            item {
+            item(key = "empty_state") {
                 EmptyStateCard(
                     icon = Icons.Outlined.AccountBalanceWallet,
                     headline = strings.setFirstCategoryBudget,
@@ -136,7 +136,7 @@ fun BudgetListTabContent(
             }
         }
 
-        item {
+        item(key = "bottom_spacer") {
             Spacer(modifier = Modifier.height(84.dp))
         }
     }

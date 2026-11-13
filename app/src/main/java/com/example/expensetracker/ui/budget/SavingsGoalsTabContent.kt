@@ -52,7 +52,7 @@ fun SavingsGoalsTabContent(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
+        item(key = "summary_card") {
             SavingsSummaryCard(
                 goals = savingsGoals,
                 currencySymbol = currencySymbol,
@@ -62,7 +62,7 @@ fun SavingsGoalsTabContent(
         }
 
         if (savingsGoals.isEmpty()) {
-            item {
+            item(key = "empty_state") {
                 Spacer(modifier = Modifier.height(CardGap))
                 EmptyStateCard(
                     icon = Icons.Outlined.Savings,
@@ -72,7 +72,7 @@ fun SavingsGoalsTabContent(
                     onButtonClick = onAddGoalClick
                 )
             }
-            item {
+            item(key = "quick_templates") {
                 Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                     Text(
                         text = if (strings.isBangla) "জনপ্রিয় লক্ষ্য দিয়ে শুরু করুন:" else "Quick goal templates:",
@@ -113,7 +113,7 @@ fun SavingsGoalsTabContent(
                 }
             }
         } else {
-            item {
+            item(key = "goals_header") {
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -152,7 +152,7 @@ fun SavingsGoalsTabContent(
             }
         }
 
-        item {
+        item(key = "bottom_spacer") {
             Spacer(modifier = Modifier.height(84.dp))
         }
     }

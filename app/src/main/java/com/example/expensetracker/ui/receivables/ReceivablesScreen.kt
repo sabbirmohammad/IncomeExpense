@@ -131,7 +131,7 @@ fun ReceivablesScreen(
                 )
             }
 
-            item { Spacer(modifier = Modifier.height(100.dp)) }
+            item(key = "bottom_spacer") { Spacer(modifier = Modifier.height(100.dp)) }
         }
     }
 
