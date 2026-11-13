@@ -48,7 +48,7 @@ fun ReceivableAmountInputSection(
         OutlinedTextField(
             value = amountText,
             onValueChange = { input ->
-                onAmountChange(input.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/* " })
+                onAmountChange(com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(input))
             },
             placeholder = { Text("0.00", color = appColors.textMuted) },
             trailingIcon = {

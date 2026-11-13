@@ -148,7 +148,7 @@ fun TransferFundsSheet(
             OutlinedTextField(
                 value = amountText,
                 onValueChange = {
-                    amountText = it.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/* " }
+                    amountText = com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(it)
                     errorMessage = null
                 },
                 placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = colors.textMuted) },

@@ -51,7 +51,7 @@ fun GoalTargetAmountSection(
         OutlinedTextField(
             value = targetAmountText,
             onValueChange = { input ->
-                onTargetAmountChanged(input.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/* " })
+                onTargetAmountChanged(com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(input))
             },
             placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = appColors.textMuted) },
             trailingIcon = {

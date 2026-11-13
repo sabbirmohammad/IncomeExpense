@@ -126,7 +126,7 @@ fun AddSavingsContributionSheet(
             OutlinedTextField(
                 value = amountText,
                 onValueChange = {
-                    amountText = it.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/* " }
+                    amountText = com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(it)
                     if (errorMessage != null) errorMessage = null
                 },
                 placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = appColors.textMuted) },

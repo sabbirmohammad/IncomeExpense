@@ -159,7 +159,7 @@ class AddEditTransactionState(
     }
 
     fun handleAmountChange(newVal: String) {
-        val filtered = newVal.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/*−— " }
+        val filtered = com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(newVal)
         amountText = filtered
         if (errorMessage != null) errorMessage = null
     }

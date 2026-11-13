@@ -4,11 +4,6 @@ import com.example.expensetracker.data.model.MarketItem
 
 object MarketListParser {
 
-    private val BENGALI_DIGITS = mapOf(
-        '০' to '0', '১' to '1', '২' to '2', '৩' to '3', '৪' to '4',
-        '৫' to '5', '৬' to '6', '৭' to '7', '৮' to '8', '৯' to '9'
-    )
-
     private val FRACTION_MAP = mapOf(
         "হাফ" to 0.5,
         "আধা" to 0.5,
