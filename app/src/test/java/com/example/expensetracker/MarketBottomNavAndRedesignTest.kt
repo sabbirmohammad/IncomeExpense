@@ -38,19 +38,12 @@ class MarketBottomNavAndRedesignTest {
         assertTrue("ModernBottomNavBar.kt must exist", navBarFile.exists())
         val content = navBarFile.readText()
 
-        // Verify Market item button in Bottom Bar
+        // Verify Bazaar / Market item in Bottom Bar
         assertTrue(
-            "ModernBottomNavBar must have BottomNavItemButton for NavigationItem.MARKET",
-            content.contains("selectedItem == NavigationItem.MARKET") &&
-                    content.contains("strings.navMarket") &&
+            "ModernBottomNavBar must have tab for BAZAAR with shopping cart icon",
+            content.contains("NavigationItem.BAZAAR") &&
                     content.contains("Icons.Filled.ShoppingCart") &&
                     content.contains("Icons.Outlined.ShoppingCart")
-        )
-
-        // Verify isMoreSelected includes NavigationItem.ANALYTICS
-        assertTrue(
-            "isMoreSelected must include NavigationItem.ANALYTICS",
-            content.contains("selectedItem == NavigationItem.ANALYTICS")
         )
     }
 

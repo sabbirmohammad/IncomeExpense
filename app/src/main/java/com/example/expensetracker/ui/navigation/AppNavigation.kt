@@ -40,12 +40,15 @@ import com.example.expensetracker.ui.components.rememberAppStrings
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
 import com.example.expensetracker.ui.onboarding.OnboardingScreen
 
+import com.example.expensetracker.ui.components.AppAddFab
+import com.example.expensetracker.ui.components.AppScaffold
+import androidx.compose.foundation.layout.padding
+
 /**
- * Main App Navigation (v7 Refined Ledger Architecture):
- * - Replaces 3D drawer with clean 5-slot AppBottomBar (Home, Transactions, +, Market, Money).
- * - Bottom bar is visible ONLY on top-level screens (Home, Transactions, Market, Money).
- * - Drill-down screens hide bottom bar and return to parent (Money hub).
- * - 1-tap on + opens Add transaction sheet directly.
+ * Main App Navigation (Living Ledger 2.0 Architecture):
+ * - 5 Top-level destinations: Home, Ledger, Bazaar, Wallets, Plan.
+ * - Flat 64dp bottom bar + contextual AppAddFab.
+ * - System back redirects to Home before exiting.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +82,6 @@ fun MainAppNavigation(
         }
     }
 
-    var showQuickActionChooserSheet by remember { mutableStateOf(false) }
     var showGlobalAddSheet by remember { mutableStateOf(false) }
     var showTransferSheet by remember { mutableStateOf(false) }
     var showBillSplitterSheet by remember { mutableStateOf(false) }
@@ -91,30 +93,20 @@ fun MainAppNavigation(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
-    // Hierarchical Back Navigation
-    val isMoneyDrillDown = selectedItem == NavigationItem.ACCOUNTS ||
-            selectedItem == NavigationItem.BUDGETS ||
-            selectedItem == NavigationItem.BILLS ||
-            selectedItem == NavigationItem.RECEIVABLES ||
-            selectedItem == NavigationItem.ANALYTICS ||
-            selectedItem == NavigationItem.REPORTS
-
-    BackHandler(enabled = isMoneyDrillDown) {
-        selectedItem = NavigationItem.MONEY
-    }
-
-    BackHandler(enabled = selectedItem == NavigationItem.SETTINGS) {
-        selectedItem = NavigationItem.HOME
-    }
-
-    BackHandler(enabled = (selectedItem == NavigationItem.TRANSACTIONS || selectedItem == NavigationItem.MARKET || selectedItem == NavigationItem.MONEY)) {
-        selectedItem = NavigationItem.HOME
-    }
-
     val isTopLevelScreen = selectedItem == NavigationItem.HOME ||
+            selectedItem == NavigationItem.LEDGER ||
+            selectedItem == NavigationItem.BAZAAR ||
+            selectedItem == NavigationItem.WALLETS ||
+            selectedItem == NavigationItem.PLAN ||
             selectedItem == NavigationItem.TRANSACTIONS ||
             selectedItem == NavigationItem.MARKET ||
-            selectedItem == NavigationItem.MONEY
+            selectedItem == NavigationItem.MONEY ||
+            selectedItem == NavigationItem.ACCOUNTS
+
+    // Back Navigation: Non-Home destination -> HOME; on HOME -> exit
+    BackHandler(enabled = selectedItem != NavigationItem.HOME) {
+        selectedItem = NavigationItem.HOME
+    }
 
     val isOnboardingCompleted by repository.isOnboardingCompleted.collectAsStateWithLifecycle()
 
@@ -131,111 +123,89 @@ fun MainAppNavigation(
                 onFinish = { repository.setOnboardingCompleted(true) }
             )
         } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(colors.background)
-            ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .widthIn(max = 840.dp)
-                    .align(Alignment.TopCenter)
-            ) {
-                // Main screen host
-                NavigationScreenHost(
-                    selectedItem = selectedItem,
-                    onNavigate = { selectedItem = it },
-                    onOpenAddTransaction = { type, dateMillis ->
-                        transactionToEdit = null
-                        initialDateForAdd = dateMillis
-                        initialTypeForAdd = type
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onEditTransaction = { tx ->
-                        transactionToEdit = tx
-                        initialDateForAdd = null
-                        initialTypeForAdd = tx.type
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onSplitBillClick = { showBillSplitterSheet = true },
-                    onTransferClick = { showTransferSheet = true },
-                    onOpenMarketList = {
-                        transactionToEdit = null
-                        initialDateForAdd = null
-                        initialTypeForAdd = TransactionType.EXPENSE
-                        initialOpenMarketForAdd = true
-                        showGlobalAddSheet = true
-                    },
-                    dashboardViewModel = dashboardViewModel
-                )
-
-                // Bottom bar visible ONLY on top-level screens
-                AnimatedVisibility(
-                    visible = isTopLevelScreen,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter)
+            AppScaffold(
+                bottomBar = {
+                    AnimatedVisibility(
+                        visible = isTopLevelScreen,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    ) {
+                        ModernBottomNavBar(
+                            selectedItem = selectedItem,
+                            onItemSelected = { item -> selectedItem = item },
+                            strings = strings
+                        )
+                    }
+                },
+                fab = {
+                    AnimatedVisibility(
+                        visible = isTopLevelScreen,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        val fabLabel = when (selectedItem) {
+                            NavigationItem.BAZAAR, NavigationItem.MARKET -> if (strings.isBangla) "＋ নতুন তালিকা" else "＋ New list"
+                            else -> if (strings.isBangla) "＋ যোগ করুন" else "＋ Add"
+                        }
+                        AppAddFab(
+                            label = fabLabel,
+                            onClick = {
+                                when (selectedItem) {
+                                    NavigationItem.BAZAAR, NavigationItem.MARKET -> {
+                                        transactionToEdit = null
+                                        initialDateForAdd = null
+                                        initialTypeForAdd = TransactionType.EXPENSE
+                                        initialOpenMarketForAdd = true
+                                        showGlobalAddSheet = true
+                                    }
+                                    else -> {
+                                        transactionToEdit = null
+                                        initialDateForAdd = null
+                                        initialTypeForAdd = TransactionType.EXPENSE
+                                        initialOpenMarketForAdd = false
+                                        showGlobalAddSheet = true
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .widthIn(max = 840.dp)
                 ) {
-                    ModernBottomNavBar(
+                    NavigationScreenHost(
                         selectedItem = selectedItem,
-                        onItemSelected = { item -> selectedItem = item },
-                        onAddClick = {
+                        onNavigate = { selectedItem = it },
+                        onOpenAddTransaction = { type, dateMillis ->
                             transactionToEdit = null
-                            initialDateForAdd = null
-                            initialTypeForAdd = TransactionType.EXPENSE
+                            initialDateForAdd = dateMillis
+                            initialTypeForAdd = type
                             initialOpenMarketForAdd = false
                             showGlobalAddSheet = true
                         },
-                        onAddLongClick = {
-                            showQuickActionChooserSheet = true
+                        onEditTransaction = { tx ->
+                            transactionToEdit = tx
+                            initialDateForAdd = null
+                            initialTypeForAdd = tx.type
+                            initialOpenMarketForAdd = false
+                            showGlobalAddSheet = true
                         },
-                        onMoreClick = {
-                            selectedItem = NavigationItem.MONEY
+                        onSplitBillClick = { showBillSplitterSheet = true },
+                        onTransferClick = { showTransferSheet = true },
+                        onOpenMarketList = {
+                            transactionToEdit = null
+                            initialDateForAdd = null
+                            initialTypeForAdd = TransactionType.EXPENSE
+                            initialOpenMarketForAdd = true
+                            showGlobalAddSheet = true
                         },
-                        strings = strings
+                        dashboardViewModel = dashboardViewModel
                     )
                 }
-            }
-
-            if (showQuickActionChooserSheet) {
-                GlobalActionChooserSheet(
-                    isBangla = strings.isBangla,
-                    activeMarketList = activeMarketList,
-                    onDismiss = {
-                        showQuickActionChooserSheet = false
-                    },
-                    onAddExpense = {
-                        showQuickActionChooserSheet = false
-                        transactionToEdit = null
-                        initialDateForAdd = null
-                        initialTypeForAdd = TransactionType.EXPENSE
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onAddIncome = {
-                        showQuickActionChooserSheet = false
-                        transactionToEdit = null
-                        initialDateForAdd = null
-                        initialTypeForAdd = TransactionType.INCOME
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onTransfer = {
-                        showQuickActionChooserSheet = false
-                        showTransferSheet = true
-                    },
-                    onOpenMarket = {
-                        showQuickActionChooserSheet = false
-                        transactionToEdit = null
-                        initialDateForAdd = null
-                        initialTypeForAdd = TransactionType.EXPENSE
-                        initialOpenMarketForAdd = true
-                        showGlobalAddSheet = true
-                    }
-                )
             }
 
             NavigationTransactionSheets(
@@ -288,5 +258,4 @@ fun MainAppNavigation(
             MiddleScreenConfirmationOverlay(controller = feedbackController)
         }
     }
-}
 }

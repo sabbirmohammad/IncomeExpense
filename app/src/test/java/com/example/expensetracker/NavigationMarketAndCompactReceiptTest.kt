@@ -25,15 +25,12 @@ class NavigationMarketAndCompactReceiptTest {
         assertTrue("AppNavigation.kt must exist", appNavFile.exists())
         val content = appNavFile.readText()
 
-        // 1-Tap Add Transaction FAB: onAddClick opens expense add directly
+        // 1-Tap Add Transaction FAB: AppAddFab opens expense add directly
         assertTrue(
-            "ModernBottomNavBar onAddClick must open AddEditTransactionSheet for Expense directly",
-            content.contains("onAddClick = {\n                            transactionToEdit = null\n                            initialDateForAdd = null\n                            initialTypeForAdd = TransactionType.EXPENSE\n                            initialOpenMarketForAdd = false\n                            showGlobalAddSheet = true\n                        }")
-        )
-        // Long press opens GlobalActionChooserSheet
-        assertTrue(
-            "ModernBottomNavBar onAddLongClick must open showQuickActionChooserSheet",
-            content.contains("onAddLongClick = {\n                            showQuickActionChooserSheet = true\n                        }")
+            "AppAddFab must open AddEditTransactionSheet for Expense directly without long press",
+            content.contains("AppAddFab(") &&
+                    content.contains("initialTypeForAdd = TransactionType.EXPENSE") &&
+                    content.contains("showGlobalAddSheet = true")
         )
     }
 
@@ -43,26 +40,16 @@ class NavigationMarketAndCompactReceiptTest {
         assertTrue("AppNavigation.kt must exist", appNavFile.exists())
         val content = appNavFile.readText()
 
-        // Verify Expense, Income, Market, and Transfer options
+        // Verify Expense and Market options
         assertTrue(
-            "onAddExpense must open Expense without bouncing",
+            "onAddExpense must open Expense directly",
             content.contains("initialTypeForAdd = TransactionType.EXPENSE") &&
-                    content.contains("initialOpenMarketForAdd = false")
-        )
-        assertTrue(
-            "onAddIncome must open Income without bouncing",
-            content.contains("initialTypeForAdd = TransactionType.INCOME") &&
                     content.contains("initialOpenMarketForAdd = false")
         )
         assertTrue(
             "onOpenMarket must open unified sheet with market tab active directly",
             content.contains("initialOpenMarketForAdd = true") &&
                     content.contains("showGlobalAddSheet = true")
-        )
-        // Verify direct execution without artificial delays or dashboard flash
-        assertFalse(
-            "AppNavigation must not use delay(120) or pendingChooserAction between sheets to prevent dashboard flash",
-            content.contains("delay(120)") || content.contains("pendingChooserAction")
         )
     }
 
@@ -152,26 +139,7 @@ class NavigationMarketAndCompactReceiptTest {
     @Test
     fun testGlobalActionChooserSmartContextualDefaults() {
         val chooserFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/GlobalActionChooserSheet.kt")
-        assertTrue("GlobalActionChooserSheet.kt must exist", chooserFile.exists())
-        val content = chooserFile.readText()
-
-        assertTrue(
-            "GlobalActionChooserSheet must track time of day for smart contextual defaults",
-            content.contains("Calendar.getInstance().get(Calendar.HOUR_OF_DAY)")
-        )
-        assertTrue(
-            "GlobalActionChooserSheet must detect morning bazaar hours",
-            content.contains("isMorningBazaarHours = currentHour in 6..11")
-        )
-        assertTrue(
-            "GlobalActionChooserSheet must provide time-aware greeting",
-            content.contains("timeGreeting") && content.contains("শুভ সকাল")
-        )
-        assertTrue(
-            "GlobalActionChooserSheet must highlight contextual actions",
-            content.contains("isHighlighted = state.isMarketContextual") &&
-                    content.contains("isHighlighted = state.isExpenseSuggested")
-        )
+        org.junit.Assert.assertFalse("GlobalActionChooserSheet.kt must be deleted in v7 per Section 3.3", chooserFile.exists())
     }
 
     @Test

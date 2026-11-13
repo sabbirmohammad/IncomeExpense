@@ -34,14 +34,17 @@ import com.example.expensetracker.ui.settings.SettingsViewModel
 import com.example.expensetracker.ui.transactions.TransactionsScreen
 import com.example.expensetracker.ui.transactions.TransactionsViewModel
 
+import com.example.expensetracker.ui.ledger.LedgerScreen
+import com.example.expensetracker.ui.plan.PlanScreen
+
 /**
- * NavigationScreenHost (v7 Refined Ledger Architecture):
+ * NavigationScreenHost (Living Ledger 2.0 5-Destination Architecture):
  *
- * - 4 Top-level Tabs: HOME, TRANSACTIONS, MARKET, MONEY
- * - Drill-down screens (ACCOUNTS, BUDGETS, BILLS, RECEIVABLES, ANALYTICS, REPORTS)
- *   navigate back to their parent: MONEY hub.
- * - Settings navigates back to HOME (or previous screen).
- * - Smooth shared-axis horizontal transitions between top tabs, and depth fade for drilldowns.
+ * - 5 Top-level Destinations: HOME, LEDGER, BAZAAR, WALLETS, PLAN
+ * - LEDGER hosts Transactions · Insights (Analytics) · Reports via segmented control
+ * - PLAN hosts Budgets · Goals · Bills · Debts via segmented control
+ * - Settings is a pushed screen with back navigation returning to HOME.
+ * - Smooth shared-axis horizontal transitions between top tabs, and depth fade for pushed screens.
  */
 @Composable
 fun NavigationScreenHost(
@@ -75,7 +78,7 @@ fun NavigationScreenHost(
                         ) + fadeOut(animationSpec = tween(180))
                     )
             } else {
-                // Drill-down transition
+                // Pushed screen transition
                 (fadeIn(animationSpec = tween(220, delayMillis = 30)))
                     .togetherWith(fadeOut(animationSpec = tween(150)))
             }
@@ -89,7 +92,7 @@ fun NavigationScreenHost(
                     viewModel = dashboardViewModel,
                     onNavigateToTransactions = {
                         transactionsViewModel.setCategoryFilter(null)
-                        onNavigate(NavigationItem.TRANSACTIONS)
+                        onNavigate(NavigationItem.LEDGER)
                     },
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
                     onOpenAddTransaction = {
@@ -100,7 +103,7 @@ fun NavigationScreenHost(
                         onNavigate(NavigationItem.ANALYTICS)
                     },
                     onNavigateToAccounts = {
-                        onNavigate(NavigationItem.ACCOUNTS)
+                        onNavigate(NavigationItem.WALLETS)
                     },
                     onNavigateToReceivables = {
                         onNavigate(NavigationItem.RECEIVABLES)
@@ -122,26 +125,32 @@ fun NavigationScreenHost(
                     onOpenMarketList = onOpenMarketList
                 )
             }
-            NavigationItem.TRANSACTIONS -> {
-                TransactionsScreen(
-                    viewModel = transactionsViewModel,
+            NavigationItem.LEDGER -> {
+                val analyticsViewModel: AnalyticsViewModel = viewModel()
+                val reportsViewModel: ReportsViewModel = viewModel()
+                LedgerScreen(
+                    transactionsViewModel = transactionsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    reportsViewModel = reportsViewModel,
                     onEditTransaction = onEditTransaction,
                     onAddTransactionForDate = { dateMillis ->
                         onOpenAddTransaction(TransactionType.EXPENSE, dateMillis)
                     },
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
+                    initialSegment = 0
                 )
             }
-            NavigationItem.MARKET -> {
-                MarketScreen(
-                    dashboardViewModel = dashboardViewModel
-                )
-            }
-            NavigationItem.MONEY -> {
-                MoneyHubScreen(
-                    dashboardViewModel = dashboardViewModel,
-                    onNavigate = onNavigate,
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
+            NavigationItem.TRANSACTIONS -> {
+                val analyticsViewModel: AnalyticsViewModel = viewModel()
+                val reportsViewModel: ReportsViewModel = viewModel()
+                LedgerScreen(
+                    transactionsViewModel = transactionsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    reportsViewModel = reportsViewModel,
+                    onEditTransaction = onEditTransaction,
+                    onAddTransactionForDate = { dateMillis ->
+                        onOpenAddTransaction(TransactionType.EXPENSE, dateMillis)
+                    },
+                    initialSegment = 0
                 )
             }
             NavigationItem.ANALYTICS -> {
@@ -150,16 +159,66 @@ fun NavigationScreenHost(
                     viewModel = analyticsViewModel,
                     onNavigateToCategoryTransactions = { categoryId ->
                         transactionsViewModel.setCategoryFilter(categoryId)
-                        onNavigate(NavigationItem.TRANSACTIONS)
+                        onNavigate(NavigationItem.LEDGER)
                     },
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
                     onNavigateBack = { onNavigate(NavigationItem.MONEY) }
+                )
+            }
+            NavigationItem.REPORTS -> {
+                val reportsViewModel: ReportsViewModel = viewModel()
+                ReportsScreen(
+                    viewModel = reportsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
+                )
+            }
+            NavigationItem.BAZAAR -> {
+                MarketScreen(
+                    dashboardViewModel = dashboardViewModel
+                )
+            }
+            NavigationItem.MARKET -> {
+                MarketScreen(
+                    dashboardViewModel = dashboardViewModel
+                )
+            }
+            NavigationItem.WALLETS -> {
+                val accountsViewModel: AccountsViewModel = viewModel()
+                AccountsScreen(
+                    viewModel = accountsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.ACCOUNTS -> {
                 val accountsViewModel: AccountsViewModel = viewModel()
                 AccountsScreen(
                     viewModel = accountsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
+                )
+            }
+            NavigationItem.MONEY -> {
+                val accountsViewModel: AccountsViewModel = viewModel()
+                AccountsScreen(
+                    viewModel = accountsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                )
+            }
+            NavigationItem.PLAN -> {
+                val budgetViewModel: BudgetViewModel = viewModel()
+                val billsViewModel: BillsViewModel = viewModel()
+                val receivablesViewModel: ReceivablesViewModel = viewModel()
+                PlanScreen(
+                    budgetViewModel = budgetViewModel,
+                    billsViewModel = billsViewModel,
+                    receivablesViewModel = receivablesViewModel,
+                    initialSegment = 0
+                )
+            }
+            NavigationItem.BUDGETS -> {
+                val budgetViewModel: BudgetViewModel = viewModel()
+                BudgetScreen(
+                    viewModel = budgetViewModel,
+                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
                     onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
@@ -177,21 +236,6 @@ fun NavigationScreenHost(
                     onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
-            NavigationItem.BUDGETS -> {
-                val budgetViewModel: BudgetViewModel = viewModel()
-                BudgetScreen(
-                    viewModel = budgetViewModel,
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
-                )
-            }
-            NavigationItem.REPORTS -> {
-                val reportsViewModel: ReportsViewModel = viewModel()
-                ReportsScreen(
-                    viewModel = reportsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
-                )
-            }
             NavigationItem.SETTINGS -> {
                 val settingsViewModel: SettingsViewModel = viewModel()
                 SettingsScreen(
@@ -202,9 +246,3 @@ fun NavigationScreenHost(
         }
     }
 }
-
-private val NavigationItem.isTopLevel: Boolean
-    get() = this == NavigationItem.HOME ||
-            this == NavigationItem.TRANSACTIONS ||
-            this == NavigationItem.MARKET ||
-            this == NavigationItem.MONEY

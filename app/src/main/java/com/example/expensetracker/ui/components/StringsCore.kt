@@ -28,6 +28,14 @@ open class StringsCore(
 
     // Navigation
     val navHome: String get() = if (isBangla) "হোম" else "Home"
+    val navLedger: String get() = if (isBangla) "খাতা" else "Ledger"
+    val navBazaar: String get() = if (isBangla) "বাজার" else "Bazaar"
+    val navWallets: String get() = if (isBangla) "ওয়ালেট" else "Wallets"
+    val navPlan: String get() = if (isBangla) "পরিকল্পনা" else "Plan"
+    val planSegmentBudgets: String get() = if (isBangla) "বাজেট" else "Budgets"
+    val planSegmentGoals: String get() = if (isBangla) "লক্ষ্য" else "Goals"
+    val planSegmentBills: String get() = if (isBangla) "বিল" else "Bills"
+    val planSegmentDebts: String get() = if (isBangla) "ধার ও দেনা" else "Debts"
     val navTransactions: String get() = if (isBangla) "লেনদেন" else "Transactions"
     val navMarket: String get() = if (isBangla) "বাজার" else "Market"
     val navMoney: String get() = if (isBangla) "হিসাব" else "Money"
