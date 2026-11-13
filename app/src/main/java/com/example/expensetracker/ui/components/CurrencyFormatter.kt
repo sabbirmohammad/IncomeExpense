@@ -15,39 +15,9 @@ private val currencyFormatterThreadLocal = object : ThreadLocal<NumberFormat>() 
     }
 }
 
-fun convertToBengaliDigits(input: String): String {
-    val bengaliDigits = charArrayOf('০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯')
-    val sb = StringBuilder(input.length)
-    for (ch in input) {
-        if (ch in '0'..'9') {
-            sb.append(bengaliDigits[ch - '0'])
-        } else {
-            sb.append(ch)
-        }
-    }
-    return sb.toString()
-}
+fun convertToBengaliDigits(input: String): String = com.example.expensetracker.common.DigitConverter.toBengaliDigits(input)
 
-fun convertToEnglishDigits(input: String): String {
-    val sb = StringBuilder(input.length)
-    for (ch in input) {
-        when (ch) {
-            '০' -> sb.append('0')
-            '১' -> sb.append('1')
-            '২' -> sb.append('2')
-            '৩' -> sb.append('3')
-            '৪' -> sb.append('4')
-            '৫' -> sb.append('5')
-            '৬' -> sb.append('6')
-            '৭' -> sb.append('7')
-            '৮' -> sb.append('8')
-            '৯' -> sb.append('9')
-            '।', '‚' -> sb.append('.')
-            else -> sb.append(ch)
-        }
-    }
-    return sb.toString()
-}
+fun convertToEnglishDigits(input: String): String = com.example.expensetracker.common.DigitConverter.toEnglishDigits(input)
 
 fun formatCurrency(
     amount: Double,

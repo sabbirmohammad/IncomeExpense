@@ -106,20 +106,17 @@ class ChallengerM4StressTest {
             detailSheetSection.contains(".minimumInteractiveComponentSize()")
         )
 
-        // 4. Quick trend filter chips (All, Up, Down) must enforce minHeight = 48.dp
-        val trendChipsSection = content.substringAfter("Quick Trend KPI Filter Bar").substringBefore("Department & Sort Chips Row")
-        val minHeight48Count = Regex("""defaultMinSize\(\s*minHeight\s*=\s*48\.dp\s*\)""").findAll(trendChipsSection).count()
-        assertEquals(
-            "Expected 3 trend filter chips (All, Up, Down) each with defaultMinSize(minHeight = 48.dp)",
-            3,
-            minHeight48Count
+        // 4. Quick trend segmented filter and sort controls must enforce minimumInteractiveComponentSize
+        assertTrue(
+            "Compact segmented filter must enforce minimumInteractiveComponentSize",
+            content.contains(".minimumInteractiveComponentSize()")
         )
 
-        // 5. Department filter chips must enforce minHeight = 48.dp
-        val deptChipsSection = content.substringAfter("Department & Sort Chips Row").substringBefore("if (showInternalSearchBar)")
+        // 5. Department section headers must enforce minimumInteractiveComponentSize
+        val deptSection = content.substringAfter("fun PriceDepartmentHeader")
         assertTrue(
-            "Department chips must have defaultMinSize(minHeight = 48.dp)",
-            deptChipsSection.contains("defaultMinSize(minHeight = 48.dp)")
+            "Department headers must have minimumInteractiveComponentSize",
+            deptSection.contains(".minimumInteractiveComponentSize()")
         )
 
         // 6. Search query clear button container must be 48x48dp

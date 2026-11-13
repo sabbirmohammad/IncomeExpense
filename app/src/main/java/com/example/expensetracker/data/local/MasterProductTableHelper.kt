@@ -184,7 +184,7 @@ internal class MasterProductTableHelper(private val dbHelper: ExpenseDatabaseHel
         return list
     }
 
-    private fun getProductByNormalizedName(db: SQLiteDatabase, normalizedName: String): MasterProduct? {
+    internal fun getProductByNormalizedName(db: SQLiteDatabase, normalizedName: String): MasterProduct? {
         val cursor = db.query(
             TABLE_MASTER_PRODUCTS,
             null,

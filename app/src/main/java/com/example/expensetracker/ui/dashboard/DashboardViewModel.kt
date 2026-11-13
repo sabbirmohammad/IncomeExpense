@@ -217,4 +217,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun getProductPriceHistory(productName: String): List<com.example.expensetracker.data.model.ProductPriceRecord> {
         return repository.dbHelper.getProductPriceHistory(productName)
     }
+
+    fun renameCommodity(oldName: String, newName: String, onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            repository.renameCommodity(oldName, newName)
+            onComplete?.invoke()
+        }
+    }
+
+    fun mergeCommodities(sourceName: String, targetName: String, onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            repository.mergeCommodities(sourceName, targetName)
+            onComplete?.invoke()
+        }
+    }
 }

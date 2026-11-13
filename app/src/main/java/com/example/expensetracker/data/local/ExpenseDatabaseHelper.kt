@@ -260,6 +260,12 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun getProductPriceHistory(productName: String, limit: Int = 50): List<com.example.expensetracker.data.model.ProductPriceRecord> =
         productPriceHelper.getPriceHistory(productName, limit)
 
+    fun renameCommodity(oldName: String, newName: String): Int =
+        productPriceHelper.renameCommodity(oldName, newName)
+
+    fun mergeCommodities(sourceName: String, targetName: String): Int =
+        productPriceHelper.mergeCommodities(sourceName, targetName)
+
     fun backfillProductPriceHistory(db: SQLiteDatabase) =
         productPriceHelper.backfillProductPriceHistory(db)
 

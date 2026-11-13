@@ -69,7 +69,6 @@ object AppUpdateManager {
                 val lastCheck = prefs.getLong(KEY_LAST_CHECK_TIME, 0L)
                 val now = System.currentTimeMillis()
                 if (now - lastCheck < AUTO_CHECK_INTERVAL_MS) {
-                    Log.d(TAG, "Skipping background update check (Cooldown active)")
                     return
                 }
             } catch (_: Exception) {}

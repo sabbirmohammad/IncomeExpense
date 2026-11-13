@@ -46,13 +46,7 @@ object MarketListParser {
     /**
      * Converts any Bengali digits in the string to standard ASCII digits (0-9).
      */
-    fun convertBengaliDigitsToEnglish(text: String): String {
-        val sb = StringBuilder()
-        for (ch in text) {
-            sb.append(BENGALI_DIGITS[ch] ?: ch)
-        }
-        return sb.toString()
-    }
+    fun convertBengaliDigitsToEnglish(text: String): String = DigitConverter.toEnglishDigits(text)
 
     /**
      * Parses a bulk text string (typically pasted from WhatsApp or Notes) into a list of [MarketItem].

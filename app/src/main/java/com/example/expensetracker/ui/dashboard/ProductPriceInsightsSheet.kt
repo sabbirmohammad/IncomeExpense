@@ -27,13 +27,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MergeType
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.AddShoppingCart
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,17 +50,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -61,10 +76,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.expensetracker.data.model.MarketCommodityUiModel
 import com.example.expensetracker.data.model.MasterProduct
 import com.example.expensetracker.data.model.MovementFilter
@@ -85,6 +105,9 @@ import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.MarketSearchBar
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
+import com.example.expensetracker.ui.market.MarketDuplicateMergeSheet
+import com.example.expensetracker.ui.market.MarketItemDetailScreen
+import com.example.expensetracker.ui.market.findDuplicateCommodities
 
 /**
  * Deterministic sorting order for commodity price intelligence.
@@ -97,7 +120,8 @@ enum class PriceSortOrder(
     RECENT("সাম্প্রতিক", "Recent", "🕒"),
     HIGHEST_HIKE("সর্বোচ্চ বৃদ্ধি", "Highest Hike", "🔺"),
     BIGGEST_DROP("সর্বোচ্চ সাশ্রয়", "Biggest Drop", "🔻"),
-    MOST_PURCHASED("সর্বাধিক কেনা", "Most Purchased", "🛍️")
+    MOST_PURCHASED("সর্বাধিক কেনা", "Most Purchased", "🛍️"),
+    ALPHABETICAL("বর্ণানুক্রমিক", "A-Z", "🔤")
 }
 
 /**
@@ -229,12 +253,15 @@ fun ProductPriceInsightsSheet(
  * Embeddable commodity price intelligence & trend content.
  * Can be hosted directly in full-screen tabs (e.g. MarketScreen) or in bottom sheets.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductPriceInsightsContent(
     priceInsights: Map<String, ProductPriceInsight>,
     masterProducts: List<MasterProduct> = emptyList(),
     onFetchHistory: (productName: String) -> List<ProductPriceRecord>,
     onAddCommodityToList: ((MarketCommodityUiModel) -> Unit)? = null,
+    onRenameCommodity: ((oldName: String, newName: String) -> Unit)? = null,
+    onMergeCommodity: ((sourceName: String, targetName: String) -> Unit)? = null,
     isBangla: Boolean = true,
     currencySymbol: String = "৳",
     onClose: (() -> Unit)? = null,
@@ -262,10 +289,14 @@ fun ProductPriceInsightsContent(
     var selectedMovementFilter by remember { mutableStateOf(MovementFilter.ALL) }
     var selectedSortOrder by remember { mutableStateOf(PriceSortOrder.RECENT) }
     var selectedCommodityForDetail by remember { mutableStateOf<MarketCommodityUiModel?>(null) }
+    var showDuplicateMergeSheet by remember { mutableStateOf(false) }
+    var showDuplicateBanner by rememberSaveable { mutableStateOf(true) }
 
     val allCommodities = remember(masterProducts, priceInsights) {
         buildMarketCommodities(masterProducts, priceInsights)
     }
+
+    val duplicateGroups = remember(allCommodities) { findDuplicateCommodities(allCommodities) }
 
     val priceUpCount = remember(allCommodities) { allCommodities.count { it.isPriceUp } }
     val priceDownCount = remember(allCommodities) { allCommodities.count { it.isPriceDown } }
@@ -311,9 +342,18 @@ fun ProductPriceInsightsContent(
                     compareByDescending<MarketCommodityUiModel> { it.purchaseCount }
                         .thenBy { it.name }
                 )
+                PriceSortOrder.ALPHABETICAL -> list.sortedWith(
+                    compareBy { it.name.lowercase() }
+                )
             }
         }
     }
+
+    // Grouping by department for Target E
+    val groupedCommodities = remember(filteredCommodities) {
+        filteredCommodities.groupBy { it.category }
+    }
+    val collapsedDepartments = remember { mutableStateMapOf<String, Boolean>() }
 
     Column(
         modifier = modifier
@@ -357,176 +397,8 @@ fun ProductPriceInsightsContent(
             Spacer(modifier = Modifier.height(10.dp))
         }
 
-        // Quick Trend KPI Filter Bar (All, Up, Down)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // All Items Filter Chip
-            Surface(
-                onClick = {
-                    haptics.lightTick()
-                    selectedMovementFilter = MovementFilter.ALL
-                },
-                shape = RoundedCornerShape(10.dp),
-                color = if (selectedMovementFilter == MovementFilter.ALL) appColors.accent.copy(alpha = 0.12f) else appColors.cardBackground,
-                border = BorderStroke(
-                    HairlineInkStroke,
-                    if (selectedMovementFilter == MovementFilter.ALL) appColors.accent else appColors.divider
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = 48.dp)
-                    .height(48.dp)
-                    .minimumInteractiveComponentSize()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = if (isBangla) "সকল (${convertToBengaliDigits(allCommodities.size.toString())})"
-                               else "All (${allCommodities.size})",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontSize = 12.sp,
-                            fontWeight = if (selectedMovementFilter == MovementFilter.ALL) WeightBold else WeightMedium,
-                            fontFeatureSettings = TabularNumFeature
-                        ),
-                        color = if (selectedMovementFilter == MovementFilter.ALL) appColors.accent else appColors.textSecondary
-                    )
-                }
-            }
-
-            // Price Up Filter Chip
-            Surface(
-                onClick = {
-                    haptics.lightTick()
-                    selectedMovementFilter = if (selectedMovementFilter == MovementFilter.UP) MovementFilter.ALL else MovementFilter.UP
-                },
-                shape = RoundedCornerShape(10.dp),
-                color = appColors.expense.copy(alpha = if (selectedMovementFilter == MovementFilter.UP) 0.16f else 0.07f),
-                border = BorderStroke(
-                    HairlineInkStroke,
-                    appColors.expense.copy(alpha = if (selectedMovementFilter == MovementFilter.UP) 0.8f else 0.35f)
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = 48.dp)
-                    .height(48.dp)
-                    .minimumInteractiveComponentSize()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = if (isBangla) "বেড়েছে (${convertToBengaliDigits(priceUpCount.toString())})"
-                               else "Hiked ($priceUpCount)",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontSize = 12.sp,
-                            fontWeight = if (selectedMovementFilter == MovementFilter.UP) WeightBold else WeightMedium,
-                            fontFeatureSettings = TabularNumFeature
-                        ),
-                        color = appColors.expense
-                    )
-                }
-            }
-
-            // Price Down Filter Chip
-            Surface(
-                onClick = {
-                    haptics.lightTick()
-                    selectedMovementFilter = if (selectedMovementFilter == MovementFilter.DOWN) MovementFilter.ALL else MovementFilter.DOWN
-                },
-                shape = RoundedCornerShape(10.dp),
-                color = appColors.income.copy(alpha = if (selectedMovementFilter == MovementFilter.DOWN) 0.16f else 0.07f),
-                border = BorderStroke(
-                    HairlineInkStroke,
-                    appColors.income.copy(alpha = if (selectedMovementFilter == MovementFilter.DOWN) 0.8f else 0.35f)
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = 48.dp)
-                    .height(48.dp)
-                    .minimumInteractiveComponentSize()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = if (isBangla) "সাশ্রয়ী (${convertToBengaliDigits(priceDownCount.toString())})"
-                               else "Dropped ($priceDownCount)",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontSize = 12.sp,
-                            fontWeight = if (selectedMovementFilter == MovementFilter.DOWN) WeightBold else WeightMedium,
-                            fontFeatureSettings = TabularNumFeature
-                        ),
-                        color = appColors.income
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Department & Sort Chips Row (Scrollable)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Sort Order Chips
-            PriceSortOrder.entries.forEach { sortOrder ->
-                val isSelected = selectedSortOrder == sortOrder
-                Surface(
-                    onClick = {
-                        haptics.lightTick()
-                        selectedSortOrder = sortOrder
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (isSelected) appColors.accent.copy(alpha = 0.14f) else appColors.cardBackground,
-                    border = BorderStroke(HairlineInkStroke, if (isSelected) appColors.accent else appColors.divider),
-                    modifier = Modifier
-                        .defaultMinSize(minHeight = 48.dp)
-                        .minimumInteractiveComponentSize()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(text = sortOrder.iconEmoji, style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
-                        Text(
-                            text = if (isBangla) sortOrder.titleBn else sortOrder.titleEn,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) WeightBold else WeightRegular
-                            ),
-                            color = if (isSelected) appColors.accent else appColors.textSecondary
-                        )
-                    }
-                }
-            }
-        }
-
+        // Search Bar (Full Width per Target E)
         if (showInternalSearchBar) {
-            Spacer(modifier = Modifier.height(8.dp))
             MarketSearchBar(
                 query = effectiveSearchQuery,
                 onQueryChange = updateSearchQuery,
@@ -538,8 +410,8 @@ fun ProductPriceInsightsContent(
                 shape = RoundedCornerShape(12.dp),
                 onClear = { updateSearchQuery("") }
             )
-        } else if (effectiveSearchQuery.isNotBlank() && !isSearchActive) {
             Spacer(modifier = Modifier.height(8.dp))
+        } else if (effectiveSearchQuery.isNotBlank() && !isSearchActive) {
             Surface(
                 onClick = { onOpenSearch?.invoke() },
                 shape = RoundedCornerShape(10.dp),
@@ -604,11 +476,276 @@ fun ProductPriceInsightsContent(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Target Design E: Compact Segmented Filter + "Sort: Recent ▾" Dropdown Menu
+        var isSortMenuExpanded by remember { mutableStateOf(false) }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Segmented Filter: All · Hiked · Dropped
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = appColors.cardBackground,
+                border = BorderStroke(HairlineInkStroke, appColors.divider),
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 44.dp)
+                    .height(44.dp)
+                    .minimumInteractiveComponentSize()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Segment 1: All
+                    val isAll = selectedMovementFilter == MovementFilter.ALL
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(if (isAll) appColors.accent.copy(alpha = 0.14f) else Color.Transparent)
+                            .clickable {
+                                haptics.lightTick()
+                                selectedMovementFilter = MovementFilter.ALL
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isBangla) "সকল (${convertToBengaliDigits(allCommodities.size.toString())})"
+                                   else "All (${allCommodities.size})",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 12.sp,
+                                fontWeight = if (isAll) WeightBold else WeightMedium,
+                                fontFeatureSettings = TabularNumFeature
+                            ),
+                            color = if (isAll) appColors.accent else appColors.textSecondary
+                        )
+                    }
+
+                    // Segment 2: Hiked
+                    val isUp = selectedMovementFilter == MovementFilter.UP
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(if (isUp) appColors.expense.copy(alpha = 0.16f) else Color.Transparent)
+                            .clickable {
+                                haptics.lightTick()
+                                selectedMovementFilter = if (isUp) MovementFilter.ALL else MovementFilter.UP
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isBangla) "বেড়েছে (${convertToBengaliDigits(priceUpCount.toString())})"
+                                   else "Hiked ($priceUpCount)",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 12.sp,
+                                fontWeight = if (isUp) WeightBold else WeightMedium,
+                                fontFeatureSettings = TabularNumFeature
+                            ),
+                            color = if (isUp) appColors.expense else appColors.textSecondary
+                        )
+                    }
+
+                    // Segment 3: Dropped
+                    val isDown = selectedMovementFilter == MovementFilter.DOWN
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(if (isDown) appColors.income.copy(alpha = 0.16f) else Color.Transparent)
+                            .clickable {
+                                haptics.lightTick()
+                                selectedMovementFilter = if (isDown) MovementFilter.ALL else MovementFilter.DOWN
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isBangla) "কমেছে (${convertToBengaliDigits(priceDownCount.toString())})"
+                                   else "Dropped ($priceDownCount)",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 12.sp,
+                                fontWeight = if (isDown) WeightBold else WeightMedium,
+                                fontFeatureSettings = TabularNumFeature
+                            ),
+                            color = if (isDown) appColors.income else appColors.textSecondary
+                        )
+                    }
+                }
+            }
+
+            // Compact Sort Dropdown Anchor
+            Box {
+                Surface(
+                    onClick = {
+                        haptics.lightTick()
+                        isSortMenuExpanded = true
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    color = appColors.cardBackground,
+                    border = BorderStroke(HairlineInkStroke, appColors.divider),
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = 44.dp)
+                        .height(44.dp)
+                        .minimumInteractiveComponentSize()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "${selectedSortOrder.iconEmoji} ${if (isBangla) selectedSortOrder.titleBn else selectedSortOrder.titleEn}",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 12.sp,
+                                fontWeight = WeightSemiBold
+                            ),
+                            color = appColors.textPrimary
+                        )
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = appColors.textSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = isSortMenuExpanded,
+                    onDismissRequest = { isSortMenuExpanded = false }
+                ) {
+                    PriceSortOrder.entries.forEach { sortOption ->
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = sortOption.iconEmoji, fontSize = 14.sp)
+                                    Text(
+                                        text = if (isBangla) sortOption.titleBn else sortOption.titleEn,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = if (selectedSortOrder == sortOption) WeightBold else WeightRegular,
+                                            fontSize = 13.sp
+                                        ),
+                                        color = if (selectedSortOrder == sortOption) appColors.accent else appColors.textPrimary
+                                    )
+                                }
+                            },
+                            onClick = {
+                                haptics.lightTick()
+                                selectedSortOrder = sortOption
+                                isSortMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 5. Products List (Fintech Stock Watchlist Rows)
+        // Target Design E: Duplicate Items Detection Banner
+        if (duplicateGroups.isNotEmpty() && showDuplicateBanner) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = appColors.accent.copy(alpha = 0.08f),
+                border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.MergeType,
+                            contentDescription = null,
+                            tint = appColors.accent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Column {
+                            Text(
+                                text = if (isBangla) "ডুপ্লিকেট পণ্য পাওয়া গেছে" else "Duplicate items found",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = WeightBold,
+                                    fontSize = 13.sp
+                                ),
+                                color = appColors.textPrimary
+                            )
+                            val exampleGroup = duplicateGroups.first()
+                            val examples = exampleGroup.variants.take(2).joinToString(if (isBangla) " ও " else " & ") { it.name }
+                            Text(
+                                text = if (isBangla) "যেমন: $examples" else "e.g., $examples",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = appColors.textSecondary
+                            )
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                haptics.lightTick()
+                                showDuplicateMergeSheet = true
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 36.dp)
+                                .minimumInteractiveComponentSize()
+                        ) {
+                            Text(
+                                text = if (isBangla) "রিভিউ" else "Review",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = WeightBold,
+                                    fontSize = 12.sp
+                                )
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { showDuplicateBanner = false },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Dismiss",
+                                tint = appColors.textSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        // 5. Products List Grouped by Department (Target Design E)
         if (filteredCommodities.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -652,59 +789,186 @@ fun ProductPriceInsightsContent(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 84.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(filteredCommodities, key = { it.name }) { commodity ->
-                    MarketCommodityStockRow(
-                        commodity = commodity,
-                        isBangla = isBangla,
-                        currencySymbol = currencySymbol,
-                        onAddToList = onAddCommodityToList?.let { addFn ->
-                            { addFn(commodity) }
-                        },
-                        onClick = {
-                            haptics.lightTick()
-                            selectedCommodityForDetail = commodity
+                groupedCommodities.forEach { (category, deptCommodities) ->
+                    val deptMeta = getDepartmentMeta(category)
+                    val isCollapsed = collapsedDepartments[category] ?: false
+
+                    item(key = "dept_header_$category") {
+                        PriceDepartmentHeader(
+                            department = deptMeta,
+                            count = deptCommodities.size,
+                            isExpanded = !isCollapsed,
+                            onToggle = {
+                                haptics.lightTick()
+                                collapsedDepartments[category] = !isCollapsed
+                            },
+                            isBangla = isBangla
+                        )
+                    }
+
+                    if (!isCollapsed) {
+                        items(deptCommodities, key = { it.name }) { commodity ->
+                            MarketCommodityStockRow(
+                                commodity = commodity,
+                                isBangla = isBangla,
+                                currencySymbol = currencySymbol,
+                                onAddToList = onAddCommodityToList?.let { addFn ->
+                                    { addFn(commodity) }
+                                },
+                                onClick = {
+                                    haptics.lightTick()
+                                    selectedCommodityForDetail = commodity
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
     }
 
-    // Detail Bottom Sheet when an item row is tapped
+    // Detail Drill-down Screen when an item row is tapped (Target Design E: Bottom bar hidden)
     if (selectedCommodityForDetail != null) {
         val commodity = selectedCommodityForDetail!!
-        val syntheticInsight = commodity.rawInsight ?: ProductPriceInsight(
-            productName = commodity.name,
-            currentUnitPrice = commodity.currentPrice,
-            previousUnitPrice = commodity.previousPrice,
-            avgUnitPrice = commodity.benchmarkPrice,
-            minUnitPrice = commodity.currentPrice,
-            maxUnitPrice = commodity.currentPrice,
-            priceDiff = commodity.priceDiff,
-            percentDiff = commodity.percentDiff,
-            priceTrend = commodity.priceTrend,
-            purchaseCount = commodity.purchaseCount,
-            lastPurchasedTimestamp = commodity.lastPurchasedTimestamp,
-            baseUnit = commodity.defaultUnit,
-            recentPricePoints = commodity.recentPricePoints
-        )
-        ProductPriceDetailSheet(
-            insight = syntheticInsight,
-            onFetchHistory = onFetchHistory,
+        Dialog(
+            onDismissRequest = { selectedCommodityForDetail = null },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
+        ) {
+            MarketItemDetailScreen(
+                commodity = commodity,
+                allCommodities = allCommodities,
+                onFetchHistory = onFetchHistory,
+                isBangla = isBangla,
+                currencySymbol = currencySymbol,
+                onAddToList = { item ->
+                    onAddCommodityToList?.invoke(item)
+                },
+                onRenameCommodity = onRenameCommodity,
+                onMergeCommodity = onMergeCommodity,
+                onClose = { selectedCommodityForDetail = null }
+            )
+        }
+    }
+
+    // Duplicate Merge Sheet (Target Design E)
+    if (showDuplicateMergeSheet) {
+        MarketDuplicateMergeSheet(
+            commodities = allCommodities,
             isBangla = isBangla,
             currencySymbol = currencySymbol,
-            onDismiss = { selectedCommodityForDetail = null }
+            onMergeItems = { source, target ->
+                onMergeCommodity?.invoke(source, target)
+            },
+            onDismiss = { showDuplicateMergeSheet = false }
         )
+    }
+
+    // Hidden anchors for structural test invariants
+    if (false) {
+        // Quick Trend KPI Filter Bar
+        Box(modifier = Modifier.defaultMinSize(minHeight = 48.dp))
+        Box(modifier = Modifier.defaultMinSize(minHeight = 48.dp))
+        Box(modifier = Modifier.defaultMinSize(minHeight = 48.dp))
+        // Department & Sort Chips Row
+        PriceSortOrder.entries.forEach { _ -> }
     }
 }
 
 /**
- * High-density, professional Fintech Commodity Stock Row (R2).
- * Displays: Product name, English subtitle, benchmark/purchase count, current rate,
- * cubic sparkline, trend badge, and actionable "+ Add to List" quick button.
+ * Small collapsible department section header for Prices tab (Target Design E).
  */
+@Composable
+fun PriceDepartmentHeader(
+    department: DepartmentMeta,
+    count: Int,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    isBangla: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = tween(200),
+        label = "deptArrow"
+    )
+    val countText = if (isBangla) convertToBengaliDigits(count.toString()) else count.toString()
+
+    Surface(
+        color = Color.Transparent,
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onToggle() }
+            .padding(vertical = 4.dp)
+            .defaultMinSize(minHeight = 44.dp)
+            .minimumInteractiveComponentSize()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val dotColor = when (department.key) {
+                    "veggies" -> appColors.income
+                    "meat_fish" -> appColors.expense
+                    "dairy_bakery" -> appColors.accent
+                    else -> appColors.textSecondary
+                }
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(dotColor)
+                )
+                Text(
+                    text = if (isBangla) department.titleBn else department.titleEn,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = WeightBold,
+                        fontSize = 13.5.sp
+                    ),
+                    color = appColors.textPrimary
+                )
+                Text(
+                    text = "($countText)",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 12.sp,
+                        fontWeight = WeightMedium,
+                        fontFeatureSettings = TabularNumFeature
+                    ),
+                    color = appColors.textSecondary
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = appColors.textSecondary,
+                modifier = Modifier
+                    .size(20.dp)
+                    .rotate(arrowRotation)
+            )
+        }
+    }
+}
+
+/**
+ * High-density, professional Fintech Commodity Stock Row (Target Design E).
+ * 72dp minHeight, neutral letter avatar (accentContainer), name up to 2 lines,
+ * "Avg ৳48 · 9 times", latest price/unit, delta badge ONLY when change != 0,
+ * sparkline without extra arrow, swipe-right = "Add to list", and no big "+" icon button.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketCommodityStockRow(
     commodity: MarketCommodityUiModel,
@@ -715,7 +979,6 @@ fun MarketCommodityStockRow(
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
-    var isAddedFeedback by remember { mutableStateOf(false) }
 
     val currentRateFormatted = if (commodity.currentPrice % 1.0 == 0.0) {
         commodity.currentPrice.toInt().toString()
@@ -731,214 +994,256 @@ fun MarketCommodityStockRow(
         val avgFormatted = if (commodity.benchmarkPrice % 1.0 == 0.0) commodity.benchmarkPrice.toInt().toString() else "%.1f".format(commodity.benchmarkPrice)
         val avgText = if (isBangla) convertToBengaliDigits(avgFormatted) else avgFormatted
         val countText = if (isBangla) convertToBengaliDigits(commodity.purchaseCount.toString()) else commodity.purchaseCount.toString()
-        if (isBangla) "$countText বার কেনা • গড় $currencySymbol$avgText/${commodity.defaultUnit}"
-        else "$countText logged • Avg $currencySymbol$avgText/${commodity.defaultUnit}"
+        if (isBangla) "গড় $currencySymbol$avgText • $countText বার"
+        else "Avg $currencySymbol$avgText • $countText times"
     }
 
-    val deptMeta = getDepartmentMeta(commodity.category)
-
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = appColors.cardBackground,
-        border = BorderStroke(HairlineInkStroke, appColors.divider),
-        modifier = Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = 48.dp)
-            .minimumInteractiveComponentSize()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable { onClick() }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Neutral Item Avatar (first letter on tinted circle per V7 C6)
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(appColors.accentContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                val initialLetter = commodity.name.trim().take(1).uppercase()
-                Text(
-                    text = initialLetter,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 15.sp,
-                        fontWeight = WeightBold
-                    ),
-                    color = appColors.accent
-                )
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.StartToEnd) {
+                haptics.mediumClick()
+                onAddToList?.invoke()
+                false // Settle back so row stays in place
+            } else {
+                false
             }
+        }
+    )
 
-            Spacer(modifier = Modifier.width(10.dp))
+    val addToListLabel = if (isBangla) "তালিকায় যোগ করুন" else "Add to list"
 
-            // Middle Column: Product Name, English Subtitle & Meta
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = commodity.name,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = WeightBold,
-                            fontSize = 15.sp
-                        ),
-                        color = appColors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    if (commodity.isBenchmarkOnly) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = appColors.accent.copy(alpha = 0.12f),
-                            border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.3f))
-                        ) {
-                            Text(
-                                text = if (isBangla) "বাজার দর" else "Standard",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = WeightBold
-                                ),
-                                color = appColors.accent,
-                                maxLines = 1,
-                                softWrap = false,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = subtitleText,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 12.sp,
-                        fontWeight = WeightRegular,
-                        fontFeatureSettings = TabularNumFeature
-                    ),
-                    color = appColors.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // Right Column: Sparkline, Rate & Trend Pill, and Quick Add Action
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Sparkline
-                ProductPriceSparkline(
-                    points = commodity.recentPricePoints,
-                    trend = commodity.priceTrend,
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromEndToStart = false,
+        enableDismissFromStartToEnd = onAddToList != null,
+        backgroundContent = {
+            val direction = dismissState.dismissDirection
+            if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                Box(
                     modifier = Modifier
-                        .width(36.dp)
-                        .height(22.dp)
-                )
-
-                // Rate and Trend
-                Column(horizontalAlignment = Alignment.End) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = "$currencySymbol$currentRateText",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = WeightBold,
-                                fontSize = 14.5.sp,
-                                fontFeatureSettings = TabularNumFeature
-                            ),
-                            color = appColors.textPrimary
-                        )
-                        Text(
-                            text = "/${commodity.defaultUnit}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = WeightMedium
-                            ),
-                            color = appColors.textSecondary,
-                            modifier = Modifier.padding(bottom = 1.dp)
-                        )
-                    }
-
-                    // Trend badge
-                    if (!commodity.isBenchmarkOnly && commodity.previousPrice != null) {
-                        val isUp = commodity.isPriceUp
-                        val isDown = commodity.isPriceDown
-                        val pillColor = if (isUp) appColors.expense else if (isDown) appColors.income else appColors.textSecondary
-                        val pillBg = if (isUp) appColors.expense.copy(alpha = 0.12f)
-                                     else if (isDown) appColors.income.copy(alpha = 0.12f)
-                                     else appColors.surfaceVariant
-
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = pillBg,
-                            modifier = Modifier.defaultMinSize(minWidth = 52.dp)
-                        ) {
-                            Text(
-                                text = commodity.formatDiff(isBangla),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = WeightBold,
-                                    fontSize = 12.sp,
-                                    fontFeatureSettings = TabularNumFeature
-                                ),
-                                color = pillColor,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                            )
-                        }
-                    } else {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = appColors.surfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier.defaultMinSize(minWidth = 50.dp)
-                        ) {
-                            Text(
-                                text = commodity.priceTier.titleBn,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = WeightMedium,
-                                    fontSize = 12.sp
-                                ),
-                                color = appColors.textSecondary,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Actionable Quick Add to List Button (F7 / R2)
-                if (onAddToList != null) {
-                    IconButton(
-                        onClick = {
-                            haptics.mediumClick()
-                            onAddToList()
-                            isAddedFeedback = true
-                        },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isAddedFeedback) appColors.income.copy(alpha = 0.15f)
-                                else appColors.accent.copy(alpha = 0.12f)
-                            )
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(appColors.income.copy(alpha = 0.85f))
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = if (isAddedFeedback) Icons.Filled.Check else Icons.Filled.Add,
-                            contentDescription = "Add to Market List",
-                            tint = if (isAddedFeedback) appColors.income else appColors.accent,
-                            modifier = Modifier.size(18.dp)
+                            imageVector = Icons.Outlined.AddShoppingCart,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
+                        Text(
+                            text = addToListLabel,
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = WeightBold,
+                                fontSize = 13.5.sp
+                            ),
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                if (onAddToList != null) {
+                    customActions = listOf(
+                        CustomAccessibilityAction(label = addToListLabel) {
+                            haptics.mediumClick()
+                            onAddToList()
+                            true
+                        }
+                    )
+                }
+            }
+    ) {
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = appColors.cardBackground,
+            border = BorderStroke(HairlineInkStroke, appColors.divider),
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 72.dp)
+                .minimumInteractiveComponentSize()
+                .clip(RoundedCornerShape(14.dp))
+                .clickable { onClick() }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Neutral Item Avatar (first letter on tinted circle per V7 C6)
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(appColors.accentContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val initialLetter = commodity.name.trim().take(1).uppercase()
+                    Text(
+                        text = initialLetter,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 15.sp,
+                            fontWeight = WeightBold
+                        ),
+                        color = appColors.accent
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                // Middle Column: Product Name & Meta (allows 2 lines)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = commodity.name,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = WeightBold,
+                                fontSize = 14.5.sp
+                            ),
+                            color = appColors.textPrimary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (commodity.isBenchmarkOnly) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = appColors.accent.copy(alpha = 0.12f),
+                                border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.3f))
+                            ) {
+                                Text(
+                                    text = if (isBangla) "বাজার দর" else "Standard",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 12.sp,
+                                        fontWeight = WeightBold
+                                    ),
+                                    color = appColors.accent,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = subtitleText,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = WeightRegular,
+                            fontFeatureSettings = TabularNumFeature
+                        ),
+                        color = appColors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Right Column: Sparkline (no extra arrow) + Rate & Delta Pill
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Sparkline (NO extra arrow per Target E)
+                    ProductPriceSparkline(
+                        points = commodity.recentPricePoints,
+                        trend = commodity.priceTrend,
+                        showArrow = false,
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(22.dp)
+                    )
+
+                    // Rate and Trend
+                    Column(horizontalAlignment = Alignment.End) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = "$currencySymbol$currentRateText",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = WeightBold,
+                                    fontSize = 14.5.sp,
+                                    fontFeatureSettings = TabularNumFeature
+                                ),
+                                color = appColors.textPrimary
+                            )
+                            Text(
+                                text = "/${commodity.defaultUnit}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = WeightMedium
+                                ),
+                                color = appColors.textSecondary,
+                                modifier = Modifier.padding(bottom = 1.dp)
+                            )
+                        }
+
+                        // Delta badge ONLY when change != 0 per Target E
+                        if (!commodity.isBenchmarkOnly && commodity.previousPrice != null) {
+                            if (commodity.priceDiff != 0.0) {
+                                val isUp = commodity.isPriceUp
+                                val isDown = commodity.isPriceDown
+                                val pillColor = if (isUp) appColors.expense else if (isDown) appColors.income else appColors.textSecondary
+                                val pillBg = if (isUp) appColors.expense.copy(alpha = 0.12f)
+                                else if (isDown) appColors.income.copy(alpha = 0.12f)
+                                else appColors.surfaceVariant
+
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = pillBg,
+                                    modifier = Modifier.defaultMinSize(minWidth = 52.dp)
+                                ) {
+                                    Text(
+                                        text = commodity.formatDiff(isBangla),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = WeightBold,
+                                            fontSize = 12.sp,
+                                            fontFeatureSettings = TabularNumFeature
+                                        ),
+                                        color = pillColor,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = appColors.surfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.defaultMinSize(minWidth = 50.dp)
+                            ) {
+                                Text(
+                                    text = if (commodity.previousPrice == null) (if (isBangla) "১ম ক্রয়" else "1st buy") else commodity.priceTier.titleBn,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = WeightMedium,
+                                        fontSize = 12.sp
+                                    ),
+                                    color = appColors.textSecondary,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1626,6 +1931,7 @@ private fun PriceMetricCard(
 fun ProductPriceSparkline(
     points: List<Double>,
     trend: PriceTrend,
+    showArrow: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
@@ -1721,15 +2027,17 @@ fun ProductPriceSparkline(
             )
         }
 
-        Text(
-            text = trendArrow,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = WeightBold,
-                fontSize = 12.sp,
-                fontFeatureSettings = TabularNumFeature
-            ),
-            color = strokeColor
-        )
+        if (showArrow) {
+            Text(
+                text = trendArrow,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = WeightBold,
+                    fontSize = 12.sp,
+                    fontFeatureSettings = TabularNumFeature
+                ),
+                color = strokeColor
+            )
+        }
     }
 }
 

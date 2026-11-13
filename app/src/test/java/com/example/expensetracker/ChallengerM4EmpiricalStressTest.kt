@@ -460,6 +460,8 @@ class ChallengerM4EmpiricalStressTest {
                 PriceSortOrder.MOST_PURCHASED -> compareByDescending<ProductPriceInsight> { it.purchaseCount }
                     .thenByDescending { it.lastPurchasedTimestamp }
                     .thenBy { it.productName.lowercase() }
+                PriceSortOrder.ALPHABETICAL -> compareBy<ProductPriceInsight> { it.productName.lowercase() }
+                    .thenByDescending { it.lastPurchasedTimestamp }
             }
 
             // Reference baseline sorted list

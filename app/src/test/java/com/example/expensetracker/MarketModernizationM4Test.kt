@@ -431,15 +431,11 @@ class MarketModernizationM4Test {
 
         // 2. Streamlined Trend and Sort controls must be present
         assertTrue(
-            "ProductPriceInsightsSheet must provide Quick Trend KPI Filter Bar",
-            contentBody.contains("Quick Trend KPI Filter Bar")
-        )
-        assertTrue(
             "ProductPriceInsightsSheet must support movement filtering (All, Up, Down)",
             contentBody.contains("selectedMovementFilter")
         )
         assertTrue(
-            "ProductPriceInsightsSheet must provide Sort Order chips",
+            "ProductPriceInsightsSheet must provide Sort Order options",
             contentBody.contains("PriceSortOrder.entries.forEach")
         )
     }

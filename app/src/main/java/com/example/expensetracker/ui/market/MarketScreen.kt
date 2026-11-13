@@ -37,11 +37,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MergeType
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Edit
@@ -51,6 +53,8 @@ import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Icon
@@ -102,6 +106,8 @@ import com.example.expensetracker.data.model.MarketCommodityUiModel
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.ProductPriceInsight
+import com.example.expensetracker.data.model.buildMarketCommodities
+import com.example.expensetracker.ui.market.MarketDuplicateMergeSheet
 import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -206,6 +212,7 @@ fun MarketScreen(
     var listToDeleteConfirmId by remember { mutableStateOf<Long?>(null) }
     var tripForCompletionSheet by remember { mutableStateOf<MarketListWithItems?>(null) }
     var isShopModeActive by rememberSaveable(currentViewingList?.list?.id) { mutableStateOf(false) }
+    var showDuplicateMergeSheet by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -224,7 +231,9 @@ fun MarketScreen(
                 searchQuery = priceSearchQuery,
                 onSearchQueryChange = { priceSearchQuery = it },
                 isSearchActive = isPriceSearchActive,
-                onSearchActiveChange = { isPriceSearchActive = it }
+                onSearchActiveChange = { isPriceSearchActive = it },
+                onOpenMergeDuplicates = { showDuplicateMergeSheet = true },
+                onOpenPastTrips = { selectedTab = 0 }
             )
 
             // 2. Segmented Pill Tabs synchronized bidirectionally with HorizontalPager
@@ -337,6 +346,12 @@ fun MarketScreen(
                                         duration = SnackbarDuration.Short
                                     )
                                 }
+                            },
+                            onRenameCommodity = { oldName, newName ->
+                                dashboardViewModel.renameCommodity(oldName, newName)
+                            },
+                            onMergeCommodity = { sourceName, targetName ->
+                                dashboardViewModel.mergeCommodities(sourceName, targetName)
                             },
                             isBangla = isBangla,
                             currencySymbol = currencySymbol,
@@ -666,6 +681,22 @@ fun MarketScreen(
         }
     }
 
+    // 9. Duplicate Commodity Merging Sheet (Target Design E)
+    if (showDuplicateMergeSheet) {
+        val allCommodities = remember(masterProducts, productPriceInsights) {
+            buildMarketCommodities(masterProducts, productPriceInsights)
+        }
+        MarketDuplicateMergeSheet(
+            commodities = allCommodities,
+            isBangla = isBangla,
+            currencySymbol = currencySymbol,
+            onMergeItems = { source, target ->
+                dashboardViewModel.mergeCommodities(source, target)
+            },
+            onDismiss = { showDuplicateMergeSheet = false }
+        )
+    }
+
     // Hidden anchors for structural test invariants
     Box(modifier = Modifier.size(0.dp)) {
         if (false) {
@@ -699,7 +730,9 @@ private fun MarketTopBar(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     isSearchActive: Boolean,
-    onSearchActiveChange: (Boolean) -> Unit
+    onSearchActiveChange: (Boolean) -> Unit,
+    onOpenMergeDuplicates: () -> Unit = {},
+    onOpenPastTrips: () -> Unit = {}
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -780,22 +813,98 @@ private fun MarketTopBar(
                         color = appColors.textPrimary
                     )
 
-                    // In Tab 1 (Price Intelligence / বাজার দর): Simple, clean Outlined Search button with 44dp hit area
-                    if (selectedTab == 1) {
-                        val hasQuery = searchQuery.isNotBlank()
-                        IconButton(
-                            onClick = {
-                                haptics.lightTick()
-                                onSearchActiveChange(true)
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = if (isBangla) "পণ্য খুঁজুন" else "Search",
-                                tint = if (hasQuery) appColors.accent else appColors.textPrimary,
-                                modifier = Modifier.size(22.dp)
-                            )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // In Tab 1 (Price Intelligence / বাজার দর): Simple, clean Outlined Search button with 44dp hit area
+                        if (selectedTab == 1) {
+                            val hasQuery = searchQuery.isNotBlank()
+                            IconButton(
+                                onClick = {
+                                    haptics.lightTick()
+                                    onSearchActiveChange(true)
+                                },
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Search,
+                                    contentDescription = if (isBangla) "পণ্য খুঁজুন" else "Search",
+                                    tint = if (hasQuery) appColors.accent else appColors.textPrimary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+
+                        // Target A: Overflow Menu (Merge duplicates, Past trips)
+                        var overflowExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(
+                                onClick = {
+                                    haptics.lightTick()
+                                    overflowExpanded = true
+                                },
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = if (isBangla) "আরও অপশন" else "More options",
+                                    tint = appColors.textPrimary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = overflowExpanded,
+                                onDismissRequest = { overflowExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Outlined.MergeType,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp),
+                                                tint = appColors.accent
+                                            )
+                                            Text(
+                                                text = if (isBangla) "ডুপ্লিকেট মার্জ করুন" else "Merge duplicates",
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        overflowExpanded = false
+                                        onOpenMergeDuplicates()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.History,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp),
+                                                tint = appColors.textSecondary
+                                            )
+                                            Text(
+                                                text = if (isBangla) "আগের বাজার" else "Past trips",
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        overflowExpanded = false
+                                        onOpenPastTrips()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

@@ -248,6 +248,81 @@ internal class ProductPriceTableHelper(private val dbHelper: ExpenseDatabaseHelp
     }
 
     /**
+     * Renames a commodity across price history, master catalog, and market items.
+     * Retains 100% of purchase records and price history points.
+     */
+    fun renameCommodity(oldName: String, newName: String): Int {
+        val cleanOld = UnitConverterEngine.normalizeProductName(oldName)
+        val cleanNew = UnitConverterEngine.normalizeProductName(newName)
+        if (cleanOld.isBlank() || cleanNew.isBlank() || cleanOld.equals(cleanNew, ignoreCase = true)) return 0
+
+        val db = dbHelper.writableDatabase
+        db.beginTransaction()
+        var updatedRows = 0
+        try {
+            val cvPrice = ContentValues().apply {
+                put(COL_PPH_PRODUCT_NAME, cleanNew)
+            }
+            updatedRows = db.update(
+                TABLE_PRODUCT_PRICE_HISTORY,
+                cvPrice,
+                "$COL_PPH_PRODUCT_NAME = ? COLLATE NOCASE",
+                arrayOf(cleanOld)
+            )
+
+            val cvMarket = ContentValues().apply {
+                put(COL_MI_NAME, newName.trim())
+            }
+            db.update(
+                TABLE_MARKET_ITEMS,
+                cvMarket,
+                "$COL_MI_NAME = ? COLLATE NOCASE",
+                arrayOf(oldName.trim())
+            )
+
+            // Reconcile Master Products catalog
+            val targetExisting = dbHelper.masterProductHelper.getProductByNormalizedName(db, cleanNew)
+            val sourceExisting = dbHelper.masterProductHelper.getProductByNormalizedName(db, cleanOld)
+            if (sourceExisting != null) {
+                if (targetExisting == null) {
+                    val cvMp = ContentValues().apply {
+                        put(COL_MP_NAME, newName.trim())
+                        put(COL_MP_NORMALIZED_NAME, cleanNew)
+                    }
+                    db.update(TABLE_MASTER_PRODUCTS, cvMp, "$COL_MP_ID = ?", arrayOf(sourceExisting.id.toString()))
+                } else {
+                    val combinedCount = targetExisting.purchaseCount + sourceExisting.purchaseCount
+                    val minPrice = minOf(targetExisting.minUnitPrice, sourceExisting.minUnitPrice)
+                    val maxPrice = maxOf(targetExisting.maxUnitPrice, sourceExisting.maxUnitPrice)
+                    val avgPrice = if (combinedCount > 0) {
+                        ((targetExisting.avgUnitPrice * targetExisting.purchaseCount) + (sourceExisting.avgUnitPrice * sourceExisting.purchaseCount)) / combinedCount
+                    } else targetExisting.avgUnitPrice
+                    val cvTarget = ContentValues().apply {
+                        put(COL_MP_PURCHASE_COUNT, combinedCount)
+                        put(COL_MP_MIN_UNIT_PRICE, minPrice)
+                        put(COL_MP_MAX_UNIT_PRICE, maxPrice)
+                        put(COL_MP_AVG_UNIT_PRICE, avgPrice)
+                    }
+                    db.update(TABLE_MASTER_PRODUCTS, cvTarget, "$COL_MP_ID = ?", arrayOf(targetExisting.id.toString()))
+                    db.delete(TABLE_MASTER_PRODUCTS, "$COL_MP_ID = ?", arrayOf(sourceExisting.id.toString()))
+                }
+            }
+
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        return updatedRows
+    }
+
+    /**
+     * Merges source commodity into target commodity, preserving all price history and records.
+     */
+    fun mergeCommodities(sourceName: String, targetName: String): Int {
+        return renameCommodity(sourceName, targetName)
+    }
+
+    /**
      * Backfills historical data from existing completed market items.
      */
     fun backfillProductPriceHistory(db: SQLiteDatabase) {

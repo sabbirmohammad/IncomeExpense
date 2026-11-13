@@ -284,6 +284,26 @@ class ExpenseRepository private constructor(context: Context) {
         rows > 0
     }
 
+    suspend fun renameCommodity(oldName: String, newName: String): Int = withContext(Dispatchers.IO) {
+        val rows = dbHelper.renameCommodity(oldName, newName)
+        if (rows > 0) {
+            refreshProductPrices()
+            refreshMarketList()
+            triggerAutoSync()
+        }
+        rows
+    }
+
+    suspend fun mergeCommodities(sourceName: String, targetName: String): Int = withContext(Dispatchers.IO) {
+        val rows = dbHelper.mergeCommodities(sourceName, targetName)
+        if (rows > 0) {
+            refreshProductPrices()
+            refreshMarketList()
+            triggerAutoSync()
+        }
+        rows
+    }
+
     companion object {
         @Volatile
         private var INSTANCE: ExpenseRepository? = null
