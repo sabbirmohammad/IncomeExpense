@@ -262,135 +262,15 @@ fun MarketPriceEntrySheet(
             }
 
             // 2. Quantity Stepper + Unit Chips
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = appColors.surface,
-                border = BorderStroke(HairlineInkStroke, appColors.divider),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = if (isBangla) "পরিমাণ ও একক:" else "Quantity & Unit:",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 13.sp
-                            ),
-                            color = appColors.textSecondary
-                        )
-
-                        // Stepper: [-] quantity [+]
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Surface(
-                                onClick = {
-                                    haptics.lightTick()
-                                    val step = if (quantity <= 1.0) 0.25 else if (quantity <= 5.0) 0.5 else 1.0
-                                    quantity = (quantity - step).coerceAtLeast(0.1)
-                                },
-                                shape = CircleShape,
-                                color = appColors.cardBackground,
-                                border = BorderStroke(HairlineInkStroke, appColors.divider),
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .minimumInteractiveComponentSize()
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Remove,
-                                        contentDescription = "Decrease",
-                                        tint = appColors.textPrimary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-
-                            val qtyFormatted = if (quantity % 1.0 == 0.0) quantity.toInt().toString() else "%.2f".format(quantity).trimEnd('0').trimEnd('.')
-                            val qtyBengali = if (isBangla) convertToBengaliDigits(qtyFormatted) else qtyFormatted
-                            Text(
-                                text = "$qtyBengali $unit",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = appColors.textPrimary
-                            )
-
-                            Surface(
-                                onClick = {
-                                    haptics.lightTick()
-                                    val step = if (quantity < 1.0) 0.25 else if (quantity < 5.0) 0.5 else 1.0
-                                    quantity = (quantity + step)
-                                },
-                                shape = CircleShape,
-                                color = appColors.cardBackground,
-                                border = BorderStroke(HairlineInkStroke, appColors.divider),
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .minimumInteractiveComponentSize()
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Add,
-                                        contentDescription = "Increase",
-                                        tint = appColors.textPrimary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Unit Chips (Scrollable row)
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        items(standardUnits) { u ->
-                            val isSelected = unit == u
-                            Surface(
-                                onClick = {
-                                    haptics.lightTick()
-                                    unit = u
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) appColors.accentContainer else appColors.cardBackground,
-                                border = BorderStroke(
-                                    HairlineInkStroke,
-                                    if (isSelected) appColors.accent else appColors.divider
-                                ),
-                                modifier = Modifier
-                                    .defaultMinSize(minHeight = 36.dp)
-                                    .minimumInteractiveComponentSize()
-                            ) {
-                                Box(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = u,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                        ),
-                                        color = if (isSelected) appColors.accent else appColors.textPrimary
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            MarketPriceQuantityStepper(
+                quantity = quantity,
+                onQuantityChange = { quantity = it },
+                unit = unit,
+                onUnitChange = { unit = it },
+                standardUnits = standardUnits,
+                isBangla = isBangla,
+                haptics = haptics
+            )
 
             // 3. Segmented Control: "Per unit | Total price" (48dp height)
             Surface(
@@ -456,103 +336,20 @@ fun MarketPriceEntrySheet(
                 }
             }
 
-            // 4. Live Display Card (Entered Amount + Computed Cross Value)
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = appColors.surface,
-                border = BorderStroke(HairlineInkStroke, appColors.divider),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val label = if (priceMode == 0) "${strings.marketPerUnit} ($unit)" else strings.marketTotalPrice
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = appColors.textSecondary
-                    )
-
-                    // Big Entered Price Display
-                    val displayExpr = if (expression.isBlank()) "0" else expression
-                    val displayDigits = if (isBangla) convertToBengaliDigits(displayExpr) else displayExpr
-                    Text(
-                        text = "$currencySymbol$displayDigits",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 32.sp,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = appColors.textPrimary,
-                        textAlign = TextAlign.Center
-                    )
-
-                    // Computed Counterpart
-                    val crossInfo = if (priceMode == 0) {
-                        val computedStr = formatCurrency(totalAmountComputed, currencySymbol)
-                        "${strings.marketTotalPrice}: $computedStr"
-                    } else {
-                        val rateStr = formatCurrency(unitRateComputed, currencySymbol)
-                        val norm = UnitConverterEngine.normalize(quantity, unit)
-                        "${strings.marketPerUnit}: $rateStr/${norm.baseUnit}"
-                    }
-
-                    Text(
-                        text = crossInfo,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = appColors.accent
-                    )
-
-                    // 5. Live Variance Line vs Last Price
-                    if (varianceDiff != null && baselineUnitPrice != null && baselineUnitPrice > 0) {
-                        val diffAbs = abs(varianceDiff)
-                        val diffStr = if (diffAbs % 1.0 == 0.0) diffAbs.toInt().toString() else "%.1f".format(diffAbs)
-                        val diffDigits = if (isBangla) convertToBengaliDigits(diffStr) else diffStr
-                        val pctAbs = abs(variancePercent ?: 0.0).roundToInt().toString()
-                        val pctDigits = if (isBangla) convertToBengaliDigits(pctAbs) else pctAbs
-
-                        val varianceText = when {
-                            varianceDiff < -0.5 -> {
-                                if (isBangla) "▼ ৳$diffDigits গতবারের চেয়ে কম, −$pctDigits%"
-                                else "▼ ৳$diffDigits less than last, −$pctDigits%"
-                            }
-                            varianceDiff > 0.5 -> {
-                                if (isBangla) "▲ ৳$diffDigits গতবারের চেয়ে বেশি, +$pctDigits%"
-                                else "▲ ৳$diffDigits more than last, +$pctDigits%"
-                            }
-                            else -> {
-                                strings.marketSameAsLast
-                            }
-                        }
-
-                        val varianceColor = when {
-                            varianceDiff < -0.5 -> appColors.income
-                            varianceDiff > 0.5 -> appColors.warning
-                            else -> appColors.textSecondary
-                        }
-
-                        Text(
-                            text = varianceText,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                fontFeatureSettings = "tnum"
-                            ),
-                            color = varianceColor,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-                }
-            }
+            // 4. Live Display Card (Entered Amount + Computed Cross Value & Variance)
+            MarketPriceVarianceDisplay(
+                priceMode = priceMode,
+                unit = unit,
+                quantity = quantity,
+                expression = expression,
+                currencySymbol = currencySymbol,
+                isBangla = isBangla,
+                totalAmountComputed = totalAmountComputed,
+                unitRateComputed = unitRateComputed,
+                baselineUnitPrice = baselineUnitPrice,
+                varianceDiff = varianceDiff,
+                variancePercent = variancePercent
+            )
 
             // 6. Quick Chips: "Same as last", "+৳5", "−৳5"
             Row(
@@ -672,203 +469,20 @@ fun MarketPriceEntrySheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // 8. Action Buttons: Primary "Save & next" + secondary "Save"
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Primary Action Button
-                val isNextAvailable = hasNextPendingItem && autoAdvanceEnabled
-                Button(
-                    onClick = {
-                        haptics.mediumClick()
-                        val finalTotal = totalAmountComputed.coerceAtLeast(0.0)
-                        onSaveItem(quantity, unit, finalTotal, isNextAvailable)
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accent),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isNextAvailable) Icons.AutoMirrored.Filled.ArrowForward else Icons.Filled.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = if (isNextAvailable) strings.marketSaveAndNext else strings.save,
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
-                            ),
-                            color = Color.White
-                        )
-                    }
-                }
-
-                // Secondary row: "Save" (without advancing) + Auto-advance toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Secondary Save button (always finishes this item)
-                    if (hasNextPendingItem) {
-                        OutlinedButton(
-                            onClick = {
-                                haptics.lightTick()
-                                val finalTotal = totalAmountComputed.coerceAtLeast(0.0)
-                                onSaveItem(quantity, unit, finalTotal, false)
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            border = BorderStroke(HairlineInkStroke, appColors.divider),
-                            modifier = Modifier.defaultMinSize(minHeight = 44.dp)
-                        ) {
-                            Text(
-                                text = strings.save,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = appColors.textPrimary
-                            )
-                        }
-                    }
-
-                    // Auto-advance toggle chip
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            autoAdvanceEnabled = !autoAdvanceEnabled
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (autoAdvanceEnabled) appColors.accentContainer.copy(alpha = 0.4f) else Color.Transparent,
-                        border = BorderStroke(
-                            HairlineInkStroke,
-                            if (autoAdvanceEnabled) appColors.accent else appColors.divider
-                        ),
-                        modifier = Modifier
-                            .defaultMinSize(minHeight = 36.dp)
-                            .minimumInteractiveComponentSize()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (autoAdvanceEnabled) Icons.Filled.Check else Icons.Filled.Close,
-                                contentDescription = null,
-                                tint = if (autoAdvanceEnabled) appColors.accent else appColors.textMuted,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = strings.marketAutoAdvance,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = if (autoAdvanceEnabled) appColors.accent else appColors.textSecondary
-                            )
-                        }
-                    }
-                }
-            }
+            // 8. Action Buttons: Primary "Save & next" + secondary "Save" + Auto-advance toggle
+            MarketPriceEntryActionButtons(
+                hasNextPendingItem = hasNextPendingItem,
+                autoAdvanceEnabled = autoAdvanceEnabled,
+                onAutoAdvanceToggle = { autoAdvanceEnabled = !autoAdvanceEnabled },
+                onSaveClick = { shouldAdvance ->
+                    val finalTotal = totalAmountComputed.coerceAtLeast(0.0)
+                    onSaveItem(quantity, unit, finalTotal, shouldAdvance)
+                },
+                haptics = haptics
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
 
-// =========================================================================
-// PREVIEWS (Light, Dark, AMOLED x English, Bengali)
-// =========================================================================
-
-@Preview(name = "MarketPriceEntrySheet - Dark En", showBackground = true)
-@Composable
-fun PreviewMarketPriceEntrySheetDarkEn() {
-    ExpenseTrackerTheme(themeMode = "dark") {
-        CompositionLocalProvider(LocalAppStrings provides EnglishStrings) {
-            Surface(color = LocalAppColors.current.background) {
-                MarketPriceEntrySheet(
-                    item = MarketItem(
-                        id = 1L,
-                        listId = 1L,
-                        name = "Potatoes",
-                        quantity = 2.0,
-                        unit = "kg",
-                        amount = null
-                    ),
-                    currencySymbol = "৳",
-                    isBangla = false,
-                    hasNextPendingItem = true,
-                    onDismiss = {},
-                    onSaveItem = { _, _, _, _ -> },
-                    lastRate = Pair(30.0, "kg")
-                )
-            }
-        }
-    }
-}
-
-@Preview(name = "MarketPriceEntrySheet - Light Bn", showBackground = true)
-@Composable
-fun PreviewMarketPriceEntrySheetLightBn() {
-    ExpenseTrackerTheme(themeMode = "light") {
-        CompositionLocalProvider(LocalAppStrings provides BanglaStrings) {
-            Surface(color = LocalAppColors.current.background) {
-                MarketPriceEntrySheet(
-                    item = MarketItem(
-                        id = 2L,
-                        listId = 1L,
-                        name = "দেশি পেঁয়াজ",
-                        quantity = 1.0,
-                        unit = "কেজি",
-                        amount = 120.0
-                    ),
-                    currencySymbol = "৳",
-                    isBangla = true,
-                    hasNextPendingItem = true,
-                    onDismiss = {},
-                    onSaveItem = { _, _, _, _ -> },
-                    lastRate = Pair(110.0, "কেজি")
-                )
-            }
-        }
-    }
-}
-
-@Preview(name = "MarketPriceEntrySheet - AMOLED Bn", showBackground = true)
-@Composable
-fun PreviewMarketPriceEntrySheetAmoledBn() {
-    ExpenseTrackerTheme(themeMode = "amoled") {
-        CompositionLocalProvider(LocalAppStrings provides BanglaStrings) {
-            Surface(color = LocalAppColors.current.background) {
-                MarketPriceEntrySheet(
-                    item = MarketItem(
-                        id = 3L,
-                        listId = 1L,
-                        name = "রুই মাছ",
-                        quantity = 1.5,
-                        unit = "কেজি",
-                        amount = null
-                    ),
-                    currencySymbol = "৳",
-                    isBangla = true,
-                    hasNextPendingItem = false,
-                    onDismiss = {},
-                    onSaveItem = { _, _, _, _ -> },
-                    lastRate = Pair(350.0, "কেজি")
-                )
-            }
-        }
-    }
-}
