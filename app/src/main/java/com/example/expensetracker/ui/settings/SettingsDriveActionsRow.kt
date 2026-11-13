@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,7 +46,9 @@ fun SettingsDriveActionsRow(
         Button(
             onClick = onBackupNow,
             enabled = !isSyncing,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp),
             shape = RoundedCornerShape(SmallElementRadius),
             colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
         ) {
@@ -77,7 +80,9 @@ fun SettingsDriveActionsRow(
         OutlinedButton(
             onClick = onRestoreFromDrive,
             enabled = !isSyncing,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp),
             shape = RoundedCornerShape(SmallElementRadius),
             border = BorderStroke(1.dp, appColors.border),
             colors = ButtonDefaults.outlinedButtonColors(

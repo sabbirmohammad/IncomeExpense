@@ -57,6 +57,9 @@ class ExpenseRepository private constructor(context: Context) {
     internal val _isPrivacyMode = MutableStateFlow(false)
     val isPrivacyMode: StateFlow<Boolean> = _isPrivacyMode.asStateFlow()
 
+    internal val _isOnboardingCompleted = MutableStateFlow(false)
+    val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
+
     internal val _budgets = MutableStateFlow<List<Budget>>(emptyList())
     val budgets: StateFlow<List<Budget>> = _budgets.asStateFlow()
 
@@ -112,6 +115,7 @@ class ExpenseRepository private constructor(context: Context) {
             val profile = dbHelper.getUserProfile()
             _userProfile.value = profile
             _isPrivacyMode.value = profile.isPrivacyModeEnabled
+            _isOnboardingCompleted.value = dbHelper.isOnboardingCompleted() || dbHelper.getAllTransactions().isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -140,6 +144,11 @@ class ExpenseRepository private constructor(context: Context) {
         dbHelper.setPrivacyModeEnabled(newMode)
         _userProfile.value = _userProfile.value.copy(isPrivacyModeEnabled = newMode)
         return newMode
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        _isOnboardingCompleted.value = completed
+        dbHelper.setOnboardingCompleted(completed)
     }
 
     fun refreshAccounts() {

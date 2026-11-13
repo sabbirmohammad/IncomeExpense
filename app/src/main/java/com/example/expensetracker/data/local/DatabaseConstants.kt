@@ -4,6 +4,7 @@ internal const val DATABASE_NAME = "expense_tracker.db"
 internal const val DATABASE_VERSION = 15
 internal const val PREFS_NAME = "expense_tracker_secure_prefs"
 internal const val PREF_KEY_PRIVACY_MODE = "is_privacy_mode_enabled"
+internal const val PREF_KEY_ONBOARDING_COMPLETED = "is_onboarding_completed"
 internal const val PREF_KEY_LAST_BUDGET_PROMPT = "last_budget_prompt_month_key"
 internal const val PREF_KEY_LAST_BUDGET_NOTIFIED = "last_budget_notified_month_key"
 

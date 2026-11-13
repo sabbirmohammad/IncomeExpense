@@ -38,6 +38,7 @@ import com.example.expensetracker.ui.components.MiddleScreenConfirmationOverlay
 import com.example.expensetracker.ui.components.TransactionFeedbackController
 import com.example.expensetracker.ui.components.rememberAppStrings
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
+import com.example.expensetracker.ui.onboarding.OnboardingScreen
 
 /**
  * Main App Navigation (v7 Refined Ledger Architecture):
@@ -115,6 +116,8 @@ fun MainAppNavigation(
             selectedItem == NavigationItem.MARKET ||
             selectedItem == NavigationItem.MONEY
 
+    val isOnboardingCompleted by repository.isOnboardingCompleted.collectAsStateWithLifecycle()
+
     val strings = rememberAppStrings(AppLanguage.fromCode(userProfile.appLanguage))
     val feedbackController = remember { TransactionFeedbackController() }
     val colors = LocalAppColors.current
@@ -123,11 +126,16 @@ fun MainAppNavigation(
         LocalAppStrings provides strings,
         LocalFeedbackController provides feedbackController
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(colors.background)
-        ) {
+        if (!isOnboardingCompleted) {
+            OnboardingScreen(
+                onFinish = { repository.setOnboardingCompleted(true) }
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colors.background)
+            ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -280,4 +288,5 @@ fun MainAppNavigation(
             MiddleScreenConfirmationOverlay(controller = feedbackController)
         }
     }
+}
 }

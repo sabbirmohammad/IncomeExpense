@@ -4,9 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,6 +20,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +50,7 @@ fun SettingsDriveAccountRow(
                 .clip(RoundedCornerShape(SmallElementRadius))
                 .background(appColors.surfaceVariant)
                 .border(1.dp, appColors.border, RoundedCornerShape(SmallElementRadius))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -58,22 +61,29 @@ fun SettingsDriveAccountRow(
                 maxLines = 1,
                 modifier = Modifier.weight(1f)
             )
-            Text(
-                text = strings.disconnect,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                color = appColors.expense,
+            Box(
                 modifier = Modifier
+                    .minimumInteractiveComponentSize()
                     .clickable { onDisconnect() }
-                    .padding(4.dp)
-            )
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = strings.disconnect,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = appColors.expense
+                )
+            }
         }
     } else {
         Button(
             onClick = onConnect,
-            modifier = modifier.fillMaxWidth(),
+            modifier = modifier
+                .fillMaxWidth()
+                .height(48.dp),
             shape = RoundedCornerShape(SmallElementRadius),
             colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
         ) {

@@ -20,6 +20,22 @@ internal class UserPreferencesHelper(private val context: Context) {
         } catch (_: Exception) {}
     }
 
+    fun isOnboardingCompleted(): Boolean {
+        return try {
+            val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.getBoolean(PREF_KEY_ONBOARDING_COMPLETED, false)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        try {
+            val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putBoolean(PREF_KEY_ONBOARDING_COMPLETED, completed).apply()
+        } catch (_: Exception) {}
+    }
+
     fun getLastBudgetPromptKey(): String? {
         return try {
             val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

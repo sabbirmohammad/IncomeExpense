@@ -3,6 +3,7 @@ package com.example.expensetracker.ui.settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +29,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +65,7 @@ fun SettingsProfileCard(
     val haptics = rememberAppHaptics()
     val isBangla = strings.isBangla
     val isCloud = userProfile.googleAccountEmail != null
+    var showFullEmail by remember { mutableStateOf(false) }
 
     // Background gradient for sleek fintech executive feel
     val cardBackgroundGradient = if (appColors.isDark) {
@@ -218,16 +225,28 @@ fun SettingsProfileCard(
                                     tint = if (isCloud) appColors.income else appColors.textSecondary,
                                     modifier = Modifier.size(13.dp)
                                 )
+                                val email = userProfile.googleAccountEmail
+                                val displayEmail = if (email != null) {
+                                    if (showFullEmail) email else {
+                                        if (email.length > 22) {
+                                            val half = (22 - 3) / 2
+                                            email.take(half) + "..." + email.takeLast(half)
+                                        } else email
+                                    }
+                                } else {
+                                    if (isBangla) "লোকাল অ্যাকাউন্ট • সুরক্ষিত" else "Local Account • Secure"
+                                }
+
                                 Text(
-                                    text = userProfile.googleAccountEmail
-                                        ?: if (isBangla) "লোকাল অ্যাকাউন্ট • সুরক্ষিত" else "Local Account • Secure",
+                                    text = displayEmail,
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         fontSize = 11.5.sp,
                                         fontWeight = FontWeight.Medium
                                     ),
                                     color = appColors.textSecondary,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.clickable { showFullEmail = !showFullEmail }
                                 )
                             }
                         }
@@ -235,7 +254,7 @@ fun SettingsProfileCard(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Modern "Edit" Pill Button
+                    // Modern "Edit" Pill Button (>= 48dp hit area)
                     Surface(
                         onClick = {
                             haptics.lightTick()
@@ -243,7 +262,8 @@ fun SettingsProfileCard(
                         },
                         shape = RoundedCornerShape(20.dp),
                         color = appColors.accent.copy(alpha = 0.14f),
-                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.35f))
+                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.35f)),
+                        modifier = Modifier.minimumInteractiveComponentSize()
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),

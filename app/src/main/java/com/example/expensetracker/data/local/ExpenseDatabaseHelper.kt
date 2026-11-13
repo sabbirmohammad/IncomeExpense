@@ -102,6 +102,8 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     // --- Preferences Operations ---
     fun isPrivacyModeEnabled(): Boolean = prefsHelper.isPrivacyModeEnabled()
     fun setPrivacyModeEnabled(enabled: Boolean) = prefsHelper.setPrivacyModeEnabled(enabled)
+    fun isOnboardingCompleted(): Boolean = prefsHelper.isOnboardingCompleted()
+    fun setOnboardingCompleted(completed: Boolean) = prefsHelper.setOnboardingCompleted(completed)
     fun getLastBudgetPromptKey(): String? = prefsHelper.getLastBudgetPromptKey()
     fun setLastBudgetPromptKey(key: String) = prefsHelper.setLastBudgetPromptKey(key)
     fun getLastBudgetNotifiedKey(): String? = prefsHelper.getLastBudgetNotifiedKey()

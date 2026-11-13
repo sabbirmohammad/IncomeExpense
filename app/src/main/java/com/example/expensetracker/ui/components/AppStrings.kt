@@ -143,6 +143,28 @@ class Strings(
     val chooseAvatarLabel: String get() = if (isBangla) "অ্যাভাটার আইকন নির্বাচন করুন" else "Choose avatar icon"
     val dashboardPreviewLabel: String get() = if (isBangla) "ড্যাশবোর্ড প্রিভিউ" else "Dashboard preview"
     fun previewGreeting(name: String): String = if (isBangla) "হ্যালো, $name" else "Hello, $name"
+
+    // Onboarding
+    val onboardingSkip: String get() = if (isBangla) "এড়িয়ে যান" else "Skip"
+    val onboardingNext: String get() = if (isBangla) "পরবর্তী" else "Next"
+    val onboardingGetStarted: String get() = if (isBangla) "শুরু করুন" else "Get Started"
+    val onboardingTrackTitle: String get() = if (isBangla) "প্রতিটি খরচের নিখুঁত হিসাব" else "Track Every Expense"
+    val onboardingTrackDesc: String get() = if (isBangla) "দৈনন্দিন আয় ও খরচের নির্ভুল হিসাব রাখুন নিমেষেই। সম্পূর্ণ অফলাইন, দ্রুত ও ব্যক্তিগত।" else "Effortless expense and income tracking with zero friction. Fast, private, and offline."
+    val onboardingPlanTitle: String get() = if (isBangla) "মাসিক বাজেট ও সঞ্চয় লক্ষ্য" else "Plan Budgets & Savings"
+    val onboardingPlanDesc: String get() = if (isBangla) "ক্যাটাগরি অনুযায়ী বাজেট বাঁধুন এবং সঞ্চয়ের লক্ষ্য পূরণ করুন লাইভ ট্র্যাকিংয়ের মাধ্যমে।" else "Set smart category spending limits and grow your savings with live progress tracking."
+    val onboardingBazaarTitle: String get() = if (isBangla) "বাজারের ফর্দ ও নিত্যপণ্যের দর" else "Smart Bazaar & Market"
+    val onboardingBazaarDesc: String get() = if (isBangla) "বাজারের তালিকা সাজান আইল অনুযায়ী, জানুন নিত্যপণ্যের দর এবং কেনাকাটা করুন সহজে।" else "Organize shopping by aisle, track live commodity prices, and check off items effortlessly."
+
+    // Sync Status Card
+    val syncStatusTitle: String get() = if (isBangla) "গুগল ড্রাইভ ক্লাউড ব্যাকআপ" else "Google Drive Cloud Backup"
+    val syncProtected: String get() = if (isBangla) "নিরাপদ ও সুরক্ষিত" else "Backed up & secure"
+    val syncSyncing: String get() = if (isBangla) "ড্রাইভের সাথে সিঙ্ক হচ্ছে..." else "Syncing with Google Drive..."
+    val syncDisconnected: String get() = if (isBangla) "লোকাল ব্যাকআপ সক্রিয়" else "Local backup only"
+    val syncConnectDriveDesc: String get() = if (isBangla) "তথ্য নিরাপদে রাখতে গুগল ড্রাইভের সাথে যুক্ত করুন" else "Connect Google Drive to safeguard your financial ledger"
+    val syncAutoDailyTitle: String get() = if (isBangla) "দৈনিক স্বয়ংক্রিয় ব্যাকআপ" else "Daily automatic backup"
+    val syncAutoDailyDesc: String get() = if (isBangla) "প্রতিদিন রাতে স্বয়ংক্রিয়ভাবে ড্রাইভে ব্যাকআপ সংরক্ষিত হবে" else "Backs up to Google Drive automatically in the background"
+    val syncRetry: String get() = if (isBangla) "পুনরায় চেষ্টা" else "Retry"
+    val syncErrorDetected: String get() = if (isBangla) "সিঙ্ক ত্রুটি পরিলক্ষিত হয়েছে" else "Sync issue detected"
 }
 
 val BanglaStrings = Strings(isBangla = true)

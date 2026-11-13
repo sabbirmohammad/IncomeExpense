@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,11 +72,15 @@ fun SettingsBengaliNumeralsCard(
             Switch(
                 checked = useBengaliNumerals,
                 onCheckedChange = onToggle,
+                modifier = Modifier.semantics {
+                    stateDescription = if (useBengaliNumerals) (if (strings.isBangla) "চালু" else "On") else (if (strings.isBangla) "বন্ধ" else "Off")
+                },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = appColors.accent,
-                    uncheckedThumbColor = appColors.textMuted,
-                    uncheckedTrackColor = appColors.surface
+                    uncheckedThumbColor = appColors.textPrimary,
+                    uncheckedTrackColor = appColors.surfaceVariant,
+                    uncheckedBorderColor = appColors.border
                 )
             )
         }
