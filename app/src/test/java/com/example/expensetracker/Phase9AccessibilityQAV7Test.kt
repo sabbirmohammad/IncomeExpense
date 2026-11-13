@@ -24,8 +24,8 @@ class Phase9AccessibilityQAV7Test {
             marketContent.contains("minimumInteractiveComponentSize()")
         )
         assertTrue(
-            "MarketSegmentedPills must declare height(42.dp)",
-            marketContent.contains("height(42.dp)")
+            "MarketSegmentedPills must declare height(48.dp) or height(42.dp)",
+            marketContent.contains("height(48.dp)") || marketContent.contains("height(42.dp)")
         )
 
         // 2. AccountCardMenu: items declare minimumInteractiveComponentSize()

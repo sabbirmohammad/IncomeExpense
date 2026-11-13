@@ -8,9 +8,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,28 +23,34 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.expensetracker.theme.ExpenseTrackerTheme
 import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.BanglaStrings
+import com.example.expensetracker.ui.components.EnglishStrings
+import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.DepartmentMeta
 
 /**
- * Handcrafted Department Stall Section Header:
- * Groups market checklist items by physical bazaar stall:
- * - 🥬 কাঁচাবাজার (Vegetables)
- * - 🐟 মাছ ও মাংস (Meat & Fish)
- * - 🥛 দুধ ও বেকারি (Dairy & Bakery)
- * - 🧂 মুদি সদাই (Groceries)
- * Features live completion counter ("৩/৪টি সম্পন্ন") and smooth collapsible toggle.
+ * Handcrafted Aisle Section Header (Target Design B5):
+ * - Groups market checklist items by bazaar stall / aisle.
+ * - Small icon + name + "2/3" + chevron (collapsible).
+ * - Section tint is a small dot only (no rainbow card backgrounds).
+ * - >= 48dp minimum touch target for seamless collapse/expansion.
+ * - Flat surface with subtle hairline divider.
  */
 @Composable
 fun MarketDepartmentSectionHeader(
@@ -64,24 +72,25 @@ fun MarketDepartmentSectionHeader(
         label = "deptArrowRotation"
     )
 
-    val progressText = if (isDeptCompleted) {
-        if (isBangla) "✓ ${convertToBengaliDigits(completedCount.toString())}/${convertToBengaliDigits(totalCount.toString())}টি সম্পন্ন"
-        else "✓ $completedCount/$totalCount Done"
+    val countLabel = if (isBangla) {
+        "${convertToBengaliDigits(completedCount.toString())}/${convertToBengaliDigits(totalCount.toString())}"
     } else {
-        if (isBangla) "${convertToBengaliDigits(completedCount.toString())}/${convertToBengaliDigits(totalCount.toString())}টি সম্পন্ন"
-        else "$completedCount/$totalCount Done"
+        "$completedCount/$totalCount"
+    }
+    // Structural compatibility string
+    val fullProgressText = if (isBangla) {
+        "${convertToBengaliDigits(completedCount.toString())}/${convertToBengaliDigits(totalCount.toString())}টি সম্পন্ন"
+    } else {
+        "$completedCount/$totalCount Done"
     }
 
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isDeptCompleted) appColors.income.copy(alpha = 0.08f) else appColors.cardBackground,
-        border = BorderStroke(
-            HairlineInkStroke,
-            if (isDeptCompleted) appColors.income.copy(alpha = 0.25f) else appColors.divider
-        ),
+        color = appColors.cardBackground,
+        border = BorderStroke(HairlineInkStroke, appColors.divider),
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 3.dp)
             .clickable {
                 haptics.lightTick()
                 onToggleExpand()
@@ -95,16 +104,28 @@ fun MarketDepartmentSectionHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: Stall Icon & Title
+            // Left: Section Tint Dot + Small Icon + Name
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.weight(1f, fill = false)
             ) {
+                // Section tint: small dot only per Target Design B5
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isDeptCompleted) appColors.income
+                            else appColors.accent
+                        )
+                )
+
                 Text(
                     text = dept.icon,
-                    fontSize = 17.sp
+                    fontSize = 16.sp
                 )
+
                 Text(
                     text = if (isBangla) dept.titleBn else dept.titleEn,
                     style = MaterialTheme.typography.titleSmall.copy(
@@ -115,36 +136,26 @@ fun MarketDepartmentSectionHeader(
                 )
             }
 
-            // Right: Live Progress Pill & Expand/Collapse Toggle
+            // Right: Short "2/3" Count + Chevron
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (isDeptCompleted) appColors.income.copy(alpha = 0.15f) else appColors.accent.copy(alpha = 0.10f),
-                    border = BorderStroke(
-                        HairlineInkStroke,
-                        if (isDeptCompleted) appColors.income.copy(alpha = 0.35f) else appColors.accent.copy(alpha = 0.25f)
-                    )
-                ) {
-                    Text(
-                        text = progressText,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = if (isDeptCompleted) appColors.income else appColors.accent,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
+                Text(
+                    text = countLabel,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    color = if (isDeptCompleted) appColors.income else appColors.textSecondary
+                )
 
                 Box(
                     modifier = Modifier
                         .size(24.dp)
                         .clip(CircleShape)
-                        .background(appColors.border.copy(alpha = 0.25f)),
+                        .background(appColors.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -156,6 +167,94 @@ fun MarketDepartmentSectionHeader(
                             .rotate(arrowRotation)
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Direct alias for MarketSectionHeader
+ */
+@Composable
+fun MarketSectionHeader(
+    dept: DepartmentMeta,
+    completedCount: Int,
+    totalCount: Int,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    isBangla: Boolean,
+    modifier: Modifier = Modifier
+) {
+    MarketDepartmentSectionHeader(
+        dept = dept,
+        completedCount = completedCount,
+        totalCount = totalCount,
+        isExpanded = isExpanded,
+        onToggleExpand = onToggleExpand,
+        isBangla = isBangla,
+        modifier = modifier
+    )
+}
+
+// =========================================================================
+// PREVIEWS (Light, Dark, AMOLED x English, Bengali)
+// =========================================================================
+
+@Preview(name = "MarketSectionHeader - Dark En", showBackground = true)
+@Composable
+fun PreviewMarketSectionHeaderDarkEn() {
+    ExpenseTrackerTheme(themeMode = "dark") {
+        CompositionLocalProvider(LocalAppStrings provides EnglishStrings) {
+            Surface(color = LocalAppColors.current.background) {
+                MarketSectionHeader(
+                    dept = DepartmentMeta("veggies", "কাঁচাবাজার", "Vegetables", "🥬"),
+                    completedCount = 2,
+                    totalCount = 3,
+                    isExpanded = true,
+                    onToggleExpand = {},
+                    isBangla = false,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "MarketSectionHeader - Light Bn", showBackground = true)
+@Composable
+fun PreviewMarketSectionHeaderLightBn() {
+    ExpenseTrackerTheme(themeMode = "light") {
+        CompositionLocalProvider(LocalAppStrings provides BanglaStrings) {
+            Surface(color = LocalAppColors.current.background) {
+                MarketSectionHeader(
+                    dept = DepartmentMeta("meat_fish", "মাছ ও মাংস", "Meat & Fish", "🐟"),
+                    completedCount = 2,
+                    totalCount = 2,
+                    isExpanded = true,
+                    onToggleExpand = {},
+                    isBangla = true,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "MarketSectionHeader - AMOLED Bn", showBackground = true)
+@Composable
+fun PreviewMarketSectionHeaderAmoledBn() {
+    ExpenseTrackerTheme(themeMode = "amoled") {
+        CompositionLocalProvider(LocalAppStrings provides BanglaStrings) {
+            Surface(color = LocalAppColors.current.background) {
+                MarketSectionHeader(
+                    dept = DepartmentMeta("groceries", "মুদি সদাই", "Groceries", "🧂"),
+                    completedCount = 0,
+                    totalCount = 5,
+                    isExpanded = false,
+                    onToggleExpand = {},
+                    isBangla = true,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }

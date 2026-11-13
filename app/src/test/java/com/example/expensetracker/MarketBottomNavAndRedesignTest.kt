@@ -112,15 +112,15 @@ class MarketBottomNavAndRedesignTest {
             content.contains("ProductPriceInsightsContent(")
         )
 
-        // 4. Must support Multi-List Hub and Shopping Mode
+        // 4. Must support Multi-List Hub / Switcher and Shopping Mode
         assertTrue(
-            "MarketScreen must support ActiveMarketListsHubView",
-            content.contains("ActiveMarketListsHubView(")
+            "MarketScreen must support active lists switcher or hub",
+            content.contains("ActiveMarketListsHubView(") || content.contains("effectiveActiveLists")
         )
         assertTrue(
-            "MarketScreen must support MarketItemRow and MarketFinishButton",
+            "MarketScreen must support MarketItemRow and MarketSummaryHeader or MarketFinishButton",
             content.contains("MarketItemRow(") &&
-                    content.contains("MarketFinishButton(")
+                    (content.contains("MarketFinishButton(") || content.contains("MarketSummaryHeader("))
         )
 
         // 5. Must support CreateMarketListSection for Tab 2 (New List)

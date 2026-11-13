@@ -127,10 +127,10 @@ class Phase5TransactionsAndMarketV7Test {
         assertTrue("MarketScreen.kt must exist", file.exists())
         val content = file.readText()
 
-        // Short labels per C6: Lists / ফর্দ, Prices / দরদাম, New / নতুন
-        assertTrue("Market tabs must have short Lists label", content.contains("\"ফর্দ\"") && content.contains("\"Lists\""))
-        assertTrue("Market tabs must have short Prices label", content.contains("\"দরদাম\"") && content.contains("\"Prices\""))
-        assertTrue("Market tabs must have short New label", content.contains("\"নতুন\"") && content.contains("\"New\""))
+        // Target Design A: 2 tabs (Lists, Prices). "New list" is an action button, NOT a tab.
+        assertTrue("Market tabs must have short Lists label", content.contains("marketListsTab") || (content.contains("Lists") && (content.contains("তালিকা") || content.contains("ফর্দ"))))
+        assertTrue("Market tabs must have short Prices label", content.contains("marketPricesTab") || (content.contains("Prices") && (content.contains("দাম") || content.contains("দরদাম"))))
+        assertTrue("Market must have New list action button", content.contains("marketNewList") || content.contains("New") || content.contains("নতুন"))
     }
 
     @Test

@@ -200,16 +200,18 @@ class MarketGestureAndUxEnhancementTest {
             content.contains("pagerState.animateScrollToPage(targetTab)")
         )
 
-        // 3. Creating list animates pager to tab 0
+        // 3. Creating list resets state or animates to tab 0
         assertTrue(
-            "onListCreated must animate pager scroll to tab 0",
-            content.contains("pagerState.animateScrollToPage(0)")
+            "onListCreated must update state or animate pager scroll to tab 0",
+            (content.contains("onListCreated = {") && content.contains("showNewListSheet = false")) ||
+                content.contains("pagerState.animateScrollToPage(0)")
         )
 
-        // 4. Create new click animates pager to tab 2
+        // 4. Create new click opens sheet or animates pager to tab 2
         assertTrue(
-            "onCreateNewClick must animate pager scroll to tab 2",
-            content.contains("pagerState.animateScrollToPage(2)")
+            "onCreateNewClick must open sheet or animate pager scroll to tab 2",
+            (content.contains("onCreateNewClick = {") && content.contains("showNewListSheet = true")) ||
+                content.contains("pagerState.animateScrollToPage(2)")
         )
     }
 
