@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +25,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.FinancialSummary
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
 
@@ -39,6 +42,8 @@ fun ReportSummaryKpiSection(
     val savingsRate = if (summary.totalIncome > 0) {
         ((summary.netBalance / summary.totalIncome) * 100).toInt().coerceIn(-999, 100)
     } else 0
+
+    val borderStroke = if (!appColors.isDark) BorderStroke(HairlineInkStroke, appColors.border) else null
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
@@ -82,9 +87,9 @@ fun ReportSummaryKpiSection(
 
             Surface(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                color = appColors.surface,
-                border = BorderStroke(1.dp, appColors.border)
+                shape = RoundedCornerShape(RadiusM),
+                color = appColors.surfaceRaised,
+                border = borderStroke
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -98,8 +103,11 @@ fun ReportSummaryKpiSection(
                     )
                     Text(
                         text = if (isPrivacyMode) "••%" else "$savingsRate%",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
+                        ),
                         color = if (savingsRate >= 0) appColors.income else appColors.expense
                     )
                 }
@@ -119,11 +127,13 @@ fun ReportKpiCard(
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
+    val borderStroke = if (!appColors.isDark) BorderStroke(HairlineInkStroke, appColors.border) else null
+
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = appColors.surface,
-        border = BorderStroke(1.dp, appColors.border)
+        shape = RoundedCornerShape(RadiusM),
+        color = appColors.surfaceRaised,
+        border = borderStroke
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -141,9 +151,8 @@ fun ReportKpiCard(
                 )
                 Text(
                     text = title,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = appColors.textMuted,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = appColors.textSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -151,8 +160,11 @@ fun ReportKpiCard(
 
             Text(
                 text = if (isPrivacyMode) "••••••" else formatCurrency(amount, currencySymbol),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum"
+                ),
                 color = accentColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

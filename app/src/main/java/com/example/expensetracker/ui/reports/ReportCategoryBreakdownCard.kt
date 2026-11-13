@@ -23,7 +23,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.CategorySpend
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -38,12 +40,13 @@ fun ReportCategoryBreakdownCard(
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
+    val borderStroke = if (!appColors.isDark) BorderStroke(HairlineInkStroke, appColors.border) else null
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = appColors.surface,
-        border = BorderStroke(1.dp, appColors.border)
+        shape = RoundedCornerShape(RadiusM),
+        color = appColors.surfaceRaised,
+        border = borderStroke
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -91,14 +94,20 @@ fun ReportCategoryBreakdownCard(
                         ) {
                             Text(
                                 text = String.format(Locale.US, "%.0f%%", cat.percentage * 100),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFeatureSettings = "tnum"
+                                ),
                                 color = appColors.textMuted
                             )
                             Text(
                                 text = if (isPrivacyMode) "••••" else formatCurrency(cat.totalAmount, currencySymbol),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum"
+                                ),
                                 color = appColors.textPrimary
                             )
                         }

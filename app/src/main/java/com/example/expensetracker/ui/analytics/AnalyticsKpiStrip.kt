@@ -85,7 +85,8 @@ fun AnalyticsKpiStrip(
                     text = formatCurrency(overview.dailyAverageSpend, userProfile.currencySymbol),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
                     ),
                     color = appColors.textPrimary,
                     maxLines = 1,
@@ -153,7 +154,8 @@ fun AnalyticsKpiStrip(
                     text = "${if (strings.isBangla) convertToBengaliDigits(savingsRate.toString()) else savingsRate}%",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
                     ),
                     color = savingsColor,
                     maxLines = 1,
@@ -226,7 +228,8 @@ fun AnalyticsKpiStrip(
                     text = trendText,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
                     ),
                     color = trendColor,
                     maxLines = 1,

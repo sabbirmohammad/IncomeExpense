@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +24,9 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.model.getLocalizedAccountName
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
 import com.example.expensetracker.ui.components.CategoryIconBadge
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -39,12 +42,13 @@ fun ReportTransactionRowItem(
     val strings = LocalAppStrings.current
     val appColors = LocalAppColors.current
     val isIncome = transaction.type == TransactionType.INCOME
+    val borderStroke = if (!appColors.isDark) BorderStroke(HairlineInkStroke, appColors.border) else null
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = appColors.surface,
-        border = BorderStroke(1.dp, appColors.border)
+        shape = RoundedCornerShape(RadiusM),
+        color = appColors.surfaceRaised,
+        border = borderStroke
     ) {
         Row(
             modifier = Modifier
@@ -108,8 +112,11 @@ fun ReportTransactionRowItem(
                         val sign = if (isIncome) "+" else "-"
                         "$sign ${formatCurrency(transaction.amount, currencySymbol)}"
                     },
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
+                    ),
                     color = if (isIncome) appColors.income else appColors.expense
                 )
 

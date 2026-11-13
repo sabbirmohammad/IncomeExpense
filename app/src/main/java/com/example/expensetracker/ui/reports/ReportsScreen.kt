@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.EmptyState
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
 
@@ -99,8 +100,12 @@ fun ReportsScreen(
             }
 
             item {
-                ReportSummaryKpiSection(
+                val activeAccName = accounts.find { it.id == selectedAccountId }?.name ?: strings.allAccounts
+                StatementPreviewCard(
+                    periodTitle = periodTitle,
+                    accountName = activeAccName,
                     summary = summary,
+                    transactionCount = filteredTransactions.size,
                     currencySymbol = userProfile.currencySymbol,
                     isPrivacyMode = isPrivacyMode,
                     strings = strings
@@ -115,6 +120,15 @@ fun ReportsScreen(
                     onExportPdf = { viewModel.exportAndSharePdf(context, strings.isBangla) },
                     onViewPdf = { viewModel.openPdfDirectly(context, strings.isBangla) },
                     onExportCsv = { viewModel.exportAndShareCsv(context, strings.isBangla) }
+                )
+            }
+
+            item {
+                ReportSummaryKpiSection(
+                    summary = summary,
+                    currencySymbol = userProfile.currencySymbol,
+                    isPrivacyMode = isPrivacyMode,
+                    strings = strings
                 )
             }
 
@@ -164,42 +178,11 @@ fun ReportsScreen(
 
             if (filteredTransactions.isEmpty()) {
                 item {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = appColors.surface,
-                        border = BorderStroke(1.dp, appColors.border)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 36.dp, horizontal = 20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape)
-                                    .background(appColors.accent.copy(alpha = 0.12f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.ReceiptLong,
-                                    contentDescription = null,
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = strings.noTransactionsForPeriod,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = appColors.textSecondary,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                    EmptyState(
+                        title = strings.noTransactionsForPeriod,
+                        body = if (strings.isBangla) "নির্বাচিত সময়ের জন্য কোনো লেনদেনের রেকর্ড পাওয়া যায়নি" else "No transaction records found for the selected timeframe",
+                        icon = Icons.Outlined.ReceiptLong
+                    )
                 }
             } else {
                 items(filteredTransactions, key = { it.id }) { tx ->

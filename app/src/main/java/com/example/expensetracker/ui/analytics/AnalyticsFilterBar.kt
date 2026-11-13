@@ -1,20 +1,24 @@
 package com.example.expensetracker.ui.analytics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
-import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +30,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.data.model.TimeFilter
 import com.example.expensetracker.data.model.TransactionType
+import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.AppChip
+import com.example.expensetracker.ui.components.AppChipVariant
 import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.components.DropdownFilterChip
 import com.example.expensetracker.ui.components.Strings
@@ -43,16 +50,26 @@ fun AnalyticsFilterBar(
 ) {
     val appColors = LocalAppColors.current
     var showTypeMenu by remember { mutableStateOf(false) }
-    var showTimeMenu by remember { mutableStateOf(false) }
+
+    val periodList = remember(strings) {
+        listOf(
+            TimeFilter.TODAY to strings.today,
+            TimeFilter.THIS_WEEK to strings.thisWeek,
+            TimeFilter.THIS_MONTH to strings.thisMonth,
+            TimeFilter.THIS_YEAR to strings.thisYear,
+            TimeFilter.ALL to strings.allTime
+        )
+    }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 1. Type Dropdown
+        // 1. Type Dropdown Chip
         Box {
             val isExpense = transactionType == TransactionType.EXPENSE
             val typeText = if (isExpense) strings.expense else strings.income
@@ -122,56 +139,21 @@ fun AnalyticsFilterBar(
             }
         }
 
-        // 2. Time Dropdown
-        Box {
-            val timeText = when (timeFilter) {
-                TimeFilter.THIS_MONTH -> strings.thisMonth
-                TimeFilter.THIS_WEEK -> strings.thisWeek
-                TimeFilter.TODAY -> strings.today
-                TimeFilter.THIS_YEAR -> strings.thisYear
-                TimeFilter.ALL -> strings.allTime
-                TimeFilter.CUSTOM -> strings.customDateRange
-            }
+        VerticalDivider(
+            modifier = Modifier
+                .height(24.dp)
+                .width(HairlineInkStroke),
+            color = appColors.border
+        )
 
-            DropdownFilterChip(
-                text = timeText,
-                isActive = timeFilter != TimeFilter.ALL,
-                icon = Icons.Outlined.CalendarToday,
-                activeColor = appColors.accent,
-                onClick = {
-                    haptics.lightTick()
-                    showTimeMenu = true
-                }
+        // 2. Direct Period Chips: Today, Week, Month, Year, All
+        periodList.forEach { (filter, label) ->
+            AppChip(
+                label = label,
+                selected = timeFilter == filter,
+                onClick = { onTimeFilterChange(filter) },
+                variant = AppChipVariant.Choice
             )
-
-            DropdownMenu(
-                expanded = showTimeMenu,
-                onDismissRequest = { showTimeMenu = false },
-                modifier = Modifier.background(appColors.surface)
-            ) {
-                listOf(
-                    TimeFilter.THIS_MONTH to strings.thisMonth,
-                    TimeFilter.THIS_WEEK to strings.thisWeek,
-                    TimeFilter.TODAY to strings.today,
-                    TimeFilter.THIS_YEAR to strings.thisYear,
-                    TimeFilter.ALL to strings.allTime
-                ).forEach { (filter, label) ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = label,
-                                color = if (timeFilter == filter) appColors.accent else appColors.textPrimary,
-                                fontWeight = if (timeFilter == filter) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        onClick = {
-                            haptics.lightTick()
-                            onTimeFilterChange(filter)
-                            showTimeMenu = false
-                        }
-                    )
-                }
-            }
         }
     }
 }

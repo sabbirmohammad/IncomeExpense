@@ -160,13 +160,17 @@ fun PaymentMethodRankingCard(
                                 text = formatCurrency(spend.totalAmount, userProfile.currencySymbol),
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFeatureSettings = "tnum"
                                 ),
                                 color = appColors.textPrimary
                             )
                             Text(
                                 text = "${(spend.percentage * 100).toInt()}%",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontFeatureSettings = "tnum"
+                                ),
                                 color = appColors.textSecondary
                             )
                         }
