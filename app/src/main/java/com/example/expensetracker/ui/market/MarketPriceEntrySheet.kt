@@ -214,52 +214,15 @@ fun MarketPriceEntrySheet(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // 1. Header: Item Name & Close
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.name,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            lineHeight = 24.sp
-                        ),
-                        color = appColors.textPrimary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    if (baselineUnitPrice != null && baselineUnitPrice > 0) {
-                        val baseUnit = lastRate?.second ?: "কেজি"
-                        val rateStr = if (baselineUnitPrice % 1.0 == 0.0) baselineUnitPrice.toInt().toString() else "%.1f".format(baselineUnitPrice)
-                        val rateDigits = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
-                        Text(
-                            text = "${strings.marketLastTime}: $currencySymbol$rateDigits/$baseUnit",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontFeatureSettings = "tnum"
-                            ),
-                            color = appColors.textSecondary
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = {
-                        haptics.lightTick()
-                        onDismiss()
-                    },
-                    modifier = Modifier.minimumInteractiveComponentSize()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Close",
-                        tint = appColors.textSecondary
-                    )
-                }
-            }
+            MarketPriceEntryHeader(
+                itemName = item.name,
+                baselineUnitPrice = baselineUnitPrice,
+                baseUnit = lastRate?.second ?: "কেজি",
+                currencySymbol = currencySymbol,
+                isBangla = isBangla,
+                onDismiss = onDismiss,
+                haptics = haptics
+            )
 
             // 2. Quantity Stepper + Unit Chips
             MarketPriceQuantityStepper(
@@ -273,68 +236,11 @@ fun MarketPriceEntrySheet(
             )
 
             // 3. Segmented Control: "Per unit | Total price" (48dp height)
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = appColors.surface,
-                border = BorderStroke(HairlineInkStroke, appColors.divider),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    // Option 0: Per unit
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            priceMode = 0
-                        },
-                        shape = RoundedCornerShape(11.dp),
-                        color = if (priceMode == 0) appColors.cardBackground else Color.Transparent,
-                        border = if (priceMode == 0) BorderStroke(HairlineInkStroke, appColors.divider) else null,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .minimumInteractiveComponentSize()
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = strings.marketPerUnit,
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = if (priceMode == 0) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 13.sp
-                                ),
-                                color = if (priceMode == 0) appColors.accent else appColors.textSecondary
-                            )
-                        }
-                    }
-
-                    // Option 1: Total price
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            priceMode = 1
-                        },
-                        shape = RoundedCornerShape(11.dp),
-                        color = if (priceMode == 1) appColors.cardBackground else Color.Transparent,
-                        border = if (priceMode == 1) BorderStroke(HairlineInkStroke, appColors.divider) else null,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .minimumInteractiveComponentSize()
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = strings.marketTotalPrice,
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = if (priceMode == 1) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 13.sp
-                                ),
-                                color = if (priceMode == 1) appColors.accent else appColors.textSecondary
-                            )
-                        }
-                    }
-                }
-            }
+            MarketPriceModeSelector(
+                priceMode = priceMode,
+                onPriceModeChange = { priceMode = it },
+                haptics = haptics
+            )
 
             // 4. Live Display Card (Entered Amount + Computed Cross Value & Variance)
             MarketPriceVarianceDisplay(
@@ -352,110 +258,18 @@ fun MarketPriceEntrySheet(
             )
 
             // 6. Quick Chips: "Same as last", "+৳5", "−৳5"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (baselineUnitPrice != null && baselineUnitPrice > 0) {
-                    val prevPriceFormatted = if (baselineUnitPrice % 1.0 == 0.0) baselineUnitPrice.toInt().toString() else baselineUnitPrice.toString()
-                    val prevPriceDigits = if (isBangla) convertToBengaliDigits(prevPriceFormatted) else prevPriceFormatted
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            priceMode = 0
-                            expression = prevPriceFormatted
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        color = appColors.accentContainer.copy(alpha = 0.35f),
-                        border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.35f)),
-                        modifier = Modifier
-                            .weight(1.2f)
-                            .defaultMinSize(minHeight = 44.dp)
-                            .minimumInteractiveComponentSize()
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "${strings.marketSameAsLast} ৳$prevPriceDigits",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = appColors.textPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+            MarketPriceQuickChips(
+                baselineUnitPrice = baselineUnitPrice,
+                enteredNumber = enteredNumber,
+                onApplyPrice = { newExpr, newMode ->
+                    expression = newExpr
+                    if (newMode >= 0) {
+                        priceMode = newMode
                     }
-                }
-
-                // "+৳5" Chip
-                Surface(
-                    onClick = {
-                        haptics.lightTick()
-                        val current = enteredNumber
-                        val next = (current + 5.0).coerceAtLeast(0.0)
-                        expression = if (next % 1.0 == 0.0) next.toInt().toString() else next.toString()
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    color = appColors.surface,
-                    border = BorderStroke(HairlineInkStroke, appColors.divider),
-                    modifier = Modifier
-                        .weight(0.9f)
-                        .defaultMinSize(minHeight = 44.dp)
-                        .minimumInteractiveComponentSize()
-                ) {
-                    Box(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (isBangla) "+৳৫" else "+৳5",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFeatureSettings = "tnum"
-                            ),
-                            color = appColors.textPrimary
-                        )
-                    }
-                }
-
-                // "−৳5" Chip
-                Surface(
-                    onClick = {
-                        haptics.lightTick()
-                        val current = enteredNumber
-                        val next = (current - 5.0).coerceAtLeast(0.0)
-                        expression = if (next % 1.0 == 0.0) next.toInt().toString() else next.toString()
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    color = appColors.surface,
-                    border = BorderStroke(HairlineInkStroke, appColors.divider),
-                    modifier = Modifier
-                        .weight(0.9f)
-                        .defaultMinSize(minHeight = 44.dp)
-                        .minimumInteractiveComponentSize()
-                ) {
-                    Box(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (isBangla) "−৳৫" else "−৳5",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFeatureSettings = "tnum"
-                            ),
-                            color = appColors.textPrimary
-                        )
-                    }
-                }
-            }
+                },
+                isBangla = isBangla,
+                haptics = haptics
+            )
 
             // 7. Amount Keypad (Tactile 4x4 with operators)
             AmountKeypad(
