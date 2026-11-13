@@ -104,134 +104,16 @@ fun SettingsCategoriesCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Interactive Header (Tapping toggles expand/collapse)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable {
-                        haptics.lightTick()
-                        isExpanded = !isExpanded
-                    }
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    // Category Section Icon Badge
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(appColors.accent.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Category,
-                            contentDescription = null,
-                            tint = appColors.accent,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = if (isBangla) "ক্যাটাগরি সমূহ" else "Categories",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = appColors.textPrimary
-                        )
-
-                        // Counter badge capsule
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = appColors.accent.copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                text = "${DateTimeHelper.formatCounter(categories.size, isBangla, useBengaliNumerals || isBangla)} ${if (isBangla) "টি" else "active"}",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                ),
-                                color = appColors.accent,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Action Buttons on Right: Quick "+ New" and Chevron Toggle
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    // Quick Add Button
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            onAddCategoryClick()
-                        },
-                        shape = RoundedCornerShape(20.dp),
-                        color = appColors.accent.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = null,
-                                tint = appColors.accent,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text(
-                                text = if (isBangla) "নতুন" else "New",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 11.5.sp
-                                ),
-                                color = appColors.accent
-                            )
-                        }
-                    }
-
-                    // Rotating Chevron Toggle Button
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            isExpanded = !isExpanded
-                        },
-                        shape = CircleShape,
-                        color = appColors.surface.copy(alpha = 0.7f),
-                        border = BorderStroke(0.5.dp, appColors.border)
-                    ) {
-                        Box(
-                            modifier = Modifier.size(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ExpandMore,
-                                contentDescription = if (isExpanded) "Collapse" else "Expand",
-                                tint = if (isExpanded) appColors.accent else appColors.textSecondary,
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .rotate(chevronRotation)
-                            )
-                        }
-                    }
-                }
-            }
+            SettingsCategoriesCardHeader(
+                isExpanded = isExpanded,
+                onToggleExpand = { isExpanded = !isExpanded },
+                chevronRotation = chevronRotation,
+                categoriesCount = categories.size,
+                isBangla = isBangla,
+                useBengaliNumerals = useBengaliNumerals,
+                onAddCategoryClick = onAddCategoryClick,
+                haptics = haptics
+            )
 
             // Compact Preview Ribbon when COLLAPSED
             if (!isExpanded && categories.isNotEmpty()) {
