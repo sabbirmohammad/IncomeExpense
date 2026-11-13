@@ -71,7 +71,7 @@ fun AccountDetailSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = appColors.surface,
-        shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -158,7 +158,9 @@ fun AccountDetailSheet(
 
             OutlinedButton(
                 onClick = onReconcile,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.accent),
                 border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.45f))

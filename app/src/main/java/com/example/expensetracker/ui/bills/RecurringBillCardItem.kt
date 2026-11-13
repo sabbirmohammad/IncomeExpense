@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,8 +79,7 @@ fun RecurringBillCardItem(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(RoundedCornerShape(SmallElementRadius))
-                            .background(categoryColor.copy(alpha = 0.16f))
-                            .border(1.dp, categoryColor.copy(alpha = 0.35f), RoundedCornerShape(SmallElementRadius)),
+                            .background(categoryColor.copy(alpha = 0.16f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -137,7 +137,8 @@ fun RecurringBillCardItem(
                         text = formatCurrency(bill.amount, currencySymbol),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = 15.sp,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = appColors.textPrimary,
                         maxLines = 1,
@@ -146,7 +147,8 @@ fun RecurringBillCardItem(
 
                     Box {
                         IconButton(
-                            onClick = { showMenu = true }
+                            onClick = { showMenu = true },
+                            modifier = Modifier.minimumInteractiveComponentSize()
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,

@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.theme.SmallElementRadius
+import com.example.expensetracker.theme.RadiusS
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 @Composable
@@ -43,20 +43,25 @@ fun AccountsQuickActionsRow(
             modifier = Modifier
                 .weight(1f)
                 .height(48.dp)
-                .clip(RoundedCornerShape(SmallElementRadius))
+                .clip(RoundedCornerShape(RadiusS))
                 .clickable { onAddAccountClick() },
-            shape = RoundedCornerShape(SmallElementRadius),
-            color = appColors.accent.copy(alpha = 0.15f),
-            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.35f))
+            shape = RoundedCornerShape(RadiusS),
+            color = appColors.accentContainer,
+            border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.accent.copy(alpha = 0.35f))
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Filled.Add, null, tint = appColors.accent, modifier = Modifier.size(16.dp))
+                Icon(Icons.Filled.Add, null, tint = appColors.accent, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(strings.addAccount, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = appColors.accent)
+                Text(
+                    text = strings.addAccount,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = appColors.accent
+                )
             }
         }
 
@@ -64,20 +69,25 @@ fun AccountsQuickActionsRow(
             modifier = Modifier
                 .weight(1f)
                 .height(48.dp)
-                .clip(RoundedCornerShape(SmallElementRadius))
+                .clip(RoundedCornerShape(RadiusS))
                 .clickable { onTransferFundsClick() },
-            shape = RoundedCornerShape(SmallElementRadius),
-            color = appColors.surface,
-            border = BorderStroke(1.dp, appColors.border)
+            shape = RoundedCornerShape(RadiusS),
+            color = appColors.surfaceRaised,
+            border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border)
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Filled.SwapHoriz, null, tint = appColors.textPrimary, modifier = Modifier.size(17.dp))
+                Icon(Icons.Filled.SwapHoriz, null, tint = appColors.textPrimary, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(strings.transferFunds, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = appColors.textPrimary)
+                Text(
+                    text = strings.transferFunds,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = appColors.textPrimary
+                )
             }
         }
     }

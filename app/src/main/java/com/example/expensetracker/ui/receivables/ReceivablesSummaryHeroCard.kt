@@ -74,7 +74,8 @@ fun ReceivablesSummaryHeroCard(
                 text = if (isPrivacyMode) "••••••" else formatCurrency(summary.remainingDue, currencySymbol),
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum"
                 ),
                 color = appColors.textPrimary
             )
@@ -91,8 +92,11 @@ fun ReceivablesSummaryHeroCard(
                     Text(strings.totalLent, fontSize = 11.sp, color = appColors.textMuted)
                     Text(
                         text = if (isPrivacyMode) "••••" else formatCurrency(summary.totalLent, currencySymbol),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFeatureSettings = "tnum"
+                        ),
                         color = appColors.textPrimary
                     )
                 }
@@ -101,8 +105,11 @@ fun ReceivablesSummaryHeroCard(
                     Text(strings.totalCollected, fontSize = 11.sp, color = appColors.textMuted)
                     Text(
                         text = if (isPrivacyMode) "••••" else formatCurrency(summary.totalCollected, currencySymbol),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFeatureSettings = "tnum"
+                        ),
                         color = appColors.income
                     )
                 }

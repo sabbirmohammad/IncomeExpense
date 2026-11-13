@@ -223,4 +223,27 @@ open class StringsCore(
     val updateAccount: String get() = if (isBangla) "অ্যাকাউন্ট আপডেট করুন" else "Update Account"
     val saveAccount: String get() = if (isBangla) "অ্যাকাউন্ট সংরক্ষণ করুন" else "Save Account"
     val activeSources: String get() = if (isBangla) "সক্রিয় অ্যাকাউন্ট" else "ACTIVE SOURCES"
+
+    // Phase 6 Money Hub Sub-screens Strings
+    val budgetStatusSafe: String get() = if (isBangla) "নিরাপদ" else "Safe"
+    val budgetStatusWarning: String get() = if (isBangla) "সীমার কাছাকাছি" else "Nearing limit"
+    val budgetStatusOver: String get() = if (isBangla) "বাজেট অতিক্রম" else "Over budget"
+    val suggestBudgetFromLastMonth: String get() = if (isBangla) "গত মাসের খরচের ভিত্তিতে বাজেট সাজান" else "Suggest budget from last month"
+
+    val tabUpcoming: String get() = if (isBangla) "আসন্ন" else "Upcoming"
+    val tabPaid: String get() = if (isBangla) "পরিশোধিত" else "Paid"
+    val tabAll: String get() = if (isBangla) "সকল" else "All"
+
+    val templateElectricity: String get() = if (isBangla) "বিদ্যুৎ বিল" else "Electricity"
+    val templateGas: String get() = if (isBangla) "গ্যাস বিল" else "Gas"
+    val templateWifi: String get() = if (isBangla) "ইন্টারনেট" else "Wi-Fi"
+    val templateRent: String get() = if (isBangla) "বাড়ি ভাড়া" else "Rent"
+    val templateRecharge: String get() = if (isBangla) "মোবাইল রিচার্জ" else "Mobile Recharge"
+    val templateSubscription: String get() = if (isBangla) "সাবস্ক্রিপশন" else "Subscription"
+
+    val templateEmergencyFund: String get() = if (isBangla) "জরুরি তহবিল" else "Emergency Fund"
+    val templateEidSavings: String get() = if (isBangla) "ঈদ সঞ্চয়" else "Eid Savings"
+    val templateEducation: String get() = if (isBangla) "শিক্ষা" else "Education"
+    val templateTravel: String get() = if (isBangla) "ভ্রমণ" else "Travel"
+    val payNowAction: String get() = if (isBangla) "পরিশোধ করুন" else "Pay now"
 }

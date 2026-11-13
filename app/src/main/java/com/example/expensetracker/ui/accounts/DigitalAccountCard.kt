@@ -50,9 +50,9 @@ fun DigitalAccountCard(
         modifier = modifier
             .fillMaxWidth()
             .height(190.dp),
-        shape = RoundedCornerShape(22.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.20f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.20f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(
             modifier = Modifier
@@ -174,7 +174,8 @@ fun DigitalAccountCard(
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
+                            letterSpacing = (-0.5).sp,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = if (isLightContent) Color.White else Color.Black
                     )

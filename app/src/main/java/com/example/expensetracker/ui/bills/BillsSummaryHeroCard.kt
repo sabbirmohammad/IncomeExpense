@@ -30,7 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.ui.components.AppCard
+import com.example.expensetracker.theme.RadiusM
+import com.example.expensetracker.theme.RadiusS
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
@@ -50,11 +51,13 @@ fun BillsSummaryHeroCard(
     val appColors = LocalAppColors.current
     val isBn = strings.isBangla || globalBengaliNumeralsEnabled
 
-    AppCard(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        padding = 16.dp
+        shape = RoundedCornerShape(RadiusM),
+        color = appColors.surfaceRaised,
+        border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border)
     ) {
-        Column {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -72,9 +75,10 @@ fun BillsSummaryHeroCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = formatCurrency(totalMonthlyCommitments, currencySymbol, isBn),
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = appColors.textPrimary
                     )
@@ -83,8 +87,8 @@ fun BillsSummaryHeroCard(
                 Box(
                     modifier = Modifier
                         .size(46.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(appColors.accent.copy(alpha = 0.15f)),
+                        .clip(RoundedCornerShape(RadiusS))
+                        .background(appColors.accentContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -127,8 +131,7 @@ fun BillsSummaryHeroCard(
                     val overdueDisp = if (isBn) convertToBengaliDigits(overdueCount.toString()) else overdueCount.toString()
                     Surface(
                         shape = CircleShape,
-                        color = appColors.dangerExpense.copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, appColors.dangerExpense.copy(alpha = 0.35f))
+                        color = appColors.expenseContainer
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -138,16 +141,16 @@ fun BillsSummaryHeroCard(
                             Icon(
                                 imageVector = Icons.Outlined.Warning,
                                 contentDescription = null,
-                                tint = appColors.dangerExpense,
+                                tint = appColors.expense,
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "$overdueDisp ${if (strings.isBangla) "বকেয়া" else "overdue"}",
+                                text = "$overdueDisp ${strings.overdueBadgeText}",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = appColors.dangerExpense
+                                color = appColors.expense
                             )
                         }
                     }
@@ -155,8 +158,7 @@ fun BillsSummaryHeroCard(
                     val dueSoonDisp = if (isBn) convertToBengaliDigits(dueSoonCount.toString()) else dueSoonCount.toString()
                     Surface(
                         shape = CircleShape,
-                        color = appColors.warning.copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, appColors.warning.copy(alpha = 0.35f))
+                        color = appColors.warningContainer
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -170,7 +172,7 @@ fun BillsSummaryHeroCard(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "$dueSoonDisp ${if (strings.isBangla) "তাগিদ" else "due soon"}",
+                                text = "$dueSoonDisp ${if (strings.isBangla) "টি বিল আসছে" else "due soon"}",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold

@@ -23,6 +23,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -111,8 +112,10 @@ fun SavingsSummaryCard(
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = appColors.accent.copy(alpha = 0.12f),
-                    modifier = Modifier.clickable { onAddGoalClick() }
+                    color = appColors.accentContainer,
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable { onAddGoalClick() }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -149,7 +152,8 @@ fun SavingsSummaryCard(
                         text = if (isPrivacyMode) "••••••" else formatCurrency(totalSaved, currencySymbol),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = appColors.income
                     )

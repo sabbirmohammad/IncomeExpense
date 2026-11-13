@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -111,11 +112,13 @@ fun ReceivablesTopBar(
             if (selectedTab == DebtLedgerTab.RECEIVABLES) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = appColors.accent.copy(alpha = 0.15f),
-                    modifier = Modifier.clickable {
-                        haptics.mediumClick()
-                        onSplitBillClick()
-                    }
+                    color = appColors.accentContainer,
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable {
+                            haptics.mediumClick()
+                            onSplitBillClick()
+                        }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
@@ -141,18 +144,18 @@ fun ReceivablesTopBar(
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
-            // Quick Add Button
             IconButton(
                 onClick = {
                     haptics.mediumClick()
                     onQuickAddClick()
-                }
+                },
+                modifier = Modifier.minimumInteractiveComponentSize()
             ) {
                 Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(appColors.accent.copy(alpha = 0.15f)),
+                        .background(appColors.accentContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

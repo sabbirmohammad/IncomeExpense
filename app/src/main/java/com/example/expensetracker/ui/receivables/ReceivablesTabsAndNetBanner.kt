@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,10 +29,10 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.DebtBookSummary
 import com.example.expensetracker.data.model.PayablesSummary
 import com.example.expensetracker.data.model.ReceivablesSummary
-import com.example.expensetracker.theme.CardCornerRadius
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
+import com.example.expensetracker.theme.RadiusS
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
-import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -62,24 +63,25 @@ fun ReceivablesTabsAndNetBanner(
         ) {
             // Tab 1: Receivables
             Surface(
-                shape = RoundedCornerShape(SmallElementRadius),
-                color = if (selectedTab == DebtLedgerTab.RECEIVABLES) appColors.accent else appColors.surface,
-                border = if (selectedTab == DebtLedgerTab.RECEIVABLES) null else BorderStroke(1.dp, appColors.border),
+                shape = RoundedCornerShape(RadiusS),
+                color = if (selectedTab == DebtLedgerTab.RECEIVABLES) appColors.accent else appColors.surfaceRaised,
+                border = if (selectedTab == DebtLedgerTab.RECEIVABLES || appColors.isDark) null else BorderStroke(0.5.dp, appColors.border),
                 modifier = Modifier
                     .weight(1f)
+                    .minimumInteractiveComponentSize()
                     .clickable {
                         haptics.lightTick()
                         onTabSelected(DebtLedgerTab.RECEIVABLES)
                     }
             ) {
                 Row(
-                    modifier = Modifier.padding(vertical = 9.dp),
+                    modifier = Modifier.padding(vertical = 10.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = strings.tabReceivables,
-                        fontSize = 12.5.sp,
+                        fontSize = 13.sp,
                         fontWeight = if (selectedTab == DebtLedgerTab.RECEIVABLES) FontWeight.Bold else FontWeight.Medium,
                         color = if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White else appColors.textSecondary
                     )
@@ -88,7 +90,7 @@ fun ReceivablesTabsAndNetBanner(
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White.copy(alpha = 0.25f) else appColors.accent.copy(alpha = 0.15f))
+                                .background(if (selectedTab == DebtLedgerTab.RECEIVABLES) Color.White.copy(alpha = 0.25f) else appColors.accentContainer)
                                 .padding(horizontal = 6.dp, vertical = 1.dp)
                         ) {
                             Text(
@@ -104,24 +106,25 @@ fun ReceivablesTabsAndNetBanner(
 
             // Tab 2: Payables
             Surface(
-                shape = RoundedCornerShape(SmallElementRadius),
-                color = if (selectedTab == DebtLedgerTab.PAYABLES) appColors.accent else appColors.surface,
-                border = if (selectedTab == DebtLedgerTab.PAYABLES) null else BorderStroke(1.dp, appColors.border),
+                shape = RoundedCornerShape(RadiusS),
+                color = if (selectedTab == DebtLedgerTab.PAYABLES) appColors.accent else appColors.surfaceRaised,
+                border = if (selectedTab == DebtLedgerTab.PAYABLES || appColors.isDark) null else BorderStroke(0.5.dp, appColors.border),
                 modifier = Modifier
                     .weight(1f)
+                    .minimumInteractiveComponentSize()
                     .clickable {
                         haptics.lightTick()
                         onTabSelected(DebtLedgerTab.PAYABLES)
                     }
             ) {
                 Row(
-                    modifier = Modifier.padding(vertical = 9.dp),
+                    modifier = Modifier.padding(vertical = 10.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = strings.tabPayables,
-                        fontSize = 12.5.sp,
+                        fontSize = 13.sp,
                         fontWeight = if (selectedTab == DebtLedgerTab.PAYABLES) FontWeight.Bold else FontWeight.Medium,
                         color = if (selectedTab == DebtLedgerTab.PAYABLES) Color.White else appColors.textSecondary
                     )
@@ -130,7 +133,7 @@ fun ReceivablesTabsAndNetBanner(
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(if (selectedTab == DebtLedgerTab.PAYABLES) Color.White.copy(alpha = 0.25f) else appColors.expense.copy(alpha = 0.15f))
+                                .background(if (selectedTab == DebtLedgerTab.PAYABLES) Color.White.copy(alpha = 0.25f) else appColors.expenseContainer)
                                 .padding(horizontal = 6.dp, vertical = 1.dp)
                         ) {
                             Text(
@@ -147,15 +150,15 @@ fun ReceivablesTabsAndNetBanner(
 
         // Net Position Banner
         Surface(
-            shape = RoundedCornerShape(CardCornerRadius),
-            color = appColors.surface,
-            border = BorderStroke(1.dp, appColors.border),
+            shape = RoundedCornerShape(RadiusM),
+            color = appColors.surfaceRaised,
+            border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = ScreenPaddingHorizontal, vertical = 4.dp)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -173,7 +176,7 @@ fun ReceivablesTabsAndNetBanner(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = strings.netPosition,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         color = appColors.textSecondary
                     )
                 }
@@ -191,8 +194,9 @@ fun ReceivablesTabsAndNetBanner(
                     Text(
                         text = netText,
                         style = MaterialTheme.typography.labelMedium.copy(
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = if (debtBookSummary.netBalance > 0) appColors.income
                         else if (debtBookSummary.netBalance < 0) appColors.expense

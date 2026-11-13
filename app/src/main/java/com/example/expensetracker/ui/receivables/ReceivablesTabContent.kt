@@ -59,12 +59,14 @@ fun LazyListScope.receivablesTabContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val countDisp = if (strings.isBangla) com.example.expensetracker.ui.components.convertToBengaliDigits(receivables.size.toString()) else receivables.size.toString()
             Text(
-                text = "${strings.pendingDebtors} (${receivables.size})",
+                text = "${strings.pendingDebtors} ($countDisp)",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = appColors.textMuted,
-                letterSpacing = 0.8.sp
+                letterSpacing = 0.8.sp,
+                style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum")
             )
             Text(
                 text = "+ ${strings.addReceivable}",

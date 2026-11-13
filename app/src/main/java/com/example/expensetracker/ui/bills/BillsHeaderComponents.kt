@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,10 +31,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
+import com.example.expensetracker.theme.RadiusS
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
 import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.LocalAppStrings
-import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun BillsTopBar(
@@ -52,7 +56,10 @@ fun BillsTopBar(
             DrawerMenuButton(onClick = onMenuClick)
             Spacer(modifier = Modifier.width(12.dp))
         } else if (onNavigateBack != null) {
-            IconButton(onClick = onNavigateBack) {
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier.minimumInteractiveComponentSize()
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Back",
@@ -82,39 +89,32 @@ fun AddRecurringBillButton(
     val strings = LocalAppStrings.current
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = appColors.accent.copy(alpha = 0.14f),
-        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.45f)),
+        shape = RoundedCornerShape(RadiusS),
+        color = appColors.accentContainer,
+        border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.accent.copy(alpha = 0.35f)),
         modifier = modifier
             .fillMaxWidth()
+            .height(48.dp)
             .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 13.dp),
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(appColors.accent),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(17.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = null,
+                tint = appColors.accent,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = if (strings.isBangla) "নতুন রিকারিং বিল যোগ করুন" else "Add New Recurring Bill",
                 style = MaterialTheme.typography.titleSmall.copy(
-                    fontSize = 14.sp,
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
                 color = appColors.accent
@@ -149,14 +149,15 @@ fun BillsSectionHeader(
 
         Surface(
             shape = CircleShape,
-            color = appColors.surfaceVariant,
-            border = BorderStroke(1.dp, appColors.border)
+            color = appColors.surfaceRaised,
+            border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border)
         ) {
             Text(
                 text = "$count",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    fontFeatureSettings = "tnum"
                 ),
                 color = appColors.textSecondary,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)

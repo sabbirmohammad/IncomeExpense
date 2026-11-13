@@ -107,7 +107,8 @@ fun SavingsGoalCard(
                         text = if (isPrivacyMode) "••••••" else formatCurrency(goal.savedAmount, currencySymbol),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = if (goal.isCompleted) appColors.income else appColors.textPrimary
                     )

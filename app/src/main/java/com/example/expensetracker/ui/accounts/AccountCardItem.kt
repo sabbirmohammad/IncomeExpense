@@ -2,7 +2,6 @@ package com.example.expensetracker.ui.accounts
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
+import com.example.expensetracker.theme.RadiusS
 import com.example.expensetracker.ui.components.BrandIdentityHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
@@ -59,24 +60,15 @@ fun AccountCardItem(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(RadiusM))
             .clickable { onClick() },
-        shape = RoundedCornerShape(18.dp),
-        color = appColors.surface,
-        border = BorderStroke(1.dp, brandStyle.primaryColor.copy(alpha = if (appColors.isDark) 0.28f else 0.20f))
+        shape = RoundedCornerShape(RadiusM),
+        color = appColors.surfaceRaised,
+        border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            brandStyle.primaryColor.copy(alpha = if (appColors.isDark) 0.12f else 0.08f),
-                            appColors.surface.copy(alpha = 0.90f),
-                            if (appColors.isDark) Color(0xFF0F1220) else appColors.surfaceVariant
-                        )
-                    )
-                )
                 .padding(14.dp)
         ) {
             Column {
@@ -92,16 +84,15 @@ fun AccountCardItem(
                         Box(
                             modifier = Modifier
                                 .size(46.dp)
-                                .clip(RoundedCornerShape(13.dp))
-                                .background(brandStyle.gradient)
-                                .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(13.dp)),
+                                .clip(RoundedCornerShape(RadiusS))
+                                .background(brandStyle.gradient),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = brandStyle.icon,
                                 contentDescription = null,
                                 tint = if (brandStyle.isDarkCard) Color.White else Color.Black,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
@@ -112,7 +103,7 @@ fun AccountCardItem(
                                 Text(
                                     text = account.name,
                                     style = MaterialTheme.typography.titleMedium.copy(
-                                        fontSize = 15.5.sp,
+                                        fontSize = 15.sp,
                                         fontWeight = FontWeight.SemiBold
                                     ),
                                     color = appColors.textPrimary,
@@ -123,7 +114,7 @@ fun AccountCardItem(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
                                         shape = RoundedCornerShape(4.dp),
-                                        color = appColors.accent.copy(alpha = 0.2f)
+                                        color = appColors.accentContainer
                                     ) {
                                         Text(
                                             text = "DEFAULT",
@@ -146,7 +137,7 @@ fun AccountCardItem(
                                     account.accountNumber.isNotBlank() -> "•••• ${account.accountNumber.takeLast(4)}"
                                     else -> account.type.getDisplayName(strings.isBangla)
                                 },
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                 color = appColors.textSecondary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -161,8 +152,12 @@ fun AccountCardItem(
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 text = formatCurrency(account.currentBalance, currencySymbol),
-                                style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-                                color = if (account.currentBalance >= 0) appColors.textPrimary else appColors.dangerExpense
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum"
+                                ),
+                                color = if (account.currentBalance >= 0) appColors.textPrimary else appColors.expense
                             )
                             Text(
                                 text = if (strings.isBangla) "ব্যালেন্স" else "Balance",

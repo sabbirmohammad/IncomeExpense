@@ -1,36 +1,50 @@
 package com.example.expensetracker.ui.bills
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.BillFrequency
 import com.example.expensetracker.data.model.BillPaymentStatus
 import com.example.expensetracker.data.model.RecurringBill
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
+import com.example.expensetracker.ui.components.AppChip
 import com.example.expensetracker.ui.components.ConfettiCelebration
 import com.example.expensetracker.ui.components.EmptyStateCard
 import com.example.expensetracker.ui.components.FeedbackStrings
 import com.example.expensetracker.ui.components.FeedbackVisualType
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.LocalFeedbackController
+import com.example.expensetracker.ui.components.SegmentedControl
 import com.example.expensetracker.ui.components.TransactionFeedbackData
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
@@ -53,6 +67,7 @@ fun BillsScreen(
     var billToPay by remember { mutableStateOf<RecurringBill?>(null) }
     var billToDelete by remember { mutableStateOf<RecurringBill?>(null) }
     var showConfetti by remember { mutableStateOf(false) }
+    var selectedSegment by remember { mutableIntStateOf(0) } // 0 = Upcoming, 1 = Paid, 2 = All
 
     val totalMonthlyCommitments = remember(bills) {
         bills.filter { it.isActive }.sumOf {
@@ -69,6 +84,14 @@ fun BillsScreen(
     }
     val dueSoonCount = remember(bills) {
         bills.count { it.isActive && it.getPaymentStatus() == BillPaymentStatus.DUE_SOON }
+    }
+
+    val filteredBills = remember(bills, selectedSegment) {
+        when (selectedSegment) {
+            0 -> bills.filter { it.getPaymentStatus() != BillPaymentStatus.PAID }
+            1 -> bills.filter { it.getPaymentStatus() == BillPaymentStatus.PAID }
+            else -> bills
+        }
     }
 
     Column(
@@ -119,10 +142,22 @@ fun BillsScreen(
                 }
 
                 item {
-                    BillsSectionHeader(count = bills.size)
+                    SegmentedControl(
+                        items = listOf(strings.tabUpcoming, strings.tabPaid, strings.tabAll),
+                        selectedIndex = selectedSegment,
+                        onItemSelected = {
+                            haptics.lightTick()
+                            selectedSegment = it
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
 
-                if (bills.isEmpty()) {
+                item {
+                    BillsSectionHeader(count = filteredBills.size)
+                }
+
+                if (filteredBills.isEmpty()) {
                     item {
                         EmptyStateCard(
                             icon = Icons.Outlined.ReceiptLong,
@@ -138,8 +173,57 @@ fun BillsScreen(
                             }
                         )
                     }
+
+                    if (bills.isEmpty()) {
+                        item {
+                            Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                                Text(
+                                    text = if (strings.isBangla) "বিল টেমপ্লেট নির্বাচন করুন:" else "Quick bill templates:",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = LocalAppColors.current.textMuted
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val templates = listOf(
+                                        strings.templateElectricity to "Electricity",
+                                        strings.templateGas to "Gas",
+                                        strings.templateWifi to "Wi-Fi",
+                                        strings.templateRent to "House Rent",
+                                        strings.templateRecharge to "Mobile Recharge",
+                                        strings.templateSubscription to "Subscription"
+                                    )
+                                    templates.forEach { (label, defaultTitle) ->
+                                        AppChip(
+                                            label = label,
+                                            selected = false,
+                                            onClick = {
+                                                billToEdit = RecurringBill(
+                                                    title = if (strings.isBangla) label else defaultTitle,
+                                                    amount = 0.0,
+                                                    categoryId = 0L,
+                                                    categoryName = "Bills",
+                                                    categoryIcon = "ReceiptLong",
+                                                    frequency = BillFrequency.MONTHLY,
+                                                    dueDay = 1
+                                                )
+                                                showAddSheet = true
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else {
-                    items(bills, key = { it.id }) { bill ->
+                    items(filteredBills, key = { it.id }) { bill ->
                         RecurringBillCardItem(
                             bill = bill,
                             currencySymbol = userProfile.currencySymbol,
@@ -176,7 +260,7 @@ fun BillsScreen(
             currencySymbol = userProfile.currencySymbol,
             onDismiss = { showAddSheet = false },
             onSave = { newBill ->
-                val isEditing = billToEdit != null
+                val isEditing = billToEdit != null && billToEdit!!.id != 0L
                 if (isEditing) {
                     viewModel.updateBill(newBill)
                 } else {

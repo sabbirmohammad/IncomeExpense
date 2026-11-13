@@ -21,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -83,8 +84,7 @@ fun ReceivableItemCard(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(appColors.accent.copy(alpha = 0.15f))
-                            .border(1.dp, appColors.accent.copy(alpha = 0.3f), CircleShape),
+                            .background(appColors.accentContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -147,7 +147,10 @@ fun ReceivableItemCard(
                     }
 
                     Box {
-                        IconButton(onClick = { showMenu = true }) {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.minimumInteractiveComponentSize()
+                        ) {
                             Icon(Icons.Default.MoreVert, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp))
                         }
                         ReceivableItemMenu(
@@ -175,15 +178,26 @@ fun ReceivableItemCard(
                         text = formatCurrency(receivable.remainingAmount, currencySymbol),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = if (receivable.isSettled) appColors.income else appColors.expense
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("${strings.totalLent}: ${formatCurrency(receivable.amount, currencySymbol)}", fontSize = 11.sp, color = appColors.textSecondary)
-                    Text("${strings.totalCollected}: ${formatCurrency(receivable.amountReceived, currencySymbol)}", fontSize = 11.sp, color = appColors.income)
+                    Text(
+                        "${strings.totalLent}: ${formatCurrency(receivable.amount, currencySymbol)}",
+                        fontSize = 11.sp,
+                        color = appColors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+                    )
+                    Text(
+                        "${strings.totalCollected}: ${formatCurrency(receivable.amountReceived, currencySymbol)}",
+                        fontSize = 11.sp,
+                        color = appColors.income,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+                    )
                 }
             }
 

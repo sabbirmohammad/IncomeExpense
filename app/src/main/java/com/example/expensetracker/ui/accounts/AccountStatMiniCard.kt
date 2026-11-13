@@ -30,7 +30,7 @@ fun AccountStatMiniCard(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         color = appColors.surfaceVariant,
-        border = BorderStroke(1.dp, appColors.border.copy(alpha = 0.6f))
+        border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
@@ -50,7 +50,8 @@ fun AccountStatMiniCard(
                 fontWeight = FontWeight.Bold,
                 color = color,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
             )
         }
     }

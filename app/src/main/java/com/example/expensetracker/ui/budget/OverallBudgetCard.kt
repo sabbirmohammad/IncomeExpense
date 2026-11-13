@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,22 +24,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.SmallElementRadius
-import com.example.expensetracker.ui.components.AppCard
+import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.RadiusM
+import com.example.expensetracker.theme.RadiusS
 import com.example.expensetracker.ui.components.AppProgressBar
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
-import java.util.Calendar
-import com.example.expensetracker.theme.LocalAppColors
 
 @Composable
 fun OverallBudgetCard(
@@ -53,8 +51,13 @@ fun OverallBudgetCard(
     val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
-    AppCard(modifier = modifier) {
-        Column {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(RadiusM),
+        color = appColors.surfaceRaised,
+        border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -64,8 +67,8 @@ fun OverallBudgetCard(
                     Box(
                         modifier = Modifier
                             .size(38.dp)
-                            .clip(RoundedCornerShape(SmallElementRadius))
-                            .background(appColors.accent.copy(alpha = 0.15f)),
+                            .clip(RoundedCornerShape(RadiusS))
+                            .background(appColors.accentContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -80,19 +83,51 @@ fun OverallBudgetCard(
                         text = strings.overallMonthlyBudget,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.SemiBold
                         ),
                         color = appColors.textPrimary
                     )
                 }
 
-                IconButton(onClick = onEditBudgetClick) {
-                    Icon(
-                        imageVector = Icons.Outlined.Edit,
-                        contentDescription = "Edit overall budget",
-                        tint = appColors.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
+                if (overallStatus != null) {
+                    val (statusFillColor, statusContainerColor, statusText) = when {
+                        overallStatus.isOverBudget || overallStatus.progressPercent >= 1.0f ->
+                            Triple(appColors.expense, appColors.expenseContainer, strings.budgetStatusOver)
+                        overallStatus.progressPercent >= 0.75f ->
+                            Triple(appColors.warning, appColors.warningContainer, strings.budgetStatusWarning)
+                        else ->
+                            Triple(appColors.accent, appColors.accentContainer, strings.budgetStatusSafe)
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = statusContainerColor
+                        ) {
+                            Text(
+                                text = statusText,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = statusFillColor,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onEditBudgetClick,
+                            modifier = Modifier.minimumInteractiveComponentSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit overall budget",
+                                tint = appColors.textSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -115,7 +150,8 @@ fun OverallBudgetCard(
                             text = formatCurrency(overallStatus.spentAmount, currencySymbol),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontSize = 20.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Bold,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = if (overallStatus.isOverBudget) appColors.expense else appColors.income
                         )
@@ -132,7 +168,8 @@ fun OverallBudgetCard(
                             text = formatCurrency(overallStatus.budget.amount, currencySymbol),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontSize = 17.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.SemiBold,
+                                fontFeatureSettings = "tnum"
                             ),
                             color = appColors.textPrimary
                         )
@@ -142,14 +179,14 @@ fun OverallBudgetCard(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 val statusFillColor = when {
-                    overallStatus.isOverBudget -> appColors.expense
-                    overallStatus.progressPercent > 0.8f -> appColors.warning
-                    else -> appColors.income
+                    overallStatus.isOverBudget || overallStatus.progressPercent >= 1.0f -> appColors.expense
+                    overallStatus.progressPercent >= 0.75f -> appColors.warning
+                    else -> appColors.accent
                 }
 
                 AppProgressBar(
                     progress = overallStatus.progressPercent,
-                    height = 7.dp,
+                    height = 6.dp,
                     fillColor = statusFillColor
                 )
 
@@ -167,14 +204,18 @@ fun OverallBudgetCard(
                         else
                             overallPctDisplay,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = if (overallStatus.isOverBudget) appColors.expense else appColors.textSecondary
                     )
                     Text(
                         text = if (strings.isBangla) "${formatCurrency(overallStatus.remainingAmount, currencySymbol)} বাকি" else "${formatCurrency(overallStatus.remainingAmount, currencySymbol)} left",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontFeatureSettings = "tnum"
+                        ),
                         color = appColors.textSecondary
                     )
                 }
@@ -191,22 +232,24 @@ fun OverallBudgetCard(
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         color = appColors.textSecondary
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = onSetBudgetClick,
                         colors = ButtonDefaults.buttonColors(containerColor = appColors.accent),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.height(36.dp)
+                        shape = RoundedCornerShape(RadiusS),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Add,
                             contentDescription = null,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (strings.isBangla) "বাজেট নির্ধারণ করুন" else "Set Monthly Budget",
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }

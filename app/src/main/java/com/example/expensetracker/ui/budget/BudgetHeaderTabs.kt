@@ -120,8 +120,8 @@ fun BudgetHeaderTabs(
         // Segmented Tabs: Budgets vs Savings Goals
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = appColors.surface,
-            border = BorderStroke(1.dp, appColors.border),
+            color = appColors.surfaceRaised,
+            border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(

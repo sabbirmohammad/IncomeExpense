@@ -57,9 +57,14 @@ fun LazyListScope.payablesTabContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val countDisp = if (strings.isBangla) com.example.expensetracker.ui.components.convertToBengaliDigits(payables.size.toString()) else payables.size.toString()
             Text(
-                text = "${strings.payablesTitle.uppercase(Locale.getDefault())} (${payables.size})",
-                style = MaterialTheme.typography.titleSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                text = "${strings.payablesTitle.uppercase(Locale.getDefault())} ($countDisp)",
+                style = MaterialTheme.typography.titleSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum"
+                ),
                 color = appColors.textSecondary,
                 letterSpacing = 0.8.sp
             )

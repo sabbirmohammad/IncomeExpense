@@ -77,7 +77,8 @@ fun PayablesSummaryCard(
                 text = if (isPrivacyMode) "••••••" else formatCurrency(summary.remainingDue, currencySymbol),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum"
                 ),
                 color = appColors.expense
             )
@@ -112,7 +113,8 @@ fun PayablesSummaryCard(
                         text = if (isPrivacyMode) "••••" else formatCurrency(summary.totalBorrowed, currencySymbol),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = appColors.textPrimary
                     )
@@ -129,7 +131,8 @@ fun PayablesSummaryCard(
                         text = if (isPrivacyMode) "••••" else formatCurrency(summary.totalRepaid, currencySymbol),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = appColors.income
                     )

@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,8 +81,8 @@ fun PayableRowItem(
                             .size(38.dp)
                             .clip(CircleShape)
                             .background(
-                                if (payable.isSettled) appColors.income.copy(alpha = 0.15f)
-                                else appColors.expense.copy(alpha = 0.15f)
+                                if (payable.isSettled) appColors.accentContainer
+                                else appColors.expenseContainer
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -122,7 +123,8 @@ fun PayableRowItem(
                         text = if (isPrivacyMode) "••••" else formatCurrency(payable.remainingAmount, currencySymbol),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
                         ),
                         color = if (payable.isSettled) appColors.income else appColors.expense
                     )
@@ -139,7 +141,8 @@ fun PayableRowItem(
 
                 Box {
                     IconButton(
-                        onClick = { showMenu = true }
+                        onClick = { showMenu = true },
+                        modifier = Modifier.minimumInteractiveComponentSize()
                     ) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,

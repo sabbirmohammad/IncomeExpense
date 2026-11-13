@@ -130,7 +130,14 @@ fun AccountsScreen(
             }
 
             if (accounts.isEmpty()) {
-                item { AccountsEmptyState() }
+                item {
+                    AccountsEmptyState(
+                        onAddAccountClick = {
+                            accountToEdit = null
+                            showAddEditSheet = true
+                        }
+                    )
+                }
             } else {
                 items(accounts, key = { it.id }) { acc ->
                     AccountCardItem(
