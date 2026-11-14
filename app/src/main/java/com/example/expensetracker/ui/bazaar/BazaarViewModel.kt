@@ -44,6 +44,7 @@ class BazaarViewModel(
 
     // Repository state flows
     val allMarketLists: StateFlow<List<MarketListWithItems>> = repository.allMarketLists
+    val isMarketListsLoaded: StateFlow<Boolean> = repository.isMarketListsLoaded
     val activeMarketLists: StateFlow<List<MarketListWithItems>> = repository.activeMarketLists
     val activeMarketList: StateFlow<MarketListWithItems?> = repository.activeMarketList
     val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = repository.lastPurchasedRates

@@ -46,17 +46,7 @@ fun rememberMarketDialogController(
     var isShopModeActive by rememberSaveable(currentViewingList?.list?.id) { mutableStateOf(false) }
     var showDuplicateMergeSheet by remember { mutableStateOf(false) }
 
-    MarketScreenShopModeDialog(
-        isActive = isShopModeActive,
-        currentViewingList = currentViewingList,
-        accounts = accounts,
-        currencySymbol = currencySymbol,
-        isBangla = isBangla,
-        dashboardViewModel = dashboardViewModel,
-        lastPurchasedRates = lastPurchasedRates,
-        productPriceInsights = productPriceInsights,
-        onDismiss = { isShopModeActive = false }
-    )
+
 
     MarketScreenDialogs(
         itemForUnitDialog = itemForUnitDialog,

@@ -21,6 +21,8 @@ import com.example.expensetracker.ui.analytics.AnalyticsScreen
 import com.example.expensetracker.ui.analytics.AnalyticsViewModel
 import com.example.expensetracker.ui.bazaar.BazaarHubScreen
 import com.example.expensetracker.ui.bazaar.BazaarPlanScreen
+import com.example.expensetracker.ui.bazaar.BazaarShopScreen
+import com.example.expensetracker.ui.bazaar.BazaarShopViewModel
 import com.example.expensetracker.ui.bazaar.BazaarViewModel
 import com.example.expensetracker.ui.bills.BillsScreen
 import com.example.expensetracker.ui.bills.BillsViewModel
@@ -83,10 +85,17 @@ fun NavigationScreenHost(
                 )
             }
             is PushedScreen.BAZAAR_SHOP -> {
-                BackHandler {
-                    navState.popScreen()
-                }
-                MarketScreen(dashboardViewModel = dashboardViewModel)
+                val bazaarShopViewModel: BazaarShopViewModel = viewModel()
+                BazaarShopScreen(
+                    listId = pushed.listId,
+                    bazaarShopViewModel = bazaarShopViewModel,
+                    onNavigateBack = {
+                        navState.popScreen()
+                    },
+                    onTripCompleted = {
+                        navState.popScreen()
+                    }
+                )
             }
         }
         return

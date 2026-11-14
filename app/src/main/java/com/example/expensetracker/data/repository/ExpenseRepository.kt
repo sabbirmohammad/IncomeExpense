@@ -79,6 +79,8 @@ class ExpenseRepository private constructor(context: Context) {
     val activeMarketLists: StateFlow<List<MarketListWithItems>> = _activeMarketLists.asStateFlow()
     internal val _allMarketLists = MutableStateFlow<List<MarketListWithItems>>(emptyList())
     val allMarketLists: StateFlow<List<MarketListWithItems>> = _allMarketLists.asStateFlow()
+    internal val _isMarketListsLoaded = MutableStateFlow(false)
+    val isMarketListsLoaded: StateFlow<Boolean> = _isMarketListsLoaded.asStateFlow()
     internal val _lastPurchasedRates = MutableStateFlow<Map<String, Pair<Double, String>>>(emptyMap())
     val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = _lastPurchasedRates.asStateFlow()
     internal val _productPriceInsights = MutableStateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>>(emptyMap())
@@ -153,6 +155,7 @@ class ExpenseRepository private constructor(context: Context) {
         _activeMarketList.value = dbHelper.getActiveMarketList()
         _activeMarketLists.value = dbHelper.getActiveMarketLists()
         _allMarketLists.value = dbHelper.getAllMarketLists()
+        _isMarketListsLoaded.value = true
         refreshProductPrices()
     }
 

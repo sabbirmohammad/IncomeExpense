@@ -119,22 +119,17 @@ fun BazaarPlanScreen(
     val masterProducts by bazaarViewModel.masterProducts.collectAsStateWithLifecycle()
     val masterProductsMap by bazaarViewModel.masterProductsMap.collectAsStateWithLifecycle()
     val isPrivacyMode by bazaarViewModel.isPrivacyMode.collectAsStateWithLifecycle()
+    val isMarketListsLoaded by bazaarViewModel.isMarketListsLoaded.collectAsStateWithLifecycle()
     val userProfile by bazaarViewModel.userProfile.collectAsStateWithLifecycle()
     val budgetCaps by bazaarViewModel.budgetCaps.collectAsStateWithLifecycle()
     val pendingDeletedItemIds by bazaarViewModel.pendingDeletedItemIds.collectAsStateWithLifecycle()
 
     val currentTrip = allLists.find { it.list.id == listId }
 
-    // If list does not exist (e.g. deleted or invalid restore), safely pop back
-    LaunchedEffect(allLists, currentTrip) {
-        if (allLists.isNotEmpty() && currentTrip == null) {
+    // If list does not exist after repository loading finishes, safely pop back to Hub
+    LaunchedEffect(isMarketListsLoaded, currentTrip) {
+        if (isMarketListsLoaded && currentTrip == null) {
             onNavigateBack()
-        } else if (currentTrip == null) {
-            // Grace period for initial repository StateFlow emission
-            delay(150L)
-            if (allLists.find { it.list.id == listId } == null) {
-                onNavigateBack()
-            }
         }
     }
 

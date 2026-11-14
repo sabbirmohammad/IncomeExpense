@@ -5,8 +5,10 @@ import com.example.expensetracker.data.model.MarketList
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.MasterProduct
 import com.example.expensetracker.ui.bazaar.BazaarDomainLogic
+import com.example.expensetracker.ui.dashboard.resetMasterProductsSupplier
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.launch
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -404,6 +406,11 @@ class BazaarPlanModeV7Test {
         assertEquals("বাজারের ফর্দ ২০২৬", savedTitle)
     }
 
+    @After
+    fun tearDown() {
+        resetMasterProductsSupplier()
+    }
+
     @Test
     fun testRestoreSafetyWithMissingListPopsToHubFallback() {
         val existingLists = listOf(
@@ -414,13 +421,23 @@ class BazaarPlanModeV7Test {
         )
         val missingListId = 999L
 
+        var isMarketListsLoaded = false
         var didPopToHub = false
-        val currentTrip = existingLists.find { it.list.id == missingListId }
-        if (existingLists.isNotEmpty() && currentTrip == null) {
-            didPopToHub = true
+
+        fun evaluateRestoreFallback(loaded: Boolean, lists: List<MarketListWithItems>, targetId: Long) {
+            val trip = lists.find { it.list.id == targetId }
+            if (loaded && trip == null) {
+                didPopToHub = true
+            }
         }
 
-        assertTrue("When restored listId is missing from existing lists, fallback must pop to Hub", didPopToHub)
-        assertNull("Missing list must resolve to null without throwing NPE", currentTrip)
+        // Before repository finish loading, must NOT prematurely pop
+        evaluateRestoreFallback(isMarketListsLoaded, emptyList(), missingListId)
+        assertFalse("Must not pop before repository completes initial loading", didPopToHub)
+
+        // After repository finish loading and list is really missing
+        isMarketListsLoaded = true
+        evaluateRestoreFallback(isMarketListsLoaded, existingLists, missingListId)
+        assertTrue("When restored listId is missing after loading finished, fallback must pop to Hub", didPopToHub)
     }
 }

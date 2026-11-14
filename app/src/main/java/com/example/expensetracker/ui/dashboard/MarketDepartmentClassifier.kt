@@ -19,6 +19,10 @@ private fun isSpicePowder(lower: String): Boolean {
 
 var masterProductsSupplier: (() -> Map<String, MasterProduct>?)? = null
 
+fun resetMasterProductsSupplier() {
+    masterProductsSupplier = null
+}
+
 fun classifyStallWithOverride(
     name: String,
     masterProductsMap: Map<String, MasterProduct>? = null
