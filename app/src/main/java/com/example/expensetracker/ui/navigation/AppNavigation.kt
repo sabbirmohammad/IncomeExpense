@@ -50,6 +50,9 @@ fun MainAppNavigation(
     val summary by dashboardViewModel.summary.collectAsStateWithLifecycle()
     val accounts by dashboardViewModel.accounts.collectAsStateWithLifecycle()
     val activeMarketList by dashboardViewModel.activeMarketList.collectAsStateWithLifecycle()
+    val activeMarketLists by dashboardViewModel.activeMarketLists.collectAsStateWithLifecycle()
+    val recurringBills by dashboardViewModel.recurringBills.collectAsStateWithLifecycle()
+    val receivables by dashboardViewModel.receivables.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val repository = remember { ExpenseRepository.getInstance(context) }
@@ -66,9 +69,18 @@ fun MainAppNavigation(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
-    // Status badges synchronization
-    navState.hasPlanAttention = summary.budgetOverspent > 0
-    navState.isBazaarTripActive = activeMarketList?.items?.any { !it.isPurchased } == true
+    // Status badges dynamically derived from live repository StateFlows (never saved in Saver)
+    val hasOverdueBills = remember(recurringBills) {
+        recurringBills.any { it.isActive && it.getPaymentStatus() == com.example.expensetracker.data.model.BillPaymentStatus.OVERDUE }
+    }
+    val hasOverdueDebts = remember(receivables) {
+        val now = System.currentTimeMillis()
+        receivables.any { !it.isSettled && it.dueDateMillis != null && it.dueDateMillis <= now }
+    }
+    val hasBudgetOverspent = summary.budgetOverspent > 0
+
+    navState.hasPlanAttention = hasOverdueBills || hasOverdueDebts || hasBudgetOverspent
+    navState.isBazaarTripActive = activeMarketLists.isNotEmpty() || (activeMarketList?.items?.any { !it.isPurchased } == true)
 
     // Notification trigger handling
     LaunchedEffect(triggerBudgetPromptFromNotification) {

@@ -37,10 +37,11 @@ class AdaptiveNavigationStateTest {
             initialTab = PulseTab.PLAN,
             initialMoneySegment = MoneySegment.INSIGHTS,
             initialPlanSegment = PlanSegment.DEBTS,
-            initialPushedScreen = PushedScreen.SETTINGS,
-            initialHasPlanAttention = true,
-            initialIsBazaarTripActive = true
-        )
+            initialPushedScreen = PushedScreen.SETTINGS
+        ).apply {
+            hasPlanAttention = true
+            isBazaarTripActive = true
+        }
 
         // Save
         val saved = with(AdaptiveNavigationState.Saver) {
@@ -55,8 +56,10 @@ class AdaptiveNavigationStateTest {
         assertEquals("Restored money segment must match", MoneySegment.INSIGHTS, restored.moneySegment)
         assertEquals("Restored plan segment must match", PlanSegment.DEBTS, restored.planSegment)
         assertEquals("Restored pushedScreen must match", PushedScreen.SETTINGS, restored.pushedScreen)
-        assertTrue("Restored hasPlanAttention must be true", restored.hasPlanAttention)
-        assertTrue("Restored isBazaarTripActive must be true", restored.isBazaarTripActive)
+
+        // Badges are NOT persisted in Saver (derived dynamically at runtime from repository StateFlows)
+        assertFalse("Restored hasPlanAttention must be false (not persisted)", restored.hasPlanAttention)
+        assertFalse("Restored isBazaarTripActive must be false (not persisted)", restored.isBazaarTripActive)
     }
 
     @Test

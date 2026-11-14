@@ -21,18 +21,16 @@ class AdaptiveNavigationState(
     initialTab: PulseTab = PulseTab.HOME,
     initialMoneySegment: MoneySegment = MoneySegment.ACTIVITY,
     initialPlanSegment: PlanSegment = PlanSegment.BUDGETS,
-    initialPushedScreen: PushedScreen? = null,
-    initialHasPlanAttention: Boolean = false,
-    initialIsBazaarTripActive: Boolean = false
+    initialPushedScreen: PushedScreen? = null
 ) {
     var selectedTab by mutableStateOf(initialTab)
     var moneySegment by mutableStateOf(initialMoneySegment)
     var planSegment by mutableStateOf(initialPlanSegment)
     var pushedScreen by mutableStateOf(initialPushedScreen)
 
-    // Badges
-    var hasPlanAttention by mutableStateOf(initialHasPlanAttention)
-    var isBazaarTripActive by mutableStateOf(initialIsBazaarTripActive)
+    // Badges: derived dynamically at the shell level from live repository StateFlows, NEVER persisted in Saver
+    var hasPlanAttention by mutableStateOf(false)
+    var isBazaarTripActive by mutableStateOf(false)
 
     val isTopLevel: Boolean
         get() = pushedScreen == null
@@ -173,9 +171,7 @@ class AdaptiveNavigationState(
                     state.selectedTab.name,
                     state.moneySegment.name,
                     state.planSegment.name,
-                    state.pushedScreen?.name ?: "",
-                    state.hasPlanAttention,
-                    state.isBazaarTripActive
+                    state.pushedScreen?.name ?: ""
                 )
             },
             restore = { list ->
@@ -184,9 +180,7 @@ class AdaptiveNavigationState(
                 val planSeg = runCatching { PlanSegment.valueOf(list[2] as String) }.getOrDefault(PlanSegment.BUDGETS)
                 val pushedStr = list[3] as String
                 val pushed = if (pushedStr.isNotBlank()) runCatching { PushedScreen.valueOf(pushedStr) }.getOrNull() else null
-                val hasAttention = if (list.size > 4) (list[4] as? Boolean) ?: false else false
-                val isBazaarActive = if (list.size > 5) (list[5] as? Boolean) ?: false else false
-                AdaptiveNavigationState(tab, moneySeg, planSeg, pushed, hasAttention, isBazaarActive)
+                AdaptiveNavigationState(tab, moneySeg, planSeg, pushed)
             }
         )
     }
