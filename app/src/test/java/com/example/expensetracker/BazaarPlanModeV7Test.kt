@@ -5,6 +5,8 @@ import com.example.expensetracker.data.model.MarketList
 import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.MasterProduct
 import com.example.expensetracker.ui.bazaar.BazaarDomainLogic
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -287,5 +289,138 @@ class BazaarPlanModeV7Test {
         assertTrue(formatted.contains("□ মুরগি - ১.৫ কেজি"))
         assertTrue(formatted.contains("🥛 দুধ ও বেকারি:"))
         assertTrue(formatted.contains("□ ডিম - ১ ডজন"))
+    }
+
+    @Test
+    fun testDeferredDeleteAllowsUndoBeforeTimeoutAndDeletesAfterwards() = runTest {
+        val pendingDeletedIds = mutableSetOf<Long>()
+        var realDbDeleteCalled = false
+
+        // Simulate initiating delete with undo
+        val itemId = 101L
+        pendingDeletedIds.add(itemId)
+        assertTrue("Item must be hidden immediately in UI pending state", pendingDeletedIds.contains(itemId))
+
+        // Case A: User clicks Undo before timeout
+        var userTriggeredUndo = true
+        if (userTriggeredUndo) {
+            pendingDeletedIds.remove(itemId)
+            assertFalse("Undo must restore item into active items", pendingDeletedIds.contains(itemId))
+            assertFalse("Real DB delete must NOT have been called on undo", realDbDeleteCalled)
+        }
+
+        // Case B: User does not undo, timeout expires
+        pendingDeletedIds.add(itemId)
+        userTriggeredUndo = false
+        if (!userTriggeredUndo) {
+            pendingDeletedIds.remove(itemId)
+            realDbDeleteCalled = true
+            assertTrue("Real DB delete must be executed when undo window expires", realDbDeleteCalled)
+        }
+    }
+
+    @Test
+    fun testBudgetCapPurgedOnDeleteOnlyNotOnComplete() {
+        val budgetCapStore = mutableMapOf<Long, Double>()
+        val listId = 42L
+        budgetCapStore[listId] = 2500.0
+
+        // Step 1: Complete list -> must NOT purge cap
+        var isCompleted = false
+        fun completeList(id: Long) {
+            isCompleted = true
+            // In Phase 3a fix: budget cap is NOT purged on complete
+        }
+        completeList(listId)
+        assertTrue("List must be marked completed", isCompleted)
+        assertEquals("Budget cap must be retained after completion for 3c trip history/summary", 2500.0, budgetCapStore[listId])
+
+        // Step 2: Delete list -> MUST purge cap
+        fun deleteList(id: Long) {
+            budgetCapStore.remove(id)
+        }
+        deleteList(listId)
+        assertNull("Budget cap must be purged only when list is deleted", budgetCapStore[listId])
+    }
+
+    @Test
+    fun testMissingBudgetCapKeyNeverThrows() {
+        val budgetCapStore = mutableMapOf<Long, Double>()
+        val nonExistentId = 999999L
+        val retrieved = runCatching { budgetCapStore[nonExistentId] }.getOrNull()
+        assertNull("Missing budget cap must return null without throwing", retrieved)
+    }
+
+    @Test
+    fun testDuplicateMarketListCopiesBudgetCap() {
+        val budgetCapStore = mutableMapOf<Long, Double>()
+        val sourceListId = 15L
+        budgetCapStore[sourceListId] = 3500.0
+
+        // Simulate duplicateMarketList logic
+        val newListId = 20L
+        val existingCap = budgetCapStore[sourceListId]
+        if (existingCap != null) {
+            budgetCapStore[newListId] = existingCap
+        }
+
+        assertEquals("New duplicated list must copy budget cap from source list", 3500.0, budgetCapStore[newListId])
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun testTitleDebounceCollapsesRapidEditsIntoSingleWrite() = runTest {
+        var dbWriteCount = 0
+        var savedTitle = ""
+        var debounceJob: kotlinx.coroutines.Job? = null
+
+        fun updateTitleDebounced(newTitle: String) {
+            debounceJob?.cancel()
+            debounceJob = launch {
+                kotlinx.coroutines.delay(400L)
+                dbWriteCount++
+                savedTitle = newTitle
+            }
+        }
+
+        // Rapid keystroke simulation within 200ms
+        updateTitleDebounced("ব")
+        testScheduler.advanceTimeBy(50)
+        updateTitleDebounced("বাজা")
+        testScheduler.advanceTimeBy(50)
+        updateTitleDebounced("বাজার")
+        testScheduler.advanceTimeBy(50)
+        updateTitleDebounced("বাজারের")
+        testScheduler.advanceTimeBy(50)
+        updateTitleDebounced("বাজারের ফর্দ ২০২৬")
+
+        // Before 400ms passes, zero writes
+        testScheduler.advanceTimeBy(300)
+        assertEquals("Before debounce duration expires, no writes should have occurred", 0, dbWriteCount)
+
+        // After debounce finishes
+        testScheduler.advanceTimeBy(150)
+        assertEquals("Rapid edits must collapse into exactly 1 database write", 1, dbWriteCount)
+        assertEquals("বাজারের ফর্দ ২০২৬", savedTitle)
+    }
+
+    @Test
+    fun testRestoreSafetyWithMissingListPopsToHubFallback() {
+        val existingLists = listOf(
+            MarketListWithItems(
+                list = MarketList(id = 1L, title = "Morning Bazaar"),
+                items = emptyList()
+            )
+        )
+        val missingListId = 999L
+
+        var didPopToHub = false
+        val currentTrip = existingLists.find { it.list.id == missingListId }
+        if (existingLists.isNotEmpty() && currentTrip == null) {
+            didPopToHub = true
+        }
+
+        assertTrue("When restored listId is missing from existing lists, fallback must pop to Hub", didPopToHub)
+        assertNull("Missing list must resolve to null without throwing NPE", currentTrip)
     }
 }

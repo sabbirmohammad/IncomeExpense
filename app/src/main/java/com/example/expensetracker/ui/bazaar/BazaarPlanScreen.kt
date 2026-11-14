@@ -126,9 +126,15 @@ fun BazaarPlanScreen(
     val currentTrip = allLists.find { it.list.id == listId }
 
     // If list does not exist (e.g. deleted or invalid restore), safely pop back
-    LaunchedEffect(currentTrip) {
+    LaunchedEffect(allLists, currentTrip) {
         if (allLists.isNotEmpty() && currentTrip == null) {
             onNavigateBack()
+        } else if (currentTrip == null) {
+            // Grace period for initial repository StateFlow emission
+            delay(150L)
+            if (allLists.find { it.list.id == listId } == null) {
+                onNavigateBack()
+            }
         }
     }
 
@@ -424,11 +430,26 @@ fun BazaarPlanScreen(
                                     }
                                     val estFormatted = if (userProfile.useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(estNum) else estNum
 
-                                    Text(
-                                        text = "$countText · ৳$estFormatted",
-                                        style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = appColors.textPrimary
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.clickable { isPrivacyRevealed = true }
+                                    ) {
+                                        PulseTabularText(
+                                            text = countText,
+                                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = appColors.textPrimary
+                                        )
+                                        Text(
+                                            text = " · ",
+                                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = appColors.textSecondary
+                                        )
+                                        PulseTabularText(
+                                            text = if (isPrivacyMode && !isPrivacyRevealed) "••••••" else "৳$estFormatted",
+                                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = appColors.textPrimary
+                                        )
+                                    }
 
                                     Button(
                                         onClick = {
@@ -828,7 +849,7 @@ fun PlanItemRow(
                     .background(appColors.surfaceVariant)
                     .clickable(
                         role = Role.Button,
-                        onClickLabel = "Change department stall",
+                        onClickLabel = if (isBangla) "স্টল পরিবর্তন করুন" else "Change department stall",
                         onClick = onStallClick
                     )
                     .padding(6.dp)
@@ -858,7 +879,7 @@ fun PlanItemRow(
                         modifier = Modifier.clickable { onRevealPrivacy() }
                     ) {
                         Text(
-                            text = "আনুমানিক: ",
+                            text = if (isBangla) "আনুমানিক: " else "Est: ",
                             style = typography.bodySmall,
                             color = appColors.textMuted
                         )
@@ -869,7 +890,7 @@ fun PlanItemRow(
                         )
                     }
                 } else {
-                    Text(
+                    PulseTabularText(
                         text = "৳—",
                         style = typography.bodySmall,
                         color = appColors.textMuted
@@ -889,13 +910,13 @@ fun PlanItemRow(
                     },
                     modifier = Modifier.size(48.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", tint = appColors.textSecondary)
+                    Icon(imageVector = Icons.Default.Remove, contentDescription = if (isBangla) "কমান" else "Decrease", tint = appColors.textSecondary)
                 }
 
                 val qtyNum = if (item.quantity % 1.0 == 0.0) "${item.quantity.toInt()}" else "${item.quantity}"
                 val qtyDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(qtyNum) else qtyNum
 
-                Text(
+                PulseTabularText(
                     text = qtyDisplay,
                     style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = appColors.textPrimary,
@@ -910,7 +931,7 @@ fun PlanItemRow(
                     },
                     modifier = Modifier.size(48.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", tint = appColors.textSecondary)
+                    Icon(imageVector = Icons.Default.Add, contentDescription = if (isBangla) "বাড়ান" else "Increase", tint = appColors.textSecondary)
                 }
             }
 
@@ -921,7 +942,7 @@ fun PlanItemRow(
                     .background(appColors.surfaceVariant)
                     .clickable(
                         role = Role.Button,
-                        onClickLabel = "Change unit",
+                        onClickLabel = if (isBangla) "পরিমাপের একক পরিবর্তন করুন" else "Change unit",
                         onClick = onUnitClick
                     )
                     .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -1048,7 +1069,7 @@ fun EstimateAndBudgetStickyBar(
                 modifier = Modifier
                     .clickable(
                         role = Role.Button,
-                        onClickLabel = "Set budget cap",
+                        onClickLabel = if (isBangla) "বাজেট সীমা নির্ধারণ করুন" else "Set budget cap",
                         onClick = onSetBudgetClick
                     )
             ) {

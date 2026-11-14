@@ -17,24 +17,31 @@ private fun isSpicePowder(lower: String): Boolean {
            !lower.contains("দুধ") && !lower.contains("milk") && !lower.contains("দই")
 }
 
+var masterProductsSupplier: (() -> Map<String, MasterProduct>?)? = null
+
 fun classifyStallWithOverride(
     name: String,
     masterProductsMap: Map<String, MasterProduct>? = null
 ): String {
-    if (masterProductsMap != null && name.isNotBlank()) {
+    val map = masterProductsMap ?: masterProductsSupplier?.invoke()
+    if (map != null && name.isNotBlank()) {
         val clean = UnitConverterEngine.normalizeProductName(name)
-        val overrideCategory = masterProductsMap[clean]?.category
-            ?: masterProductsMap.values.find {
+        val overrideCategory = map[clean]?.category
+            ?: map.values.find {
                 it.name.equals(name.trim(), ignoreCase = true) || it.normalizedName == clean
             }?.category
         if (!overrideCategory.isNullOrBlank() && ALL_DEPARTMENTS.any { it.key == overrideCategory }) {
             return overrideCategory
         }
     }
-    return getMarketItemCategory(name)
+    return getMarketItemCategoryInternal(name)
 }
 
 fun getMarketItemCategory(name: String): String {
+    return classifyStallWithOverride(name, null)
+}
+
+private fun getMarketItemCategoryInternal(name: String): String {
     val lower = name.lowercase().trim()
     return when {
         // Priority 1: Oils, Spices, Dry Grocery, Grains (Must precede veggie keywords to prevent 'মরিচ গুঁড়া' going to veggies)

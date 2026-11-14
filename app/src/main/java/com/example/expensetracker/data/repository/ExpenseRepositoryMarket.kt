@@ -137,6 +137,9 @@ suspend fun ExpenseRepository.deleteMarketList(listId: Long): Boolean = withCont
         dbHelper.deleteTransaction(txId)
     }
     val success = dbHelper.deleteMarketList(listId)
+    if (success) {
+        dbHelper.deleteMarketListBudget(listId)
+    }
     refreshTransactions()
     refreshAccounts()
     refreshBudgets()
@@ -174,7 +177,14 @@ suspend fun ExpenseRepository.duplicateMarketList(sourceListId: Long, customTitl
             transactionId = null
         )
     }
-    createMarketListWithItems(title, clonedItems)
+    val newListId = createMarketListWithItems(title, clonedItems)
+    if (newListId > 0) {
+        val existingCap = dbHelper.getMarketListBudget(sourceListId)
+        if (existingCap != null) {
+            dbHelper.setMarketListBudget(newListId, existingCap)
+        }
+    }
+    newListId
 }
 
 suspend fun ExpenseRepository.cloneMarketTrip(sourceListId: Long, isBangla: Boolean = true): Long = withContext(Dispatchers.IO) {
@@ -192,6 +202,13 @@ suspend fun ExpenseRepository.cloneMarketTrip(sourceListId: Long, isBangla: Bool
             transactionId = null
         )
     }
-    createMarketListWithItems(title, clonedItems)
+    val newListId = createMarketListWithItems(title, clonedItems)
+    if (newListId > 0) {
+        val existingCap = dbHelper.getMarketListBudget(sourceListId)
+        if (existingCap != null) {
+            dbHelper.setMarketListBudget(newListId, existingCap)
+        }
+    }
+    newListId
 }
 

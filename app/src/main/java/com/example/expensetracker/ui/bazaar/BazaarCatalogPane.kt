@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -207,104 +208,106 @@ fun CatalogCommodityTile(
         label = "tileBgColor"
     )
 
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = tileBgColor,
-        tonalElevation = 1.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(
-                role = Role.Button,
-                onClickLabel = if (isBangla) "${product.name} যোগ করুন" else "Add ${product.name}",
-                onClick = onClick
-            )
-            .semantics {
-                role = Role.Button
-                contentDescription = "${product.name}, ${if (isOnList) "তালিকার মধ্যে $countOnList" else "যোগ করুন"}"
-            }
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                // Name
-                Text(
-                    text = product.name,
-                    style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
-                    color = appColors.textPrimary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+        val countStr = if (countOnList % 1.0 == 0.0) "${countOnList.toInt()}" else "$countOnList"
+        val formattedCount = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(countStr) else countStr
 
-                // Plus or Count Badge
-                if (isOnList) {
-                    val countStr = if (countOnList % 1.0 == 0.0) "${countOnList.toInt()}" else "$countOnList"
-                    val formattedCount = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(countStr) else countStr
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(appColors.accent)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = formattedCount,
-                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = appColors.onAccent
-                        )
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(appColors.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = appColors.textSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = tileBgColor,
+            tonalElevation = 1.dp,
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(min = 72.dp)
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = if (isBangla) "${product.name} যোগ করুন" else "Add ${product.name}",
+                    onClick = onClick
+                )
+                .semantics {
+                    role = Role.Button
+                    contentDescription = "${product.name}, ${if (isOnList) (if (isBangla) "তালিকার মধ্যে $formattedCount" else "In list: $formattedCount") else (if (isBangla) "যোগ করুন" else "Add")}"
+                }
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    // Name
+                    Text(
+                        text = product.name,
+                        style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
+                        color = appColors.textPrimary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Plus or Count Badge
+                    if (isOnList) {
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(appColors.accent)
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            PulseTabularText(
+                                text = formattedCount,
+                                style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.onAccent
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(appColors.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = appColors.textSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // Subline: Default Unit and Latest Price
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = product.defaultUnit,
-                    style = typography.bodySmall,
-                    color = appColors.textMuted
-                )
-
-                if (product.latestUnitPrice > 0.0) {
-                    val priceNum = if (product.latestUnitPrice % 1.0 == 0.0) {
-                        "${product.latestUnitPrice.toInt()}"
-                    } else {
-                        "%.1f".format(product.latestUnitPrice)
-                    }
-                    val formattedPrice = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(priceNum) else priceNum
+                // Subline: Default Unit and Latest Price
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        text = "৳$formattedPrice",
-                        style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                        color = appColors.textSecondary
+                        text = product.defaultUnit,
+                        style = typography.bodySmall,
+                        color = appColors.textMuted
                     )
+
+                    if (product.latestUnitPrice > 0.0) {
+                        val priceNum = if (product.latestUnitPrice % 1.0 == 0.0) {
+                            "${product.latestUnitPrice.toInt()}"
+                        } else {
+                            "%.1f".format(product.latestUnitPrice)
+                        }
+                        val formattedPrice = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(priceNum) else priceNum
+                        PulseTabularText(
+                            text = "৳$formattedPrice",
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            color = appColors.textSecondary
+                        )
+                    }
                 }
             }
         }
-    }
 }

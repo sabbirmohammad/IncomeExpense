@@ -69,6 +69,7 @@ import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.adaptive.LocalWindowClass
 import com.example.expensetracker.ui.adaptive.WindowWidthClass
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.PulseTabularText
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
 import com.example.expensetracker.ui.dashboard.getDepartmentMeta
@@ -450,14 +451,18 @@ fun PreviewItemCard(
                             onUpdate(item.copy(quantity = item.quantity - 0.5))
                         }
                     },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease", tint = appColors.textSecondary)
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = if (isBangla) "কমান" else "Decrease",
+                        tint = appColors.textSecondary
+                    )
                 }
 
                 val qtyStr = if (item.quantity % 1.0 == 0.0) "${item.quantity.toInt()}" else "${item.quantity}"
                 val displayQty = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(qtyStr) else qtyStr
-                Text(
+                PulseTabularText(
                     text = "$displayQty ${item.unit}",
                     style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                     color = appColors.textPrimary,
@@ -466,18 +471,26 @@ fun PreviewItemCard(
 
                 IconButton(
                     onClick = { onUpdate(item.copy(quantity = item.quantity + 0.5)) },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Increase", tint = appColors.textSecondary)
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = if (isBangla) "বাড়ান" else "Increase",
+                        tint = appColors.textSecondary
+                    )
                 }
             }
 
             // Remove button
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(48.dp)
             ) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Remove", tint = appColors.expense)
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = if (isBangla) "মুছুন" else "Remove",
+                    tint = appColors.expense
+                )
             }
         }
     }
@@ -525,7 +538,7 @@ fun FlaggedLineCard(
                 OutlinedButton(
                     onClick = onDiscard,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.height(40.dp)
+                    modifier = Modifier.height(48.dp)
                 ) {
                     Text(if (isBangla) "বাদ দিন" else "Discard", color = appColors.textSecondary)
                 }
@@ -551,7 +564,7 @@ fun FlaggedLineCard(
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.warning),
-                    modifier = Modifier.height(40.dp)
+                    modifier = Modifier.height(48.dp)
                 ) {
                     Text(if (isBangla) "যোগ করুন" else "Add", color = Color.White)
                 }

@@ -569,7 +569,17 @@ fun BazaarHubHeroCard(
                         val capNum = if (budgetCap % 1.0 == 0.0) "${budgetCap.toInt()}" else "%.1f".format(budgetCap)
                         val capStr = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(capNum) else capNum
                         Text(
-                            text = " (বাজেট ৳$capStr)",
+                            text = if (isBangla) " (বাজেট " else " (Budget ",
+                            style = typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                        PulseTabularText(
+                            text = if (isPrivacyMode) "••••" else "৳$capStr",
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                        Text(
+                            text = ")",
                             style = typography.bodySmall,
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -791,11 +801,11 @@ fun BazaarMyListsSection(
                             Box {
                                 IconButton(
                                     onClick = { showCardMenu = true },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.MoreVert,
-                                        contentDescription = "Options",
+                                        contentDescription = if (isBangla) "বিকল্পসমূহ" else "Options",
                                         tint = appColors.textMuted
                                     )
                                 }

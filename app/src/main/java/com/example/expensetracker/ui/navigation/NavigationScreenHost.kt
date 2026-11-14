@@ -60,11 +60,6 @@ fun NavigationScreenHost(
 ) {
     val transactionsViewModel: TransactionsViewModel = viewModel()
     val bazaarViewModel: BazaarViewModel = viewModel()
-    var activeShoppingTripId by remember { mutableStateOf<Long?>(null) }
-
-    BackHandler(enabled = activeShoppingTripId != null) {
-        activeShoppingTripId = null
-    }
 
     val pushed = navState.pushedScreen
     if (pushed != null) {
@@ -83,9 +78,15 @@ fun NavigationScreenHost(
                     onNavigateBack = { navState.popScreen() },
                     onStartShopping = { shoppingListId ->
                         navState.popScreen()
-                        activeShoppingTripId = shoppingListId
+                        navState.pushScreen(PushedScreen.BAZAAR_SHOP(shoppingListId))
                     }
                 )
+            }
+            is PushedScreen.BAZAAR_SHOP -> {
+                BackHandler {
+                    navState.popScreen()
+                }
+                MarketScreen(dashboardViewModel = dashboardViewModel)
             }
         }
         return
@@ -128,15 +129,11 @@ fun NavigationScreenHost(
                 )
             }
             PulseTab.BAZAAR -> {
-                if (activeShoppingTripId != null) {
-                    MarketScreen(dashboardViewModel = dashboardViewModel)
-                } else {
-                    BazaarHubScreen(
-                        bazaarViewModel = bazaarViewModel,
-                        onOpenPlanMode = { listId -> navState.pushScreen(PushedScreen.BAZAAR_PLAN(listId)) },
-                        onResumeShopping = { listId -> activeShoppingTripId = listId }
-                    )
-                }
+                BazaarHubScreen(
+                    bazaarViewModel = bazaarViewModel,
+                    onOpenPlanMode = { listId -> navState.pushScreen(PushedScreen.BAZAAR_PLAN(listId)) },
+                    onResumeShopping = { listId -> navState.pushScreen(PushedScreen.BAZAAR_SHOP(listId)) }
+                )
             }
             PulseTab.PLAN -> {
                 PlanScreen(

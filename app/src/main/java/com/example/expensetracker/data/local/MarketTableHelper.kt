@@ -135,11 +135,7 @@ internal class MarketTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val cv = ContentValues().apply {
             put(COL_ML_IS_COMPLETED, 1)
         }
-        val updated = db.update(TABLE_MARKET_LISTS, cv, "$COL_ML_ID = ?", arrayOf(listId.toString())) > 0
-        if (updated) {
-            dbHelper.deleteMarketListBudget(listId)
-        }
-        return updated
+        return db.update(TABLE_MARKET_LISTS, cv, "$COL_ML_ID = ?", arrayOf(listId.toString())) > 0
     }
 
     fun deleteMarketList(listId: Long): Boolean {
@@ -149,9 +145,6 @@ internal class MarketTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
             db.delete(TABLE_MARKET_ITEMS, "$COL_MI_LIST_ID = ?", arrayOf(listId.toString()))
             val rows = db.delete(TABLE_MARKET_LISTS, "$COL_ML_ID = ?", arrayOf(listId.toString()))
             db.setTransactionSuccessful()
-            if (rows > 0) {
-                dbHelper.deleteMarketListBudget(listId)
-            }
             return rows > 0
         } finally {
             db.endTransaction()

@@ -91,6 +91,9 @@ class ExpenseRepository private constructor(context: Context) {
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
+        com.example.expensetracker.ui.dashboard.masterProductsSupplier = {
+            _masterProducts.value.associateBy { it.normalizedName }
+        }
         try {
             val profile = dbHelper.getUserProfile()
             _userProfile.value = profile
