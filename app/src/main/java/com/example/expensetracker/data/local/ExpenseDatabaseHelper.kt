@@ -1,56 +1,15 @@
 package com.example.expensetracker.data.local
 
 import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import com.example.expensetracker.data.model.Account
-import com.example.expensetracker.data.model.BackupPayload
-import com.example.expensetracker.data.model.BillSplitData
-import com.example.expensetracker.data.model.Budget
-import com.example.expensetracker.data.model.Category
-import com.example.expensetracker.data.model.CategorySpend
-import com.example.expensetracker.data.model.DebtBookSummary
-import com.example.expensetracker.data.model.FinancialSummary
-import com.example.expensetracker.data.model.MarketItem
-import com.example.expensetracker.data.model.MarketListWithItems
-import com.example.expensetracker.data.model.MasterProduct
-import com.example.expensetracker.data.model.Payable
-import com.example.expensetracker.data.model.PayablesSummary
-import com.example.expensetracker.data.model.PaymentMethod
-import com.example.expensetracker.data.model.PaymentMethodSpend
-import com.example.expensetracker.data.model.Receivable
-import com.example.expensetracker.data.model.ReceivablesSummary
-import com.example.expensetracker.data.model.RecurringBill
-import com.example.expensetracker.data.model.SavingsGoal
-import com.example.expensetracker.data.model.TimeFilter
-import com.example.expensetracker.data.model.Transaction
-import com.example.expensetracker.data.model.TransactionType
-import com.example.expensetracker.data.model.UserProfile
+import com.example.expensetracker.data.model.*
 
 class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         const val DATABASE_NAME = com.example.expensetracker.data.local.DATABASE_NAME
         const val DATABASE_VERSION = com.example.expensetracker.data.local.DATABASE_VERSION
-        const val PREFS_NAME = com.example.expensetracker.data.local.PREFS_NAME
-        const val PREF_KEY_PRIVACY_MODE = com.example.expensetracker.data.local.PREF_KEY_PRIVACY_MODE
-        const val PREF_KEY_LAST_BUDGET_PROMPT = com.example.expensetracker.data.local.PREF_KEY_LAST_BUDGET_PROMPT
-        const val PREF_KEY_LAST_BUDGET_NOTIFIED = com.example.expensetracker.data.local.PREF_KEY_LAST_BUDGET_NOTIFIED
-
-        const val TABLE_CATEGORIES = com.example.expensetracker.data.local.TABLE_CATEGORIES
-        const val TABLE_TRANSACTIONS = com.example.expensetracker.data.local.TABLE_TRANSACTIONS
-        const val TABLE_BUDGETS = com.example.expensetracker.data.local.TABLE_BUDGETS
-        const val TABLE_PROFILE = com.example.expensetracker.data.local.TABLE_PROFILE
-        const val TABLE_ACCOUNTS = com.example.expensetracker.data.local.TABLE_ACCOUNTS
-        const val TABLE_RECEIVABLES = com.example.expensetracker.data.local.TABLE_RECEIVABLES
-        const val TABLE_RECURRING_BILLS = com.example.expensetracker.data.local.TABLE_RECURRING_BILLS
-        const val TABLE_PAYABLES = com.example.expensetracker.data.local.TABLE_PAYABLES
-        const val TABLE_SAVINGS_GOALS = com.example.expensetracker.data.local.TABLE_SAVINGS_GOALS
-        const val TABLE_MARKET_LISTS = com.example.expensetracker.data.local.TABLE_MARKET_LISTS
-        const val TABLE_MARKET_ITEMS = com.example.expensetracker.data.local.TABLE_MARKET_ITEMS
-        const val TABLE_PRODUCT_PRICE_HISTORY = com.example.expensetracker.data.local.TABLE_PRODUCT_PRICE_HISTORY
-        const val TABLE_MASTER_PRODUCTS = com.example.expensetracker.data.local.TABLE_MASTER_PRODUCTS
     }
 
     internal val prefsHelper = UserPreferencesHelper(context)
@@ -83,21 +42,8 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
         DatabaseSeedData.seedSampleRecurringBillsIfEmpty(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) =
         DatabaseMigrations.onUpgrade(db, oldVersion, newVersion, this)
-    }
-
-    // --- Internal Seed & Balance Operations ---
-    internal fun seedDefaultAccountsIfEmpty(db: SQLiteDatabase) = DatabaseSeedData.seedDefaultAccountsIfEmpty(db)
-    internal fun backfillTransactionAccounts(db: SQLiteDatabase) = DatabaseSeedData.backfillTransactionAccounts(db)
-    internal fun seedSampleRecurringBillsIfEmpty(db: SQLiteDatabase) = DatabaseSeedData.seedSampleRecurringBillsIfEmpty(db)
-    fun seedDefaultCategories(db: SQLiteDatabase) = DatabaseSeedData.seedDefaultCategories(db)
-    fun reconcileAndDeduplicateCategoryColors(db: SQLiteDatabase) = CategoryColorReconciler.reconcileAndDeduplicateCategoryColors(db)
-    fun recalculateAccountBalance(db: SQLiteDatabase, accountId: Long) = AccountBalanceHelper.recalculateAccountBalance(db, accountId)
-    fun recalculateAllAccountBalances(db: SQLiteDatabase) = AccountBalanceHelper.recalculateAllAccountBalances(db, this)
-    fun resolveAccountForTransaction(db: SQLiteDatabase, accountId: Long?, paymentMethod: PaymentMethod?): Pair<Long, String> =
-        AccountBalanceHelper.resolveAccountForTransaction(db, accountId, paymentMethod, this)
-    internal fun cursorToTransaction(c: Cursor): Transaction = transactionHelper.cursorToTransaction(c)
 
     // --- Preferences Operations ---
     fun isPrivacyModeEnabled(): Boolean = prefsHelper.isPrivacyModeEnabled()
@@ -148,8 +94,6 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun getAllBudgets(): List<Budget> = budgetHelper.getAllBudgets()
     fun saveBudget(budget: Budget): Long = budgetHelper.saveBudget(budget)
     fun deleteBudget(id: Long): Int = budgetHelper.deleteBudget(id)
-    fun hasBudgetsForMonth(month: Int, year: Int): Boolean = budgetHelper.hasBudgetsForMonth(month, year)
-    fun copyBudgets(fromMonth: Int, fromYear: Int, toMonth: Int, toYear: Int): Boolean = budgetHelper.copyBudgets(fromMonth, fromYear, toMonth, toYear)
 
     // --- User Profile Operations ---
     fun getUserProfile(): UserProfile = userProfileHelper.getUserProfile()
@@ -199,9 +143,6 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun addSavingsContribution(goalId: Long, amount: Double, deductFromAccountId: Long? = null, note: String = ""): Boolean =
         savingsGoalHelper.addSavingsContribution(goalId, amount, deductFromAccountId, note)
 
-    // --- Backup & Restore Operations ---
-    fun createBackupPayload(): BackupPayload = backupHelper.createBackupPayload()
-    fun restoreFromBackup(payload: BackupPayload): Boolean = backupHelper.restoreFromBackup(payload)
 
     // --- Recurring Bills & Bill Split Operations ---
     fun insertRecurringBill(bill: RecurringBill): Long = recurringBillHelper.insertRecurringBill(bill)
@@ -233,61 +174,26 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
 
     // --- Product Price Intelligence Operations ---
     fun recordProductPrice(
-        productName: String,
-        rawQuantity: Double,
-        rawUnit: String,
-        totalAmount: Double,
-        marketItemId: Long? = null,
-        transactionId: Long? = null,
-        timestamp: Long = System.currentTimeMillis()
+        productName: String, rawQuantity: Double, rawUnit: String, totalAmount: Double,
+        marketItemId: Long? = null, transactionId: Long? = null, timestamp: Long = System.currentTimeMillis()
     ): Long = productPriceHelper.recordPrice(productName, rawQuantity, rawUnit, totalAmount, marketItemId, transactionId, timestamp)
 
-    fun recordPricesForMarketItems(
-        items: List<MarketItem>,
-        transactionId: Long?,
-        timestamp: Long
-    ) = productPriceHelper.recordPricesForMarketItems(items, transactionId, timestamp)
+    fun recordPricesForMarketItems(items: List<MarketItem>, transactionId: Long?, timestamp: Long) =
+        productPriceHelper.recordPricesForMarketItems(items, transactionId, timestamp)
 
-    fun getProductPriceInsight(productName: String): com.example.expensetracker.data.model.ProductPriceInsight? =
+    fun getProductPriceInsight(productName: String): ProductPriceInsight? =
         productPriceHelper.getPriceInsight(productName)
 
-    fun getAllProductPriceInsights(): Map<String, com.example.expensetracker.data.model.ProductPriceInsight> =
+    fun getAllProductPriceInsights(): Map<String, ProductPriceInsight> =
         productPriceHelper.getAllPriceInsights()
 
     fun estimateProductCost(productName: String, quantity: Double, unit: String): Double? =
         productPriceHelper.estimateCost(productName, quantity, unit)
 
-    fun getProductPriceHistory(productName: String, limit: Int = 50): List<com.example.expensetracker.data.model.ProductPriceRecord> =
+    fun getProductPriceHistory(productName: String, limit: Int = 50): List<ProductPriceRecord> =
         productPriceHelper.getPriceHistory(productName, limit)
 
-    fun renameCommodity(oldName: String, newName: String): Int =
-        productPriceHelper.renameCommodity(oldName, newName)
-
-    fun mergeCommodities(sourceName: String, targetName: String): Int =
-        productPriceHelper.mergeCommodities(sourceName, targetName)
-
-    fun backfillProductPriceHistory(db: SQLiteDatabase) =
-        productPriceHelper.backfillProductPriceHistory(db)
-
     // --- Master Product Catalog Operations ---
-    fun getAllMasterProducts(): List<MasterProduct> =
-        masterProductHelper.getAllMasterProducts()
-
-    fun getStapleProducts(limit: Int = 15): List<MasterProduct> =
-        masterProductHelper.getStapleProducts(limit)
-
-    fun getMasterProductByName(name: String): MasterProduct? =
-        masterProductHelper.getMasterProductByName(name)
-
-    fun searchMasterProducts(query: String, limit: Int = 20): List<MasterProduct> =
-        masterProductHelper.searchMasterProducts(query, limit)
-
-    fun recordOrUpdateMasterProduct(
-        productName: String,
-        rawQuantity: Double,
-        rawUnit: String,
-        totalAmount: Double,
-        timestamp: Long = System.currentTimeMillis()
-    ): Pair<MasterProduct, Boolean>? =
-        masterProductHelper.recordOrUpdateProduct(productName, rawQuantity, rawUnit, totalAmount, timestamp)
+    fun getAllMasterProducts(): List<MasterProduct> = masterProductHelper.getAllMasterProducts()
+    fun getStapleProducts(limit: Int = 15): List<MasterProduct> = masterProductHelper.getStapleProducts(limit)
 }

@@ -113,30 +113,10 @@ fun TransactionEditFormBody(
         }
 
         // 4. Account Chip Row (with Transfer mode and insufficient balance warning)
-        Text(
-            text = state.strings.account,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-            color = appColors.textSecondary
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AccountChipRow(
-            accounts = state.accounts,
-            selectedAccountId = state.selectedAccountId,
-            onAccountSelected = { acc ->
-                state.selectedAccountId = acc.id
-                state.selectedPaymentMethod = when (acc.type) {
-                    AccountType.BANK -> PaymentMethod.BANK_TRANSFER
-                    AccountType.MFS -> PaymentMethod.BKASH
-                    AccountType.CASH -> PaymentMethod.CASH
-                }
-            },
-            isTransfer = state.isTransfer,
-            toAccountId = state.toAccountId,
-            onToAccountSelected = { acc -> state.toAccountId = acc.id },
-            amount = parsedAmount,
-            isExpense = state.isExpense,
-            currencySymbol = currencySymbol,
-            isBangla = state.strings.isBangla
+        TransactionAccountPickerSection(
+            state = state,
+            parsedAmount = parsedAmount,
+            currencySymbol = currencySymbol
         )
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -169,45 +149,15 @@ fun TransactionEditFormBody(
         Spacer(modifier = Modifier.height(14.dp))
 
         // 7. Receipt / Voucher Section (compact 48dp launcher)
+        TransactionReceiptLauncherSection(
+            state = state,
+            typeAccentColor = typeAccentColor,
+            onLaunchPhotoPicker = onLaunchPhotoPicker,
+            onLaunchCamera = onLaunchCamera,
+            onLaunchGallery = onLaunchGallery,
+            onChangeReceipt = onChangeReceipt
+        )
         if (!state.isTransfer) {
-            TransactionReceiptSection(
-                receiptImagePath = state.receiptImagePath,
-                receiptBitmap = state.receiptBitmap,
-                typeAccentColor = typeAccentColor,
-                strings = state.strings,
-                onLaunchPhotoPicker = {
-                    state.haptics.lightTick()
-                    onLaunchPhotoPicker()
-                },
-                onViewReceipt = {
-                    if (state.receiptBitmap != null) {
-                        state.haptics.lightTick()
-                        state.showFullReceiptPreview = true
-                    } else {
-                        state.haptics.warningFeedback()
-                        state.errorMessage = if (state.strings.isBangla) "রশিদ লোড করা সম্ভব হয়নি" else "Could not load receipt"
-                    }
-                },
-                onRemoveReceipt = {
-                    if (state.receiptImagePath != null && state.receiptImagePath != state.existingTransaction?.receiptImagePath) {
-                        ReceiptImageHelper.deleteReceiptImage(state.context, state.receiptImagePath)
-                    }
-                    state.receiptImagePath = null
-                    state.receiptBitmap = null
-                },
-                onLaunchCamera = {
-                    state.haptics.lightTick()
-                    onLaunchCamera()
-                },
-                onLaunchGallery = {
-                    state.haptics.lightTick()
-                    onLaunchGallery()
-                },
-                onChangeReceipt = {
-                    state.haptics.lightTick()
-                    onChangeReceipt()
-                }
-            )
             Spacer(modifier = Modifier.height(14.dp))
         }
 

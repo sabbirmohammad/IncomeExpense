@@ -111,25 +111,12 @@ fun AddEditBillSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = title,
-                onValueChange = {
+            BillTitleInput(
+                title = title,
+                onTitleChange = {
                     title = it
                     errorMessage = null
-                },
-                placeholder = { Text(strings.billTitle, color = appColors.textMuted, fontSize = 13.sp) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary,
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant
-                ),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
+                }
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -179,22 +166,9 @@ fun AddEditBillSheet(
                 Spacer(modifier = Modifier.height(14.dp))
             }
 
-            OutlinedTextField(
-                value = notes,
-                onValueChange = { notes = it },
-                placeholder = { Text(strings.notesOptional, color = appColors.textMuted, fontSize = 13.sp) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary,
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant
-                ),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp)
+            BillNotesInput(
+                notes = notes,
+                onNotesChange = { notes = it }
             )
 
             Spacer(modifier = Modifier.height(20.dp))

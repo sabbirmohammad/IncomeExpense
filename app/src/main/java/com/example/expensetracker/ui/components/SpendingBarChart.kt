@@ -5,9 +5,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,9 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -136,31 +129,20 @@ fun SpendingBarChart(
                         ) {
                             Text(
                                 text = spend.dayLabel,
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
+                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
                                 color = appColors.textPrimary
                             )
                             if (spend.income > 0) {
                                 Text(
                                     text = "+${formatCurrency(spend.income, currencySymbol)}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontFeatureSettings = "tnum"
-                                    ),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
                                     color = appColors.income
                                 )
                             }
                             if (spend.expense > 0) {
                                 Text(
                                     text = "-${formatCurrency(spend.expense, currencySymbol)}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontFeatureSettings = "tnum"
-                                    ),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
                                     color = appColors.expense
                                 )
                             }
@@ -191,112 +173,19 @@ fun SpendingBarChart(
             displaySpends.forEach { spend ->
                 val isSelected = selectedSpend == spend
                 val isToday = isSameDay(spend.dateMillis)
-                val expenseHeight = if (spend.expense > 0) ((spend.expense / maxVal) * 96 * animProgress.value).toFloat().coerceAtLeast(6f) else 0f
-                val incomeHeight = if (spend.income > 0) ((spend.income / maxVal) * 96 * animProgress.value).toFloat().coerceAtLeast(6f) else 0f
-
-                Column(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            selectedSpend = if (selectedSpend == spend) null else spend
-                        }
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Bottom
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        // Income Bar: #3ddc97
-                        if (spend.income > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .width(8.dp)
-                                    .height(incomeHeight.dp)
-                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                    .background(if (selectedSpend == null || isSelected) appColors.income else appColors.income.copy(alpha = 0.4f))
-                            )
-                        }
-                        // Expense Bar: #f0716b
-                        if (spend.expense > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .width(8.dp)
-                                    .height(expenseHeight.dp)
-                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                                    .background(if (selectedSpend == null || isSelected) appColors.expense else appColors.expense.copy(alpha = 0.4f))
-                            )
-                        } else if (spend.income <= 0) {
-                            // Subtle neutral indicator on days with no spend or income
-                            Box(
-                                modifier = Modifier
-                                    .width(8.dp)
-                                    .height(3.dp)
-                                    .clip(CircleShape)
-                                    .background(appColors.border)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    // Day label with Today highlight
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = spend.dayLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
-                            ),
-                            color = when {
-                                isSelected -> appColors.accent
-                                isToday -> appColors.accent
-                                else -> appColors.textSecondary
-                            }
-                        )
-                        if (isToday) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(top = 2.dp)
-                                    .size(4.dp)
-                                    .clip(CircleShape)
-                                    .background(appColors.accent)
-                            )
-                        }
-                    }
-                }
+                SpendingBarChartItem(
+                    spend = spend,
+                    isSelected = isSelected,
+                    isToday = isToday,
+                    maxVal = maxVal,
+                    animProgress = animProgress.value,
+                    hasSelection = selectedSpend != null,
+                    onClick = { selectedSpend = if (selectedSpend == spend) null else spend }
+                )
             }
         }
 
-        // Legend row per spec: 10px circles, Income green #3ddc97, Expense danger #f0716b
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(appColors.income))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = strings.income,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = appColors.textSecondary
-            )
-
-            Spacer(modifier = Modifier.width(20.dp))
-
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(appColors.expense))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = strings.expense,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = appColors.textSecondary
-            )
-        }
+        // Legend row
+        SpendingBarChartLegend()
     }
 }

@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.MarketListWithItems
@@ -169,45 +168,17 @@ fun MarketShopModeView(
         }
     }
 
-    state.activePriceSheetItem?.let { currentItem ->
-        val nextPendingItem = remember(state.allItems, currentItem.id) {
-            state.allItems.firstOrNull { it.id != currentItem.id && !it.isPurchased }
-        }
-        MarketPriceEntrySheet(
-            item = currentItem,
-            currencySymbol = currencySymbol,
-            isBangla = isBangla,
-            hasNextPendingItem = nextPendingItem != null,
-            onDismiss = { state.activePriceSheetItem = null },
-            onSaveItem = { updatedQty, updatedUnit, totalAmount, shouldAdvanceToNext ->
-                if (updatedQty != currentItem.quantity || updatedUnit != currentItem.unit) {
-                    onUpdateItemQuantityAndUnit(currentItem, updatedQty, updatedUnit)
-                }
-                onUpdateItemAmount(currentItem, totalAmount)
-                state.activePriceSheetItem = if (shouldAdvanceToNext && nextPendingItem != null) nextPendingItem else null
-            },
-            lastRate = lastPurchasedRates[currentItem.name.lowercase().trim()],
-            priceInsight = UnitConverterEngine.findMatchingInsight(currentItem.name, productPriceInsights)
-        )
-    }
-
-    if (state.showFinishSummarySheet) {
-        MarketTripFinishSummarySheet(
-            trip = activeList,
-            accounts = accounts,
-            currencySymbol = currencySymbol,
-            isBangla = isBangla,
-            onDismiss = { state.showFinishSummarySheet = false },
-            onConfirmComplete = { selectedAccountId, leftoverOption ->
-                state.showFinishSummarySheet = false
-                val rollOverItems = when (leftoverOption) {
-                    LeftoverHandlingOption.MOVE_TO_NEXT -> state.unboughtItems
-                    LeftoverHandlingOption.KEEP_IN_LIST, LeftoverHandlingOption.DISCARD -> emptyList()
-                }
-                onCompleteTrip(selectedAccountId, rollOverItems)
-                onExitShopMode()
-            },
-            productPriceInsights = productPriceInsights
-        )
-    }
+    MarketShopModeSheets(
+        state = state,
+        trip = activeList,
+        accounts = accounts,
+        currencySymbol = currencySymbol,
+        isBangla = isBangla,
+        lastPurchasedRates = lastPurchasedRates,
+        productPriceInsights = productPriceInsights,
+        onUpdateItemQuantityAndUnit = onUpdateItemQuantityAndUnit,
+        onUpdateItemAmount = onUpdateItemAmount,
+        onCompleteTrip = onCompleteTrip,
+        onExitShopMode = onExitShopMode
+    )
 }

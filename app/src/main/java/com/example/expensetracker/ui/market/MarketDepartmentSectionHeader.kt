@@ -8,11 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,23 +21,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ExpenseTrackerTheme
 import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.ui.components.BanglaStrings
-import com.example.expensetracker.ui.components.EnglishStrings
-import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.DepartmentMeta
@@ -115,16 +106,10 @@ fun MarketDepartmentSectionHeader(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(
-                            if (isDeptCompleted) appColors.income
-                            else appColors.accent
-                        )
+                        .background(if (isDeptCompleted) appColors.income else appColors.accent)
                 )
 
-                Text(
-                    text = dept.icon,
-                    fontSize = 16.sp
-                )
+                Text(text = dept.icon, fontSize = 16.sp)
 
                 Text(
                     text = if (isBangla) dept.titleBn else dept.titleEn,
@@ -194,68 +179,4 @@ fun MarketSectionHeader(
         isBangla = isBangla,
         modifier = modifier
     )
-}
-
-// =========================================================================
-// PREVIEWS (Light, Dark, AMOLED x English, Bengali)
-// =========================================================================
-
-@Preview(name = "MarketSectionHeader - Dark En", showBackground = true)
-@Composable
-fun PreviewMarketSectionHeaderDarkEn() {
-    ExpenseTrackerTheme(themeMode = "dark") {
-        CompositionLocalProvider(LocalAppStrings provides EnglishStrings) {
-            Surface(color = LocalAppColors.current.background) {
-                MarketSectionHeader(
-                    dept = DepartmentMeta("veggies", "কাঁচাবাজার", "Vegetables", "🥬"),
-                    completedCount = 2,
-                    totalCount = 3,
-                    isExpanded = true,
-                    onToggleExpand = {},
-                    isBangla = false,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-    }
-}
-
-@Preview(name = "MarketSectionHeader - Light Bn", showBackground = true)
-@Composable
-fun PreviewMarketSectionHeaderLightBn() {
-    ExpenseTrackerTheme(themeMode = "light") {
-        CompositionLocalProvider(LocalAppStrings provides BanglaStrings) {
-            Surface(color = LocalAppColors.current.background) {
-                MarketSectionHeader(
-                    dept = DepartmentMeta("meat_fish", "মাছ ও মাংস", "Meat & Fish", "🐟"),
-                    completedCount = 2,
-                    totalCount = 2,
-                    isExpanded = true,
-                    onToggleExpand = {},
-                    isBangla = true,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-    }
-}
-
-@Preview(name = "MarketSectionHeader - AMOLED Bn", showBackground = true)
-@Composable
-fun PreviewMarketSectionHeaderAmoledBn() {
-    ExpenseTrackerTheme(themeMode = "amoled") {
-        CompositionLocalProvider(LocalAppStrings provides BanglaStrings) {
-            Surface(color = LocalAppColors.current.background) {
-                MarketSectionHeader(
-                    dept = DepartmentMeta("groceries", "মুদি সদাই", "Groceries", "🧂"),
-                    completedCount = 0,
-                    totalCount = 5,
-                    isExpanded = false,
-                    onToggleExpand = {},
-                    isBangla = true,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-    }
 }

@@ -107,7 +107,7 @@ class Phase1FoundationsV7Test {
         assertEquals(12.dp, RadiusS)
         assertEquals(16.dp, RadiusM)
         assertEquals(24.dp, RadiusL)
-        assertEquals(24.dp, RadiusSheet)
+        assertEquals(28.dp, RadiusSheet)
     }
 
     @Test
@@ -151,11 +151,11 @@ class Phase1FoundationsV7Test {
     @Test
     fun testV7TypographyDisplayAmountAndNumberKeypad() {
         assertEquals(40.sp, com.example.expensetracker.theme.StyleDisplayAmount.fontSize)
-        assertEquals(46.sp, com.example.expensetracker.theme.StyleDisplayAmount.lineHeight)
+        assertEquals(48.sp, com.example.expensetracker.theme.StyleDisplayAmount.lineHeight)
         assertEquals(TabularNumFeature, com.example.expensetracker.theme.StyleDisplayAmount.fontFeatureSettings)
 
-        assertEquals(22.sp, com.example.expensetracker.theme.StyleNumberKeypad.fontSize)
-        assertEquals(28.sp, com.example.expensetracker.theme.StyleNumberKeypad.lineHeight)
+        assertEquals(24.sp, com.example.expensetracker.theme.StyleNumberKeypad.fontSize)
+        assertEquals(30.sp, com.example.expensetracker.theme.StyleNumberKeypad.lineHeight)
         assertEquals(TabularNumFeature, com.example.expensetracker.theme.StyleNumberKeypad.fontFeatureSettings)
     }
 

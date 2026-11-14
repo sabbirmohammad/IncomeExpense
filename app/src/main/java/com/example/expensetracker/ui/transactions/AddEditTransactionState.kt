@@ -15,15 +15,7 @@ import com.example.expensetracker.ui.components.AppHaptics
 import com.example.expensetracker.ui.components.CategoryRecommendationEngine
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
-import com.example.expensetracker.utils.ReceiptImageHelper
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-
-enum class TransactionSheetTab {
-    EXPENSE,
-    INCOME,
-    TRANSFER
-}
 
 class AddEditTransactionState(
     val existingTransaction: Transaction?,
@@ -176,64 +168,6 @@ class AddEditTransactionState(
     }
 
     fun saveCurrentTransaction() {
-        if (isSaving) return
-        val evaluated = amountText.toParsedAmountOrNull()
-        if (evaluated == null || evaluated <= 0.0) {
-            errorMessage = strings.amountGreaterThanZero
-            haptics.warningFeedback()
-            return
-        }
-
-        if (sheetTab == TransactionSheetTab.TRANSFER) {
-            val fromId = selectedAccountId ?: accounts.firstOrNull()?.id
-            val toId = toAccountId ?: accounts.getOrNull(1)?.id
-            if (fromId == null || toId == null || fromId == toId) {
-                errorMessage = if (strings.isBangla) "উৎস ও গন্তব্য হিসেবে ভিন্ন অ্যাকাউন্ট নির্বাচন করুন" else "Select different source and destination accounts"
-                haptics.warningFeedback()
-                return
-            }
-            isSaving = true
-            haptics.successFeedback()
-            onTransfer?.invoke(fromId, toId, evaluated, notes.ifBlank { title })
-            onDismiss()
-            return
-        }
-
-        val cat = selectedCategory
-        if (cat == null) {
-            errorMessage = strings.selectCategoryPrompt
-            haptics.warningFeedback()
-            return
-        }
-        val effAccId = selectedAccountId ?: accounts.find { it.isDefault }?.id ?: accounts.firstOrNull()?.id
-        val matchedAcc = accounts.find { it.id == effAccId }
-
-        // Clean up replaced old receipt file from disk if existing transaction had one that changed
-        if (existingTransaction != null &&
-            !existingTransaction.receiptImagePath.isNullOrBlank() &&
-            existingTransaction.receiptImagePath != receiptImagePath
-        ) {
-            ReceiptImageHelper.deleteReceiptImage(context, existingTransaction.receiptImagePath)
-        }
-
-        val tx = Transaction(
-            id = existingTransaction?.id ?: 0L,
-            title = title.ifBlank { cat.getLocalizedName(strings.isBangla) },
-            amount = evaluated,
-            type = selectedType,
-            categoryId = cat.id,
-            categoryName = cat.name,
-            categoryIcon = cat.icon,
-            categoryColor = cat.colorHex,
-            dateMillis = dateMillis,
-            paymentMethod = selectedPaymentMethod,
-            accountId = effAccId,
-            accountName = matchedAcc?.name ?: existingTransaction?.accountName ?: "Cash in Hand",
-            notes = notes,
-            receiptImagePath = receiptImagePath
-        )
-        isSaving = true
-        haptics.successFeedback()
-        onSave(tx)
+        TransactionSaveHandler.save(this)
     }
 }

@@ -9,23 +9,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,14 +29,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Receivable
 import com.example.expensetracker.theme.CardCornerRadius
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.theme.SmallElementRadius
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,47 +92,11 @@ fun AddEditReceivableSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Text(strings.personName, fontSize = 12.sp, color = appColors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = personName,
-                onValueChange = { personName = it },
-                placeholder = { Text(if (strings.isBangla) "যেমন: করিম আহমেদ, বন্ধু তানভীর" else "e.g. Karim Ahmed, Friend Tanvir", color = appColors.textMuted) },
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Outlined.Person, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp)) },
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant,
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("${strings.phoneNumber} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                placeholder = { Text("017XXXXXXXX", color = appColors.textMuted) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                leadingIcon = { Icon(Icons.Outlined.Phone, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp)) },
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant,
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
+            ReceivablePersonAndPhoneFields(
+                personName = personName,
+                onPersonNameChange = { personName = it },
+                phoneNumber = phoneNumber,
+                onPhoneNumberChange = { phoneNumber = it }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -162,23 +118,9 @@ fun AddEditReceivableSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text("${strings.note} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = notes,
-                onValueChange = { notes = it },
-                placeholder = { Text(if (strings.isBangla) "যেমন: প্রোজেক্টের অগ্রিম, জরুরি ধার" else "e.g. Project advance, Emergency loan", color = appColors.textMuted) },
-                maxLines = 2,
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant,
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
+            ReceivableNoteField(
+                notes = notes,
+                onNotesChange = { notes = it }
             )
 
             if (receivable == null && accounts.isNotEmpty()) {

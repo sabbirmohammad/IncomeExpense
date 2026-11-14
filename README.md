@@ -37,17 +37,17 @@ A modern, privacy-focused, and 100% offline personal finance manager for Android
 ### 🌐 Localization & Design
 - **Bilingual Support**: Full English and Bengali (বাংলা) language options.
 - **Bengali Numeral Support**: Optional display of all numbers and amounts in Bengali digits (১, ২, ৩...).
-- **One UI Inspired Aesthetics**: Clean cards, rounded corners, fluid animations, and complete Light & Dark theme support.
+- **Refined Ledger Aesthetics**: Clean flat surfaces, harmonized radii hierarchy (`RadiusL` 24dp, `RadiusM` 16dp, `RadiusS` 10dp), tabular numbers (`fontFeatureSettings = "tnum"`), fluid animations, and complete Light, Dark, AMOLED, and Soft Green theme support.
 
 ---
 
 ## 🛠️ Architecture & Tech Stack
 
-- **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) with Material 3 Design
-- **Navigation**: Modern Jetpack Compose Navigation 3 with 3D Scaffold Drawer & Clean Bottom Navigation
-  - **Single Source of Navigation**: Bottom Navigation Bar (`ModernBottomNavBar`) handles primary navigation: `Home`, `Transactions`, `+ (Add)`, `Analytics`, and `More` (Menu).
-  - **Drawer Access**: The 3D side drawer is exclusively opened via the bottom `More` menu or edge gestures.
-  - **No Header Menu Duplication**: Screen headers omit duplicate hamburger buttons. Primary screens feature uncluttered One UI headers; secondary screens (`Accounts`, `Bills`, `Receivables`, `Budgets`, `Reports`, `Settings`) provide standard back-arrow (`←`) navigation returning to Home.
+- **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) with Material 3 Design & Refined Ledger tokens
+- **Navigation**: Modern 5-Tab Bottom Dock (`ModernBottomNavBar`) with Context-Aware Extended FAB (`AppAddFab`) and `AppScaffold`
+  - **5 Primary Destinations**: **Home**, **Ledger (খাতা)** (Transactions, Analytics, Reports), **+ (Add)** (instant full-bleed sheet with custom `AmountKeypad`), **Bazaar (বাজার)** (Market checklist, shop HUD, commodity price intelligence), and **Plan (পরিকল্পনা)** (Budgets, Savings Goals, Recurring Bills, Debts).
+  - **Ergonomics & Accessibility**: Completely eliminated legacy 3D drawer in favor of direct 1-tap/2-tap access. Screens enforce uniform bottom padding (80–100dp) ensuring zero content occlusion. 100% WCAG 2.2 touch target compliance (>= 48dp).
+  - **Drill-down Navigation**: Drill-down screens provide standard back navigation returning to their parent hub without conflicting navigation bars.
 - **Language**: [Kotlin](https://kotlinlang.org/) with Coroutines & StateFlow
 - **Database**: Optimized SQLite Database Helper architecture with modular table delegates
 - **Background Tasks**: [AndroidX WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) for automated Google Drive sync
@@ -68,14 +68,23 @@ ExpenseTracker/
 │   │   │   ├── java/com/example/expensetracker/
 │   │   │   │   ├── data/           # Database, Models, Repositories, & Drive services
 │   │   │   │   ├── ui/             # Jetpack Compose Screens, ViewModels & Components
-│   │   │   │   │   ├── accounts/   # Multi-account management
-│   │   │   │   │   ├── analytics/  # Visual charts & Reports
-│   │   │   │   │   ├── bills/      # Recurring bills & Subscriptions
-│   │   │   │   │   ├── budget/     # Category budgets & Savings goals
-│   │   │   │   │   ├── dashboard/  # Main overview screen
-│   │   │   │   │   ├── market/     # Market / Bazar checklist
-│   │   │   │   │   ├── payables/   # Debt & loan tracking
+│   │   │   │   │   ├── accounts/   # Multi-account management & reconciliation
+│   │   │   │   │   ├── analytics/  # Visual charts & spend distribution
+│   │   │   │   │   ├── bills/      # Recurring bills & subscriptions
+│   │   │   │   │   ├── budget/     # Category budgets
+│   │   │   │   │   ├── components/ # Refined Ledger shared design system components
+│   │   │   │   │   ├── dashboard/  # Home overview & quick action hub
+│   │   │   │   │   ├── ledger/     # Unified Ledger (Transactions, Analytics, Reports)
+│   │   │   │   │   ├── market/     # Market / Bazar checklist & price intelligence
+│   │   │   │   │   ├── money/      # Unified Money Hub
+│   │   │   │   │   ├── navigation/ # App navigation, scaffold & bottom dock
+│   │   │   │   │   ├── onboarding/ # First-launch interactive walkthrough
+│   │   │   │   │   ├── plan/       # Unified Plan Hub (Budgets, Goals, Bills, Debts)
+│   │   │   │   │   ├── receivables/# Debt & loan tracking (ধার ও দেনা)
+│   │   │   │   │   ├── reports/    # PDF/CSV statement exports
+│   │   │   │   │   ├── savings/    # Savings goals & progress tracking
 │   │   │   │   │   ├── settings/   # Profile, Drive backup, & themes
+│   │   │   │   │   ├── share/      # Expense slip & PDF sharing
 │   │   │   │   │   └── transactions/# Add/Edit transactions & receipt attachments
 │   │   │   │   └── utils/          # Formatting, PDF export, Image helpers
 │   │   │   └── res/                # XML Resources, Drawables, Mipmaps, Strings

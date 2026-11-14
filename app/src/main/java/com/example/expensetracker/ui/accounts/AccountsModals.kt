@@ -23,7 +23,10 @@ fun AccountsModals(
     onDismissReconcile: () -> Unit,
     onConfirmReconcile: (Double, String) -> Unit,
     currencySymbol: String,
-    accounts: List<Account>
+    accounts: List<Account>,
+    accountToDelete: Account? = null,
+    onDismissDelete: () -> Unit = {},
+    onConfirmDelete: (Account) -> Unit = {}
 ) {
     if (showAddEditSheet) {
         AddEditAccountSheet(
@@ -60,6 +63,15 @@ fun AccountsModals(
             currencySymbol = currencySymbol,
             onDismiss = onDismissReconcile,
             onConfirm = onConfirmReconcile
+        )
+    }
+
+    if (accountToDelete != null) {
+        AccountDeleteConfirmationDialog(
+            account = accountToDelete,
+            canDelete = accounts.size > 1,
+            onDismiss = onDismissDelete,
+            onConfirmDelete = { onConfirmDelete(accountToDelete) }
         )
     }
 }

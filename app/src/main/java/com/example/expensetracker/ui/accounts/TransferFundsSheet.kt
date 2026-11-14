@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -35,21 +34,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.theme.CardCornerRadius
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
-import androidx.compose.material.icons.filled.Calculate
-import com.example.expensetracker.ui.components.CalculatorPreviewBadge
-import com.example.expensetracker.ui.components.ExpandableCalculatorKeypadBar
 import com.example.expensetracker.ui.components.LocalAppStrings
-import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,15 +61,10 @@ fun TransferFundsSheet(
     var note by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCalculator by remember { mutableStateOf(false) }
-    val hasOperators = remember(amountText) {
-        amountText.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }
-    }
-
-    val colors = LocalAppColors.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = colors.surface,
+        containerColor = appColors.surface,
         shape = RoundedCornerShape(topStart = CardCornerRadius, topEnd = CardCornerRadius)
     ) {
         Column(
@@ -97,17 +85,17 @@ fun TransferFundsSheet(
                 Text(
                     text = strings.transferFunds,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = colors.textPrimary
+                    color = appColors.textPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = colors.textSecondary)
+                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = appColors.textSecondary)
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
             // Source Account (From)
-            Text(strings.fromAccount, fontSize = 12.sp, color = colors.textSecondary)
+            Text(strings.fromAccount, fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(6.dp))
             TransferAccountPickerRow(
                 accounts = accounts,
@@ -121,13 +109,13 @@ fun TransferFundsSheet(
                 currencySymbol = currencySymbol,
                 isBangla = strings.isBangla,
                 haptics = haptics,
-                selectedColor = colors.accent
+                selectedColor = appColors.accent
             )
 
             Spacer(modifier = Modifier.height(14.dp))
 
             // Destination Account (To)
-            Text(strings.toAccount, fontSize = 12.sp, color = colors.textSecondary)
+            Text(strings.toAccount, fontSize = 12.sp, color = appColors.textSecondary)
             Spacer(modifier = Modifier.height(6.dp))
 
             TransferAccountPickerRow(
@@ -137,85 +125,28 @@ fun TransferFundsSheet(
                 currencySymbol = currencySymbol,
                 isBangla = strings.isBangla,
                 haptics = haptics,
-                selectedColor = colors.income
+                selectedColor = appColors.income
             )
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Amount Input
-            Text("${strings.amount} ($currencySymbol)", fontSize = 12.sp, color = colors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = amountText,
-                onValueChange = {
-                    amountText = com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(it)
+            TransferAmountInputSection(
+                amountText = amountText,
+                onAmountChange = {
+                    amountText = it
                     errorMessage = null
                 },
-                placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = colors.textMuted) },
-                trailingIcon = {
-                    IconButton(onClick = { showCalculator = !showCalculator }) {
-                        Icon(
-                            imageVector = Icons.Filled.Calculate,
-                            contentDescription = "Calculator",
-                            tint = if (showCalculator || hasOperators) appColors.accent else colors.textSecondary
-                        )
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = colors.surfaceVariant,
-                    unfocusedContainerColor = colors.surfaceVariant,
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = colors.border,
-                    focusedTextColor = colors.textPrimary,
-                    unfocusedTextColor = colors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            CalculatorPreviewBadge(
-                expression = amountText,
+                showCalculator = showCalculator,
+                onToggleCalculator = { showCalculator = !showCalculator },
                 currencySymbol = currencySymbol,
-                onApply = { evaluated ->
-                    haptics.successFeedback()
-                    amountText = if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated)
-                    showCalculator = false
-                }
-            )
-
-            ExpandableCalculatorKeypadBar(
-                expanded = showCalculator,
-                currentExpression = amountText,
-                onExpressionChanged = { amountText = it },
-                onApplyResult = { evaluated ->
-                    haptics.successFeedback()
-                    amountText = if (evaluated % 1.0 == 0.0) evaluated.toLong().toString() else String.format(Locale.US, "%.2f", evaluated)
-                    showCalculator = false
-                }
+                haptics = haptics
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Note Field
-            Text(strings.note, fontSize = 12.sp, color = colors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                placeholder = { Text(if (strings.isBangla) "যেমন: ব্যাংক থেকে বিকাশ, এটিএম উত্তোলন" else "e.g. Bank to bKash add money, ATM withdrawal", color = colors.textMuted) },
-                singleLine = true,
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = colors.surfaceVariant,
-                    unfocusedContainerColor = colors.surfaceVariant,
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = colors.border,
-                    focusedTextColor = colors.textPrimary,
-                    unfocusedTextColor = colors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
+            TransferNoteField(
+                note = note,
+                onNoteChange = { note = it }
             )
 
             if (errorMessage != null) {

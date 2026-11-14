@@ -66,93 +66,12 @@ fun ActiveMarketListDashboardCard(
         padding = 14.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF2EC4B6).copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ShoppingCart,
-                            contentDescription = null,
-                            tint = Color(0xFF2EC4B6),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Column {
-                        val activeTitle = remember(marketListWithItems.list.title, marketListWithItems.list.createdAt, isBangla) {
-                            if (marketListWithItems.list.title.isNotBlank() &&
-                                marketListWithItems.list.title != "বাজারের ফর্দ" &&
-                                marketListWithItems.list.title != "Market Checklist" &&
-                                marketListWithItems.list.title != "আজকের বাজার"
-                            ) {
-                                "🛒 " + marketListWithItems.list.title
-                            } else {
-                                "🛒 " + DateTimeHelper.formatMarketTripTitle(marketListWithItems.list.createdAt, isBangla)
-                            }
-                        }
-                        Text(
-                            text = activeTitle,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = appColors.textPrimary
-                        )
-                        val subText = if (isBangla) {
-                            "${convertToBengaliDigits(purchasedItems.toString())}/${convertToBengaliDigits(totalItems.toString())} সম্পন্ন · খরচ: ${formatCurrency(totalSpent, currencySymbol)}"
-                        } else {
-                            "$purchasedItems/$totalItems bought · Spent: ${formatCurrency(totalSpent, currencySymbol)}"
-                        }
-                        Text(
-                            text = subText,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 11.sp,
-                                fontFeatureSettings = "tnum"
-                            ),
-                            color = appColors.textSecondary
-                        )
-                    }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .defaultMinSize(minHeight = 36.dp)
-                        .clickable {
-                            haptics.lightTick()
-                            onOpenFullList()
-                        }
-                        .padding(horizontal = 4.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = if (isBangla) "সব দেখুন" else "View All",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = appColors.accent
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.ChevronRight,
-                        contentDescription = null,
-                        tint = appColors.accent,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
+            ActiveMarketListHeader(
+                marketListWithItems = marketListWithItems,
+                currencySymbol = currencySymbol,
+                isBangla = isBangla,
+                onOpenFullList = onOpenFullList
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 

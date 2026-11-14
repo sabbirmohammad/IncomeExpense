@@ -61,48 +61,15 @@ fun SettingsCategoriesExpandedContent(
         HairlineDivider(color = appColors.border.copy(alpha = 0.6f))
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Type Filter Segment Bar (All / Expense / Income)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(appColors.surface)
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            CategoryFilterSegment(
-                title = if (isBangla) "সব (${categories.size})" else "All (${categories.size})",
-                isSelected = selectedTypeFilter == null,
-                activeColor = appColors.accent,
-                onClick = {
-                    haptics.lightTick()
-                    onSelectTypeFilter(null)
-                },
-                modifier = Modifier.weight(1f)
-            )
-
-            CategoryFilterSegment(
-                title = if (isBangla) "ব্যয় (${expenseCategories.size})" else "Expense (${expenseCategories.size})",
-                isSelected = selectedTypeFilter == TransactionType.EXPENSE,
-                activeColor = appColors.expense,
-                onClick = {
-                    haptics.lightTick()
-                    onSelectTypeFilter(TransactionType.EXPENSE)
-                },
-                modifier = Modifier.weight(1f)
-            )
-
-            CategoryFilterSegment(
-                title = if (isBangla) "আয় (${incomeCategories.size})" else "Income (${incomeCategories.size})",
-                isSelected = selectedTypeFilter == TransactionType.INCOME,
-                activeColor = appColors.income,
-                onClick = {
-                    haptics.lightTick()
-                    onSelectTypeFilter(TransactionType.INCOME)
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        CategoryTypeSegmentBar(
+            totalCategoriesCount = categories.size,
+            expenseCategoriesCount = expenseCategories.size,
+            incomeCategoriesCount = incomeCategories.size,
+            selectedTypeFilter = selectedTypeFilter,
+            onSelectTypeFilter = onSelectTypeFilter,
+            isBangla = isBangla,
+            haptics = haptics
+        )
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -172,57 +139,11 @@ fun SettingsCategoriesExpandedContent(
             Spacer(modifier = Modifier.height(6.dp))
         }
 
-        // Bottom Row: Add New + Collapse Button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(
-                onClick = {
-                    haptics.lightTick()
-                    onAddCategoryClick()
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Add,
-                    contentDescription = null,
-                    tint = appColors.accent,
-                    modifier = Modifier.size(15.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = if (isBangla) "নতুন ক্যাটাগরি যোগ করুন" else "Add New Category",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = appColors.accent
-                )
-            }
-
-            TextButton(
-                onClick = {
-                    haptics.lightTick()
-                    onCollapseClick()
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.ExpandLess,
-                    contentDescription = null,
-                    tint = appColors.textSecondary,
-                    modifier = Modifier.size(15.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-                Text(
-                    text = if (isBangla) "সংকুচিত করুন" else "Collapse",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = appColors.textSecondary
-                )
-            }
-        }
+        CategoryExpandedBottomActions(
+            onAddCategoryClick = onAddCategoryClick,
+            onCollapseClick = onCollapseClick,
+            isBangla = isBangla,
+            haptics = haptics
+        )
     }
 }

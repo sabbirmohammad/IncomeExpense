@@ -1,7 +1,6 @@
 package com.example.expensetracker.data.local
 
 import android.content.ContentValues
-import android.database.Cursor
 import com.example.expensetracker.data.model.AccountType
 import com.example.expensetracker.data.model.DebtBookSummary
 import com.example.expensetracker.data.model.Payable
@@ -19,7 +18,7 @@ internal class PayableTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val cursor = db.query(TABLE_PAYABLES, null, null, null, null, null, "$COL_PAY_STATUS ASC, $COL_PAY_CREATED_DATE DESC")
         cursor.use { c ->
             while (c.moveToNext()) {
-                list.add(cursorToPayable(c))
+                list.add(c.toPayable())
             }
         }
         return list
@@ -30,7 +29,7 @@ internal class PayableTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val cursor = db.query(TABLE_PAYABLES, null, "$COL_PAY_ID = ?", arrayOf(id.toString()), null, null, null)
         cursor.use { c ->
             if (c.moveToFirst()) {
-                return cursorToPayable(c)
+                return c.toPayable()
             }
         }
         return null
@@ -195,28 +194,6 @@ internal class PayableTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         return DebtBookSummary(
             totalReceivable = recSummary.remainingDue,
             totalPayable = paySummary.remainingDue
-        )
-    }
-
-    private fun cursorToPayable(c: Cursor): Payable {
-        val dueIndex = c.getColumnIndexOrThrow(COL_PAY_DUE_DATE)
-        val dueDate = if (c.isNull(dueIndex)) null else c.getLong(dueIndex)
-        val statusStr = c.getString(c.getColumnIndexOrThrow(COL_PAY_STATUS))
-        val status = try {
-            PayableStatus.valueOf(statusStr)
-        } catch (_: Exception) {
-            PayableStatus.PENDING
-        }
-        return Payable(
-            id = c.getLong(c.getColumnIndexOrThrow(COL_PAY_ID)),
-            personName = c.getString(c.getColumnIndexOrThrow(COL_PAY_PERSON_NAME)),
-            phoneNumber = c.getString(c.getColumnIndexOrThrow(COL_PAY_PHONE)),
-            amount = c.getDouble(c.getColumnIndexOrThrow(COL_PAY_AMOUNT)),
-            amountPaid = c.getDouble(c.getColumnIndexOrThrow(COL_PAY_AMOUNT_PAID)),
-            dueDateMillis = dueDate,
-            createdDateMillis = c.getLong(c.getColumnIndexOrThrow(COL_PAY_CREATED_DATE)),
-            notes = c.getString(c.getColumnIndexOrThrow(COL_PAY_NOTES)),
-            status = status
         )
     }
 }

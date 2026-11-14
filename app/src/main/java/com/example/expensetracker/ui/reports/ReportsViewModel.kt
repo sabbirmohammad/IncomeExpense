@@ -107,72 +107,45 @@ class ReportsViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun setPeriod(period: ReportPeriod) {
-        _selectedPeriod.value = period
-    }
-
+    fun setPeriod(period: ReportPeriod) { _selectedPeriod.value = period }
     fun setCustomRange(startMillis: Long, endMillis: Long) {
         _customStartMillis.value = startMillis
         _customEndMillis.value = endMillis
         _selectedPeriod.value = ReportPeriod.CUSTOM
     }
+    fun setAccountFilter(accountId: Long?) { _selectedAccountId.value = accountId }
+    fun setTypeFilter(type: TransactionType?) { _selectedType.value = type }
+    fun togglePrivacyMode() = viewModelScope.launch { repository.togglePrivacyMode() }
+    fun clearExportMessage() { _exportMessage.value = null }
 
-    fun setAccountFilter(accountId: Long?) {
-        _selectedAccountId.value = accountId
-    }
+    fun getPeriodTitle(isBangla: Boolean): String =
+        ReportPeriodFormatter.formatPeriodTitle(
+            period = _selectedPeriod.value,
+            customStartMillis = _customStartMillis.value,
+            customEndMillis = _customEndMillis.value,
+            isBangla = isBangla
+        )
 
-    fun setTypeFilter(type: TransactionType?) {
-        _selectedType.value = type
-    }
-
-    fun togglePrivacyMode() {
-        viewModelScope.launch {
-            repository.togglePrivacyMode()
+    private suspend fun buildPdfFile(context: Context, isBangla: Boolean): Pair<File?, String> {
+        val periodTitle = getPeriodTitle(isBangla)
+        val file = withContext(Dispatchers.IO) {
+            StatementExportHelper.generatePdfFile(
+                context = context,
+                profile = userProfile.value,
+                summary = _summary.value,
+                transactions = _filteredTransactions.value,
+                periodTitle = periodTitle,
+                categorySpends = _categorySpends.value
+            )
         }
-    }
-
-    fun clearExportMessage() {
-        _exportMessage.value = null
-    }
-
-    fun getPeriodTitle(isBangla: Boolean): String {
-        val locale = DateTimeHelper.getLocale(isBangla)
-        val df = SimpleDateFormat("dd MMM yyyy", locale)
-        val raw = when (_selectedPeriod.value) {
-            ReportPeriod.THIS_MONTH -> {
-                val cal = Calendar.getInstance()
-                SimpleDateFormat("MMMM yyyy", locale).format(cal.time)
-            }
-            ReportPeriod.LAST_MONTH -> {
-                val cal = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
-                SimpleDateFormat("MMMM yyyy", locale).format(cal.time)
-            }
-            ReportPeriod.LAST_3_MONTHS -> if (isBangla) "গত ৩ মাস" else "Last 3 Months"
-            ReportPeriod.THIS_YEAR -> {
-                val cal = Calendar.getInstance()
-                SimpleDateFormat("yyyy", locale).format(cal.time)
-            }
-            ReportPeriod.ALL_TIME -> if (isBangla) "সর্বমোট হিসাব" else "All Time"
-            ReportPeriod.CUSTOM -> "${df.format(Date(_customStartMillis.value))} - ${df.format(Date(_customEndMillis.value))}"
-        }
-        return if (isBangla) convertToBengaliDigits(raw) else raw
+        _lastGeneratedPdfFile.value = file
+        return Pair(file, periodTitle)
     }
 
     fun exportAndSharePdf(context: Context, isBangla: Boolean) {
         viewModelScope.launch {
             _isExporting.value = true
-            val periodTitle = getPeriodTitle(isBangla)
-            val file = withContext(Dispatchers.IO) {
-                StatementExportHelper.generatePdfFile(
-                    context = context,
-                    profile = userProfile.value,
-                    summary = _summary.value,
-                    transactions = _filteredTransactions.value,
-                    periodTitle = periodTitle,
-                    categorySpends = _categorySpends.value
-                )
-            }
-            _lastGeneratedPdfFile.value = file
+            val (file, periodTitle) = buildPdfFile(context, isBangla)
             _isExporting.value = false
             if (file != null) {
                 StatementExportHelper.sharePdf(context, file, periodTitle)
@@ -192,18 +165,7 @@ class ReportsViewModel(application: Application) : AndroidViewModel(application)
             }
 
             _isExporting.value = true
-            val periodTitle = getPeriodTitle(isBangla)
-            val file = withContext(Dispatchers.IO) {
-                StatementExportHelper.generatePdfFile(
-                    context = context,
-                    profile = userProfile.value,
-                    summary = _summary.value,
-                    transactions = _filteredTransactions.value,
-                    periodTitle = periodTitle,
-                    categorySpends = _categorySpends.value
-                )
-            }
-            _lastGeneratedPdfFile.value = file
+            val (file, _) = buildPdfFile(context, isBangla)
             _isExporting.value = false
             if (file != null) {
                 StatementExportHelper.openPdf(context, file)

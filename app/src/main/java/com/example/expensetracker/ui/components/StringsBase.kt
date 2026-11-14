@@ -1,0 +1,100 @@
+package com.example.expensetracker.ui.components
+
+open class StringsBase(
+    val isBangla: Boolean = false
+) {
+    val appName: String get() = if (isBangla) "হিসাব খাতা" else "Expense Tracker"
+    val cancel: String get() = if (isBangla) "বাতিল" else "Cancel"
+    val save: String get() = if (isBangla) "সংরক্ষণ" else "Save"
+    val saving: String get() = if (isBangla) "সংরক্ষণ হচ্ছে..." else "Saving..."
+    val confirm: String get() = if (isBangla) "নিশ্চিত করুন" else "Confirm"
+    val delete: String get() = if (isBangla) "মুছে ফেলুন" else "Delete"
+    val close: String get() = if (isBangla) "বন্ধ করুন" else "Close"
+    val done: String get() = if (isBangla) "সম্পন্ন" else "Done"
+    val search: String get() = if (isBangla) "অনুসন্ধান করুন..." else "Search transactions..."
+    val filters: String get() = if (isBangla) "ফিল্টার" else "Filters"
+    val transactionType: String get() = if (isBangla) "লেনদেনের ধরন" else "Transaction Type"
+    val timeFilter: String get() = if (isBangla) "সময়কাল" else "Time Period"
+    val filter: String get() = if (isBangla) "ফিল্টার" else "Filter"
+    val all: String get() = if (isBangla) "সব" else "All"
+    val note: String get() = if (isBangla) "নোট বা বিবরণ" else "Notes"
+    val optional: String get() = if (isBangla) "ঐচ্ছিক" else "Optional"
+    val amount: String get() = if (isBangla) "টাকার পরিমাণ" else "Amount"
+    val date: String get() = if (isBangla) "তারিখ" else "Date"
+    val category: String get() = if (isBangla) "ক্যাটাগরি" else "Category"
+    val account: String get() = if (isBangla) "অ্যাকাউন্ট" else "Account"
+    val success: String get() = if (isBangla) "সফল হয়েছে" else "Success"
+    val viewAll: String get() = if (isBangla) "সব দেখুন" else "View All"
+
+    // Navigation
+    val navHome: String get() = if (isBangla) "হোম" else "Home"
+    val navLedger: String get() = if (isBangla) "খাতা" else "Ledger"
+    val navBazaar: String get() = if (isBangla) "বাজার" else "Bazaar"
+    val navWallets: String get() = if (isBangla) "ওয়ালেট" else "Wallets"
+    val navPlan: String get() = if (isBangla) "পরিকল্পনা" else "Plan"
+    val planSegmentBudgets: String get() = if (isBangla) "বাজেট" else "Budgets"
+    val planSegmentGoals: String get() = if (isBangla) "লক্ষ্য" else "Goals"
+    val planSegmentBills: String get() = if (isBangla) "বিল" else "Bills"
+    val planSegmentDebts: String get() = if (isBangla) "ধার ও দেনা" else "Debts"
+    val navTransactions: String get() = if (isBangla) "লেনদেন" else "Transactions"
+    val navMarket: String get() = if (isBangla) "বাজার" else "Market"
+    val navMoney: String get() = if (isBangla) "হিসাব" else "Money"
+    val navAnalytics: String get() = if (isBangla) "অ্যানালিটিক্স" else "Analytics"
+    val navAccounts: String get() = if (isBangla) "অ্যাকাউন্ট ও MFS" else "Accounts & MFS"
+    val navReceivables: String get() = if (isBangla) "বকেয়া ও পাওনা টাকা" else "Money Owed"
+    val navBudgets: String get() = if (isBangla) "বাজেট" else "Budgets"
+    val navBills: String get() = if (isBangla) "নিয়মিত বিল" else "Bills & Subscriptions"
+    val navSettings: String get() = if (isBangla) "সেটিংস" else "Settings"
+    val navMore: String get() = if (isBangla) "মেনু" else "Menu"
+
+    // Dashboard
+    fun timeBasedGreeting(hour: Int = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)): String {
+        return if (isBangla) {
+            when (hour) {
+                in 5..11 -> "শুভ সকাল"
+                in 12..16 -> "শুভ দুপুর"
+                in 17..20 -> "শুভ সন্ধ্যা"
+                else -> "শুভ রাত্রি"
+            }
+        } else {
+            when (hour) {
+                in 5..11 -> "Good morning"
+                in 12..16 -> "Good afternoon"
+                in 17..20 -> "Good evening"
+                else -> "Good evening"
+            }
+        }
+    }
+    val safeToSpendToday: String get() = if (isBangla) "আজকের নিরাপদ ব্যয়" else "Safe to spend today"
+    val spendingWalletSuffix: String get() = if (isBangla) "খরচের ওয়ালেটে" else "in spending wallet"
+    val getStartedChecklist: String get() = if (isBangla) "শুরু করার ধাপগুলো" else "Get started"
+    val addAccountTask: String get() = if (isBangla) "অ্যাকাউন্ট যোগ করুন" else "Add account"
+    val addFirstExpenseTask: String get() = if (isBangla) "প্রথম খরচ যোগ করুন" else "Add first expense"
+    val setBudgetTask: String get() = if (isBangla) "বাজেট নির্ধারণ করুন" else "Set monthly budget"
+    val privacyMode: String get() = if (isBangla) "গোপনীয়তা মোড" else "Privacy mode"
+    val notifications: String get() = if (isBangla) "নোটিফিকেশন" else "Notifications"
+    val sevenDaySpend: String get() = if (isBangla) "গত ৭ দিনের খরচ" else "7-day spend"
+    val openText: String get() = if (isBangla) "খুলুন" else "Open"
+    val greeting: String get() = if (isBangla) "স্বাগতম" else "Welcome"
+    val totalBalance: String get() = if (isBangla) "মোট ব্যালেন্স" else "Total Balance"
+    val totalWalletBalance: String get() = if (isBangla) "খরচের ওয়ালেট ব্যালেন্স" else "Spending Wallet Balance"
+    val syncedBadge: String get() = if (isBangla) "১০০% সিনক্রোনাইজড" else "100% Synced"
+    val periodNetBalance: String get() = if (isBangla) "নিট ব্যালেন্স" else "Net Balance"
+    val walletBalanceWarning: String get() = if (isBangla) "এই ওয়ালেটের পর্যাপ্ত ব্যালেন্স নেই" else "Insufficient wallet balance"
+    val monthlyIncome: String get() = if (isBangla) "চলতি মাসের আয়" else "This Month Income"
+    val monthlyExpense: String get() = if (isBangla) "চলতি মাসের ব্যয়" else "This Month Expense"
+    val budgetRemaining: String get() = if (isBangla) "বাজেট অবশিষ্ট" else "Budget Remaining"
+    val quickActions: String get() = if (isBangla) "কুইক অ্যাকশন" else "Quick Actions"
+    val actionAdd: String get() = if (isBangla) "লেনদেন" else "Add Tx"
+    val actionTransfer: String get() = if (isBangla) "স্থানান্তর" else "Transfer"
+    val actionSplitBill: String get() = if (isBangla) "বিল স্প্লিট" else "Split Bill"
+    val actionBills: String get() = if (isBangla) "বিল পে" else "Bills"
+    val actionOwed: String get() = if (isBangla) "বকেয়া ও পাওনা" else "Money Owed"
+    val actionExport: String get() = if (isBangla) "রিপোর্ট" else "Reports"
+    val accountsAndWallets: String get() = if (isBangla) "অ্যাকাউন্ট ও ওয়ালেট" else "Accounts & Wallets"
+    val moneyOwedWidgetTitle: String get() = if (isBangla) "অন্যের কাছে পাওনা" else "Money Owed to You"
+    val moneyOwedWidgetSubtitle: String get() = if (isBangla) "বকেয়া ঋণ ও আদায় ট্র্যাকার" else "Personal Loan & Debt Tracker"
+    val recentTransactions: String get() = if (isBangla) "সাম্প্রতিক লেনদেন" else "Recent Transactions"
+    val upcomingBillsAlert: String get() = if (isBangla) "নিয়মিত বিল পরিশোধের সময় হয়েছে!" else "Upcoming recurring bills due soon!"
+    val dueInDays: String get() = if (isBangla) "দিন বাকি" else "days left"
+}

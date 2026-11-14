@@ -11,15 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Savings
-import androidx.compose.material.icons.outlined.TrendingDown
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,61 +51,16 @@ fun AnalyticsKpiStrip(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Card 1: Daily Average Spend
-        AppCard(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            padding = 10.dp
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.TrendingDown,
-                        contentDescription = null,
-                        tint = appColors.accent,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = if (strings.isBangla) "দৈনিক গড়" else "Daily Avg",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = appColors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = formatCurrency(overview.dailyAverageSpend, userProfile.currencySymbol),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = appColors.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = if (strings.isBangla) "প্রতিদিন ব্যয়" else "per day",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = appColors.textMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
+        KpiMetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.AutoMirrored.Outlined.TrendingDown,
+            iconTint = appColors.accent,
+            title = if (strings.isBangla) "দৈনিক গড়" else "Daily Avg",
+            value = formatCurrency(overview.dailyAverageSpend, userProfile.currencySymbol),
+            valueColor = appColors.textPrimary,
+            subtitle = if (strings.isBangla) "প্রতিদিন ব্যয়" else "per day",
+            subtitleColor = appColors.textMuted
+        )
 
         // Card 2: Savings Rate KPI
         val savingsRate = overview.savingsRate
@@ -117,62 +74,16 @@ fun AnalyticsKpiStrip(
             savingsRate >= 5 -> if (strings.isBangla) "মাঝারি" else "Moderate"
             else -> if (strings.isBangla) "কম" else "Low"
         }
-
-        AppCard(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            padding = 10.dp
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Savings,
-                        contentDescription = null,
-                        tint = savingsColor,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = if (strings.isBangla) "সঞ্চয়ের হার" else "Savings Rate",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = appColors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "${if (strings.isBangla) convertToBengaliDigits(savingsRate.toString()) else savingsRate}%",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = savingsColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = savingsLabel,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = savingsColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
+        KpiMetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Outlined.Savings,
+            iconTint = savingsColor,
+            title = if (strings.isBangla) "সঞ্চয়ের হার" else "Savings Rate",
+            value = "${if (strings.isBangla) convertToBengaliDigits(savingsRate.toString()) else savingsRate}%",
+            valueColor = savingsColor,
+            subtitle = savingsLabel,
+            subtitleColor = savingsColor
+        )
 
         // Card 3: Period Comparison Trend
         val changePct = overview.periodChangePercent
@@ -183,7 +94,6 @@ fun AnalyticsKpiStrip(
         } else {
             if (strings.isBangla) "স্থিতিশীল" else "Stable"
         }
-
         val trendColor = if (overview.isPeriodChangeFavorable) appColors.income else appColors.expense
         val trendLabel = if (changePct != null) {
             if (overview.isPeriodChangeFavorable) (if (strings.isBangla) "অনুকূল" else "Favorable")
@@ -191,61 +101,82 @@ fun AnalyticsKpiStrip(
         } else {
             if (strings.isBangla) "তথ্য নেই" else "No data"
         }
+        KpiMetricCard(
+            modifier = Modifier.weight(1f),
+            icon = if (overview.isPeriodChangeFavorable) Icons.AutoMirrored.Outlined.TrendingDown else Icons.AutoMirrored.Outlined.TrendingUp,
+            iconTint = trendColor,
+            title = if (strings.isBangla) "আগের তুলনা" else "Vs Previous",
+            value = trendText,
+            valueColor = trendColor,
+            subtitle = trendLabel,
+            subtitleColor = appColors.textMuted
+        )
+    }
+}
 
-        AppCard(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            padding = 10.dp
+@Composable
+private fun KpiMetricCard(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    iconTint: Color,
+    title: String,
+    value: String,
+    valueColor: Color,
+    subtitle: String,
+    subtitleColor: Color
+) {
+    val appColors = LocalAppColors.current
+    AppCard(
+        modifier = modifier.fillMaxHeight(),
+        padding = 10.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = if (overview.isPeriodChangeFavorable) Icons.Outlined.TrendingDown else Icons.Outlined.TrendingUp,
-                        contentDescription = null,
-                        tint = trendColor,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = if (strings.isBangla) "আগের তুলনা" else "Vs Previous",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = appColors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = trendText,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = trendColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(13.dp)
                 )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
                 Text(
-                    text = trendLabel,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = appColors.textMuted,
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = appColors.textSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum"
+                ),
+                color = valueColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = subtitleColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

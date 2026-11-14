@@ -1,12 +1,6 @@
 package com.example.expensetracker.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,28 +17,23 @@ import com.example.expensetracker.ui.budget.BudgetScreen
 import com.example.expensetracker.ui.budget.BudgetViewModel
 import com.example.expensetracker.ui.dashboard.DashboardScreen
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
+import com.example.expensetracker.ui.ledger.LedgerScreen
 import com.example.expensetracker.ui.market.MarketScreen
-import com.example.expensetracker.ui.money.MoneyHubScreen
+import com.example.expensetracker.ui.plan.PlanScreen
 import com.example.expensetracker.ui.receivables.ReceivablesScreen
 import com.example.expensetracker.ui.receivables.ReceivablesViewModel
 import com.example.expensetracker.ui.reports.ReportsScreen
 import com.example.expensetracker.ui.reports.ReportsViewModel
 import com.example.expensetracker.ui.settings.SettingsScreen
 import com.example.expensetracker.ui.settings.SettingsViewModel
-import com.example.expensetracker.ui.transactions.TransactionsScreen
 import com.example.expensetracker.ui.transactions.TransactionsViewModel
-
-import com.example.expensetracker.ui.ledger.LedgerScreen
-import com.example.expensetracker.ui.plan.PlanScreen
 
 /**
  * NavigationScreenHost (Living Ledger 2.0 5-Destination Architecture):
- *
  * - 5 Top-level Destinations: HOME, LEDGER, BAZAAR, WALLETS, PLAN
  * - LEDGER hosts Transactions · Insights (Analytics) · Reports via segmented control
  * - PLAN hosts Budgets · Goals · Bills · Debts via segmented control
  * - Settings is a pushed screen with back navigation returning to HOME.
- * - Smooth shared-axis horizontal transitions between top tabs, and depth fade for pushed screens.
  */
 @Composable
 fun NavigationScreenHost(
@@ -63,68 +52,31 @@ fun NavigationScreenHost(
 
     AnimatedContent(
         targetState = selectedItem,
-        transitionSpec = {
-            val forward = targetState.ordinal > initialState.ordinal
-            if (targetState.isTopLevel && initialState.isTopLevel) {
-                // Shared-axis X transition between top tabs
-                (slideInHorizontally(
-                    initialOffsetX = { fullWidth -> if (forward) fullWidth / 4 else -fullWidth / 4 },
-                    animationSpec = tween(220)
-                ) + fadeIn(animationSpec = tween(220)))
-                    .togetherWith(
-                        slideOutHorizontally(
-                            targetOffsetX = { fullWidth -> if (forward) -fullWidth / 4 else fullWidth / 4 },
-                            animationSpec = tween(180)
-                        ) + fadeOut(animationSpec = tween(180))
-                    )
-            } else {
-                // Pushed screen transition
-                (fadeIn(animationSpec = tween(220, delayMillis = 30)))
-                    .togetherWith(fadeOut(animationSpec = tween(150)))
-            }
-        },
+        transitionSpec = { navigationScreenTransitionSpec() },
         label = "ScreenTransition",
         modifier = modifier.fillMaxSize()
     ) { targetScreen ->
         when (targetScreen) {
-            NavigationItem.HOME -> {
-                DashboardScreen(
-                    viewModel = dashboardViewModel,
-                    onNavigateToTransactions = {
-                        transactionsViewModel.setCategoryFilter(null)
-                        onNavigate(NavigationItem.LEDGER)
-                    },
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onOpenAddTransaction = {
-                        onOpenAddTransaction(TransactionType.EXPENSE, null)
-                    },
-                    onEditTransaction = onEditTransaction,
-                    onNavigateToAnalytics = {
-                        onNavigate(NavigationItem.ANALYTICS)
-                    },
-                    onNavigateToAccounts = {
-                        onNavigate(NavigationItem.WALLETS)
-                    },
-                    onNavigateToReceivables = {
-                        onNavigate(NavigationItem.RECEIVABLES)
-                    },
-                    onNavigateToBills = {
-                        onNavigate(NavigationItem.BILLS)
-                    },
-                    onNavigateToBudgets = {
-                        onNavigate(NavigationItem.BUDGETS)
-                    },
-                    onSplitBillClick = onSplitBillClick,
-                    onOpenAddExpense = {
-                        onOpenAddTransaction(TransactionType.EXPENSE, null)
-                    },
-                    onOpenAddIncome = {
-                        onOpenAddTransaction(TransactionType.INCOME, null)
-                    },
-                    onTransferClick = onTransferClick,
-                    onOpenMarketList = onOpenMarketList
-                )
-            }
+            NavigationItem.HOME -> DashboardScreen(
+                viewModel = dashboardViewModel,
+                onNavigateToTransactions = {
+                    transactionsViewModel.setCategoryFilter(null)
+                    onNavigate(NavigationItem.LEDGER)
+                },
+                onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
+                onOpenAddTransaction = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onEditTransaction = onEditTransaction,
+                onNavigateToAnalytics = { onNavigate(NavigationItem.ANALYTICS) },
+                onNavigateToAccounts = { onNavigate(NavigationItem.WALLETS) },
+                onNavigateToReceivables = { onNavigate(NavigationItem.RECEIVABLES) },
+                onNavigateToBills = { onNavigate(NavigationItem.BILLS) },
+                onNavigateToBudgets = { onNavigate(NavigationItem.BUDGETS) },
+                onSplitBillClick = onSplitBillClick,
+                onOpenAddExpense = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onOpenAddIncome = { onOpenAddTransaction(TransactionType.INCOME, null) },
+                onTransferClick = onTransferClick,
+                onOpenMarketList = onOpenMarketList
+            )
             NavigationItem.LEDGER -> {
                 val analyticsViewModel: AnalyticsViewModel = viewModel()
                 val reportsViewModel: ReportsViewModel = viewModel()
@@ -133,9 +85,7 @@ fun NavigationScreenHost(
                     analyticsViewModel = analyticsViewModel,
                     reportsViewModel = reportsViewModel,
                     onEditTransaction = onEditTransaction,
-                    onAddTransactionForDate = { dateMillis ->
-                        onOpenAddTransaction(TransactionType.EXPENSE, dateMillis)
-                    },
+                    onAddTransactionForDate = { dateMillis -> onOpenAddTransaction(TransactionType.EXPENSE, dateMillis) },
                     initialSegment = 0
                 )
             }
@@ -147,9 +97,7 @@ fun NavigationScreenHost(
                     analyticsViewModel = analyticsViewModel,
                     reportsViewModel = reportsViewModel,
                     onEditTransaction = onEditTransaction,
-                    onAddTransactionForDate = { dateMillis ->
-                        onOpenAddTransaction(TransactionType.EXPENSE, dateMillis)
-                    },
+                    onAddTransactionForDate = { dateMillis -> onOpenAddTransaction(TransactionType.EXPENSE, dateMillis) },
                     initialSegment = 0
                 )
             }
@@ -173,14 +121,10 @@ fun NavigationScreenHost(
                 )
             }
             NavigationItem.BAZAAR -> {
-                MarketScreen(
-                    dashboardViewModel = dashboardViewModel
-                )
+                MarketScreen(dashboardViewModel = dashboardViewModel)
             }
             NavigationItem.MARKET -> {
-                MarketScreen(
-                    dashboardViewModel = dashboardViewModel
-                )
+                MarketScreen(dashboardViewModel = dashboardViewModel)
             }
             NavigationItem.WALLETS -> {
                 val accountsViewModel: AccountsViewModel = viewModel()

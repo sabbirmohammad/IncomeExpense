@@ -1,33 +1,22 @@
 package com.example.expensetracker.ui.transactions
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
@@ -41,10 +30,8 @@ import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.RadiusM
 import com.example.expensetracker.theme.RadiusS
 import com.example.expensetracker.ui.components.AmountKeypadLogic
-import com.example.expensetracker.ui.components.CalculatorEvaluator
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
-import com.example.expensetracker.ui.components.rememberAppHaptics
 
 /**
  * V7 Transaction Amount Card:
@@ -68,14 +55,9 @@ fun TransactionAmountCard(
     isTransfer: Boolean = false
 ) {
     val appColors = LocalAppColors.current
-    val haptics = rememberAppHaptics()
 
-    val hasOperators = remember(amountText) {
-        AmountKeypadLogic.hasOperators(amountText)
-    }
-    val evaluatedValue = remember(amountText) {
-        AmountKeypadLogic.evaluate(amountText)
-    }
+    val hasOperators = remember(amountText) { AmountKeypadLogic.hasOperators(amountText) }
+    val evaluatedValue = remember(amountText) { AmountKeypadLogic.evaluate(amountText) }
 
     val displayAmount = remember(amountText, strings.isBangla) {
         when {
@@ -85,11 +67,7 @@ fun TransactionAmountCard(
         }
     }
 
-    val borderStroke = if (appColors.isDark) {
-        null
-    } else {
-        BorderStroke(HairlineInkStroke, appColors.border)
-    }
+    val borderStroke = if (appColors.isDark) null else BorderStroke(HairlineInkStroke, appColors.border)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Surface(
@@ -107,59 +85,17 @@ fun TransactionAmountCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Header indicator row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(typeAccentColor)
-                        )
-                        Text(
-                            text = when {
-                                isTransfer -> strings.transferTab
-                                isExpense -> strings.expenseAmount
-                                else -> strings.incomeAmount
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = appColors.textSecondary
-                        )
-                    }
-
-                    // Clear button if amount entered
-                    if (amountText.isNotEmpty()) {
-                        Text(
-                            text = strings.clear,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = appColors.textSecondary,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable {
-                                    haptics.lightTick()
-                                    onAmountChange("")
-                                }
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
-                    }
-                }
+                TransactionAmountHeaderRow(
+                    isTransfer = isTransfer,
+                    isExpense = isExpense,
+                    typeAccentColor = typeAccentColor,
+                    amountText = amountText,
+                    strings = strings,
+                    onClear = { onAmountChange("") }
+                )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Big Hero Amount Display (<= 140dp area)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -191,53 +127,16 @@ fun TransactionAmountCard(
                     )
                 }
 
-                // Live Evaluated Result Line (when math expression is entered)
-                AnimatedVisibility(
-                    visible = hasOperators && evaluatedValue != null,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    val evalStr = evaluatedValue?.let { AmountKeypadLogic.formatEvaluated(it, strings.isBangla) } ?: ""
-                    Surface(
-                        shape = RoundedCornerShape(RadiusS),
-                        color = appColors.accentContainer,
-                        border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.35f)),
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .clickable {
-                                haptics.lightTick()
-                                evaluatedValue?.let {
-                                    val clean = CalculatorEvaluator.formatResult(it)
-                                    onAmountChange(clean)
-                                }
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "= $currencySymbol $evalStr",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = appColors.accent
-                            )
-                            Text(
-                                text = if (strings.isBangla) "(ট্যাপ করুন)" else "(Tap to apply)",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = appColors.textSecondary
-                            )
-                        }
-                    }
-                }
+                TransactionAmountLiveEvaluation(
+                    hasOperators = hasOperators,
+                    evaluatedValue = evaluatedValue,
+                    currencySymbol = currencySymbol,
+                    strings = strings,
+                    onApplyEvaluated = onAmountChange
+                )
             }
         }
 
-        // Inline Error Message
         if (errorMessage != null) {
             Surface(
                 shape = RoundedCornerShape(RadiusS),

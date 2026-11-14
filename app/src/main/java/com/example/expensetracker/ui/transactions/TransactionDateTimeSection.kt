@@ -12,13 +12,8 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,7 +38,6 @@ import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 
 /**
  * V7 Transaction Date & Time Chips:
@@ -66,15 +60,9 @@ fun TransactionDateTimeSection(
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
 
-    val isToday = remember(dateMillis) {
-        isSameDay(dateMillis, System.currentTimeMillis())
-    }
-    val yesterdayMillis = remember {
-        Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.timeInMillis
-    }
-    val isYesterday = remember(dateMillis) {
-        isSameDay(dateMillis, yesterdayMillis)
-    }
+    val isToday = remember(dateMillis) { isSameDay(dateMillis, System.currentTimeMillis()) }
+    val yesterdayMillis = remember { Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.timeInMillis }
+    val isYesterday = remember(dateMillis) { isSameDay(dateMillis, yesterdayMillis) }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -84,11 +72,8 @@ fun TransactionDateTimeSection(
         )
         Spacer(modifier = Modifier.height(6.dp))
 
-        val scrollState = rememberScrollState()
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(scrollState),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -122,95 +107,21 @@ fun TransactionDateTimeSection(
                 }
             )
 
-            // 3. Date Picker Chip (shows current formatted date)
-            val dateLabel = remember(dateMillis) {
-                dateOnlyFormat.format(Date(dateMillis))
-            }
-            Surface(
-                shape = RoundedCornerShape(RadiusS),
-                color = if (!isToday && !isYesterday) appColors.accentContainer else appColors.surfaceVariant,
-                border = if (!isToday && !isYesterday) {
-                    BorderStroke(1.5.dp, typeAccentColor)
-                } else if (appColors.isDark) null else {
-                    BorderStroke(HairlineInkStroke, appColors.border)
-                },
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 44.dp)
-                    .minimumInteractiveComponentSize()
-                    .clickable {
-                        haptics.lightTick()
-                        onOpenDatePicker()
-                    }
-                    .semantics {
-                        role = Role.Button
-                        contentDescription = "Date $dateLabel"
-                    }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.CalendarToday,
-                        contentDescription = null,
-                        tint = if (!isToday && !isYesterday) typeAccentColor else appColors.textSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = dateLabel,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = if (!isToday && !isYesterday) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 13.sp,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = if (!isToday && !isYesterday) appColors.textPrimary else appColors.textSecondary
-                    )
-                }
-            }
+            // 3. Date Picker Chip
+            TransactionDatePickerChip(
+                dateMillis = dateMillis,
+                isCustomDate = !isToday && !isYesterday,
+                typeAccentColor = typeAccentColor,
+                dateOnlyFormat = dateOnlyFormat,
+                onOpenDatePicker = onOpenDatePicker
+            )
 
-            // 4. Time Picker Chip (shows current formatted time)
-            val timeLabel = remember(dateMillis) {
-                timeOnlyFormat.format(Date(dateMillis))
-            }
-            Surface(
-                shape = RoundedCornerShape(RadiusS),
-                color = appColors.surfaceVariant,
-                border = if (appColors.isDark) null else BorderStroke(HairlineInkStroke, appColors.border),
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 44.dp)
-                    .minimumInteractiveComponentSize()
-                    .clickable {
-                        haptics.lightTick()
-                        onOpenTimePicker()
-                    }
-                    .semantics {
-                        role = Role.Button
-                        contentDescription = "Time $timeLabel"
-                    }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Schedule,
-                        contentDescription = null,
-                        tint = appColors.textSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = timeLabel,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 13.sp,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = appColors.textSecondary
-                    )
-                }
-            }
+            // 4. Time Picker Chip
+            TransactionTimePickerChip(
+                dateMillis = dateMillis,
+                timeOnlyFormat = timeOnlyFormat,
+                onOpenTimePicker = onOpenTimePicker
+            )
         }
     }
 }

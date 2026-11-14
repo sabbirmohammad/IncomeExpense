@@ -2,19 +2,12 @@ package com.example.expensetracker.ui.accounts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,7 +15,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,7 +24,6 @@ import com.example.expensetracker.data.model.AccountType
 import com.example.expensetracker.theme.CardGap
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
-import com.example.expensetracker.ui.components.DrawerMenuButton
 import com.example.expensetracker.ui.components.FeedbackStrings
 import com.example.expensetracker.ui.components.FeedbackVisualType
 import com.example.expensetracker.ui.components.LocalAppStrings
@@ -66,30 +57,11 @@ fun AccountsScreen(
     val totalCash = remember(accounts) { accounts.filter { it.type == AccountType.CASH }.sumOf { it.currentBalance } }
 
     Column(modifier = Modifier.fillMaxSize().background(appColors.background)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenPaddingHorizontal, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (onMenuClick != null) {
-                DrawerMenuButton(onClick = onMenuClick)
-                Spacer(modifier = Modifier.width(12.dp))
-            } else if (onNavigateBack != null) {
-                IconButton(onClick = onNavigateBack) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                        contentDescription = "Back",
-                        tint = appColors.textPrimary
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-
-            Text(
-                text = strings.accountsTitle,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
-                color = appColors.textPrimary
-            )
-        }
+        AccountsTopBar(
+            title = strings.accountsTitle,
+            onMenuClick = onMenuClick,
+            onNavigateBack = onNavigateBack
+        )
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = ScreenPaddingHorizontal)
@@ -165,16 +137,10 @@ fun AccountsScreen(
     AccountsModals(
         showAddEditSheet = showAddEditSheet,
         accountToEdit = accountToEdit,
-        onDismissAddEdit = {
-            showAddEditSheet = false
-            accountToEdit = null
-        },
+        onDismissAddEdit = { showAddEditSheet = false; accountToEdit = null },
         onSaveAccount = { acc ->
-            if (accountToEdit != null) {
-                viewModel.updateAccount(acc)
-            } else {
-                viewModel.addAccount(acc.name, acc.type, acc.institutionName, acc.accountNumber, acc.initialBalance, acc.colorHex)
-            }
+            if (accountToEdit != null) viewModel.updateAccount(acc)
+            else viewModel.addAccount(acc.name, acc.type, acc.institutionName, acc.accountNumber, acc.initialBalance, acc.colorHex)
             showAddEditSheet = false
             accountToEdit = null
         },
@@ -187,15 +153,8 @@ fun AccountsScreen(
         showAccountDetailsSheet = showAccountDetailsSheet,
         selectedAccount = selectedAccount,
         accountTransactions = accountTransactions,
-        onDismissDetails = {
-            showAccountDetailsSheet = false
-            viewModel.selectAccount(null)
-        },
-        onEditFromDetails = {
-            accountToEdit = selectedAccount
-            showAccountDetailsSheet = false
-            showAddEditSheet = true
-        },
+        onDismissDetails = { showAccountDetailsSheet = false; viewModel.selectAccount(null) },
+        onEditFromDetails = { accountToEdit = selectedAccount; showAccountDetailsSheet = false; showAddEditSheet = true },
         onReconcileFromDetails = { accountToReconcile = selectedAccount },
         accountToReconcile = accountToReconcile,
         onDismissReconcile = { accountToReconcile = null },
@@ -212,26 +171,20 @@ fun AccountsScreen(
             )
         },
         currencySymbol = userProfile.currencySymbol,
-        accounts = accounts
-    )
-
-    if (accountToDelete != null) {
-        AccountDeleteConfirmationDialog(
-            account = accountToDelete!!,
-            canDelete = accounts.size > 1,
-            onDismiss = { accountToDelete = null },
-            onConfirmDelete = {
-                val deletedName = accountToDelete!!.name
-                viewModel.deleteAccount(accountToDelete!!.id)
-                accountToDelete = null
-                feedbackController.show(
-                    TransactionFeedbackData(
-                        type = FeedbackVisualType.ITEM_DELETED,
-                        title = FeedbackStrings.itemDeleted(strings.isBangla),
-                        subtitle = deletedName
-                    )
+        accounts = accounts,
+        accountToDelete = accountToDelete,
+        onDismissDelete = { accountToDelete = null },
+        onConfirmDelete = { target ->
+            val deletedName = target.name
+            viewModel.deleteAccount(target.id)
+            accountToDelete = null
+            feedbackController.show(
+                TransactionFeedbackData(
+                    type = FeedbackVisualType.ITEM_DELETED,
+                    title = FeedbackStrings.itemDeleted(strings.isBangla),
+                    subtitle = deletedName
                 )
-            }
-        )
-    }
+            )
+        }
+    )
 }

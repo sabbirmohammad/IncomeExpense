@@ -28,7 +28,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,27 +65,19 @@ fun AccountsHeroCard(
         color = appColors.surfaceRaised,
         border = if (appColors.isDark) null else BorderStroke(0.5.dp, appColors.border)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(all = 18.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(all = 18.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
+                    modifier = Modifier.size(6.dp).clip(CircleShape)
                         .background(if (totalNetWorth < 0) appColors.expense else appColors.accent)
                 )
                 Text(
                     text = if (strings.isBangla) "মোট নেট সম্পদ" else "Total Net Worth",
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.2.sp
+                        fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp
                     ),
                     color = appColors.textSecondary
                 )
@@ -97,10 +88,7 @@ fun AccountsHeroCard(
             Text(
                 text = formatCurrency(totalNetWorth, currencySymbol, isBn),
                 style = MaterialTheme.typography.displaySmall.copy(
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp,
-                    fontFeatureSettings = "tnum"
+                    fontSize = 32.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp, fontFeatureSettings = "tnum"
                 ),
                 color = appColors.textPrimary
             )
@@ -114,34 +102,19 @@ fun AccountsHeroCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 SourceStatCard(
-                    modifier = Modifier.weight(1f),
-                    label = strings.banksTab,
-                    amount = totalBank,
-                    count = accounts.count { it.type == AccountType.BANK },
-                    symbol = currencySymbol,
-                    icon = Icons.Outlined.AccountBalance,
-                    color = bankColor,
-                    isBangla = strings.isBangla
+                    modifier = Modifier.weight(1f), label = strings.banksTab, amount = totalBank,
+                    count = accounts.count { it.type == AccountType.BANK }, symbol = currencySymbol,
+                    icon = Icons.Outlined.AccountBalance, color = bankColor, isBangla = strings.isBangla
                 )
                 SourceStatCard(
-                    modifier = Modifier.weight(1f),
-                    label = strings.mfsTab,
-                    amount = totalMfs,
-                    count = accounts.count { it.type == AccountType.MFS },
-                    symbol = currencySymbol,
-                    icon = Icons.Outlined.PhoneAndroid,
-                    color = mfsColor,
-                    isBangla = strings.isBangla
+                    modifier = Modifier.weight(1f), label = strings.mfsTab, amount = totalMfs,
+                    count = accounts.count { it.type == AccountType.MFS }, symbol = currencySymbol,
+                    icon = Icons.Outlined.PhoneAndroid, color = mfsColor, isBangla = strings.isBangla
                 )
                 SourceStatCard(
-                    modifier = Modifier.weight(1f),
-                    label = strings.cashTab,
-                    amount = totalCash,
-                    count = accounts.count { it.type == AccountType.CASH },
-                    symbol = currencySymbol,
-                    icon = Icons.Outlined.Payments,
-                    color = cashColor,
-                    isBangla = strings.isBangla
+                    modifier = Modifier.weight(1f), label = strings.cashTab, amount = totalCash,
+                    count = accounts.count { it.type == AccountType.CASH }, symbol = currencySymbol,
+                    icon = Icons.Outlined.Payments, color = cashColor, isBangla = strings.isBangla
                 )
             }
         }
@@ -171,45 +144,26 @@ fun SourceStatCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.14f)),
+                modifier = Modifier.size(28.dp).clip(CircleShape).background(color.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(15.dp)
-                )
+                Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(15.dp))
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = label,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = appColors.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                text = label, fontSize = 11.sp, fontWeight = FontWeight.Medium,
+                color = appColors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = formatCurrency(amount, symbol, isBangla || globalBengaliNumeralsEnabled),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = appColors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = appColors.textPrimary,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
             )
             Spacer(modifier = Modifier.height(1.dp))
             val countDisp = if (isBangla || globalBengaliNumeralsEnabled) convertToBengaliDigits(count.toString()) else count.toString()
-            Text(
-                text = "$countDisp ${if (isBangla) "টি" else "acc"}",
-                fontSize = 10.sp,
-                color = appColors.textMuted
-            )
+            Text(text = "$countDisp ${if (isBangla) "টি" else "acc"}", fontSize = 10.sp, color = appColors.textMuted)
         }
     }
 }

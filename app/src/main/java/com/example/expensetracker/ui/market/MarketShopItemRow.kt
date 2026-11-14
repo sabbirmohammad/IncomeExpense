@@ -77,26 +77,7 @@ fun MarketShopItemRow(
         enableDismissFromStartToEnd = true,
         enableDismissFromEndToStart = true,
         backgroundContent = {
-            val direction = dismissState.dismissDirection
-            val color = when (direction) {
-                SwipeToDismissBoxValue.StartToEnd -> appColors.income.copy(alpha = 0.2f)
-                SwipeToDismissBoxValue.EndToStart -> appColors.warning.copy(alpha = 0.2f)
-                else -> Color.Transparent
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(color)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
-            ) {
-                if (direction == SwipeToDismissBoxValue.StartToEnd) {
-                    Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = appColors.income)
-                } else if (direction == SwipeToDismissBoxValue.EndToStart) {
-                    Icon(imageVector = Icons.Filled.Close, contentDescription = null, tint = appColors.warning)
-                }
-            }
+            MarketShopItemSwipeBackground(dismissState = dismissState)
         },
         modifier = modifier
     ) {
@@ -147,56 +128,10 @@ fun MarketShopItemRow(
                     }
 
                     // Middle: Name (up to 2 lines, never ellipsized) + Qty chip + Last rate
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = item.name,
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 16.sp,
-                                    lineHeight = 22.sp,
-                                    textDecoration = if (item.isPurchased) TextDecoration.LineThrough else TextDecoration.None
-                                ),
-                                color = if (item.isPurchased) appColors.textMuted else appColors.textPrimary,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            // Inline Quantity Chip
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = appColors.surface,
-                                border = BorderStroke(HairlineInkStroke, appColors.divider)
-                            ) {
-                                Text(
-                                    text = item.formatQuantity(),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        fontFeatureSettings = "tnum"
-                                    ),
-                                    color = if (item.isPurchased) appColors.textMuted else appColors.textSecondary,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-
-                        if (lastRateText != null) {
-                            Text(
-                                text = lastRateText,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = appColors.textSecondary
-                            )
-                        }
-                    }
+                    MarketShopItemDetails(
+                        item = item,
+                        lastRateText = lastRateText
+                    )
                 }
 
                 // Right: Amount Display (Paid or Estimate)

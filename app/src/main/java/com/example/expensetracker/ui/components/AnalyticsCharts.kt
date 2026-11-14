@@ -3,20 +3,14 @@ package com.example.expensetracker.ui.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,17 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +36,6 @@ import com.example.expensetracker.data.model.CategorySpend
 import com.example.expensetracker.data.model.getLocalizedCategoryName
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.LocalMotion
-import kotlin.math.atan2
 
 /**
  * Donut chart per V7 spec:
@@ -93,25 +83,9 @@ fun DonutChart(
                     val stroke = baseStrokeWidthDp.toPx()
                     val radius = (size.minDimension - stroke) / 2
                     val topLeft = Offset((size.width - 2 * radius) / 2, (size.height - 2 * radius) / 2)
-                    drawArc(
-                        color = emptyBorderColor,
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = Size(radius * 2, radius * 2),
-                        style = Stroke(width = stroke)
-                    )
+                    drawArc(color = emptyBorderColor, startAngle = 0f, sweepAngle = 360f, useCenter = false, topLeft = topLeft, size = Size(radius * 2, radius * 2), style = Stroke(width = stroke))
                 }
-
-                Text(
-                    text = if (strings.isBangla) "এই সময়ে কোনো তথ্য নেই" else "No data for this period",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal
-                    ),
-                    color = appColors.textMuted
-                )
+                Text(text = if (strings.isBangla) "এই সময়ে কোনো তথ্য নেই" else "No data for this period", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp), color = appColors.textMuted)
             } else {
                 val animationProgress = remember { Animatable(if (motion.reduceMotion) 1f else 0f) }
                 LaunchedEffect(categorySpends, centerLabel) {
@@ -128,24 +102,7 @@ fun DonutChart(
                         .size(chartDiameter - 10.dp)
                         .pointerInput(categorySpends) {
                             detectTapGestures { tapOffset ->
-                                val center = Offset(size.width / 2f, size.height / 2f)
-                                val dx = tapOffset.x - center.x
-                                val dy = tapOffset.y - center.y
-                                var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
-                                if (angle < 0) angle += 360f
-                                // Shift so that 12 o'clock (-90 deg) is 0
-                                val normalizedAngle = (angle + 90f) % 360f
-
-                                var accumulated = 0f
-                                var tappedIdx: Int? = null
-                                for ((idx, spend) in categorySpends.withIndex()) {
-                                    val sweep = spend.percentage * 360f
-                                    if (normalizedAngle >= accumulated && normalizedAngle < accumulated + sweep) {
-                                        tappedIdx = idx
-                                        break
-                                    }
-                                    accumulated += sweep
-                                }
+                                val tappedIdx = DonutChartTouchHelper.calculateTappedIndex(tapOffset, size, categorySpends)
                                 selectedIndex = if (selectedIndex == tappedIdx) null else tappedIdx
                             }
                         }
@@ -188,38 +145,18 @@ fun DonutChart(
                 val displayLabel = activeCategory?.let { getLocalizedCategoryName(it.categoryName, strings.isBangla) } ?: centerLabel
                 val displayAmount = activeCategory?.totalAmount ?: totalAmount
 
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 14.dp)
-                ) {
-                    Text(
-                        text = displayLabel,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = appColors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 14.dp)) {
+                    Text(text = displayLabel, style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Medium), color = appColors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = formatCurrency(displayAmount, currencySymbol),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum"
-                        ),
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
                         color = appColors.textPrimary
                     )
                     if (activeCategory != null) {
                         Text(
                             text = "${(activeCategory.percentage * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFeatureSettings = "tnum"
-                            ),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
                             color = appColors.accent
                         )
                     }
@@ -229,81 +166,14 @@ fun DonutChart(
 
         if (categorySpends.isNotEmpty() && totalAmount > 0.0) {
             Spacer(modifier = Modifier.height(20.dp))
-
-            // Legend: Color dot (10px circle), category name, amount + percentage with tnum
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                categorySpends.forEachIndexed { idx, spend ->
-                    val color = CategoryIconHelper.parseColor(spend.categoryColor)
-                    val isSelected = selectedIndex == idx
-                    val isAnySelected = selectedIndex != null
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(CircleShape)
-                            .background(if (isSelected) appColors.accentContainer else Color.Transparent)
-                            .clickable {
-                                selectedIndex = if (selectedIndex == idx) null else idx
-                                onCategoryClick?.invoke(spend.categoryId)
-                            }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(if (!isAnySelected || isSelected) color else color.copy(alpha = 0.4f))
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = getLocalizedCategoryName(spend.categoryName, strings.isBangla),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                ),
-                                color = if (!isAnySelected || isSelected) appColors.textPrimary else appColors.textMuted,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = formatCurrency(spend.totalAmount, currencySymbol),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = if (!isAnySelected || isSelected) appColors.textPrimary else appColors.textMuted
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "${(spend.percentage * 100).toInt()}%",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = if (!isAnySelected || isSelected) appColors.textSecondary else appColors.textMuted,
-                                modifier = Modifier.width(36.dp),
-                                textAlign = TextAlign.End
-                            )
-                        }
-                    }
-                }
-            }
+            DonutChartLegend(
+                categorySpends = categorySpends,
+                selectedIndex = selectedIndex,
+                onSelectedIndexChanged = { selectedIndex = it },
+                currencySymbol = currencySymbol,
+                isBangla = strings.isBangla,
+                onCategoryClick = onCategoryClick
+            )
         }
     }
 }

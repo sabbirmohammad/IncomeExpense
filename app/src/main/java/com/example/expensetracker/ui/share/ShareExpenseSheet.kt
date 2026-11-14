@@ -31,7 +31,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -41,12 +40,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.repository.*
@@ -151,24 +150,7 @@ fun ShareExpenseSheet(
                 .padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = strings.shareExpenseTitle,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = appColors.textPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.size(32.dp).clip(CircleShape).background(appColors.surfaceVariant)
-                ) {
-                    Icon(Icons.Outlined.Close, contentDescription = strings.close, tint = appColors.textSecondary, modifier = Modifier.size(18.dp))
-                }
-            }
+            ShareSheetHeader(onDismiss = onDismiss, strings = strings)
 
             ShareFormatSwitcher(selectedFormat = selectedFormat, strings = strings, onFormatChange = { selectedFormat = it })
             SharePeriodSelector(selectedPeriod = selectedPeriod, strings = strings, onPeriodChange = { selectedPeriod = it })
@@ -192,49 +174,24 @@ fun ShareExpenseSheet(
                     CircularProgressIndicator(color = appColors.accent, modifier = Modifier.size(36.dp))
                 }
             } else {
-                when (selectedFormat) {
-                    ShareFormatType.PDF -> SharePdfSection(
-                        periodTitle = periodTitle,
-                        periodSubtitle = periodSubtitle,
-                        totalIncome = totalIncome,
-                        totalExpense = totalExpense,
-                        transactions = transactions,
-                        userProfile = userProfile,
-                        strings = strings,
-                        context = context,
-                        coroutineScope = coroutineScope,
-                        isSharing = isSharing,
-                        isSharingPdf = isSharingPdf,
-                        isLoading = isLoading,
-                        onSharingPdfChange = { isSharingPdf = it }
-                    )
-                    ShareFormatType.IMAGE -> ShareImageSection(
-                        periodTitle = periodTitle,
-                        periodSubtitle = periodSubtitle,
-                        totalIncome = totalIncome,
-                        totalExpense = totalExpense,
-                        transactions = transactions,
-                        userProfile = userProfile,
-                        strings = strings,
-                        context = context,
-                        graphicsLayer = graphicsLayer,
-                        coroutineScope = coroutineScope,
-                        isSharing = isSharing,
-                        isSharingPdf = isSharingPdf,
-                        isLoading = isLoading,
-                        onSharingChange = { isSharing = it }
-                    )
-                    ShareFormatType.TEXT -> ShareTextSection(
-                        periodTitle = periodTitle,
-                        periodSubtitle = periodSubtitle,
-                        totalIncome = totalIncome,
-                        totalExpense = totalExpense,
-                        transactions = transactions,
-                        userProfile = userProfile,
-                        strings = strings,
-                        context = context
-                    )
-                }
+                ShareSheetContentRouter(
+                    selectedFormat = selectedFormat,
+                    periodTitle = periodTitle,
+                    periodSubtitle = periodSubtitle,
+                    totalIncome = totalIncome,
+                    totalExpense = totalExpense,
+                    transactions = transactions,
+                    userProfile = userProfile,
+                    strings = strings,
+                    context = context,
+                    graphicsLayer = graphicsLayer,
+                    coroutineScope = coroutineScope,
+                    isSharing = isSharing,
+                    isSharingPdf = isSharingPdf,
+                    isLoading = isLoading,
+                    onSharingChange = { isSharing = it },
+                    onSharingPdfChange = { isSharingPdf = it }
+                )
             }
         }
     }

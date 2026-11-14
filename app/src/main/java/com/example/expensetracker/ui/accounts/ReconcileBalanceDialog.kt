@@ -124,59 +124,10 @@ fun ReconcileBalanceDialog(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 if (diff != null) {
-                    val isGain = diff > 0
-                    val isLoss = diff < 0
-                    val diffColor = when {
-                        isGain -> appColors.income
-                        isLoss -> appColors.expense
-                        else -> appColors.textMuted
-                    }
-                    val diffText = when {
-                        isGain -> "+ ${formatCurrency(diff, currencySymbol)}"
-                        isLoss -> "- ${formatCurrency(kotlin.math.abs(diff), currencySymbol)}"
-                        else -> if (strings.isBangla) "কোনো পার্থক্য নেই" else "0 difference (Balances match)"
-                    }
-                    val diffTypeLabel = when {
-                        isGain -> if (strings.isBangla) "সমন্বয় আয় হিসেবে যোগ হবে" else "Will log as adjustment income"
-                        isLoss -> if (strings.isBangla) "সমন্বয় ব্যয় হিসেবে বাদ হবে" else "Will log as adjustment expense"
-                        else -> ""
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = diffColor.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, diffColor.copy(alpha = 0.3f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = strings.balanceDifference,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = appColors.textSecondary
-                                )
-                                Text(
-                                    text = diffText,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = diffColor
-                                )
-                            }
-                            if (diffTypeLabel.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = diffTypeLabel,
-                                    fontSize = 10.5.sp,
-                                    color = diffColor
-                                )
-                            }
-                        }
-                    }
+                    ReconcileDifferenceCard(
+                        diff = diff,
+                        currencySymbol = currencySymbol
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))

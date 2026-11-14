@@ -6,21 +6,19 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -30,19 +28,14 @@ import com.example.expensetracker.data.model.AppLanguage
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.repository.ExpenseRepository
-import com.example.expensetracker.data.repository.checkShouldShowUpcomingBudgetPrompt
-import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.components.AppAddFab
+import com.example.expensetracker.ui.components.AppScaffold
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.LocalFeedbackController
-import com.example.expensetracker.ui.components.MiddleScreenConfirmationOverlay
 import com.example.expensetracker.ui.components.TransactionFeedbackController
 import com.example.expensetracker.ui.components.rememberAppStrings
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
 import com.example.expensetracker.ui.onboarding.OnboardingScreen
-
-import com.example.expensetracker.ui.components.AppAddFab
-import com.example.expensetracker.ui.components.AppScaffold
-import androidx.compose.foundation.layout.padding
 
 /**
  * Main App Navigation (Living Ledger 2.0 Architecture):
@@ -57,7 +50,6 @@ fun MainAppNavigation(
     onBudgetPromptHandled: () -> Unit = {}
 ) {
     var selectedItem by remember { mutableStateOf(NavigationItem.HOME) }
-
     val dashboardViewModel: DashboardViewModel = viewModel()
 
     val categories by dashboardViewModel.categories.collectAsStateWithLifecycle()
@@ -68,19 +60,7 @@ fun MainAppNavigation(
 
     val context = LocalContext.current
     val repository = remember { ExpenseRepository.getInstance(context) }
-    var showUpcomingBudgetPrompt by remember { mutableStateOf(false) }
-
-    LaunchedEffect(triggerBudgetPromptFromNotification) {
-        if (triggerBudgetPromptFromNotification) {
-            showUpcomingBudgetPrompt = true
-            onBudgetPromptHandled()
-        } else {
-            val shouldShow = repository.checkShouldShowUpcomingBudgetPrompt()
-            if (shouldShow) {
-                showUpcomingBudgetPrompt = true
-            }
-        }
-    }
+    var showUpcomingBudgetPrompt by rememberUpcomingBudgetPromptState(repository, triggerBudgetPromptFromNotification, onBudgetPromptHandled)
 
     var showGlobalAddSheet by remember { mutableStateOf(false) }
     var showTransferSheet by remember { mutableStateOf(false) }
@@ -93,15 +73,11 @@ fun MainAppNavigation(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
-    val isTopLevelScreen = selectedItem == NavigationItem.HOME ||
-            selectedItem == NavigationItem.LEDGER ||
-            selectedItem == NavigationItem.BAZAAR ||
-            selectedItem == NavigationItem.WALLETS ||
-            selectedItem == NavigationItem.PLAN ||
-            selectedItem == NavigationItem.TRANSACTIONS ||
-            selectedItem == NavigationItem.MARKET ||
-            selectedItem == NavigationItem.MONEY ||
-            selectedItem == NavigationItem.ACCOUNTS
+    val isTopLevelScreen = selectedItem in listOf(
+        NavigationItem.HOME, NavigationItem.LEDGER, NavigationItem.BAZAAR,
+        NavigationItem.WALLETS, NavigationItem.PLAN, NavigationItem.TRANSACTIONS,
+        NavigationItem.MARKET, NavigationItem.MONEY, NavigationItem.ACCOUNTS
+    )
 
     // Back Navigation: Non-Home destination -> HOME; on HOME -> exit
     BackHandler(enabled = selectedItem != NavigationItem.HOME) {
@@ -109,19 +85,15 @@ fun MainAppNavigation(
     }
 
     val isOnboardingCompleted by repository.isOnboardingCompleted.collectAsStateWithLifecycle()
-
     val strings = rememberAppStrings(AppLanguage.fromCode(userProfile.appLanguage))
     val feedbackController = remember { TransactionFeedbackController() }
-    val colors = LocalAppColors.current
 
     CompositionLocalProvider(
         LocalAppStrings provides strings,
         LocalFeedbackController provides feedbackController
     ) {
         if (!isOnboardingCompleted) {
-            OnboardingScreen(
-                onFinish = { repository.setOnboardingCompleted(true) }
-            )
+            OnboardingScreen(onFinish = { repository.setOnboardingCompleted(true) })
         } else {
             AppScaffold(
                 bottomBar = {
@@ -138,11 +110,7 @@ fun MainAppNavigation(
                     }
                 },
                 fab = {
-                    AnimatedVisibility(
-                        visible = isTopLevelScreen,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
+                    AnimatedVisibility(visible = isTopLevelScreen, enter = fadeIn(), exit = fadeOut()) {
                         val fabLabel = when (selectedItem) {
                             NavigationItem.BAZAAR, NavigationItem.MARKET -> if (strings.isBangla) "＋ নতুন তালিকা" else "＋ New list"
                             else -> if (strings.isBangla) "＋ যোগ করুন" else "＋ Add"
@@ -150,22 +118,11 @@ fun MainAppNavigation(
                         AppAddFab(
                             label = fabLabel,
                             onClick = {
-                                when (selectedItem) {
-                                    NavigationItem.BAZAAR, NavigationItem.MARKET -> {
-                                        transactionToEdit = null
-                                        initialDateForAdd = null
-                                        initialTypeForAdd = TransactionType.EXPENSE
-                                        initialOpenMarketForAdd = true
-                                        showGlobalAddSheet = true
-                                    }
-                                    else -> {
-                                        transactionToEdit = null
-                                        initialDateForAdd = null
-                                        initialTypeForAdd = TransactionType.EXPENSE
-                                        initialOpenMarketForAdd = false
-                                        showGlobalAddSheet = true
-                                    }
-                                }
+                                transactionToEdit = null
+                                initialDateForAdd = null
+                                initialTypeForAdd = TransactionType.EXPENSE
+                                initialOpenMarketForAdd = (selectedItem == NavigationItem.BAZAAR || selectedItem == NavigationItem.MARKET)
+                                showGlobalAddSheet = true
                             }
                         )
                     }
@@ -181,34 +138,22 @@ fun MainAppNavigation(
                         selectedItem = selectedItem,
                         onNavigate = { selectedItem = it },
                         onOpenAddTransaction = { type, dateMillis ->
-                            transactionToEdit = null
-                            initialDateForAdd = dateMillis
-                            initialTypeForAdd = type
-                            initialOpenMarketForAdd = false
-                            showGlobalAddSheet = true
+                            transactionToEdit = null; initialDateForAdd = dateMillis; initialTypeForAdd = type; initialOpenMarketForAdd = false; showGlobalAddSheet = true
                         },
                         onEditTransaction = { tx ->
-                            transactionToEdit = tx
-                            initialDateForAdd = null
-                            initialTypeForAdd = tx.type
-                            initialOpenMarketForAdd = false
-                            showGlobalAddSheet = true
+                            transactionToEdit = tx; initialDateForAdd = null; initialTypeForAdd = tx.type; initialOpenMarketForAdd = false; showGlobalAddSheet = true
                         },
                         onSplitBillClick = { showBillSplitterSheet = true },
                         onTransferClick = { showTransferSheet = true },
                         onOpenMarketList = {
-                            transactionToEdit = null
-                            initialDateForAdd = null
-                            initialTypeForAdd = TransactionType.EXPENSE
-                            initialOpenMarketForAdd = true
-                            showGlobalAddSheet = true
+                            transactionToEdit = null; initialDateForAdd = null; initialTypeForAdd = TransactionType.EXPENSE; initialOpenMarketForAdd = true; showGlobalAddSheet = true
                         },
                         dashboardViewModel = dashboardViewModel
                     )
                 }
             }
 
-            NavigationTransactionSheets(
+            AppNavigationSheets(
                 showGlobalAddSheet = showGlobalAddSheet,
                 showBillSplitterSheet = showBillSplitterSheet,
                 showTransferSheet = showTransferSheet,
@@ -224,6 +169,11 @@ fun MainAppNavigation(
                 strings = strings,
                 feedbackController = feedbackController,
                 dashboardViewModel = dashboardViewModel,
+                showMarketListSheet = showMarketListSheet,
+                activeMarketList = activeMarketList,
+                showUpcomingBudgetPrompt = showUpcomingBudgetPrompt,
+                summary = summary,
+                repository = repository,
                 onCloseAddSheet = {
                     showGlobalAddSheet = false
                     transactionToEdit = null
@@ -233,29 +183,11 @@ fun MainAppNavigation(
                 },
                 onCloseBillSplitterSheet = { showBillSplitterSheet = false },
                 onCloseTransferSheet = { showTransferSheet = false },
-                onOpenMarketList = {
-                    initialOpenMarketForAdd = true
-                    showGlobalAddSheet = true
-                }
-            )
-
-            NavigationUtilitySheets(
-                showMarketListSheet = showMarketListSheet,
-                activeMarketList = activeMarketList,
-                showUpcomingBudgetPrompt = showUpcomingBudgetPrompt,
-                summary = summary,
-                userProfile = userProfile,
-                strings = strings,
-                feedbackController = feedbackController,
-                dashboardViewModel = dashboardViewModel,
-                repository = repository,
-                scope = scope,
+                onOpenMarketListForAdd = { initialOpenMarketForAdd = true; showGlobalAddSheet = true },
                 onCloseMarketList = { showMarketListSheet = false },
                 onCloseBudgetPrompt = { showUpcomingBudgetPrompt = false },
                 onNavigateToBudgets = { selectedItem = NavigationItem.BUDGETS }
             )
-
-            MiddleScreenConfirmationOverlay(controller = feedbackController)
         }
     }
 }

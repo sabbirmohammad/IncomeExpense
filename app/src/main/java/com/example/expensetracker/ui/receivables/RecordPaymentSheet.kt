@@ -1,8 +1,6 @@
 package com.example.expensetracker.ui.receivables
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,17 +11,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,27 +73,10 @@ fun RecordPaymentSheet(
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = strings.recordPayment,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                    color = appColors.textPrimary
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Outlined.Close, null, tint = appColors.textSecondary)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = "${receivable.personName} • ${strings.remainingDue}: ${formatCurrency(receivable.remainingAmount, currencySymbol)}",
-                fontSize = 12.sp,
-                color = appColors.textSecondary
+            RecordPaymentHeader(
+                receivable = receivable,
+                currencySymbol = currencySymbol,
+                onDismiss = onDismiss
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -140,23 +114,9 @@ fun RecordPaymentSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(strings.note, fontSize = 12.sp, color = appColors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                placeholder = { Text(strings.optional, color = appColors.textMuted) },
-                singleLine = true,
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant,
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
+            RecordPaymentNoteField(
+                note = note,
+                onNoteChange = { note = it }
             )
 
             if (errorMessage != null) {

@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -25,13 +23,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.TimeFilter
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.ui.components.AppBottomSheet
-import com.example.expensetracker.ui.components.EmptyStateCard
 import com.example.expensetracker.ui.components.LocalAppStrings
 import kotlinx.coroutines.launch
 
@@ -59,13 +54,7 @@ fun TransactionsScreen(
     val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
 
     val groupedTransactions = remember(transactions, strings.today, strings.yesterday, strings.isBangla, userProfile.useBengaliNumerals) {
-        groupTransactionsByDate(
-            transactions = transactions,
-            todayLabel = strings.today,
-            yesterdayLabel = strings.yesterday,
-            isBangla = strings.isBangla,
-            useBengaliNumerals = userProfile.useBengaliNumerals
-        )
+        groupTransactionsByDate(transactions, strings.today, strings.yesterday, strings.isBangla, userProfile.useBengaliNumerals)
     }
 
     val activeFilterCount = (if (selectedType != null || isMarketTripsView) 1 else 0) +
@@ -74,33 +63,18 @@ fun TransactionsScreen(
         (if (selectedTimeFilter != TimeFilter.THIS_MONTH) 1 else 0) +
         (if (searchQuery.isNotBlank()) 1 else 0)
 
-    var showShareSheet by remember { mutableStateOf(false) }
-    var showExportDialog by remember { mutableStateOf(false) }
-    var sharingTargetDateMillis by remember { mutableStateOf<Long?>(null) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showCustomDateRangeDialog by remember { mutableStateOf(false) }
-    var tripToDelete by remember { mutableStateOf<MarketListWithItems?>(null) }
+    val dialogState = rememberTransactionsDialogState()
     var isSearchActive by remember { mutableStateOf(searchQuery.isNotBlank()) }
 
-    // V7 bottom sheet states: DetailSheet & FilterSheet
-    var selectedTxForDetail by remember { mutableStateOf<Transaction?>(null) }
-    var showFilterSheet by remember { mutableStateOf(false) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(LocalAppColors.current.background)
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(LocalAppColors.current.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             TransactionsTopBar(
                 title = strings.transactionsTitle,
                 onMenuClick = onMenuClick,
-                onExportClick = { showExportDialog = true },
-                onShareClick = {
-                    sharingTargetDateMillis = null
-                    showShareSheet = true
-                },
+                onExportClick = { dialogState.showExportDialog = true },
+                onShareClick = { dialogState.sharingTargetDateMillis = null; dialogState.showShareSheet = true },
                 onNavigateToSettings = onNavigateToSettings,
                 onSearchClick = { isSearchActive = !isSearchActive },
                 isSearchActive = isSearchActive
@@ -120,7 +94,7 @@ fun TransactionsScreen(
                 accounts = accounts,
                 selectedAccountId = selectedAccountId,
                 onAccountFilterChanged = { viewModel.setAccountFilter(it) },
-                onOpenCustomDateRange = { showCustomDateRangeDialog = true },
+                onOpenCustomDateRange = { dialogState.showCustomDateRangeDialog = true },
                 onResetFilters = {
                     viewModel.onSearchQueryChanged("")
                     viewModel.setTypeFilter(null)
@@ -132,7 +106,7 @@ fun TransactionsScreen(
                 },
                 activeFilterCount = activeFilterCount,
                 strings = strings,
-                onOpenFilterSheet = { showFilterSheet = true }
+                onOpenFilterSheet = { dialogState.showFilterSheet = true }
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -144,79 +118,37 @@ fun TransactionsScreen(
                     isBangla = strings.isBangla,
                     useBengaliNumerals = userProfile.useBengaliNumerals || strings.isBangla,
                     strings = strings,
-                    onDeleteTrip = { trip -> tripToDelete = trip },
+                    onDeleteTrip = { trip -> dialogState.tripToDelete = trip },
                     onBackToTransactions = { viewModel.setMarketTripsView(false) }
                 )
             } else if (transactions.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 24.dp), contentAlignment = Alignment.Center) {
                     val hasActiveFilters = activeFilterCount > 0
                     val hasAnyTransactions = allTransactions.isNotEmpty()
-                    EmptyStateCard(
-                        icon = Icons.AutoMirrored.Outlined.ReceiptLong,
-                        headline = when {
-                            hasActiveFilters -> strings.noTransactionsFound
-                            hasAnyTransactions -> if (strings.isBangla) "চলতি মাসে কোনো লেনদেন নেই" else "No transactions this month"
-                            else -> strings.noTransactionsFound
+                    TransactionsEmptyStateCard(
+                        hasActiveFilters = hasActiveFilters,
+                        hasAnyTransactions = hasAnyTransactions,
+                        strings = strings,
+                        onResetFilters = {
+                            viewModel.onSearchQueryChanged("")
+                            viewModel.setTypeFilter(null)
+                            viewModel.setCategoryFilter(null)
+                            viewModel.setAccountFilter(null)
+                            viewModel.setTimeFilter(TimeFilter.THIS_MONTH)
+                            viewModel.setMarketTripsView(false)
+                            isSearchActive = false
                         },
-                        explanation = when {
-                            hasActiveFilters -> strings.noTransactionsAdjustFilter
-                            hasAnyTransactions -> if (strings.isBangla) "পূর্ববর্তী লেনদেন দেখতে সব সময়ের ফিল্টার নির্বাচন করুন অথবা নতুন লেনদেন যোগ করুন।" else "Select all time to view past records or add a new transaction."
-                            else -> strings.startTrackingSubtitle
-                        },
-                        buttonText = when {
-                            hasActiveFilters -> strings.clearFilters
-                            hasAnyTransactions -> if (strings.isBangla) "সব লেনদেন দেখুন" else "View All Transactions"
-                            else -> strings.addTransaction
-                        },
-                        onButtonClick = {
-                            when {
-                                hasActiveFilters -> {
-                                    viewModel.onSearchQueryChanged("")
-                                    viewModel.setTypeFilter(null)
-                                    viewModel.setCategoryFilter(null)
-                                    viewModel.setAccountFilter(null)
-                                    viewModel.setTimeFilter(TimeFilter.THIS_MONTH)
-                                    viewModel.setMarketTripsView(false)
-                                    isSearchActive = false
-                                }
-                                hasAnyTransactions -> {
-                                    viewModel.setTimeFilter(TimeFilter.ALL)
-                                }
-                                else -> {
-                                    onAddTransactionForDate?.invoke(System.currentTimeMillis())
-                                }
-                            }
-                        }
+                        onViewAllTransactions = { viewModel.setTimeFilter(TimeFilter.ALL) },
+                        onAddTransaction = { onAddTransactionForDate?.invoke(System.currentTimeMillis()) }
                     )
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                     groupedTransactions.forEach { (dateGroup, itemsInGroup) ->
-                        var groupExpense = 0.0
-                        var groupIncome = 0.0
-                        for (item in itemsInGroup) {
-                            if (item.type == TransactionType.EXPENSE) groupExpense += item.amount
-                            else if (item.type == TransactionType.INCOME) groupIncome += item.amount
-                        }
-                        val net = groupIncome - groupExpense
+                        val net = itemsInGroup.sumOf { if (it.type == TransactionType.INCOME) it.amount else -it.amount }
 
                         item(key = "header_$dateGroup") {
-                            TransactionDateGroupHeader(
-                                dateGroup = dateGroup,
-                                itemsCount = itemsInGroup.size,
-                                netAmount = net,
-                                currencySymbol = userProfile.currencySymbol,
-                                isBangla = strings.isBangla
-                            )
+                            TransactionDateGroupHeader(dateGroup, itemsInGroup.size, net, userProfile.currencySymbol, strings.isBangla)
                         }
 
                         item(key = "card_$dateGroup") {
@@ -229,18 +161,12 @@ fun TransactionsScreen(
                                 onDeleteTransaction = { deletedTx ->
                                     viewModel.deleteTransaction(deletedTx)
                                     scope.launch {
-                                        val result = snackbarHostState.showSnackbar(
-                                            message = strings.transactionDeleted,
-                                            actionLabel = strings.undo,
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            viewModel.restoreTransaction(deletedTx)
-                                        }
+                                        val result = snackbarHostState.showSnackbar(strings.transactionDeleted, strings.undo, duration = SnackbarDuration.Short)
+                                        if (result == SnackbarResult.ActionPerformed) viewModel.restoreTransaction(deletedTx)
                                     }
                                 },
-                                onDeleteMarketTrip = { tripToDelete = it },
-                                onSelectTransaction = { selectedTxForDetail = it },
+                                onDeleteMarketTrip = { dialogState.tripToDelete = it },
+                                onSelectTransaction = { dialogState.selectedTxForDetail = it },
                                 hasMultipleAccounts = accounts.size > 1
                             )
                         }
@@ -253,110 +179,19 @@ fun TransactionsScreen(
             }
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 80.dp, start = 16.dp, end = 16.dp)
-        )
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp, start = 16.dp, end = 16.dp))
 
-        // Detail Bottom Sheet when tapping a transaction row
-        selectedTxForDetail?.let { tx ->
-            AppBottomSheet(
-                onDismissRequest = { selectedTxForDetail = null }
-            ) {
-                TransactionDetailSheet(
-                    transaction = tx,
-                    currencySymbol = userProfile.currencySymbol,
-                    isBangla = strings.isBangla,
-                    useBengaliNumerals = userProfile.useBengaliNumerals || strings.isBangla,
-                    onEdit = {
-                        selectedTxForDetail = null
-                        onEditTransaction(it)
-                    },
-                    onDelete = { deletedTx ->
-                        selectedTxForDetail = null
-                        viewModel.deleteTransaction(deletedTx)
-                        scope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = strings.transactionDeleted,
-                                actionLabel = strings.undo,
-                                duration = SnackbarDuration.Short
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                viewModel.restoreTransaction(deletedTx)
-                            }
-                        }
-                    },
-                    onDismiss = { selectedTxForDetail = null }
-                )
-            }
-        }
-
-        // Filter Bottom Sheet when tapping "Filters"
-        if (showFilterSheet) {
-            AppBottomSheet(
-                onDismissRequest = { showFilterSheet = false }
-            ) {
-                TransactionFilterSheet(
-                    selectedType = selectedType,
-                    onTypeSelected = { viewModel.setTypeFilter(it) },
-                    isMarketTripsView = isMarketTripsView,
-                    onMarketTripsViewChanged = { viewModel.setMarketTripsView(it) },
-                    selectedTimeFilter = selectedTimeFilter,
-                    onTimeFilterSelected = { viewModel.setTimeFilter(it) },
-                    accounts = accounts,
-                    selectedAccountId = selectedAccountId,
-                    onAccountSelected = { viewModel.setAccountFilter(it) },
-                    categories = categories,
-                    selectedCategoryId = selectedCategoryId,
-                    onCategorySelected = { viewModel.setCategoryFilter(it) },
-                    onOpenCustomDateRange = {
-                        showFilterSheet = false
-                        showCustomDateRangeDialog = true
-                    },
-                    onResetAll = {
-                        viewModel.onSearchQueryChanged("")
-                        viewModel.setTypeFilter(null)
-                        viewModel.setCategoryFilter(null)
-                        viewModel.setAccountFilter(null)
-                        viewModel.setTimeFilter(TimeFilter.THIS_MONTH)
-                        viewModel.setMarketTripsView(false)
-                        isSearchActive = false
-                    },
-                    onDismiss = { showFilterSheet = false }
-                )
-            }
-        }
-
-        TransactionsDialogs(
-            showShareSheet = showShareSheet,
-            onDismissShareSheet = {
-                showShareSheet = false
-                sharingTargetDateMillis = null
-            },
-            sharingTargetDateMillis = sharingTargetDateMillis,
-            tripToDelete = tripToDelete,
-            onDismissDeleteTrip = { tripToDelete = null },
-            onConfirmDeleteTrip = { tripId ->
-                viewModel.deleteMarketTrip(tripId)
-                tripToDelete = null
-            },
-            showExportDialog = showExportDialog,
-            onDismissExportDialog = { showExportDialog = false },
-            onOpenShareSlipFromExport = {
-                sharingTargetDateMillis = null
-                showShareSheet = true
-            },
-            showCustomDateRangeDialog = showCustomDateRangeDialog,
-            onDismissCustomDateRange = { showCustomDateRangeDialog = false },
-            onConfirmDateRange = { start, end ->
-                viewModel.setCustomDateRange(start, end)
-            },
-            transactions = transactions,
+        TransactionsSheetsHost(
+            dialogState = dialogState,
+            viewModel = viewModel,
+            accounts = accounts,
+            categories = categories,
             userProfile = userProfile,
             strings = strings,
-            scope = scope
+            scope = scope,
+            snackbarHostState = snackbarHostState,
+            onEditTransaction = onEditTransaction,
+            onResetSearchActive = { isSearchActive = false }
         )
     }
 }

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Title
@@ -178,89 +177,13 @@ fun TransactionNoteAndTitleSection(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = strings.notesOptional,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-                        color = appColors.textSecondary
-                    )
-                    if (notes.isEmpty()) {
-                        Text(
-                            text = strings.cancel,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp),
-                            color = appColors.textSecondary,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable {
-                                    haptics.lightTick()
-                                    isNoteExpanded = false
-                                }
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = onNotesChange,
-                    placeholder = {
-                        Text(
-                            text = strings.notesPlaceholder,
-                            color = appColors.textMuted.copy(alpha = 0.7f),
-                            fontSize = 13.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    leadingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(appColors.border.copy(alpha = 0.35f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.Notes,
-                                contentDescription = null,
-                                tint = appColors.textSecondary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        if (notes.isNotEmpty()) {
-                            IconButton(onClick = { onNotesChange("") }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Clear,
-                                    contentDescription = "Clear",
-                                    tint = appColors.textMuted,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(RadiusS),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = appColors.surfaceVariant,
-                        unfocusedContainerColor = appColors.surfaceVariant,
-                        focusedBorderColor = typeAccentColor.copy(alpha = 0.8f),
-                        unfocusedBorderColor = if (appColors.isDark) Color.Transparent else appColors.border,
-                        focusedTextColor = appColors.textPrimary,
-                        unfocusedTextColor = appColors.textPrimary,
-                        cursorColor = typeAccentColor
-                    ),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Normal),
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 1,
-                    maxLines = 3
-                )
-            }
+            TransactionNotesInputField(
+                notes = notes,
+                onNotesChange = onNotesChange,
+                typeAccentColor = typeAccentColor,
+                strings = strings,
+                onCancel = { isNoteExpanded = false }
+            )
         }
     }
 }

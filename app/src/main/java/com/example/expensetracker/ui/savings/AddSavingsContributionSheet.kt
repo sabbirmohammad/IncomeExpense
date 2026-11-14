@@ -1,8 +1,5 @@
 package com.example.expensetracker.ui.savings
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -26,9 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,21 +32,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.filled.Calculate
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.SavingsGoal
 import com.example.expensetracker.theme.CardCornerRadius
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.SmallElementRadius
-import com.example.expensetracker.ui.components.CalculatorPreviewBadge
-import com.example.expensetracker.ui.components.ExpandableCalculatorKeypadBar
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
-import java.util.Locale
 
 /**
  * Add Contribution to Savings Goal Bottom Sheet
@@ -74,9 +62,6 @@ fun AddSavingsContributionSheet(
     var selectedAccountId by remember { mutableStateOf(accounts.firstOrNull()?.id) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCalculator by remember { mutableStateOf(false) }
-    val hasOperators = remember(amountText) {
-        amountText.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }
-    }
     val goalColor = remember(goal.colorHex) { parseGoalColor(goal.colorHex) }
 
     ModalBottomSheet(
@@ -120,60 +105,16 @@ fun AddSavingsContributionSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Amount Field
-            Text("${strings.amount} ($currencySymbol)", fontSize = 12.sp, color = appColors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = amountText,
-                onValueChange = {
-                    amountText = com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(it)
-                    if (errorMessage != null) errorMessage = null
-                },
-                placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = appColors.textMuted) },
-                trailingIcon = {
-                    IconButton(onClick = { showCalculator = !showCalculator }) {
-                        Icon(
-                            imageVector = Icons.Filled.Calculate,
-                            contentDescription = "Calculator",
-                            tint = if (showCalculator || hasOperators) goalColor else appColors.textSecondary
-                        )
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant,
-                    focusedBorderColor = goalColor,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            CalculatorPreviewBadge(
-                expression = amountText,
-                currencySymbol = currencySymbol,
-                onApply = { evaluated ->
-                    targetEvaluated(evaluated, onUpdate = { amountText = it })
-                    showCalculator = false
-                }
-            )
-
-            ExpandableCalculatorKeypadBar(
-                expanded = showCalculator,
-                currentExpression = amountText,
-                onExpressionChanged = {
+            ContributionAmountInputSection(
+                amountText = amountText,
+                onAmountChange = {
                     amountText = it
                     if (errorMessage != null) errorMessage = null
                 },
-                onApplyResult = { evaluated ->
-                    targetEvaluated(evaluated, onUpdate = { amountText = it })
-                    showCalculator = false
-                },
-                accentColor = goalColor
+                showCalculator = showCalculator,
+                onToggleCalculator = { showCalculator = !showCalculator },
+                goalColor = goalColor,
+                currencySymbol = currencySymbol
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -233,10 +174,4 @@ fun AddSavingsContributionSheet(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}
-
-private fun targetEvaluated(evaluated: Double, onUpdate: (String) -> Unit) {
-    val text = if (evaluated % 1.0 == 0.0) evaluated.toLong().toString()
-    else String.format(Locale.US, "%.2f", evaluated)
-    onUpdate(text)
 }

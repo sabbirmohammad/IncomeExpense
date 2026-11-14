@@ -6,18 +6,24 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 // =========================================================================
-// CRAFTED SHAPE & ELEVATION SYSTEM ("The Living Ledger" + "Refined Ledger v7")
+// PULSE DESIGN SYSTEM SHAPES & RADII
 // =========================================================================
 
-// --- Legacy Living Ledger Shape Tokens (Preserved for Test Invariants) ---
-val RadiusOuterSheet   = 22.dp // Primary screen cards & bottom sheets
-val RadiusCardGroup    = 16.dp // Grouped ledger lists & trip summaries
-val RadiusActionChip   = 10.dp // Interactive filter pills & action buttons
-val RadiusBadgeTag     = 6.dp  // Compact status tags & item counts
+val RadiusCard     = 24.dp // Large soft cards (no hairline borders)
+val RadiusSheet    = 28.dp // Bottom sheets top corners
+val RadiusButton   = 16.dp // Primary / prominent buttons
+val RadiusInput    = 14.dp // Text inputs & search fields
+val RadiusIconTile = 14.dp // Category & quick action icon tiles
+val RadiusPill     = 999.dp // Filter chips & dock pill
+val RadiusBadge    = 6.dp  // Compact status tags
 
-val HairlineInkStroke  = 0.5.dp // Elegant bookkeeper hairline divider
+// Legacy Living Ledger Shape Tokens (Preserved for Test Invariants)
+val RadiusOuterSheet   = 22.dp
+val RadiusCardGroup    = 16.dp
+val RadiusActionChip   = 10.dp
+val RadiusBadgeTag     = 6.dp
+val HairlineInkStroke  = 0.5.dp
 
-// Backwards-compatible aliases for existing callers
 val CardCornerRadius   = RadiusCardGroup
 val SmallElementRadius = RadiusActionChip
 val CardPadding        = 16.dp
@@ -26,36 +32,38 @@ val CardGap            = 12.dp
 val ListRowPaddingVertical = 12.dp
 val HairlineDividerStroke = HairlineInkStroke
 
+// V7 aliases
+val RadiusXS    = RadiusBadge
+val RadiusS     = 12.dp
+val RadiusM     = 16.dp
+val RadiusL     = 24.dp
+
+val ShapeBadge       = RoundedCornerShape(RadiusBadge)
+val ShapeChip        = RoundedCornerShape(RadiusPill)
+val ShapeCard        = RoundedCornerShape(RadiusCard)
+val ShapeHero        = RoundedCornerShape(RadiusCard)
+val ShapeSheet       = RoundedCornerShape(topStart = RadiusSheet, topEnd = RadiusSheet)
+val ShapePill        = CircleShape
+val ShapeIconTile    = RoundedCornerShape(RadiusIconTile)
+val ShapeInput       = RoundedCornerShape(RadiusInput)
+val ShapeButton      = RoundedCornerShape(RadiusButton)
+
 val LivingShapes = Shapes(
-    extraSmall = RoundedCornerShape(RadiusBadgeTag),
-    small = RoundedCornerShape(RadiusActionChip),
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
     medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(RadiusCardGroup),
-    extraLarge = RoundedCornerShape(RadiusOuterSheet)
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(22.dp)
+)
+
+val PulseShapes = Shapes(
+    extraSmall = RoundedCornerShape(RadiusXS),
+    small = RoundedCornerShape(RadiusInput),
+    medium = RoundedCornerShape(RadiusButton),
+    large = RoundedCornerShape(RadiusCard),
+    extraLarge = RoundedCornerShape(RadiusSheet)
 )
 
 val AppShapes = LivingShapes
 val OneUiShapes = AppShapes
-
-// --- V7 Design System Tokens ("Refined Ledger" + C1 Patch) ---
-val RadiusXS    = 6.dp  // Badges
-val RadiusS     = 12.dp // Chips, inputs, keypad keys (48dp touch target)
-val RadiusM     = 16.dp // Cards (per C1: 16dp radius, no 28dp card corners)
-val RadiusL     = 24.dp // Hero cards, large buttons
-val RadiusSheet = 24.dp // Bottom sheets top corners (per C1 patch)
-val RadiusPill  = 999.dp // Full pill buttons
-
-val ShapeBadge       = RoundedCornerShape(RadiusXS)
-val ShapeChip        = RoundedCornerShape(RadiusS)
-val ShapeCard        = RoundedCornerShape(RadiusM)
-val ShapeHero        = RoundedCornerShape(RadiusL)
-val ShapeSheet       = RoundedCornerShape(topStart = RadiusSheet, topEnd = RadiusSheet)
-val ShapePill        = CircleShape
-
-val V7Shapes = Shapes(
-    extraSmall = RoundedCornerShape(RadiusXS),
-    small = RoundedCornerShape(RadiusS),
-    medium = RoundedCornerShape(RadiusM),
-    large = RoundedCornerShape(RadiusL),
-    extraLarge = RoundedCornerShape(RadiusSheet)
-)
+val V7Shapes = PulseShapes

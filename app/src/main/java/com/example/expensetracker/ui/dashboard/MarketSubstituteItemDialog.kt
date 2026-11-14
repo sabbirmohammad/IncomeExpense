@@ -156,83 +156,22 @@ fun MarketSubstituteItemDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Suggestions Chips
-                Text(
-                    text = if (isBangla) "কুইক বিকল্প পরামর্শ:" else "Quick Suggestions:",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
-                    color = appColors.textSecondary
+                SubstituteSuggestionsFlow(
+                    suggestions = suggestions,
+                    selectedSuggestion = substituteName,
+                    onSelectSuggestion = { substituteName = it },
+                    isBangla = isBangla,
+                    haptics = haptics
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    suggestions.forEach { suggestion ->
-                        val isSelected = substituteName.trim() == suggestion
-                        Box(
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = 34.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) appColors.accent else LocalAppColors.current.background)
-                                .clickable {
-                                    haptics.lightTick()
-                                    substituteName = suggestion
-                                }
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = suggestion,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                ),
-                                color = if (isSelected) androidx.compose.ui.graphics.Color.White else appColors.textPrimary
-                            )
-                        }
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Action buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, LocalAppColors.current.border)
-                    ) {
-                        Text(
-                            text = if (isBangla) "বাতিল" else "Cancel",
-                            color = appColors.textSecondary,
-                            fontSize = 13.sp
-                        )
-                    }
-
-                    Button(
-                        onClick = submit,
-                        enabled = substituteName.isNotBlank(),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
-                    ) {
-                        Text(
-                            text = if (isBangla) "বদলান" else "Replace",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
+                SubstituteActionButtons(
+                    isConfirmEnabled = substituteName.isNotBlank(),
+                    onConfirm = submit,
+                    onDismiss = onDismiss,
+                    isBangla = isBangla
+                )
             }
         }
     }
