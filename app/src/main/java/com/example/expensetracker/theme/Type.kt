@@ -20,8 +20,7 @@ val WeightMedium    = FontWeight.Medium   // 500
 val WeightSemiBold  = FontWeight.SemiBold // 600
 val WeightBold      = FontWeight.Bold     // 700
 
-// Bundled Offline Font Families
-// IMPORTANT: Hind Siliguri MUST be first for Bengali glyphs; Inter is Latin/digit fallback (tnum).
+// Bundled Offline Font Family: Hind Siliguri (Bengali + Latin glyphs)
 val HindSiliguriFontFamily = FontFamily(
     Font(R.font.hind_siliguri_regular, FontWeight.Normal),
     Font(R.font.hind_siliguri_medium, FontWeight.Medium),
@@ -29,23 +28,7 @@ val HindSiliguriFontFamily = FontFamily(
     Font(R.font.hind_siliguri_bold, FontWeight.Bold)
 )
 
-val InterFontFamily = FontFamily(
-    Font(R.font.inter_regular, FontWeight.Normal),
-    Font(R.font.inter_medium, FontWeight.Medium),
-    Font(R.font.inter_semibold, FontWeight.SemiBold),
-    Font(R.font.inter_bold, FontWeight.Bold)
-)
-
-val AppFontFamily = FontFamily(
-    Font(R.font.hind_siliguri_regular, FontWeight.Normal),
-    Font(R.font.hind_siliguri_medium, FontWeight.Medium),
-    Font(R.font.hind_siliguri_semibold, FontWeight.SemiBold),
-    Font(R.font.hind_siliguri_bold, FontWeight.Bold),
-    Font(R.font.inter_regular, FontWeight.Normal),
-    Font(R.font.inter_medium, FontWeight.Medium),
-    Font(R.font.inter_semibold, FontWeight.SemiBold),
-    Font(R.font.inter_bold, FontWeight.Bold)
-)
+val AppFontFamily = HindSiliguriFontFamily
 
 // Extra Pulse Specific Typography Styles
 val TextStyleDisplayHero = TextStyle(

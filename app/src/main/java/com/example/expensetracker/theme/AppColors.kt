@@ -39,10 +39,11 @@ data class AppColors(
     val scrim: Color = Color(0x85000000), // 52% alpha
     val focusRing: Color = accent,
     // Module Hero 2-stop Gradients (top-left -> bottom-right)
-    val heroHome: Pair<Color, Color> = if (isDark) Color(0xFF1E3A8A) to Color(0xFF172554) else Color(0xFF2563EB) to Color(0xFF1D4ED8),
-    val heroMoney: Pair<Color, Color> = if (isDark) Color(0xFF3B0764) to Color(0xFF2E1065) else Color(0xFF6D28D9) to Color(0xFF5B21B6),
-    val heroBazaar: Pair<Color, Color> = if (isDark) Color(0xFF064E3B) to Color(0xFF022C22) else Color(0xFF047857) to Color(0xFF065F46),
-    val heroPlan: Pair<Color, Color> = if (isDark) Color(0xFF7C2D12) to Color(0xFF431407) else Color(0xFFC2410C) to Color(0xFF9A3412)
+    // Home = Blue, Money = Purple, Bazaar = Leaf Green, Plan = Mango Orange
+    val heroHome: Pair<Color, Color> = if (isDark) Color(0xFF1E3A8A) to Color(0xFF172554) else Color(0xFF1E3A8A) to Color(0xFF2563EB),
+    val heroMoney: Pair<Color, Color> = if (isDark) Color(0xFF3B0764) to Color(0xFF2E1065) else Color(0xFF581C87) to Color(0xFF7C3AED),
+    val heroBazaar: Pair<Color, Color> = if (isDark) Color(0xFF064E3B) to Color(0xFF022C22) else Color(0xFF065F46) to Color(0xFF047857),
+    val heroPlan: Pair<Color, Color> = if (isDark) Color(0xFF7C2D12) to Color(0xFF431407) else Color(0xFF9A3412) to Color(0xFFC2410C)
 ) {
     val successIncome: Color get() = income
     val dangerExpense: Color get() = expense
@@ -82,10 +83,10 @@ val LightAppColors = AppColors(
     warningContainer = ColorWarningContainerLight,
     infoContainer = ColorInfoContainerLight,
     scrim = ColorScrimLight,
-    heroHome = Color(0xFF2563EB) to Color(0xFF1D4ED8),
-    heroMoney = Color(0xFF6D28D9) to Color(0xFF5B21B6),
-    heroBazaar = Color(0xFF047857) to Color(0xFF065F46),
-    heroPlan = Color(0xFFC2410C) to Color(0xFF9A3412)
+    heroHome = Color(0xFF1E3A8A) to Color(0xFF2563EB),
+    heroMoney = Color(0xFF581C87) to Color(0xFF7C3AED),
+    heroBazaar = Color(0xFF065F46) to Color(0xFF047857),
+    heroPlan = Color(0xFF9A3412) to Color(0xFFC2410C)
 )
 
 // --- Pulse Dark Theme Tokens ---
