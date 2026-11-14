@@ -167,11 +167,16 @@ class AdaptiveNavigationState(
     companion object {
         val Saver: Saver<AdaptiveNavigationState, Any> = listSaver(
             save = { state ->
+                val pushedStr = when (val p = state.pushedScreen) {
+                    null -> ""
+                    is PushedScreen.SETTINGS -> "SETTINGS"
+                    is PushedScreen.BAZAAR_PLAN -> "BAZAAR_PLAN:${p.listId}"
+                }
                 listOf(
                     state.selectedTab.name,
                     state.moneySegment.name,
                     state.planSegment.name,
-                    state.pushedScreen?.name ?: ""
+                    pushedStr
                 )
             },
             restore = { list ->
@@ -179,7 +184,15 @@ class AdaptiveNavigationState(
                 val moneySeg = runCatching { MoneySegment.valueOf(list[1] as String) }.getOrDefault(MoneySegment.ACTIVITY)
                 val planSeg = runCatching { PlanSegment.valueOf(list[2] as String) }.getOrDefault(PlanSegment.BUDGETS)
                 val pushedStr = list[3] as String
-                val pushed = if (pushedStr.isNotBlank()) runCatching { PushedScreen.valueOf(pushedStr) }.getOrNull() else null
+                val pushed = when {
+                    pushedStr.isBlank() -> null
+                    pushedStr == "SETTINGS" -> PushedScreen.SETTINGS
+                    pushedStr.startsWith("BAZAAR_PLAN:") -> {
+                        val id = pushedStr.removePrefix("BAZAAR_PLAN:").toLongOrNull()
+                        if (id != null) PushedScreen.BAZAAR_PLAN(id) else null
+                    }
+                    else -> null
+                }
                 AdaptiveNavigationState(tab, moneySeg, planSeg, pushed)
             }
         )

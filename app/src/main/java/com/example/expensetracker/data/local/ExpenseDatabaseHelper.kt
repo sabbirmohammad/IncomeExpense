@@ -54,6 +54,9 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     fun setLastBudgetPromptKey(key: String) = prefsHelper.setLastBudgetPromptKey(key)
     fun getLastBudgetNotifiedKey(): String? = prefsHelper.getLastBudgetNotifiedKey()
     fun setLastBudgetNotifiedKey(key: String) = prefsHelper.setLastBudgetNotifiedKey(key)
+    fun getMarketListBudget(listId: Long): Double? = prefsHelper.getMarketListBudget(listId)
+    fun setMarketListBudget(listId: Long, budget: Double?) = prefsHelper.setMarketListBudget(listId, budget)
+    fun deleteMarketListBudget(listId: Long) = prefsHelper.deleteMarketListBudget(listId)
 
     // --- Transactions Operations ---
     fun insertTransaction(tx: Transaction): Long = transactionHelper.insertTransaction(tx)
@@ -196,4 +199,6 @@ class ExpenseDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
     // --- Master Product Catalog Operations ---
     fun getAllMasterProducts(): List<MasterProduct> = masterProductHelper.getAllMasterProducts()
     fun getStapleProducts(limit: Int = 15): List<MasterProduct> = masterProductHelper.getStapleProducts(limit)
+    fun updateMasterProductCategory(productName: String, newCategory: String): Boolean =
+        masterProductHelper.updateProductCategory(productName, newCategory)
 }

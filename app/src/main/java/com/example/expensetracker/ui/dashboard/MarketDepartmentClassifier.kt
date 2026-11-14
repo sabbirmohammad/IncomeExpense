@@ -1,5 +1,8 @@
 package com.example.expensetracker.ui.dashboard
 
+import com.example.expensetracker.common.UnitConverterEngine
+import com.example.expensetracker.data.model.MasterProduct
+
 /**
  * Heuristic classifier to categorize market items into standard grocery departments:
  * - veggies (শাকসবজি, কাঁচাবাজার) - e.g. আলু, পটল, পেঁয়াজ, শাক
@@ -12,6 +15,23 @@ private val SPICE_POWDER_REGEX = Regex("(?<!ব)(গুঁড়া|গুড়া|�
 private fun isSpicePowder(lower: String): Boolean {
     return SPICE_POWDER_REGEX.containsMatchIn(lower) &&
            !lower.contains("দুধ") && !lower.contains("milk") && !lower.contains("দই")
+}
+
+fun classifyStallWithOverride(
+    name: String,
+    masterProductsMap: Map<String, MasterProduct>? = null
+): String {
+    if (masterProductsMap != null && name.isNotBlank()) {
+        val clean = UnitConverterEngine.normalizeProductName(name)
+        val overrideCategory = masterProductsMap[clean]?.category
+            ?: masterProductsMap.values.find {
+                it.name.equals(name.trim(), ignoreCase = true) || it.normalizedName == clean
+            }?.category
+        if (!overrideCategory.isNullOrBlank() && ALL_DEPARTMENTS.any { it.key == overrideCategory }) {
+            return overrideCategory
+        }
+    }
+    return getMarketItemCategory(name)
 }
 
 fun getMarketItemCategory(name: String): String {

@@ -1,11 +1,16 @@
 package com.example.expensetracker.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.data.model.Transaction
@@ -14,6 +19,9 @@ import com.example.expensetracker.ui.accounts.AccountsScreen
 import com.example.expensetracker.ui.accounts.AccountsViewModel
 import com.example.expensetracker.ui.analytics.AnalyticsScreen
 import com.example.expensetracker.ui.analytics.AnalyticsViewModel
+import com.example.expensetracker.ui.bazaar.BazaarHubScreen
+import com.example.expensetracker.ui.bazaar.BazaarPlanScreen
+import com.example.expensetracker.ui.bazaar.BazaarViewModel
 import com.example.expensetracker.ui.bills.BillsScreen
 import com.example.expensetracker.ui.bills.BillsViewModel
 import com.example.expensetracker.ui.budget.BudgetScreen
@@ -35,7 +43,7 @@ import com.example.expensetracker.ui.transactions.TransactionsViewModel
 /**
  * NavigationScreenHost (Pulse Design Language Architecture):
  * - Primary entrypoint taking [AdaptiveNavigationState]:
- *     PushedScreen (e.g. Settings) or PulseTab (HOME, MONEY, BAZAAR, PLAN)
+ *     PushedScreen (e.g. Settings, Bazaar Plan) or PulseTab (HOME, MONEY, BAZAAR, PLAN)
  * - Retains backward-compatible overload for legacy tests & callers.
  */
 @Composable
@@ -51,6 +59,12 @@ fun NavigationScreenHost(
     onOpenMenu: () -> Unit = {}
 ) {
     val transactionsViewModel: TransactionsViewModel = viewModel()
+    val bazaarViewModel: BazaarViewModel = viewModel()
+    var activeShoppingTripId by remember { mutableStateOf<Long?>(null) }
+
+    BackHandler(enabled = activeShoppingTripId != null) {
+        activeShoppingTripId = null
+    }
 
     val pushed = navState.pushedScreen
     if (pushed != null) {
@@ -60,6 +74,17 @@ fun NavigationScreenHost(
                 SettingsScreen(
                     viewModel = settingsViewModel,
                     onNavigateBack = { navState.popScreen() }
+                )
+            }
+            is PushedScreen.BAZAAR_PLAN -> {
+                BazaarPlanScreen(
+                    listId = pushed.listId,
+                    bazaarViewModel = bazaarViewModel,
+                    onNavigateBack = { navState.popScreen() },
+                    onStartShopping = { shoppingListId ->
+                        navState.popScreen()
+                        activeShoppingTripId = shoppingListId
+                    }
                 )
             }
         }
@@ -103,7 +128,15 @@ fun NavigationScreenHost(
                 )
             }
             PulseTab.BAZAAR -> {
-                MarketScreen(dashboardViewModel = dashboardViewModel)
+                if (activeShoppingTripId != null) {
+                    MarketScreen(dashboardViewModel = dashboardViewModel)
+                } else {
+                    BazaarHubScreen(
+                        bazaarViewModel = bazaarViewModel,
+                        onOpenPlanMode = { listId -> navState.pushScreen(PushedScreen.BAZAAR_PLAN(listId)) },
+                        onResumeShopping = { listId -> activeShoppingTripId = listId }
+                    )
+                }
             }
             PulseTab.PLAN -> {
                 PlanScreen(

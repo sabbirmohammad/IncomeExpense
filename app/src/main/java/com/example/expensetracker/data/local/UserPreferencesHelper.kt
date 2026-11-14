@@ -67,4 +67,36 @@ internal class UserPreferencesHelper(private val context: Context) {
             prefs.edit().putString(PREF_KEY_LAST_BUDGET_NOTIFIED, key).apply()
         } catch (_: Exception) {}
     }
+
+    fun getMarketListBudget(listId: Long): Double? {
+        return try {
+            val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val key = "market_list_budget_$listId"
+            if (prefs.contains(key)) {
+                val value = prefs.getFloat(key, -1f)
+                if (value >= 0f) value.toDouble() else null
+            } else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun setMarketListBudget(listId: Long, budget: Double?) {
+        try {
+            val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val key = "market_list_budget_$listId"
+            if (budget != null && budget >= 0.0) {
+                prefs.edit().putFloat(key, budget.toFloat()).apply()
+            } else {
+                prefs.edit().remove(key).apply()
+            }
+        } catch (_: Exception) {}
+    }
+
+    fun deleteMarketListBudget(listId: Long) {
+        try {
+            val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().remove("market_list_budget_$listId").apply()
+        } catch (_: Exception) {}
+    }
 }

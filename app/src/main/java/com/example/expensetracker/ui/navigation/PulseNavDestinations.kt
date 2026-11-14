@@ -74,8 +74,9 @@ enum class PlanSegment(val index: Int) {
 /**
  * Pushed screens that slide over top-level tabs and hide the navigation dock/rail.
  */
-enum class PushedScreen {
-    SETTINGS
+sealed interface PushedScreen {
+    object SETTINGS : PushedScreen
+    data class BAZAAR_PLAN(val listId: Long) : PushedScreen
 }
 
 /**

@@ -143,3 +143,55 @@ suspend fun ExpenseRepository.deleteMarketList(listId: Long): Boolean = withCont
     refreshMarketList()
     success
 }
+
+fun ExpenseRepository.getMarketListBudget(listId: Long): Double? =
+    dbHelper.getMarketListBudget(listId)
+
+fun ExpenseRepository.setMarketListBudget(listId: Long, budget: Double?) =
+    dbHelper.setMarketListBudget(listId, budget)
+
+fun ExpenseRepository.deleteMarketListBudget(listId: Long) =
+    dbHelper.deleteMarketListBudget(listId)
+
+suspend fun ExpenseRepository.updateCommodityStall(name: String, newCategory: String): Boolean = withContext(Dispatchers.IO) {
+    val success = dbHelper.updateMasterProductCategory(name, newCategory)
+    refreshMasterProducts()
+    refreshMarketList()
+    success
+}
+
+suspend fun ExpenseRepository.duplicateMarketList(sourceListId: Long, customTitle: String? = null): Long = withContext(Dispatchers.IO) {
+    val allLists = dbHelper.getAllMarketLists()
+    val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
+    val title = customTitle ?: "${source.list.title} (কপি)"
+    val clonedItems = source.items.map {
+        MarketItem(
+            name = it.name,
+            quantity = it.quantity,
+            unit = it.unit,
+            amount = null,
+            isPurchased = false,
+            transactionId = null
+        )
+    }
+    createMarketListWithItems(title, clonedItems)
+}
+
+suspend fun ExpenseRepository.cloneMarketTrip(sourceListId: Long, isBangla: Boolean = true): Long = withContext(Dispatchers.IO) {
+    val allLists = dbHelper.getAllMarketLists()
+    val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
+    val prefix = if (isBangla) "পুনরাবৃত্তি: " else "Repeat: "
+    val title = "$prefix${source.list.title}"
+    val clonedItems = source.items.map {
+        MarketItem(
+            name = it.name,
+            quantity = it.quantity,
+            unit = it.unit,
+            amount = null,
+            isPurchased = false,
+            transactionId = null
+        )
+    }
+    createMarketListWithItems(title, clonedItems)
+}
+

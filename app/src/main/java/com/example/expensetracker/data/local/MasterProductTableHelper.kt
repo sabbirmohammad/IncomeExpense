@@ -98,6 +98,37 @@ internal class MasterProductTableHelper(private val dbHelper: ExpenseDatabaseHel
         }
     }
 
+    /**
+     * Updates or creates a commodity's category/stall override in master_products.
+     * Preserves zero-schema integrity by using the existing master_products table.
+     */
+    fun updateProductCategory(productName: String, newCategory: String): Boolean {
+        val cleanName = UnitConverterEngine.normalizeProductName(productName)
+        if (cleanName.isBlank()) return false
+        val db = dbHelper.writableDatabase
+        val existing = getProductByNormalizedName(db, cleanName)
+        val cv = ContentValues().apply {
+            put(COL_MP_CATEGORY, newCategory)
+        }
+        return if (existing != null) {
+            db.update(TABLE_MASTER_PRODUCTS, cv, "$COL_MP_ID = ?", arrayOf(existing.id.toString())) > 0
+        } else {
+            val now = System.currentTimeMillis()
+            cv.put(COL_MP_NAME, productName.trim())
+            cv.put(COL_MP_NORMALIZED_NAME, cleanName)
+            cv.put(COL_MP_DEFAULT_UNIT, "কেজি")
+            cv.put(COL_MP_LATEST_UNIT_PRICE, 0.0)
+            cv.put(COL_MP_MIN_UNIT_PRICE, 0.0)
+            cv.put(COL_MP_MAX_UNIT_PRICE, 0.0)
+            cv.put(COL_MP_AVG_UNIT_PRICE, 0.0)
+            cv.put(COL_MP_PURCHASE_COUNT, 0)
+            cv.put(COL_MP_IS_STAPLE, 0)
+            cv.put(COL_MP_FIRST_PURCHASED_AT, now)
+            cv.put(COL_MP_LAST_PURCHASED_AT, now)
+            db.insertWithOnConflict(TABLE_MASTER_PRODUCTS, null, cv, SQLiteDatabase.CONFLICT_REPLACE) > 0
+        }
+    }
+
     fun getAllMasterProducts(): List<MasterProduct> {
         val db = dbHelper.readableDatabase
         val list = mutableListOf<MasterProduct>()
