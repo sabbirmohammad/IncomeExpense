@@ -84,13 +84,16 @@ class Phase6MoneyScreensV7Test {
 
     @Test
     fun testBillsScreenUpcomingPaidAllAndTemplates() {
-        val billsScreenFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/bills/BillsScreen.kt")
-        val billsContent = billsScreenFile.readText()
+        val billsFile = listOf(
+            findSourceFile("app/src/main/java/com/example/expensetracker/ui/bills/BillsContent.kt"),
+            findSourceFile("app/src/main/java/com/example/expensetracker/ui/bills/BillsScreen.kt")
+        ).first { it.exists() }
+        val billsContent = billsFile.readText()
 
-        assertTrue("BillsScreen must include Upcoming segment", billsContent.contains("strings.tabUpcoming"))
-        assertTrue("BillsScreen must include Paid segment", billsContent.contains("strings.tabPaid"))
-        assertTrue("BillsScreen must include All segment", billsContent.contains("strings.tabAll"))
-        assertTrue("BillsScreen must include SegmentedControl", billsContent.contains("SegmentedControl("))
+        assertTrue("BillsScreen/BillsContent must include Upcoming segment", billsContent.contains("strings.tabUpcoming"))
+        assertTrue("BillsScreen/BillsContent must include Paid segment", billsContent.contains("strings.tabPaid"))
+        assertTrue("BillsScreen/BillsContent must include All segment", billsContent.contains("strings.tabAll"))
+        assertTrue("BillsScreen/BillsContent must include SegmentedControl/PulseSegmented", billsContent.contains("SegmentedControl(") || billsContent.contains("PulseSegmented("))
 
         // Invariants from ChallengerPhase2EmpiricalTest
         assertTrue(

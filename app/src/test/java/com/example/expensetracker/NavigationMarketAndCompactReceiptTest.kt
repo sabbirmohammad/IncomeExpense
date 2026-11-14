@@ -25,10 +25,10 @@ class NavigationMarketAndCompactReceiptTest {
         assertTrue("AppNavigation.kt must exist", appNavFile.exists())
         val content = appNavFile.readText()
 
-        // 1-Tap Add Transaction FAB: AppAddFab opens expense add directly
+        // 1-Tap Add Transaction: onOpenAdd opens expense add directly
         assertTrue(
-            "AppAddFab must open AddEditTransactionSheet for Expense directly without long press",
-            content.contains("AppAddFab(") &&
+            "Add action must open AddEditTransactionSheet for Expense directly without long press",
+            content.contains("onOpenAdd =") &&
                     content.contains("initialTypeForAdd = TransactionType.EXPENSE") &&
                     content.contains("showGlobalAddSheet = true")
         )

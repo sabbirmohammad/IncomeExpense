@@ -1,19 +1,14 @@
 package com.example.expensetracker.ui.navigation
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,15 +16,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.data.model.AppLanguage
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.repository.ExpenseRepository
-import com.example.expensetracker.ui.components.AppAddFab
-import com.example.expensetracker.ui.components.AppScaffold
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.LocalFeedbackController
 import com.example.expensetracker.ui.components.TransactionFeedbackController
@@ -38,10 +30,11 @@ import com.example.expensetracker.ui.dashboard.DashboardViewModel
 import com.example.expensetracker.ui.onboarding.OnboardingScreen
 
 /**
- * Main App Navigation (Living Ledger 2.0 Architecture):
- * - 5 Top-level destinations: Home, Ledger, Bazaar, Wallets, Plan.
- * - Flat 64dp bottom bar + contextual AppAddFab.
- * - System back redirects to Home before exiting.
+ * Main App Navigation (Pulse Design Language Architecture):
+ * - 4 Top-level destinations: Home, Money, Bazaar, Plan
+ * - Adaptive Navigation Shell: PulseDock (Compact), PulseNavigationRail (Medium / landscape), PulseSidePanel (Expanded)
+ * - Center raised Mango Add button (1-tap expense creation)
+ * - State holder with persistence across rotation, resize, and process death.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +42,7 @@ fun MainAppNavigation(
     triggerBudgetPromptFromNotification: Boolean = false,
     onBudgetPromptHandled: () -> Unit = {}
 ) {
-    var selectedItem by remember { mutableStateOf(NavigationItem.HOME) }
+    val navState = rememberAdaptiveNavigationState()
     val dashboardViewModel: DashboardViewModel = viewModel()
 
     val categories by dashboardViewModel.categories.collectAsStateWithLifecycle()
@@ -73,15 +66,20 @@ fun MainAppNavigation(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
-    val isTopLevelScreen = selectedItem in listOf(
-        NavigationItem.HOME, NavigationItem.LEDGER, NavigationItem.BAZAAR,
-        NavigationItem.WALLETS, NavigationItem.PLAN, NavigationItem.TRANSACTIONS,
-        NavigationItem.MARKET, NavigationItem.MONEY, NavigationItem.ACCOUNTS
-    )
+    // Status badges synchronization
+    navState.hasPlanAttention = summary.budgetOverspent > 0
+    navState.isBazaarTripActive = activeMarketList?.items?.any { !it.isPurchased } == true
 
-    // Back Navigation: Non-Home destination -> HOME; on HOME -> exit
-    BackHandler(enabled = selectedItem != NavigationItem.HOME) {
-        selectedItem = NavigationItem.HOME
+    // Notification trigger handling
+    LaunchedEffect(triggerBudgetPromptFromNotification) {
+        if (triggerBudgetPromptFromNotification) {
+            navState.handleNotificationExtra("destination", "budget")
+        }
+    }
+
+    // Back Navigation: Pushed screen -> pop; non-Home destination -> HOME; on HOME -> exit
+    BackHandler(enabled = navState.pushedScreen != null || navState.selectedTab != PulseTab.HOME) {
+        navState.handleBackPress()
     }
 
     val isOnboardingCompleted by repository.isOnboardingCompleted.collectAsStateWithLifecycle()
@@ -95,58 +93,49 @@ fun MainAppNavigation(
         if (!isOnboardingCompleted) {
             OnboardingScreen(onFinish = { repository.setOnboardingCompleted(true) })
         } else {
-            AppScaffold(
-                bottomBar = {
-                    AnimatedVisibility(
-                        visible = isTopLevelScreen,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
-                    ) {
-                        ModernBottomNavBar(
-                            selectedItem = selectedItem,
-                            onItemSelected = { item -> selectedItem = item },
-                            strings = strings
-                        )
-                    }
+            AdaptiveScaffold(
+                state = navState,
+                onOpenAdd = {
+                    transactionToEdit = null
+                    initialDateForAdd = null
+                    initialTypeForAdd = TransactionType.EXPENSE
+                    initialOpenMarketForAdd = (navState.selectedTab == PulseTab.BAZAAR)
+                    showGlobalAddSheet = true
                 },
-                fab = {
-                    AnimatedVisibility(visible = isTopLevelScreen, enter = fadeIn(), exit = fadeOut()) {
-                        val fabLabel = when (selectedItem) {
-                            NavigationItem.BAZAAR, NavigationItem.MARKET -> if (strings.isBangla) "＋ নতুন তালিকা" else "＋ New list"
-                            else -> if (strings.isBangla) "＋ যোগ করুন" else "＋ Add"
-                        }
-                        AppAddFab(
-                            label = fabLabel,
-                            onClick = {
-                                transactionToEdit = null
-                                initialDateForAdd = null
-                                initialTypeForAdd = TransactionType.EXPENSE
-                                initialOpenMarketForAdd = (selectedItem == NavigationItem.BAZAAR || selectedItem == NavigationItem.MARKET)
-                                showGlobalAddSheet = true
-                            }
-                        )
-                    }
-                }
+                onOpenSettings = {
+                    navState.pushScreen(PushedScreen.SETTINGS)
+                },
+                userName = userProfile.name
             ) { paddingValues ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .widthIn(max = 840.dp)
                 ) {
                     NavigationScreenHost(
-                        selectedItem = selectedItem,
-                        onNavigate = { selectedItem = it },
+                        navState = navState,
                         onOpenAddTransaction = { type, dateMillis ->
-                            transactionToEdit = null; initialDateForAdd = dateMillis; initialTypeForAdd = type; initialOpenMarketForAdd = false; showGlobalAddSheet = true
+                            transactionToEdit = null
+                            initialDateForAdd = dateMillis
+                            initialTypeForAdd = type
+                            initialOpenMarketForAdd = false
+                            showGlobalAddSheet = true
                         },
                         onEditTransaction = { tx ->
-                            transactionToEdit = tx; initialDateForAdd = null; initialTypeForAdd = tx.type; initialOpenMarketForAdd = false; showGlobalAddSheet = true
+                            transactionToEdit = tx
+                            initialDateForAdd = null
+                            initialTypeForAdd = tx.type
+                            initialOpenMarketForAdd = false
+                            showGlobalAddSheet = true
                         },
                         onSplitBillClick = { showBillSplitterSheet = true },
                         onTransferClick = { showTransferSheet = true },
                         onOpenMarketList = {
-                            transactionToEdit = null; initialDateForAdd = null; initialTypeForAdd = TransactionType.EXPENSE; initialOpenMarketForAdd = true; showGlobalAddSheet = true
+                            transactionToEdit = null
+                            initialDateForAdd = null
+                            initialTypeForAdd = TransactionType.EXPENSE
+                            initialOpenMarketForAdd = true
+                            showGlobalAddSheet = true
                         },
                         dashboardViewModel = dashboardViewModel
                     )
@@ -186,7 +175,7 @@ fun MainAppNavigation(
                 onOpenMarketListForAdd = { initialOpenMarketForAdd = true; showGlobalAddSheet = true },
                 onCloseMarketList = { showMarketListSheet = false },
                 onCloseBudgetPrompt = { showUpcomingBudgetPrompt = false },
-                onNavigateToBudgets = { selectedItem = NavigationItem.BUDGETS }
+                onNavigateToBudgets = { navState.navigate(NavigationItem.BUDGETS) }
             )
         }
     }

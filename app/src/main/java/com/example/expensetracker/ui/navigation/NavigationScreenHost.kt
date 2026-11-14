@@ -1,6 +1,9 @@
 package com.example.expensetracker.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,6 +22,7 @@ import com.example.expensetracker.ui.dashboard.DashboardScreen
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
 import com.example.expensetracker.ui.ledger.LedgerScreen
 import com.example.expensetracker.ui.market.MarketScreen
+import com.example.expensetracker.ui.money.MoneyScreen
 import com.example.expensetracker.ui.plan.PlanScreen
 import com.example.expensetracker.ui.receivables.ReceivablesScreen
 import com.example.expensetracker.ui.receivables.ReceivablesViewModel
@@ -29,11 +33,90 @@ import com.example.expensetracker.ui.settings.SettingsViewModel
 import com.example.expensetracker.ui.transactions.TransactionsViewModel
 
 /**
- * NavigationScreenHost (Living Ledger 2.0 5-Destination Architecture):
- * - 5 Top-level Destinations: HOME, LEDGER, BAZAAR, WALLETS, PLAN
- * - LEDGER hosts Transactions · Insights (Analytics) · Reports via segmented control
- * - PLAN hosts Budgets · Goals · Bills · Debts via segmented control
- * - Settings is a pushed screen with back navigation returning to HOME.
+ * NavigationScreenHost (Pulse Design Language Architecture):
+ * - Primary entrypoint taking [AdaptiveNavigationState]:
+ *     PushedScreen (e.g. Settings) or PulseTab (HOME, MONEY, BAZAAR, PLAN)
+ * - Retains backward-compatible overload for legacy tests & callers.
+ */
+@Composable
+fun NavigationScreenHost(
+    navState: AdaptiveNavigationState,
+    onOpenAddTransaction: (TransactionType, Long?) -> Unit,
+    onEditTransaction: (Transaction) -> Unit,
+    onSplitBillClick: () -> Unit,
+    onTransferClick: () -> Unit,
+    onOpenMarketList: () -> Unit,
+    dashboardViewModel: DashboardViewModel,
+    modifier: Modifier = Modifier,
+    onOpenMenu: () -> Unit = {}
+) {
+    val transactionsViewModel: TransactionsViewModel = viewModel()
+
+    val pushed = navState.pushedScreen
+    if (pushed != null) {
+        when (pushed) {
+            PushedScreen.SETTINGS -> {
+                val settingsViewModel: SettingsViewModel = viewModel()
+                SettingsScreen(
+                    viewModel = settingsViewModel,
+                    onNavigateBack = { navState.popScreen() }
+                )
+            }
+        }
+        return
+    }
+
+    AnimatedContent(
+        targetState = navState.selectedTab,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "PulseScreenTransition",
+        modifier = modifier.fillMaxSize()
+    ) { targetTab ->
+        when (targetTab) {
+            PulseTab.HOME -> DashboardScreen(
+                viewModel = dashboardViewModel,
+                onNavigateToTransactions = {
+                    transactionsViewModel.setCategoryFilter(null)
+                    navState.navigate(NavigationItem.TRANSACTIONS)
+                },
+                onNavigateToSettings = { navState.pushScreen(PushedScreen.SETTINGS) },
+                onOpenAddTransaction = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onEditTransaction = onEditTransaction,
+                onNavigateToAnalytics = { navState.navigate(NavigationItem.ANALYTICS) },
+                onNavigateToAccounts = { navState.navigate(NavigationItem.WALLETS) },
+                onNavigateToReceivables = { navState.navigate(NavigationItem.RECEIVABLES) },
+                onNavigateToBills = { navState.navigate(NavigationItem.BILLS) },
+                onNavigateToBudgets = { navState.navigate(NavigationItem.BUDGETS) },
+                onSplitBillClick = onSplitBillClick,
+                onOpenAddExpense = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onOpenAddIncome = { onOpenAddTransaction(TransactionType.INCOME, null) },
+                onTransferClick = onTransferClick,
+                onOpenMarketList = onOpenMarketList
+            )
+            PulseTab.MONEY -> {
+                MoneyScreen(
+                    onEditTransaction = onEditTransaction,
+                    selectedSegment = navState.moneySegment,
+                    onSegmentSelected = { navState.selectMoneySegment(it) },
+                    onAddTransactionForDate = { dateMillis -> onOpenAddTransaction(TransactionType.EXPENSE, dateMillis) },
+                    transactionsViewModel = transactionsViewModel
+                )
+            }
+            PulseTab.BAZAAR -> {
+                MarketScreen(dashboardViewModel = dashboardViewModel)
+            }
+            PulseTab.PLAN -> {
+                PlanScreen(
+                    selectedSegment = navState.planSegment,
+                    onSegmentSelected = { navState.selectPlanSegment(it) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Backward-compatible NavigationScreenHost taking [NavigationItem].
  */
 @Composable
 fun NavigationScreenHost(
@@ -155,7 +238,9 @@ fun NavigationScreenHost(
                     budgetViewModel = budgetViewModel,
                     billsViewModel = billsViewModel,
                     receivablesViewModel = receivablesViewModel,
-                    initialSegment = 0
+                    modifier = Modifier,
+                    selectedSegment = PlanSegment.BUDGETS,
+                    onSegmentSelected = {}
                 )
             }
             NavigationItem.BUDGETS -> {

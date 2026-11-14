@@ -61,7 +61,11 @@ class TransactionsFilterAndHeightVerificationTest {
 
     @Test
     fun testTransactionsScreenResetAndActiveCountUsesThisMonth() {
-        val content = readFile("com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
+        val content = try {
+            readFile("com/example/expensetracker/ui/transactions/TransactionsContent.kt")
+        } catch (e: Exception) {
+            readFile("com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
+        }
 
         assertTrue(
             "activeFilterCount must treat TimeFilter.THIS_MONTH as default (not TimeFilter.ALL)",
@@ -83,7 +87,11 @@ class TransactionsFilterAndHeightVerificationTest {
 
     @Test
     fun testTransactionsScreenEmptyStateBehavior() {
-        val content = readFile("com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
+        val content = try {
+            readFile("com/example/expensetracker/ui/transactions/TransactionsContent.kt")
+        } catch (e: Exception) {
+            readFile("com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
+        }
 
         assertTrue(
             "Empty state must check allTransactions.isNotEmpty() to detect transactions outside running month",

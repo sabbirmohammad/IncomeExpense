@@ -4,63 +4,59 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.ui.bills.BillsScreen
+import com.example.expensetracker.ui.bills.BillsContent
 import com.example.expensetracker.ui.bills.BillsViewModel
-import com.example.expensetracker.ui.budget.BudgetScreen
-import com.example.expensetracker.ui.budget.BudgetScreenTab
+import com.example.expensetracker.ui.budget.BudgetContent
 import com.example.expensetracker.ui.budget.BudgetViewModel
-import com.example.expensetracker.ui.components.AppTopBar
+import com.example.expensetracker.ui.budget.SavingsGoalsContent
 import com.example.expensetracker.ui.components.LocalAppStrings
-import com.example.expensetracker.ui.components.ScrollableSegmentedControl
-import com.example.expensetracker.ui.receivables.ReceivablesScreen
+import com.example.expensetracker.ui.components.PulseSegmented
+import com.example.expensetracker.ui.navigation.PlanSegment
+import com.example.expensetracker.ui.receivables.ReceivablesContent
 import com.example.expensetracker.ui.receivables.ReceivablesViewModel
 
 /**
  * PlanScreen:
- * Living Ledger 2.0 Tab 5 (পরিকল্পনা):
- * - Top: AppTopBar (Plan / পরিকল্পনা)
- * - 4-Segment ScrollableSegmentedControl:
+ * Pulse Tab 4 (Plan / পরিকল্পনা):
+ * - 4-Segment PulseSegmented:
  *     0: Budgets (বাজেট)
- *     1: Goals (লক্ষ্য)
- *     2: Bills (বিল)
+ *     1: Bills (বিল)
+ *     2: Goals (লক্ষ্য)
  *     3: Debts (ধার ও দেনা)
- * - Persists selected segment across navigation via rememberSaveable
+ * - Persists selected segment across navigation via AdaptiveNavigationState / rememberSaveable
  * - Handles deep links (e.g., bill reminder -> Bills, budget reminder -> Budgets)
  */
 @Composable
 fun PlanScreen(
-    budgetViewModel: BudgetViewModel,
-    billsViewModel: BillsViewModel,
-    receivablesViewModel: ReceivablesViewModel,
     modifier: Modifier = Modifier,
+    selectedSegment: PlanSegment = PlanSegment.BUDGETS,
+    onSegmentSelected: (PlanSegment) -> Unit = {},
+    budgetViewModel: BudgetViewModel = viewModel(),
+    billsViewModel: BillsViewModel = viewModel(),
+    receivablesViewModel: ReceivablesViewModel = viewModel(),
     initialSegment: Int = 0
 ) {
     val appColors = LocalAppColors.current
     val strings = LocalAppStrings.current
 
-    var selectedSegment by rememberSaveable { mutableIntStateOf(initialSegment) }
-
     val segmentTitles = remember(
         strings.planSegmentBudgets,
-        strings.planSegmentGoals,
         strings.planSegmentBills,
+        strings.planSegmentGoals,
         strings.planSegmentDebts
     ) {
         listOf(
             strings.planSegmentBudgets,
-            strings.planSegmentGoals,
             strings.planSegmentBills,
+            strings.planSegmentGoals,
             strings.planSegmentDebts
         )
     }
@@ -70,25 +66,30 @@ fun PlanScreen(
             .fillMaxSize()
             .background(appColors.background)
     ) {
-        // AppTopBar (no back button on top-level destination)
-        AppTopBar(
-            title = strings.navPlan
-        )
-
-        // 4-way Segmented Control
-        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-            ScrollableSegmentedControl(
+        // 4-way Pulse Segmented Control
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            PulseSegmented(
                 items = segmentTitles,
-                selectedIndex = selectedSegment,
+                selectedIndex = when (selectedSegment) {
+                    PlanSegment.BUDGETS -> 0
+                    PlanSegment.BILLS -> 1
+                    PlanSegment.GOALS -> 2
+                    PlanSegment.DEBTS -> 3
+                },
                 onItemSelected = { index ->
-                    selectedSegment = index
-                    // Keep sub-tab in BudgetViewModel synchronized
-                    if (index == 0) {
-                        budgetViewModel.setSelectedTab(BudgetScreenTab.BUDGETS)
-                    } else if (index == 1) {
-                        budgetViewModel.setSelectedTab(BudgetScreenTab.SAVINGS_GOALS)
+                    val target = when (index) {
+                        0 -> PlanSegment.BUDGETS
+                        1 -> PlanSegment.BILLS
+                        2 -> PlanSegment.GOALS
+                        else -> PlanSegment.DEBTS
                     }
-                }
+                    onSegmentSelected(target)
+                },
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
@@ -99,31 +100,17 @@ fun PlanScreen(
                 .weight(1f)
         ) {
             when (selectedSegment) {
-                0 -> {
-                    // Budgets
-                    budgetViewModel.setSelectedTab(BudgetScreenTab.BUDGETS)
-                    BudgetScreen(
-                        viewModel = budgetViewModel
-                    )
+                PlanSegment.BUDGETS -> {
+                    BudgetContent(viewModel = budgetViewModel)
                 }
-                1 -> {
-                    // Goals
-                    budgetViewModel.setSelectedTab(BudgetScreenTab.SAVINGS_GOALS)
-                    BudgetScreen(
-                        viewModel = budgetViewModel
-                    )
+                PlanSegment.BILLS -> {
+                    BillsContent(viewModel = billsViewModel)
                 }
-                2 -> {
-                    // Bills
-                    BillsScreen(
-                        viewModel = billsViewModel
-                    )
+                PlanSegment.GOALS -> {
+                    SavingsGoalsContent(viewModel = budgetViewModel)
                 }
-                3 -> {
-                    // Debts (Receivables & Payables)
-                    ReceivablesScreen(
-                        viewModel = receivablesViewModel
-                    )
+                PlanSegment.DEBTS -> {
+                    ReceivablesContent(viewModel = receivablesViewModel)
                 }
             }
         }

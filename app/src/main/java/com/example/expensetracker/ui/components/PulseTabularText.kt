@@ -31,7 +31,9 @@ fun PulseTabularText(
     modifier: Modifier = Modifier,
     style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
-    textAlign: TextAlign = TextAlign.Start
+    textAlign: TextAlign = TextAlign.Start,
+    maxLines: Int = 1,
+    softWrap: Boolean = false
 ) {
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current

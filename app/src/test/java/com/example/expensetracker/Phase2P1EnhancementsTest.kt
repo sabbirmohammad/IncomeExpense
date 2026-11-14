@@ -65,7 +65,10 @@ class Phase2P1EnhancementsTest {
         org.junit.Assert.assertFalse("GlobalActionChooserSheet.kt must be deleted in v7 redesign", file.exists())
 
         val fabFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/components/AppAddFab.kt")
-        assertTrue("AppAddFab.kt must exist to replace global chooser", fabFile.exists())
+        org.junit.Assert.assertFalse("AppAddFab.kt must be deleted in v7 Phase 2 and replaced by Pulse Dock Add CTA", fabFile.exists())
+
+        val pulseDockFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/PulseDock.kt")
+        assertTrue("PulseDock.kt must exist with raised Mango Add button", pulseDockFile.exists())
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.navigation.NavigationItem
 import com.example.expensetracker.ui.navigation.getLocalizedTitle
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,16 +35,24 @@ class MarketBottomNavAndRedesignTest {
 
     @Test
     fun testModernBottomNavBarContainsMarketInPrimaryPosition() {
-        val navBarFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/ModernBottomNavBar.kt")
-        assertTrue("ModernBottomNavBar.kt must exist", navBarFile.exists())
-        val content = navBarFile.readText()
+        val legacyNavBar = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/ModernBottomNavBar.kt")
+        assertFalse("ModernBottomNavBar.kt must be deleted in v7 Phase 2", legacyNavBar.exists())
 
-        // Verify Bazaar / Market item in Bottom Bar
+        val dockFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/PulseDock.kt")
+        assertTrue("PulseDock.kt must exist", dockFile.exists())
+        val content = dockFile.readText()
+
+        val destFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/PulseNavDestinations.kt")
+        assertTrue("PulseNavDestinations.kt must exist", destFile.exists())
+        val destContent = destFile.readText()
+
+        // Verify Bazaar item in Pulse Dock
         assertTrue(
-            "ModernBottomNavBar must have tab for BAZAAR with shopping cart icon",
-            content.contains("NavigationItem.BAZAAR") &&
-                    content.contains("Icons.Filled.ShoppingCart") &&
-                    content.contains("Icons.Outlined.ShoppingCart")
+            "PulseDock must have tab for BAZAAR with shopping cart icon",
+            content.contains("PulseTab.BAZAAR") &&
+                    destContent.contains("PulseTab") &&
+                    destContent.contains("Icons.Filled.ShoppingCart") &&
+                    destContent.contains("Icons.Outlined.ShoppingCart")
         )
     }
 

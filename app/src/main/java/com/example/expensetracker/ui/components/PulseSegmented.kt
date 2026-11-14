@@ -49,6 +49,24 @@ import com.example.expensetracker.theme.RadiusPill
  * - Horizontal scrolling if items > 4 or on small screens
  */
 @Composable
+fun PulseSegmented(
+    items: List<String>,
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    scrollable: Boolean = items.size > 4
+) {
+    PulseSegmented(
+        itemCount = items.size,
+        selectedIndex = selectedIndex,
+        onIndexSelected = onItemSelected,
+        label = { items[it] },
+        modifier = modifier,
+        scrollable = scrollable
+    )
+}
+
+@Composable
 fun <T> PulseSegmented(
     items: List<T>,
     selectedItem: T,

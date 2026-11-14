@@ -2,6 +2,7 @@ package com.example.expensetracker
 
 import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.navigation.NavigationItem
+import com.example.expensetracker.ui.navigation.PulseTab
 import com.example.expensetracker.ui.navigation.getLocalizedTitle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -66,31 +67,43 @@ class Phase2NavigationV7Test {
     }
 
     @Test
-    fun testModernBottomNavBarHas5DestinationsWithOpaqueSurfaceAndFlatElevation() {
-        val navBarFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/ModernBottomNavBar.kt")
-        assertTrue("ModernBottomNavBar.kt must exist", navBarFile.exists())
-        val content = navBarFile.readText()
+    fun testPulseDockHas4TabsWithCenterAddButtonAndBadges() {
+        val legacyNavBar = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/ModernBottomNavBar.kt")
+        assertFalse("ModernBottomNavBar.kt must be deleted in v7 Phase 2", legacyNavBar.exists())
 
-        // 5 Destinations verified
-        assertTrue("Slot 1 Home present", content.contains("NavigationItem.HOME"))
-        assertTrue("Slot 2 Ledger present", content.contains("NavigationItem.LEDGER"))
-        assertTrue("Slot 3 Bazaar present", content.contains("NavigationItem.BAZAAR"))
-        assertTrue("Slot 4 Wallets present", content.contains("NavigationItem.WALLETS"))
-        assertTrue("Slot 5 Plan present", content.contains("NavigationItem.PLAN"))
+        val pulseDockFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/PulseDock.kt")
+        assertTrue("PulseDock.kt must exist", pulseDockFile.exists())
+        val content = pulseDockFile.readText()
 
-        // Spec invariants
-        assertTrue("Hairline ink border present", content.contains("HairlineInkStroke"))
-        assertTrue("64dp bar height", content.contains("64.dp"))
-        assertTrue("Pill indicator behind icon", content.contains("56.dp") && content.contains("28.dp"))
+        // 4 Tabs verified
+        assertTrue("Tab Home present", content.contains("PulseTab.HOME"))
+        assertTrue("Tab Money present", content.contains("PulseTab.MONEY"))
+        assertTrue("Tab Bazaar present", content.contains("PulseTab.BAZAAR"))
+        assertTrue("Tab Plan present", content.contains("PulseTab.PLAN"))
+
+        // Spec invariants: 68dp floating dock, ShapePill, center 56dp raised Mango Add button
+        assertTrue("68dp dock height", content.contains("68.dp"))
+        assertTrue("ShapePill used for dock", content.contains("ShapePill"))
+        assertTrue("Center 56dp Add button", content.contains("56.dp") && content.contains("Icons.Filled.Add"))
+        assertTrue("Status badges support", content.contains("hasPlanAttention") && content.contains("isBazaarTripActive"))
     }
 
     @Test
-    fun testAppAddFabAndScaffoldExist() {
+    fun testAppAddFabAndScaffoldReplacedByAdaptiveScaffold() {
         val fabFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/components/AppAddFab.kt")
-        assertTrue("AppAddFab.kt must exist", fabFile.exists())
+        assertFalse("AppAddFab.kt must be deleted in v7 Phase 2", fabFile.exists())
 
         val scaffoldFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/components/AppScaffold.kt")
-        assertTrue("AppScaffold.kt must exist", scaffoldFile.exists())
+        assertFalse("AppScaffold.kt must be deleted in v7 Phase 2", scaffoldFile.exists())
+
+        val adaptiveScaffoldFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/AdaptiveScaffold.kt")
+        assertTrue("AdaptiveScaffold.kt must exist", adaptiveScaffoldFile.exists())
+
+        val railFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/PulseNavigationRail.kt")
+        assertTrue("PulseNavigationRail.kt must exist", railFile.exists())
+
+        val panelFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/PulseSidePanel.kt")
+        assertTrue("PulseSidePanel.kt must exist", panelFile.exists())
     }
 
     @Test
@@ -100,20 +113,28 @@ class Phase2NavigationV7Test {
         val content = screenHostFile.readText()
 
         assertTrue(
+            "NavigationScreenHost must bind PulseTab.HOME to DashboardScreen",
+            content.contains("PulseTab.HOME -> DashboardScreen(")
+        )
+        assertTrue(
+            "NavigationScreenHost must bind PulseTab.MONEY to MoneyScreen",
+            content.contains("PulseTab.MONEY -> {") && content.contains("MoneyScreen(")
+        )
+        assertTrue(
+            "NavigationScreenHost must bind PulseTab.BAZAAR to MarketScreen",
+            content.contains("PulseTab.BAZAAR -> {") && content.contains("MarketScreen(")
+        )
+        assertTrue(
+            "NavigationScreenHost must bind PulseTab.PLAN to PlanScreen",
+            content.contains("PulseTab.PLAN -> {") && content.contains("PlanScreen(")
+        )
+        assertTrue(
             "NavigationScreenHost must bind NavigationItem.LEDGER to LedgerScreen",
             content.contains("NavigationItem.LEDGER -> {") && content.contains("LedgerScreen(")
         )
         assertTrue(
             "NavigationScreenHost must bind NavigationItem.PLAN to PlanScreen",
             content.contains("NavigationItem.PLAN -> {") && content.contains("PlanScreen(")
-        )
-        assertTrue(
-            "NavigationScreenHost must bind NavigationItem.WALLETS to AccountsScreen",
-            content.contains("NavigationItem.WALLETS -> {") && content.contains("AccountsScreen(")
-        )
-        assertTrue(
-            "NavigationScreenHost must bind NavigationItem.BAZAAR to MarketScreen",
-            content.contains("NavigationItem.BAZAAR -> {") && content.contains("MarketScreen(")
         )
     }
 
@@ -123,9 +144,9 @@ class Phase2NavigationV7Test {
         val content = appNavFile.readText()
 
         assertTrue(
-            "BackHandler must redirect non-home screens to HOME",
-            content.contains("BackHandler(enabled = selectedItem != NavigationItem.HOME)") &&
-                    content.contains("selectedItem = NavigationItem.HOME")
+            "BackHandler must delegate to AdaptiveNavigationState.handleBackPress()",
+            content.contains("navState.handleBackPress()") &&
+                    content.contains("navState.selectedTab != PulseTab.HOME")
         )
     }
 }

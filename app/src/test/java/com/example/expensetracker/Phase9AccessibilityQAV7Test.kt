@@ -107,8 +107,9 @@ class Phase9AccessibilityQAV7Test {
         val dashboardContent = readFile("com/example/expensetracker/ui/dashboard/DashboardScreen.kt")
         assertTrue("DashboardScreen must use tnum for amounts", dashboardContent.contains("fontFeatureSettings = \"tnum\""))
 
-        val txContent = readFile("com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
-        assertTrue("TransactionsScreen must import or use tnum", txContent.contains("tnum") || txContent.contains("TransactionGroupCard"))
+        val txContent = listOf("com/example/expensetracker/ui/transactions/TransactionsContent.kt", "com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
+            .mapNotNull { runCatching { readFile(it) }.getOrNull() }.first()
+        assertTrue("Transactions must import or use tnum or PulseTabularText", txContent.contains("tnum") || txContent.contains("TransactionGroupCard") || txContent.contains("PulseTabularText"))
 
         val accContent = readFile("com/example/expensetracker/ui/accounts/AccountCardItem.kt")
         assertTrue("AccountCardItem must use tnum", accContent.contains("fontFeatureSettings = \"tnum\""))
@@ -128,17 +129,21 @@ class Phase9AccessibilityQAV7Test {
         val dashboardContent = readFile("com/example/expensetracker/ui/dashboard/DashboardScreen.kt")
         assertTrue("DashboardScreen must include 100dp bottom spacer", dashboardContent.contains("100.dp"))
 
-        val txContent = readFile("com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
-        assertTrue("TransactionsScreen must include 100dp bottom spacer", txContent.contains("100.dp"))
+        val txContent = listOf("com/example/expensetracker/ui/transactions/TransactionsContent.kt", "com/example/expensetracker/ui/transactions/TransactionsScreen.kt")
+            .mapNotNull { runCatching { readFile(it) }.getOrNull() }.first()
+        assertTrue("Transactions must include 100dp bottom spacer", txContent.contains("100.dp"))
 
-        val accContent = readFile("com/example/expensetracker/ui/accounts/AccountsScreen.kt")
-        assertTrue("AccountsScreen must include 100dp bottom spacer", accContent.contains("100.dp"))
+        val accContent = listOf("com/example/expensetracker/ui/accounts/AccountsContent.kt", "com/example/expensetracker/ui/accounts/AccountsScreen.kt")
+            .mapNotNull { runCatching { readFile(it) }.getOrNull() }.first()
+        assertTrue("Accounts must include 100dp bottom spacer", accContent.contains("100.dp"))
 
-        val billsContent = readFile("com/example/expensetracker/ui/bills/BillsScreen.kt")
-        assertTrue("BillsScreen must include 100dp bottom contentPadding", billsContent.contains("bottom = 100.dp"))
+        val billsContent = listOf("com/example/expensetracker/ui/bills/BillsContent.kt", "com/example/expensetracker/ui/bills/BillsScreen.kt")
+            .mapNotNull { runCatching { readFile(it) }.getOrNull() }.first()
+        assertTrue("Bills must include 100dp bottom contentPadding", billsContent.contains("bottom = 100.dp"))
 
-        val recContent = readFile("com/example/expensetracker/ui/receivables/ReceivablesScreen.kt")
-        assertTrue("ReceivablesScreen must include 100dp bottom spacer", recContent.contains("100.dp"))
+        val recContent = listOf("com/example/expensetracker/ui/receivables/ReceivablesContent.kt", "com/example/expensetracker/ui/receivables/ReceivablesScreen.kt")
+            .mapNotNull { runCatching { readFile(it) }.getOrNull() }.first()
+        assertTrue("Receivables must include 100dp bottom spacer", recContent.contains("100.dp"))
     }
 
     @Test
@@ -147,12 +152,14 @@ class Phase9AccessibilityQAV7Test {
         assertTrue("DashboardScreen must declare key for hero balance", dashboardContent.contains("key = \"hero_balance\""))
         assertTrue("DashboardScreen must declare key for quick actions", dashboardContent.contains("key = \"quick_actions\""))
 
-        val accContent = readFile("com/example/expensetracker/ui/accounts/AccountsScreen.kt")
-        assertTrue("AccountsScreen must declare key for hero card", accContent.contains("key = \"hero_card\""))
-        assertTrue("AccountsScreen items must use stable key", accContent.contains("items(accounts, key = { it.id })"))
+        val accContent = listOf("com/example/expensetracker/ui/accounts/AccountsContent.kt", "com/example/expensetracker/ui/accounts/AccountsScreen.kt")
+            .mapNotNull { runCatching { readFile(it) }.getOrNull() }.first()
+        assertTrue("Accounts must declare key for hero card", accContent.contains("key = \"hero_card\""))
+        assertTrue("Accounts items must use stable key", accContent.contains("items(accounts, key = { it.id })"))
 
-        val billsContent = readFile("com/example/expensetracker/ui/bills/BillsScreen.kt")
-        assertTrue("BillsScreen items must use stable key", billsContent.contains("items(filteredBills, key = { it.id })"))
+        val billsContent = listOf("com/example/expensetracker/ui/bills/BillsContent.kt", "com/example/expensetracker/ui/bills/BillsScreen.kt")
+            .mapNotNull { runCatching { readFile(it) }.getOrNull() }.first()
+        assertTrue("Bills items must use stable key", billsContent.contains("items(filteredBills, key = { it.id })"))
 
         val budgetContent = readFile("com/example/expensetracker/ui/budget/BudgetListTabContent.kt")
         assertTrue("BudgetListTabContent items must use stable key", budgetContent.contains("items(categoryBudgetStatuses, key = { it.budget.id })"))
