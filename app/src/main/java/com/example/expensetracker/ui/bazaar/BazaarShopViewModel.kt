@@ -28,11 +28,20 @@ import kotlinx.coroutines.launch
 
 class BazaarShopViewModel(
     application: Application,
-    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
-    repoOverride: ExpenseRepository? = null
+    private val savedStateHandle: SavedStateHandle,
+    repoOverride: ExpenseRepository? = null,
+    prefsOverride: android.content.SharedPreferences? = null
 ) : AndroidViewModel(application) {
 
+    constructor(application: Application) : this(application, SavedStateHandle(), null, null)
+    constructor(application: Application, repoOverride: ExpenseRepository?) : this(application, SavedStateHandle(), repoOverride, null)
+
     private val repository = repoOverride ?: ExpenseRepository.getInstance(application)
+    private val prefs = prefsOverride ?: try {
+        application.getSharedPreferences("bazaar_shop_preferences", android.content.Context.MODE_PRIVATE)
+    } catch (_: Exception) {
+        null
+    }
 
     private val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
         android.util.Log.e("BazaarShopViewModel", "Error in shop mode operation", throwable)
@@ -60,10 +69,14 @@ class BazaarShopViewModel(
     )
     val skippedItemIds: StateFlow<Set<Long>> = _skippedItemIds.asStateFlow()
 
-    // 2. Auto-advance setting (defaults to true per Amendment 12)
+    // 2. Auto-advance setting (defaults to true per Amendment 12, persisted in SharedPreferences across restarts)
     private val AUTO_ADVANCE_KEY = "shop_auto_advance_enabled"
+    private val PREF_AUTO_ADVANCE = "bazaar_auto_advance_enabled"
+    private val PREF_PRICING_MODE_PREFIX = "pricing_mode_"
+
     private val _isAutoAdvanceEnabled = MutableStateFlow(
-        savedStateHandle.get<Boolean>(AUTO_ADVANCE_KEY) ?: true
+        savedStateHandle.get<Boolean>(AUTO_ADVANCE_KEY)
+            ?: (try { prefs?.getBoolean(PREF_AUTO_ADVANCE, true) } catch (_: Exception) { null } ?: true)
     )
     val isAutoAdvanceEnabled: StateFlow<Boolean> = _isAutoAdvanceEnabled.asStateFlow()
 
@@ -71,7 +84,11 @@ class BazaarShopViewModel(
     private val _itemPricingMode = MutableStateFlow<Map<Long, PricingMode>>(emptyMap())
     val itemPricingMode: StateFlow<Map<Long, PricingMode>> = _itemPricingMode.asStateFlow()
 
-    // 4. Highlighted item for auto-advance visual pulsing
+    // 4. Pending carry-over snapshot for failure recovery and retry
+    private val _pendingCarryOverSnapshot = MutableStateFlow<Pair<String, List<MarketItem>>?>(null)
+    val pendingCarryOverSnapshot: StateFlow<Pair<String, List<MarketItem>>?> = _pendingCarryOverSnapshot.asStateFlow()
+
+    // 5. Highlighted item for auto-advance visual pulsing
     private val _pendingHighlightItemId = MutableStateFlow<Long?>(null)
     val pendingHighlightItemId: StateFlow<Long?> = _pendingHighlightItemId.asStateFlow()
 
@@ -102,6 +119,45 @@ class BazaarShopViewModel(
     fun setAutoAdvanceEnabled(enabled: Boolean) {
         _isAutoAdvanceEnabled.value = enabled
         savedStateHandle[AUTO_ADVANCE_KEY] = enabled
+        try {
+            prefs?.edit()?.putBoolean(PREF_AUTO_ADVANCE, enabled)?.apply()
+        } catch (_: Exception) {}
+    }
+
+    fun getPricingModeForItem(productName: String): PricingMode {
+        val norm = productName.lowercase().trim()
+        val saved = try {
+            prefs?.getString("$PREF_PRICING_MODE_PREFIX$norm", null)
+        } catch (_: Exception) {
+            null
+        }
+        return if (saved == PricingMode.TOTAL_PAID.name) PricingMode.TOTAL_PAID else PricingMode.PER_UNIT
+    }
+
+    fun savePricingModeForItem(productName: String, mode: PricingMode) {
+        val norm = productName.lowercase().trim()
+        try {
+            prefs?.edit()?.putString("$PREF_PRICING_MODE_PREFIX$norm", mode.name)?.apply()
+        } catch (_: Exception) {}
+    }
+
+    fun retryPendingCarryOver(onSuccess: () -> Unit, onFailure: () -> Unit) {
+        val pending = _pendingCarryOverSnapshot.value ?: return
+        viewModelScope.launch(coroutineExceptionHandler) {
+            val createdId = runCatching {
+                repository.createMarketListWithItems(pending.first, pending.second)
+            }.getOrDefault(0L)
+            if (createdId > 0L) {
+                _pendingCarryOverSnapshot.value = null
+                onSuccess()
+            } else {
+                onFailure()
+            }
+        }
+    }
+
+    fun dismissPendingCarryOver() {
+        _pendingCarryOverSnapshot.value = null
     }
 
     fun clearHighlight() {
@@ -193,10 +249,11 @@ class BazaarShopViewModel(
         val updated = item.copy(amount = roundedAmount, isPurchased = true)
         updateItemInDb(updated)
 
-        // Remember pricing mode for this item
+        // Remember pricing mode for this item (in-session and persisted across trips)
         val modeMap = _itemPricingMode.value.toMutableMap()
         modeMap[item.id] = mode
         _itemPricingMode.value = modeMap
+        savePricingModeForItem(item.name, mode)
 
         // If item was previously skipped, unskip it
         if (item.id in _skippedItemIds.value) {
@@ -307,7 +364,10 @@ class BazaarShopViewModel(
                 }.getOrDefault(0L)
 
                 if (createSuccess <= 0L) {
+                    _pendingCarryOverSnapshot.value = Pair(carryOverTitle, unpurchasedSnapshot)
                     onCarryOverFailed(unpurchasedSnapshot)
+                } else {
+                    _pendingCarryOverSnapshot.value = null
                 }
             }
 

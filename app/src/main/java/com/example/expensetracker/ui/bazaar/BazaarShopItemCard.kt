@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.common.DigitConverter
@@ -228,7 +229,7 @@ fun BazaarShopItemCard(
                             fontSize = 16.sp
                         ),
                         color = if (item.isPurchased) appColors.textSecondary else appColors.textPrimary,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
 
@@ -336,5 +337,34 @@ fun BazaarShopItemCard(
                 }
             }
         }
+    }
+}
+
+@Preview(name = "ItemCard - 200% Font Scale Bengali", fontScale = 2f, showBackground = true)
+@Composable
+private fun PreviewBazaarShopItemCardBengaliLongName() {
+    Surface {
+        BazaarShopItemCard(
+            item = MarketItem(
+                id = 1,
+                listId = 1,
+                name = "পাবনা থেকে আনা দেশি বড় তাজা রুই মাছের টুকরা",
+                quantity = 1.5,
+                unit = "কেজি",
+                amount = 450.0,
+                isPurchased = false
+            ),
+            lastRate = Pair(300.0, "কেজি"),
+            isHighlighted = false,
+            onCardClick = {},
+            onCheckCircleClick = {},
+            onSwipeRightDone = {},
+            onSwipeLeftSkip = {},
+            onEditPrice = {},
+            onMarkNotAvailable = {},
+            onRemoveItem = {},
+            isBangla = true,
+            useBengaliNumerals = true
+        )
     }
 }

@@ -68,6 +68,18 @@ class BazaarViewModel(
     private val _budgetCaps = MutableStateFlow<Map<Long, Double>>(emptyMap())
     val budgetCaps: StateFlow<Map<Long, Double>> = _budgetCaps.asStateFlow()
 
+    // Hub-level snackbar messages that survive screen pops
+    private val _hubSnackbarMessage = MutableStateFlow<String?>(null)
+    val hubSnackbarMessage: StateFlow<String?> = _hubSnackbarMessage.asStateFlow()
+
+    fun showHubSnackbar(message: String) {
+        _hubSnackbarMessage.value = message
+    }
+
+    fun clearHubSnackbar() {
+        _hubSnackbarMessage.value = null
+    }
+
     // Locally pending deleted list/item IDs for deferred deletion
     private val _pendingDeletedListIds = MutableStateFlow<Set<Long>>(emptySet())
     val pendingDeletedListIds: StateFlow<Set<Long>> = _pendingDeletedListIds.asStateFlow()

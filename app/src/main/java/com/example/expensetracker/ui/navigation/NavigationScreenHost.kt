@@ -90,6 +90,8 @@ fun NavigationScreenHost(
                     listId = pushed.listId,
                     bazaarShopViewModel = bazaarShopViewModel,
                     onNavigateBack = {
+                        val isBn = bazaarViewModel.userProfile.value.appLanguage != "en"
+                        bazaarViewModel.showHubSnackbar(if (isBn) "বাজারের অগ্রগতি সংরক্ষিত হয়েছে" else "Trip progress saved")
                         navState.popScreen()
                     },
                     onTripCompleted = {

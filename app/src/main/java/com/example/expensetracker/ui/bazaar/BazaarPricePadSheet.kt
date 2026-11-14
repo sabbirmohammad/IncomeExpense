@@ -23,11 +23,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -163,7 +167,7 @@ fun BazaarPricePadSheet(
     // Quick adjustment helper
     fun adjustExpression(delta: Double) {
         val cur = expression.toDoubleOrNull() ?: 0.0
-        val newAmt = (cur + delta).coerceAtLeast(0.0)
+        val newAmt = BazaarShopLogic.applyQuickAdjustment(cur, delta)
         expression = if (newAmt % 1.0 == 0.0) newAmt.toInt().toString() else "%.1f".format(newAmt)
     }
 
@@ -189,7 +193,9 @@ fun BazaarPricePadSheet(
                     Text(
                         text = item.name,
                         style = typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = appColors.textPrimary
+                        color = appColors.textPrimary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = if (isBangla) "মূল্য নির্ধারণ ও নিশ্চিতকরণ" else "Set and confirm price",
@@ -319,15 +325,32 @@ fun BazaarPricePadSheet(
                             recommendation.isPricey -> appColors.warning
                             else -> appColors.textSecondary
                         }
+                        val trendIcon = when {
+                            recommendation.isGoodTimeToBuy -> Icons.Default.ArrowDownward
+                            recommendation.isPricey -> Icons.Default.ArrowUpward
+                            else -> null
+                        }
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = pillBg,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, pillText.copy(alpha = 0.3f))
+                            border = androidx.compose.foundation.BorderStroke(1.dp, pillText.copy(alpha = 0.3f)),
+                            modifier = Modifier.semantics {
+                                contentDescription = "${recommendation.badgeText}, ${recommendation.varianceText}"
+                            }
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                if (trendIcon != null) {
+                                    Icon(
+                                        imageVector = trendIcon,
+                                        contentDescription = null,
+                                        tint = pillText,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
                                 Text(
                                     text = recommendation.badgeText,
                                     style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -733,5 +756,38 @@ private fun PriceHistorySparkline(
                 }
             }
         }
+    }
+}
+
+@Preview(name = "PricePad - 200% Font Scale Bengali", fontScale = 2f, showBackground = true)
+@Composable
+private fun PreviewBazaarPricePadSheetBengaliLongName() {
+    Surface {
+        BazaarPricePadSheet(
+            item = MarketItem(
+                id = 1,
+                listId = 1,
+                name = "নরম তুলতুলে বড় আকারের তাজা দেশি মুরগি",
+                quantity = 1.0,
+                unit = "কেজি",
+                amount = 240.0,
+                isPurchased = false
+            ),
+            lastRate = Pair(220.0, "কেজি"),
+            priceInsight = ProductPriceInsight(
+                productName = "মুরগি",
+                currentUnitPrice = 240.0,
+                baseUnit = "কেজি",
+                avgUnitPrice = 220.0,
+                purchaseCount = 5,
+                recentPricePoints = listOf(200.0, 210.0, 215.0, 220.0, 240.0)
+            ),
+            onConfirm = { _, _, _ -> },
+            onDismiss = {},
+            onMarkNotAvailable = {},
+            onRemoveItem = {},
+            isBangla = true,
+            useBengaliNumerals = true
+        )
     }
 }

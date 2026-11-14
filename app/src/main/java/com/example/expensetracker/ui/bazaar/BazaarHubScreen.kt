@@ -149,6 +149,14 @@ fun BazaarHubScreen(
         }
     }
 
+    // Hub-level snackbar messages (e.g. "Trip progress saved" from Shop Mode pop)
+    val hubSnackbarMessage by bazaarViewModel.hubSnackbarMessage.collectAsStateWithLifecycle()
+    LaunchedEffect(hubSnackbarMessage) {
+        val msg = hubSnackbarMessage ?: return@LaunchedEffect
+        bazaarViewModel.clearHubSnackbar()
+        snackbarHostState.showSnackbar(message = msg)
+    }
+
     val isExpanded = windowClass.widthClass.isExpanded
 
     Surface(

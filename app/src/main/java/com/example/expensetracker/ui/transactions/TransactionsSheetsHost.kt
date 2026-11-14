@@ -5,6 +5,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.Category
 import com.example.expensetracker.data.model.TimeFilter
@@ -59,13 +61,14 @@ fun TransactionsSheetsHost(
         }
     }
 
-    if (dialogState.showFilterSheet) {
-        val selectedType = viewModel.selectedType.value
-        val isMarketTripsView = viewModel.isMarketTripsView.value
-        val selectedTimeFilter = viewModel.selectedTimeFilter.value
-        val selectedAccountId = viewModel.selectedAccountId.value
-        val selectedCategoryId = viewModel.selectedCategoryId.value
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
+    val isMarketTripsView by viewModel.isMarketTripsView.collectAsStateWithLifecycle()
+    val selectedTimeFilter by viewModel.selectedTimeFilter.collectAsStateWithLifecycle()
+    val selectedAccountId by viewModel.selectedAccountId.collectAsStateWithLifecycle()
+    val selectedCategoryId by viewModel.selectedCategoryId.collectAsStateWithLifecycle()
+    val filteredTransactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
 
+    if (dialogState.showFilterSheet) {
         AppBottomSheet(onDismissRequest = { dialogState.showFilterSheet = false }) {
             TransactionFilterSheet(
                 selectedType = selectedType,
@@ -120,7 +123,7 @@ fun TransactionsSheetsHost(
         showCustomDateRangeDialog = dialogState.showCustomDateRangeDialog,
         onDismissCustomDateRange = { dialogState.showCustomDateRangeDialog = false },
         onConfirmDateRange = { start, end -> viewModel.setCustomDateRange(start, end) },
-        transactions = viewModel.filteredTransactions.value,
+        transactions = filteredTransactions,
         userProfile = userProfile,
         strings = strings,
         scope = scope

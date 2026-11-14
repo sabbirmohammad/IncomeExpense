@@ -41,6 +41,13 @@ object BazaarShopLogic {
     }
 
     /**
+     * Applies a quick delta adjustment to an amount or rate, ensuring non-negative result.
+     */
+    fun applyQuickAdjustment(currentVal: Double, delta: Double): Double {
+        return roundToTwoDecimals((currentVal + delta).coerceAtLeast(0.0))
+    }
+
+    /**
      * Calculates line total from a per-base-unit rate (e.g. ৳60/kg for 500g -> ৳30.0).
      */
     fun calculateTotalFromUnitPrice(unitRate: Double, quantity: Double, unit: String): Double {

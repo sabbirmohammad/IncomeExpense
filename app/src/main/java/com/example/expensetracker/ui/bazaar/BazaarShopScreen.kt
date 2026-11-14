@@ -32,16 +32,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -242,6 +248,10 @@ fun BazaarShopScreen(
         mutableLongStateOf(accounts.firstOrNull()?.id ?: 0L)
     }
 
+    // Top overflow menu state & Medium layout collapsible receipt state
+    var showShopOverflowMenu by remember { mutableStateOf(false) }
+    var isMediumReceiptCollapsed by rememberSaveable { mutableStateOf(false) }
+
     // 6. Forgot Staples Strip State (Amendment 5)
     var isForgotStaplesDismissed by rememberSaveable { mutableStateOf(false) }
 
@@ -343,7 +353,7 @@ fun BazaarShopScreen(
                             }
                         }
 
-                        // Auto-advance toggle (Amendment 9)
+                        // Auto-advance toggle and Shop Mode overflow menu (Amendment 7 & 9)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(
                                 onClick = { bazaarShopViewModel.setAutoAdvanceEnabled(!isAutoAdvanceEnabled) },
@@ -354,6 +364,60 @@ fun BazaarShopScreen(
                                     contentDescription = if (isBangla) "অটো-স্ক্রল টগল" else "Toggle auto advance",
                                     tint = if (isAutoAdvanceEnabled) appColors.accent else appColors.textMuted
                                 )
+                            }
+
+                            Box {
+                                IconButton(
+                                    onClick = { showShopOverflowMenu = true },
+                                    modifier = Modifier.size(48.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = if (isBangla) "আরও বিকল্প" else "More options",
+                                        tint = appColors.textPrimary
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = showShopOverflowMenu,
+                                    onDismissRequest = { showShopOverflowMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                if (isBangla) "অটো-অ্যাডভান্স (${if (isAutoAdvanceEnabled) "চালু" else "বন্ধ"})"
+                                                else "Auto-advance (${if (isAutoAdvanceEnabled) "On" else "Off"})"
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = if (isAutoAdvanceEnabled) Icons.Default.Check else Icons.Default.Navigation,
+                                                contentDescription = null,
+                                                tint = if (isAutoAdvanceEnabled) appColors.accent else appColors.textMuted
+                                            )
+                                        },
+                                        onClick = {
+                                            bazaarShopViewModel.setAutoAdvanceEnabled(!isAutoAdvanceEnabled)
+                                            showShopOverflowMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(if (isBangla) "হাতে হাতে নতুন পণ্য যোগ" else "Add extra item") },
+                                        leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
+                                        onClick = {
+                                            showAddImpromptuDialog = true
+                                            showShopOverflowMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(if (isBangla) "বাজার স্থগিত রেখে প্রস্থান" else "Pause trip") },
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) },
+                                        onClick = {
+                                            showShopOverflowMenu = false
+                                            onNavigateBack()
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -415,7 +479,19 @@ fun BazaarShopScreen(
                     tonalElevation = 6.dp,
                     border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border)
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pointerInput(Unit) {
+                                detectVerticalDragGestures { _, dragAmount ->
+                                    if (dragAmount < -15f) {
+                                        bazaarShopViewModel.setReceiptExpanded(true)
+                                    } else if (dragAmount > 15f) {
+                                        bazaarShopViewModel.setReceiptExpanded(false)
+                                    }
+                                }
+                            }
+                    ) {
                         // Expandable Receipt Panel
                         AnimatedVisibility(
                             visible = isReceiptExpanded,
@@ -429,6 +505,7 @@ fun BazaarShopScreen(
                                 isBangla = isBangla,
                                 useBengaliNumerals = useBengaliNumerals,
                                 isPrivacyMode = isPrivacyMode,
+                                onItemClick = { bazaarShopViewModel.openPricePad(it) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(max = 260.dp)
@@ -502,16 +579,41 @@ fun BazaarShopScreen(
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
         if (useTwoColumn) {
-            // Two-column responsive layout for Medium / Expanded (Amendment 6)
+            // Two-column responsive layout for Medium / Expanded or Landscape Phone
             Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
+                // If landscape phone, render dedicated vertical stall rail on the far left!
+                if (isLandscapePhone) {
+                    StallVerticalRail(
+                        allItems = items,
+                        masterProductsMap = masterProductsMap,
+                        skippedItemIds = skippedItemIds,
+                        isBangla = isBangla,
+                        useBengaliNumerals = useBengaliNumerals,
+                        onScrollToStall = { stallKey ->
+                            stallIndices[stallKey]?.let { idx ->
+                                coroutineScope.launch { listState.animateScrollToItem(idx) }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(72.dp)
+                            .fillMaxHeight()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .fillMaxHeight()
+                            .background(appColors.border)
+                    )
+                }
+
                 // Left Column: Stall Route & Item Checklist
                 Box(
                     modifier = Modifier
-                        .weight(leftColumnWeight)
+                        .weight(if (windowClass.isMedium && !isLandscapePhone && isMediumReceiptCollapsed) 1f else leftColumnWeight)
                         .fillMaxHeight()
                 ) {
                     ShopChecklistColumn(
@@ -529,6 +631,7 @@ fun BazaarShopScreen(
                         useBengaliNumerals = useBengaliNumerals,
                         isPrivacyMode = isPrivacyMode,
                         bazaarShopViewModel = bazaarShopViewModel,
+                        showHorizontalChips = !isLandscapePhone,
                         onShowUndoSnackbar = onShowUndoSnackbar,
                         onDismissForgotStaples = { isForgotStaplesDismissed = true },
                         onOpenImpromptuDialog = { showAddImpromptuDialog = true },
@@ -548,47 +651,111 @@ fun BazaarShopScreen(
                         .background(appColors.border)
                 )
 
-                // Right Column: Live Receipt & Budget Panel
-                Surface(
-                    color = appColors.surface,
-                    modifier = Modifier
-                        .weight(rightColumnWeight)
-                        .fillMaxHeight()
-                ) {
-                    Column(
+                // Right Column: Live Receipt & Budget Panel (Collapsible on Medium)
+                if (windowClass.isMedium && !isLandscapePhone && isMediumReceiptCollapsed) {
+                    Surface(
+                        color = appColors.surface,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
+                            .width(56.dp)
+                            .fillMaxHeight()
+                            .clickable { isMediumReceiptCollapsed = false }
                     ) {
-                        LiveReceiptPanelContent(
-                            items = items,
-                            totalSpent = totalSpent,
-                            budgetCap = budgetCap,
-                            isBangla = isBangla,
-                            useBengaliNumerals = useBengaliNumerals,
-                            isPrivacyMode = isPrivacyMode,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Large Finish Trip Button (48dp height)
-                        Button(
-                            onClick = { showCheckoutDialog = true },
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 52.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
+                                .fillMaxHeight()
+                                .padding(vertical = 16.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (isBangla) "কেনাকাটা সম্পন্ন করুন" else "Finish Shopping Trip",
-                                style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = appColors.onAccent
+                            IconButton(
+                                onClick = { isMediumReceiptCollapsed = false },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Receipt,
+                                    contentDescription = if (isBangla) "রশিদ খুলুন" else "Expand Live Receipt",
+                                    tint = appColors.accent
+                                )
+                            }
+                            IconButton(
+                                onClick = { showCheckoutDialog = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ShoppingCart,
+                                    contentDescription = if (isBangla) "কেনাকাটা সম্পন্ন" else "Finish Trip",
+                                    tint = appColors.accent
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Surface(
+                        color = appColors.surface,
+                        modifier = Modifier
+                            .weight(rightColumnWeight)
+                            .fillMaxHeight()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (isBangla) "ক্রয় বিবরণী" else "Live Receipt",
+                                    style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = appColors.textPrimary
+                                )
+                                if (windowClass.isMedium && !isLandscapePhone) {
+                                    IconButton(
+                                        onClick = { isMediumReceiptCollapsed = true },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ChevronRight,
+                                            contentDescription = if (isBangla) "রশিদ আড়াল করুন" else "Collapse Live Receipt",
+                                            tint = appColors.textMuted
+                                        )
+                                    }
+                                }
+                            }
+
+                            LiveReceiptPanelContent(
+                                items = items,
+                                totalSpent = totalSpent,
+                                budgetCap = budgetCap,
+                                isBangla = isBangla,
+                                useBengaliNumerals = useBengaliNumerals,
+                                isPrivacyMode = isPrivacyMode,
+                                onItemClick = { bazaarShopViewModel.openPricePad(it) },
+                                modifier = Modifier.weight(1f)
                             )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Large Finish Trip Button (48dp height)
+                            Button(
+                                onClick = { showCheckoutDialog = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
+                            ) {
+                                Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isBangla) "কেনাকাটা সম্পন্ন করুন" else "Finish Shopping Trip",
+                                    style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = appColors.onAccent
+                                )
+                            }
                         }
                     }
                 }
@@ -759,9 +926,29 @@ fun BazaarShopScreen(
                             },
                             onCarryOverFailed = { snapshot ->
                                 coroutineScope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = if (isBangla) "বাকি পণ্য ফর্দে নিতে সমস্যা হয়েছে" else "Failed to carry over unbought items"
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = if (isBangla) "বাকি পণ্য ফর্দে নিতে সমস্যা হয়েছে" else "Failed to carry over unbought items",
+                                        actionLabel = if (isBangla) "পুনরায় চেষ্টা" else "Retry",
+                                        duration = SnackbarDuration.Long
                                     )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        bazaarShopViewModel.retryPendingCarryOver(
+                                            onSuccess = {
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        message = if (isBangla) "বাকি পণ্য নতুন ফর্দে যোগ হয়েছে" else "Unbought items carried over"
+                                                    )
+                                                }
+                                            },
+                                            onFailure = {
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        message = if (isBangla) "পুনরায় চেষ্টা ব্যর্থ হয়েছে" else "Retry failed"
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         )
@@ -877,6 +1064,7 @@ private fun ShopChecklistColumn(
     useBengaliNumerals: Boolean,
     isPrivacyMode: Boolean,
     bazaarShopViewModel: BazaarShopViewModel,
+    showHorizontalChips: Boolean = true,
     onShowUndoSnackbar: (MarketItem, String, () -> Unit) -> Unit,
     onDismissForgotStaples: () -> Unit,
     onOpenImpromptuDialog: () -> Unit,
@@ -892,51 +1080,53 @@ private fun ShopChecklistColumn(
         modifier = Modifier.fillMaxSize()
     ) {
         // 1. Sticky Stall-Route Chips (Amendment 2)
-        item(key = "stall_route_chips") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ALL_DEPARTMENTS.forEach { dept ->
-                    val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
-                    val stallTitle = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}"
-                    val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
-                    val totDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.totalCount.toString()) else progress.totalCount.toString()
+        if (showHorizontalChips) {
+            item(key = "stall_route_chips") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ALL_DEPARTMENTS.forEach { dept ->
+                        val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
+                        val stallTitle = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}"
+                        val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
+                        val totDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.totalCount.toString()) else progress.totalCount.toString()
 
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (progress.isAllDone) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.accent else appColors.border),
-                        modifier = Modifier
-                            .heightIn(min = 48.dp)
-                            .clickable(role = Role.Button, onClick = { onScrollToStall(dept.key) })
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (progress.isAllDone) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.accent else appColors.border),
+                            modifier = Modifier
+                                .heightIn(min = 48.dp)
+                                .clickable(role = Role.Button, onClick = { onScrollToStall(dept.key) })
                         ) {
-                            Text(
-                                text = stallTitle,
-                                style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (progress.isAllDone) appColors.accent else appColors.textPrimary
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            if (progress.isAllDone) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Completed stall",
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
                                 Text(
-                                    text = "($doneDisp/$totDisp)",
-                                    style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                    color = appColors.textMuted
+                                    text = stallTitle,
+                                    style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (progress.isAllDone) appColors.accent else appColors.textPrimary
                                 )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                if (progress.isAllDone) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Completed stall",
+                                        tint = appColors.accent,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "($doneDisp/$totDisp)",
+                                        style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = appColors.textMuted
+                                    )
+                                }
                             }
                         }
                     }
@@ -1197,6 +1387,7 @@ private fun LiveReceiptPanelContent(
     isBangla: Boolean,
     useBengaliNumerals: Boolean,
     isPrivacyMode: Boolean,
+    onItemClick: ((MarketItem) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
@@ -1235,7 +1426,11 @@ private fun LiveReceiptPanelContent(
             ) {
                 purchasedItems.forEach { pItem ->
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(enabled = onItemClick != null) { onItemClick?.invoke(pItem) }
+                            .padding(vertical = 4.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -1243,7 +1438,7 @@ private fun LiveReceiptPanelContent(
                             text = "${pItem.name} (${pItem.quantity} ${pItem.unit})",
                             style = typography.bodySmall,
                             color = appColors.textPrimary,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
@@ -1283,5 +1478,87 @@ private fun LiveReceiptPanelContent(
                 color = appColors.accent
             )
         }
+    }
+}
+
+/**
+ * Dedicated vertical stall rail for Landscape Phone orientation.
+ * Consumes only 72dp horizontal width, leaving full vertical height for items and receipt.
+ */
+@Composable
+private fun StallVerticalRail(
+    allItems: List<MarketItem>,
+    masterProductsMap: Map<String, com.example.expensetracker.data.model.MasterProduct>,
+    skippedItemIds: Set<Long>,
+    isBangla: Boolean,
+    useBengaliNumerals: Boolean,
+    onScrollToStall: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val typography = MaterialTheme.typography
+
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ALL_DEPARTMENTS.forEach { dept ->
+            val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
+            val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
+            val totDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.totalCount.toString()) else progress.totalCount.toString()
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (progress.isAllDone) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.accent else appColors.border),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.Button, onClick = { onScrollToStall(dept.key) })
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp)
+                ) {
+                    Text(text = dept.icon, fontSize = 20.sp)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    if (progress.isAllDone) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Completed",
+                            tint = appColors.accent,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "$doneDisp/$totDisp",
+                            style = typography.bodySmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            color = appColors.textMuted
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(name = "LiveReceipt - 200% Font Scale Bengali", fontScale = 2f, showBackground = true)
+@Composable
+private fun LiveReceipt200PercentPreview() {
+    val sampleItems = listOf(
+        MarketItem(id = 1L, listId = 1L, name = "রসুন দেশি (বড় দানা)", quantity = 1.0, unit = "কেজি", isPurchased = true, amount = 220.0),
+        MarketItem(id = 2L, listId = 1L, name = "রুই মাছ আস্ত (বড় সাইজ)", quantity = 2.5, unit = "কেজি", isPurchased = true, amount = 950.0)
+    )
+    MaterialTheme {
+        LiveReceiptPanelContent(
+            items = sampleItems,
+            totalSpent = 1170.0,
+            budgetCap = 1500.0,
+            isBangla = true,
+            useBengaliNumerals = true,
+            isPrivacyMode = false
+        )
     }
 }

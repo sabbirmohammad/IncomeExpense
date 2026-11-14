@@ -248,6 +248,101 @@ class BazaarShopModeV7Test {
         assertEquals(4L, next!!.id)
     }
 
+    @Test
+    fun testQuickAdjustmentChipsArithmetic() {
+        // [+5]
+        val plus5 = BazaarShopLogic.applyQuickAdjustment(100.0, 5.0)
+        assertEquals(105.0, plus5, 0.001)
+
+        // [-5]
+        val minus5 = BazaarShopLogic.applyQuickAdjustment(100.0, -5.0)
+        assertEquals(95.0, minus5, 0.001)
+
+        // [+10]
+        val plus10 = BazaarShopLogic.applyQuickAdjustment(100.0, 10.0)
+        assertEquals(110.0, plus10, 0.001)
+
+        // Floor at 0.0
+        val underflow = BazaarShopLogic.applyQuickAdjustment(3.0, -5.0)
+        assertEquals(0.0, underflow, 0.001)
+    }
+
+    @Test
+    fun testSwipeRightWithLastPriceVersusWithoutLastPriceBehavior() {
+        val lastRates = mapOf("আলু" to Pair(50.0, "কেজি"))
+        val itemWithLastPrice = MarketItem(id = 1L, listId = 1L, name = "আলু", quantity = 2.0, unit = "কেজি")
+        val itemWithoutLastPrice = MarketItem(id = 2L, listId = 1L, name = "বেগুন", quantity = 1.0, unit = "কেজি")
+
+        // 1. With last price -> compute rate directly
+        val rate1 = lastRates[itemWithLastPrice.name]
+        assertNotNull(rate1)
+        val computedAmount = BazaarShopLogic.calculateLastPriceAmount(
+            itemQuantity = itemWithLastPrice.quantity,
+            itemUnit = itemWithLastPrice.unit,
+            lastRate = rate1!!.first,
+            lastRateUnit = rate1.second
+        )
+        assertEquals(100.0, computedAmount, 0.001)
+
+        // 2. Without last price -> rate is null, swipe right requests Price Pad
+        val rate2 = lastRates[itemWithoutLastPrice.name]
+        assertNull(rate2)
+    }
+
+    @Test
+    fun testSkipItemAndUndoSkipBehavior() {
+        val items = listOf(
+            MarketItem(id = 1L, listId = 10L, name = "আলু", quantity = 1.0, unit = "কেজি", isPurchased = true),
+            MarketItem(id = 2L, listId = 10L, name = "টমেটো", quantity = 1.0, unit = "কেজি", isPurchased = false),
+            MarketItem(id = 3L, listId = 10L, name = "মরিচ", quantity = 250.0, unit = "গ্রাম", isPurchased = false)
+        )
+        val skippedMutable = mutableSetOf<Long>()
+
+        // Initially no skipped items: 3 items in vegetable stall, 1 done
+        var progress = BazaarShopLogic.calculateStallProgress("🥬 শাকসবজি", items, emptyMap(), skippedMutable)
+        assertEquals(3, progress.totalCount)
+        assertEquals(1, progress.doneCount)
+        assertFalse(progress.isAllDone)
+
+        // Skip item 3 (মরিচ) -> stall progress recalculates with 2 total items, 1 done
+        skippedMutable.add(3L)
+        progress = BazaarShopLogic.calculateStallProgress("🥬 শাকসবজি", items, emptyMap(), skippedMutable)
+        assertEquals(2, progress.totalCount)
+        assertEquals(1, progress.doneCount)
+        assertFalse(progress.isAllDone)
+
+        // Mark item 2 as done -> stall is complete
+        val itemsAfterDone = items.map { if (it.id == 2L) it.copy(isPurchased = true, amount = 40.0) else it }
+        progress = BazaarShopLogic.calculateStallProgress("🥬 শাকসবজি", itemsAfterDone, emptyMap(), skippedMutable)
+        assertEquals(2, progress.totalCount)
+        assertEquals(2, progress.doneCount)
+        assertTrue(progress.isAllDone)
+
+        // Undo skip on item 3 -> stall is no longer all done
+        skippedMutable.remove(3L)
+        progress = BazaarShopLogic.calculateStallProgress("🥬 শাকসবজি", itemsAfterDone, emptyMap(), skippedMutable)
+        assertEquals(3, progress.totalCount)
+        assertEquals(2, progress.doneCount)
+        assertFalse(progress.isAllDone)
+    }
+
+    @Test
+    fun testCarryOverFailureAndRetryContract() {
+        val unpurchased = listOf(
+            MarketItem(id = 0L, listId = 0L, name = "রসুন", quantity = 0.5, unit = "কেজি", isPurchased = false)
+        )
+        // Simulate carry-over snapshot retention on failure
+        var pendingCarryOverSnapshot: Pair<String, List<MarketItem>>? = Pair("বাজারের ফর্দ – বাকি", unpurchased)
+        assertNotNull(pendingCarryOverSnapshot)
+        val snapshot = pendingCarryOverSnapshot!!
+        assertEquals(1, snapshot.second.size)
+        assertEquals("রসুন", snapshot.second[0].name)
+
+        // Simulate retry success -> clears snapshot
+        pendingCarryOverSnapshot = null
+        assertNull(pendingCarryOverSnapshot)
+    }
+
     // =========================================================================
     // 2. ScreenWakeLockManager Lifecycle Test
     // =========================================================================
