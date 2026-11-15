@@ -20,10 +20,12 @@ import com.example.expensetracker.ui.accounts.AccountsViewModel
 import com.example.expensetracker.ui.analytics.AnalyticsScreen
 import com.example.expensetracker.ui.analytics.AnalyticsViewModel
 import com.example.expensetracker.ui.bazaar.BazaarDoneScreen
+import com.example.expensetracker.ui.bazaar.BazaarHistoryScreen
 import com.example.expensetracker.ui.bazaar.BazaarHubScreen
 import com.example.expensetracker.ui.bazaar.BazaarPlanScreen
 import com.example.expensetracker.ui.bazaar.BazaarShopScreen
 import com.example.expensetracker.ui.bazaar.BazaarShopViewModel
+import com.example.expensetracker.ui.bazaar.BazaarTripDetailScreen
 import com.example.expensetracker.ui.bazaar.BazaarViewModel
 import com.example.expensetracker.ui.bills.BillsScreen
 import com.example.expensetracker.ui.bills.BillsViewModel
@@ -119,6 +121,28 @@ fun NavigationScreenHost(
                     }
                 )
             }
+            PushedScreen.BAZAAR_HISTORY -> {
+                BazaarHistoryScreen(
+                    bazaarViewModel = bazaarViewModel,
+                    onNavigateBack = { navState.popScreen() },
+                    onOpenTripDetail = { tripId ->
+                        navState.pushScreen(PushedScreen.BAZAAR_TRIP_DETAIL(tripId))
+                    },
+                    onOpenPlan = { newListId ->
+                        navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                    }
+                )
+            }
+            is PushedScreen.BAZAAR_TRIP_DETAIL -> {
+                BazaarTripDetailScreen(
+                    listId = pushed.listId,
+                    bazaarViewModel = bazaarViewModel,
+                    onNavigateBack = { navState.popScreen() },
+                    onOpenPlan = { newListId ->
+                        navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                    }
+                )
+            }
         }
         return
     }
@@ -163,7 +187,9 @@ fun NavigationScreenHost(
                 BazaarHubScreen(
                     bazaarViewModel = bazaarViewModel,
                     onOpenPlanMode = { listId -> navState.pushScreen(PushedScreen.BAZAAR_PLAN(listId)) },
-                    onResumeShopping = { listId -> navState.pushScreen(PushedScreen.BAZAAR_SHOP(listId)) }
+                    onResumeShopping = { listId -> navState.pushScreen(PushedScreen.BAZAAR_SHOP(listId)) },
+                    onOpenHistory = { navState.pushScreen(PushedScreen.BAZAAR_HISTORY) },
+                    onOpenTripDetail = { tripId -> navState.pushScreen(PushedScreen.BAZAAR_TRIP_DETAIL(tripId)) }
                 )
             }
             PulseTab.PLAN -> {

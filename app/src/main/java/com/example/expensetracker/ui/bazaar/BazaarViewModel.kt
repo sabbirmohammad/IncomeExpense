@@ -10,6 +10,7 @@ import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.data.repository.ExpenseRepository
 import com.example.expensetracker.data.repository.addMarketItem
+import com.example.expensetracker.data.repository.carryOverUnboughtItems
 import com.example.expensetracker.data.repository.cloneMarketTrip
 import com.example.expensetracker.data.repository.createMarketListWithItems
 import com.example.expensetracker.data.repository.deleteMarketItem
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -63,6 +65,25 @@ class BazaarViewModel @JvmOverloads constructor(
     val completedTrips: StateFlow<List<MarketListWithItems>> = allMarketLists.map { lists: List<MarketListWithItems> ->
         lists.filter { it.list.isCompleted }.sortedByDescending { it.list.createdAt }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<MarketListWithItems>())
+
+    // Search query for past trips
+    private val _pastTripsSearchQuery = MutableStateFlow("")
+    val pastTripsSearchQuery: StateFlow<String> = _pastTripsSearchQuery.asStateFlow()
+
+    fun setPastTripsSearchQuery(query: String) {
+        _pastTripsSearchQuery.value = query
+    }
+
+    // Derived: past trips grouped by month and filtered by search query
+    val historyMonthGroups: StateFlow<List<BazaarHistoryMonthGroup>> = combine(
+        completedTrips,
+        pastTripsSearchQuery,
+        userProfile
+    ) { trips, query, profile ->
+        val isBn = profile.appLanguage != "en"
+        val groups = BazaarDomainLogic.groupCompletedTripsByMonth(trips, isBn)
+        BazaarDomainLogic.filterHistoryGroups(groups, query)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // In-memory budget caps cache
     private val _budgetCaps = MutableStateFlow<Map<Long, Double>>(emptyMap())
@@ -133,7 +154,7 @@ class BazaarViewModel @JvmOverloads constructor(
      * Unified entrypoint to create a new market list and transition to Plan Mode.
      * Prevents duplicate list creation on double-tap via atomic flag.
      */
-    fun startNewList(source: String, onOpenPlan: (Long) -> Unit) {
+    fun startNewList(onOpenPlan: (Long) -> Unit) {
         if (!isStartingNewList.compareAndSet(false, true)) {
             return
         }
@@ -256,6 +277,7 @@ class BazaarViewModel @JvmOverloads constructor(
 
     /**
      * Clones a past trip into a new active list with quantities/units kept and prices cleared.
+     * Invariant: clones PURCHASED items only.
      */
     fun cloneTrip(sourceListId: Long, onCloned: ((Long) -> Unit)? = null) {
         viewModelScope.launch(coroutineExceptionHandler) {
@@ -263,6 +285,27 @@ class BazaarViewModel @JvmOverloads constructor(
             val newListId = repository.cloneMarketTrip(sourceListId, isBn)
             onCloned?.invoke(newListId)
         }
+    }
+
+    /**
+     * Carries over unbought items from a completed list into a new active list.
+     * Invariant: clones UNPURCHASED items only (isPurchased = 0, amount = null).
+     */
+    fun carryOverUnboughtItems(sourceListId: Long, onCreated: ((Long) -> Unit)? = null) {
+        viewModelScope.launch(coroutineExceptionHandler) {
+            val isBn = userProfile.value.appLanguage != "en"
+            val newListId = repository.carryOverUnboughtItems(sourceListId, isBn)
+            if (newListId > 0) {
+                onCreated?.invoke(newListId)
+            }
+        }
+    }
+
+    /**
+     * Returns a specific trip with items by listId.
+     */
+    fun getTripById(listId: Long): MarketListWithItems? {
+        return allMarketLists.value.find { it.list.id == listId }
     }
 
     /**

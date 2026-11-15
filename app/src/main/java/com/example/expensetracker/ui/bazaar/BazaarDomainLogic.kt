@@ -555,7 +555,160 @@ object BazaarDomainLogic {
 
         return groups
     }
+
+    private val BN_MONTH_NAMES = arrayOf(
+        "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+        "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+    )
+
+    private val EN_MONTH_NAMES = arrayOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    )
+
+    /**
+     * Groups completed market trips by year and month.
+     * Invariants:
+     * - Only includes completed trips (isCompleted == true)
+     * - Item counts reflect purchased items only
+     * - Total spend reflects purchased items sum
+     * - Trips sorted chronologically descending within each month
+     * - Months sorted chronologically descending
+     */
+    fun groupCompletedTripsByMonth(
+        completedLists: List<MarketListWithItems>,
+        isBangla: Boolean = true
+    ): List<BazaarHistoryMonthGroup> {
+        val completed = completedLists.filter { it.list.isCompleted }
+        if (completed.isEmpty()) return emptyList()
+
+        val cal = Calendar.getInstance()
+        val tripSummaries = completed.map { withItems ->
+            val purchased = withItems.items.filter { it.isPurchased }
+            val unbought = withItems.items.filter { !it.isPurchased }
+            val totalSpend = purchased.sumOf { it.amount ?: 0.0 }
+            val preview = purchased.map { it.name }.take(4)
+            val allNames = withItems.items.map { it.name }
+            BazaarTripSummary(
+                listId = withItems.list.id,
+                title = withItems.list.title,
+                createdAt = withItems.list.createdAt,
+                purchasedItemCount = purchased.size,
+                unboughtItemCount = unbought.size,
+                totalSpend = totalSpend,
+                purchasedItemsPreview = preview,
+                allItemNames = allNames
+            )
+        }.sortedByDescending { it.createdAt }
+
+        // Group by year and month
+        val groupedMap = linkedMapOf<Pair<Int, Int>, MutableList<BazaarTripSummary>>()
+        for (trip in tripSummaries) {
+            cal.timeInMillis = trip.createdAt
+            val y = cal.get(Calendar.YEAR)
+            val m = cal.get(Calendar.MONTH)
+            val key = Pair(y, m)
+            groupedMap.getOrPut(key) { mutableListOf() }.add(trip)
+        }
+
+        return groupedMap.map { (ym, trips) ->
+            val y = ym.first
+            val m = ym.second.coerceIn(0, 11)
+            val labelBn = "${BN_MONTH_NAMES[m]} ${DigitConverter.toBengaliDigits(y.toString())}"
+            val labelEn = "${EN_MONTH_NAMES[m]} $y"
+            BazaarHistoryMonthGroup(
+                year = y,
+                month = m,
+                monthLabelBn = labelBn,
+                monthLabelEn = labelEn,
+                trips = trips,
+                totalSpend = trips.sumOf { it.totalSpend },
+                tripCount = trips.size
+            )
+        }
+    }
+
+    /**
+     * Filters history month groups by matching list title OR any item name inside the trip.
+     * Empty groups after filtering are excluded.
+     */
+    fun filterHistoryGroups(
+        groups: List<BazaarHistoryMonthGroup>,
+        query: String
+    ): List<BazaarHistoryMonthGroup> {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return groups
+
+        return groups.mapNotNull { group ->
+            val filteredTrips = group.trips.filter { trip ->
+                trip.title.contains(trimmed, ignoreCase = true) ||
+                trip.allItemNames.any { it.contains(trimmed, ignoreCase = true) }
+            }
+            if (filteredTrips.isEmpty()) {
+                null
+            } else {
+                group.copy(
+                    trips = filteredTrips,
+                    totalSpend = filteredTrips.sumOf { it.totalSpend },
+                    tripCount = filteredTrips.size
+                )
+            }
+        }
+    }
+
+    /**
+     * Calculates trip detail statistics for a completed or inspected market trip.
+     * Invariants:
+     * - Purchased items list: isPurchased == true
+     * - Not bought items list: isPurchased == false
+     * - Total spend: sum of purchased items
+     */
+    fun calculateTripDetailStats(trip: MarketListWithItems): BazaarTripDetailStats {
+        val purchased = trip.items.filter { it.isPurchased }
+        val unbought = trip.items.filter { !it.isPurchased }
+        val totalSpend = purchased.sumOf { it.amount ?: 0.0 }
+        return BazaarTripDetailStats(
+            listId = trip.list.id,
+            title = trip.list.title,
+            createdAt = trip.list.createdAt,
+            purchasedItems = purchased,
+            unboughtItems = unbought,
+            totalSpend = totalSpend
+        )
+    }
 }
+
+data class BazaarTripSummary(
+    val listId: Long,
+    val title: String,
+    val createdAt: Long,
+    val purchasedItemCount: Int,
+    val unboughtItemCount: Int,
+    val totalSpend: Double,
+    val purchasedItemsPreview: List<String>,
+    val allItemNames: List<String>
+)
+
+data class BazaarHistoryMonthGroup(
+    val year: Int,
+    val month: Int,
+    val monthLabelBn: String,
+    val monthLabelEn: String,
+    val trips: List<BazaarTripSummary>,
+    val totalSpend: Double,
+    val tripCount: Int
+)
+
+data class BazaarTripDetailStats(
+    val listId: Long,
+    val title: String,
+    val createdAt: Long,
+    val purchasedItems: List<MarketItem>,
+    val unboughtItems: List<MarketItem>,
+    val totalSpend: Double,
+    val purchasedCount: Int = purchasedItems.size,
+    val unboughtCount: Int = unboughtItems.size
+)
 
 data class PlanSuggestionChip(
     val id: String,

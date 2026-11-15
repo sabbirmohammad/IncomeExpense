@@ -131,17 +131,12 @@ suspend fun ExpenseRepository.deleteActiveMarketList(listId: Long): Boolean = wi
 }
 
 suspend fun ExpenseRepository.deleteMarketList(listId: Long): Boolean = withContext(Dispatchers.IO) {
-    val items = dbHelper.getMarketItemsForList(listId)
-    val txIds = items.mapNotNull { it.transactionId }.filter { it > 0 }.distinct()
-    for (txId in txIds) {
-        dbHelper.deleteTransaction(txId)
-    }
+    // Invariant: Delete list, items, and budget cap only.
+    // NEVER delete the financial transaction or alter wallet balances.
     val success = dbHelper.deleteMarketList(listId)
     if (success) {
         dbHelper.deleteMarketListBudget(listId)
     }
-    refreshTransactions()
-    refreshAccounts()
     refreshBudgets()
     refreshMarketList()
     success
@@ -218,5 +213,24 @@ suspend fun ExpenseRepository.cloneMarketTrip(sourceListId: Long, isBangla: Bool
         }
     }
     newListId
+}
+
+suspend fun ExpenseRepository.carryOverUnboughtItems(sourceListId: Long, isBangla: Boolean = true): Long = withContext(Dispatchers.IO) {
+    val allLists = dbHelper.getAllMarketLists()
+    val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
+    val prefix = if (isBangla) "বাকি পণ্য: " else "Carry-over: "
+    val title = "$prefix${source.list.title}"
+    val unboughtItems = source.items.filter { !it.isPurchased }.map {
+        MarketItem(
+            name = it.name,
+            quantity = it.quantity,
+            unit = it.unit,
+            amount = null,
+            isPurchased = false,
+            transactionId = null
+        )
+    }
+    if (unboughtItems.isEmpty()) return@withContext 0L
+    createMarketListWithItems(title, unboughtItems)
 }
 

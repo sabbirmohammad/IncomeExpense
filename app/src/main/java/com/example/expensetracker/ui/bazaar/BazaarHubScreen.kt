@@ -94,7 +94,9 @@ fun BazaarHubScreen(
     bazaarViewModel: BazaarViewModel,
     onOpenPlanMode: (Long) -> Unit,
     onResumeShopping: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenHistory: () -> Unit = {},
+    onOpenTripDetail: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
     val appColors = LocalAppColors.current
@@ -194,34 +196,36 @@ fun BazaarHubScreen(
                             BazaarActionTilesRow(
                                 onPasteClick = { showPasteSheet = true },
                                 onBuildClick = {
-                                    bazaarViewModel.startNewList("hub_build_tile", onOpenPlanMode)
+                                    bazaarViewModel.startNewList(onOpenPlanMode)
                                 },
-                                onRepeatClick = { showRepeatTripPicker = true },
+                                onRepeatClick = onOpenHistory,
                                 isBangla = isBangla
                             )
                         }
 
-                        item {
-                            BazaarMyListsSection(
-                                lists = effectiveActiveLists,
-                                lastPurchasedRates = lastPurchasedRates,
-                                masterProductsMap = masterProductsMap,
-                                onOpenList = onOpenPlanMode,
-                                onNewList = {
-                                    bazaarViewModel.startNewList("hub_my_lists_card", onOpenPlanMode)
-                                },
-                                onDuplicateList = { bazaarViewModel.duplicateMarketList(it) },
-                                onDeleteList = { listId, title ->
-                                    bazaarViewModel.deleteMarketListWithUndo(listId, title, { msg, act ->
-                                        val res = snackbarHostState.showSnackbar(msg, act)
-                                        res == SnackbarResult.ActionPerformed
-                                    })
-                                },
-                                isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
-                                onRevealPrivacy = { isPrivacyRevealed = true },
-                                isBangla = isBangla,
-                                useBengaliNumerals = userProfile.useBengaliNumerals
-                            )
+                        if (effectiveActiveLists.isNotEmpty()) {
+                            item {
+                                BazaarMyListsSection(
+                                    lists = effectiveActiveLists,
+                                    lastPurchasedRates = lastPurchasedRates,
+                                    masterProductsMap = masterProductsMap,
+                                    onOpenList = onOpenPlanMode,
+                                    onNewList = {
+                                        bazaarViewModel.startNewList(onOpenPlanMode)
+                                    },
+                                    onDuplicateList = { bazaarViewModel.duplicateMarketList(it) },
+                                    onDeleteList = { listId, title ->
+                                        bazaarViewModel.deleteMarketListWithUndo(listId, title, { msg, act ->
+                                            val res = snackbarHostState.showSnackbar(msg, act)
+                                            res == SnackbarResult.ActionPerformed
+                                        })
+                                    },
+                                    isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
+                                    onRevealPrivacy = { isPrivacyRevealed = true },
+                                    isBangla = isBangla,
+                                    useBengaliNumerals = userProfile.useBengaliNumerals
+                                )
+                            }
                         }
                     }
 
@@ -247,6 +251,8 @@ fun BazaarHubScreen(
                                             onOpenPlanMode(newListId)
                                         }
                                     },
+                                    onViewAll = onOpenHistory,
+                                    onTripClick = onOpenTripDetail,
                                     isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
                                     onRevealPrivacy = { isPrivacyRevealed = true },
                                     isBangla = isBangla,
@@ -314,35 +320,37 @@ fun BazaarHubScreen(
                         BazaarActionTilesRow(
                             onPasteClick = { showPasteSheet = true },
                             onBuildClick = {
-                                bazaarViewModel.startNewList("hub_build_tile", onOpenPlanMode)
+                                bazaarViewModel.startNewList(onOpenPlanMode)
                             },
-                            onRepeatClick = { showRepeatTripPicker = true },
+                            onRepeatClick = onOpenHistory,
                             isBangla = isBangla
                         )
                     }
 
-                    // 3. My Lists Carousel
-                    item {
-                        BazaarMyListsSection(
-                            lists = effectiveActiveLists,
-                            lastPurchasedRates = lastPurchasedRates,
-                            masterProductsMap = masterProductsMap,
-                            onOpenList = onOpenPlanMode,
-                            onNewList = {
-                                bazaarViewModel.startNewList("hub_my_lists_card", onOpenPlanMode)
-                            },
-                            onDuplicateList = { bazaarViewModel.duplicateMarketList(it) },
-                            onDeleteList = { listId, title ->
-                                bazaarViewModel.deleteMarketListWithUndo(listId, title, { msg, act ->
-                                    val res = snackbarHostState.showSnackbar(msg, act)
-                                    res == SnackbarResult.ActionPerformed
-                                })
-                            },
-                            isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
-                            onRevealPrivacy = { isPrivacyRevealed = true },
-                            isBangla = isBangla,
-                            useBengaliNumerals = userProfile.useBengaliNumerals
-                        )
+                    // 3. My Lists Carousel (shown ONLY when at least one list exists)
+                    if (effectiveActiveLists.isNotEmpty()) {
+                        item {
+                            BazaarMyListsSection(
+                                lists = effectiveActiveLists,
+                                lastPurchasedRates = lastPurchasedRates,
+                                masterProductsMap = masterProductsMap,
+                                onOpenList = onOpenPlanMode,
+                                onNewList = {
+                                    bazaarViewModel.startNewList(onOpenPlanMode)
+                                },
+                                onDuplicateList = { bazaarViewModel.duplicateMarketList(it) },
+                                onDeleteList = { listId, title ->
+                                    bazaarViewModel.deleteMarketListWithUndo(listId, title, { msg, act ->
+                                        val res = snackbarHostState.showSnackbar(msg, act)
+                                        res == SnackbarResult.ActionPerformed
+                                    })
+                                },
+                                isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
+                                onRevealPrivacy = { isPrivacyRevealed = true },
+                                isBangla = isBangla,
+                                useBengaliNumerals = userProfile.useBengaliNumerals
+                            )
+                        }
                     }
 
                     // 4. Price Book Search Card
@@ -363,6 +371,8 @@ fun BazaarHubScreen(
                                         onOpenPlanMode(newListId)
                                     }
                                 },
+                                onViewAll = onOpenHistory,
+                                onTripClick = onOpenTripDetail,
                                 isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
                                 onRevealPrivacy = { isPrivacyRevealed = true },
                                 isBangla = isBangla,
@@ -811,7 +821,7 @@ fun BazaarMyListsSection(
                                     onDismissRequest = { showCardMenu = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(if (isBangla) "শেয়ার করুন" else "Share as text") },
+                                        text = { Text(if (isBangla) "শেয়ার করুন" else "Share as text", color = appColors.textPrimary) },
                                         onClick = {
                                             showCardMenu = false
                                             val shareText = BazaarDomainLogic.formatListAsWhatsAppText(
@@ -832,7 +842,7 @@ fun BazaarMyListsSection(
                                     )
 
                                     DropdownMenuItem(
-                                        text = { Text(if (isBangla) "ডুপ্লিকেট করুন" else "Duplicate") },
+                                        text = { Text(if (isBangla) "ডুপ্লিকেট করুন" else "Duplicate", color = appColors.textPrimary) },
                                         onClick = {
                                             showCardMenu = false
                                             onDuplicateList(listWithItems.list.id)
@@ -891,33 +901,35 @@ fun BazaarMyListsSection(
                 }
             }
 
-            // End card: "＋ New list"
-            item {
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = appColors.surfaceVariant.copy(alpha = 0.5f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border),
-                    modifier = Modifier
-                        .width(140.dp)
-                        .height(110.dp)
-                        .clickable(
-                            role = Role.Button,
-                            onClickLabel = "Create new list",
-                            onClick = onNewList
-                        )
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+            // End card: "＋ New list" (ONLY when at least one list already exists)
+            if (lists.isNotEmpty()) {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = appColors.surfaceVariant.copy(alpha = 0.5f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border),
+                        modifier = Modifier
+                            .width(140.dp)
+                            .height(110.dp)
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = "Create new list",
+                                onClick = onNewList
+                            )
                     ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = appColors.accent)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (isBangla) "নতুন ফর্দ" else "New list",
-                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = appColors.accent
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = appColors.accent)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (isBangla) "নতুন ফর্দ" else "New list",
+                                style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.accent
+                            )
+                        }
                     }
                 }
             }
@@ -987,18 +999,36 @@ fun BazaarRecentTripsSection(
     onRevealPrivacy: () -> Unit,
     isBangla: Boolean,
     useBengaliNumerals: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onViewAll: () -> Unit = {},
+    onTripClick: (Long) -> Unit = {}
 ) {
     val appColors = LocalAppColors.current
     val typography = MaterialTheme.typography
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = if (isBangla) "সাম্প্রতিক বাজার" else "Recent trips",
-            style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = appColors.textPrimary,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (isBangla) "সাম্প্রতিক বাজার" else "Recent trips",
+                style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = appColors.textPrimary
+            )
+            Text(
+                text = if (isBangla) "সব দেখুন" else "See all",
+                style = typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = appColors.accent,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onViewAll)
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -1007,6 +1037,9 @@ fun BazaarRecentTripsSection(
             val totalNum = if (totalSpent % 1.0 == 0.0) "${totalSpent.toInt()}" else "%.1f".format(totalSpent)
             val totalStr = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(totalNum) else totalNum
             val dateStr = DateTimeHelper.formatMarketTripTitle(trip.list.createdAt, isBangla, useBengaliNumerals)
+            val boughtCount = trip.items.count { it.isPurchased }
+            val countNum = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(boughtCount.toString()) else boughtCount.toString()
+            val countStr = if (isBangla) "${countNum}টি পণ্য কেনা হয়েছে" else "$countNum items bought"
 
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -1015,6 +1048,8 @@ fun BazaarRecentTripsSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { onTripClick(trip.list.id) }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1028,7 +1063,7 @@ fun BazaarRecentTripsSection(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "$dateStr · ${trip.items.size}টি পণ্য",
+                            text = "$dateStr · $countStr",
                             style = typography.bodySmall,
                             color = appColors.textMuted
                         )

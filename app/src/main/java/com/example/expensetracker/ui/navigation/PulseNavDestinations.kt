@@ -79,6 +79,8 @@ sealed interface PushedScreen {
     data class BAZAAR_PLAN(val listId: Long) : PushedScreen
     data class BAZAAR_SHOP(val listId: Long) : PushedScreen
     data class BAZAAR_DONE(val listId: Long) : PushedScreen
+    object BAZAAR_HISTORY : PushedScreen
+    data class BAZAAR_TRIP_DETAIL(val listId: Long) : PushedScreen
 }
 
 /**

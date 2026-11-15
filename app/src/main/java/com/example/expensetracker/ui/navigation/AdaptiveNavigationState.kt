@@ -173,6 +173,8 @@ class AdaptiveNavigationState(
                     is PushedScreen.BAZAAR_PLAN -> "BAZAAR_PLAN:${p.listId}"
                     is PushedScreen.BAZAAR_SHOP -> "BAZAAR_SHOP:${p.listId}"
                     is PushedScreen.BAZAAR_DONE -> "BAZAAR_DONE:${p.listId}"
+                    is PushedScreen.BAZAAR_HISTORY -> "BAZAAR_HISTORY"
+                    is PushedScreen.BAZAAR_TRIP_DETAIL -> "BAZAAR_TRIP_DETAIL:${p.listId}"
                 }
                 listOf(
                     state.selectedTab.name,
@@ -200,6 +202,11 @@ class AdaptiveNavigationState(
                     pushedStr.startsWith("BAZAAR_DONE:") -> {
                         val id = pushedStr.removePrefix("BAZAAR_DONE:").toLongOrNull()
                         if (id != null) PushedScreen.BAZAAR_DONE(id) else null
+                    }
+                    pushedStr == "BAZAAR_HISTORY" -> PushedScreen.BAZAAR_HISTORY
+                    pushedStr.startsWith("BAZAAR_TRIP_DETAIL:") -> {
+                        val id = pushedStr.removePrefix("BAZAAR_TRIP_DETAIL:").toLongOrNull()
+                        if (id != null) PushedScreen.BAZAAR_TRIP_DETAIL(id) else null
                     }
                     else -> null
                 }
