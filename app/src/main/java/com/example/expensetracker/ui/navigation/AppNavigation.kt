@@ -126,11 +126,9 @@ fun MainAppNavigation(
                     navState.pushScreen(PushedScreen.SETTINGS)
                 },
                 userName = userProfile.name
-            ) { paddingValues ->
+            ) { _ ->
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     NavigationScreenHost(
                         navState = navState,

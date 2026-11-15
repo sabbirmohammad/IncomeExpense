@@ -1,5 +1,6 @@
 package com.example.expensetracker.ui.navigation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,13 +43,17 @@ import com.example.expensetracker.theme.ShapePill
 import com.example.expensetracker.ui.components.LocalAppStrings
 
 /**
- * PulseDock:
- * Compact floating bottom dock for Pulse Design Language:
- * - Height: 68dp, RadiusPill (999dp), horizontal margin 16dp, bottom margin 12dp
+ * PulseDock (Refined v7):
+ * Sleek, compact floating bottom dock for Pulse Design Language:
+ * - Height: 58dp (refined from legacy 68.dp for optimal mobile proportion)
+ * - ShapePill (999dp), horizontal margin 16dp, bottom margin 6dp
  * - Layout: [Home][Money][ ＋ ][Bazaar][Plan]
- * - Central ＋ is 56dp raised circle (-8dp) in Brand Mango accent
+ * - Central ＋ is 48dp (refined from legacy 56.dp) raised circle (-6dp) in Brand Mango accent
  * - Role.Tab semantics, >=48dp touch targets, localized accessibility descriptions
  */
+val PulseDockHeight = 58.dp
+val PulseDockAddButtonSize = 48.dp
+
 @Composable
 fun PulseDock(
     selectedTab: PulseTab,
@@ -62,30 +67,37 @@ fun PulseDock(
     val strings = LocalAppStrings.current
 
     val dockShadowModifier = if (!appColors.isDark) {
-        Modifier.shadow(elevation = 12.dp, shape = ShapePill, clip = false, ambientColor = Color.Black.copy(alpha = 0.06f), spotColor = Color.Black.copy(alpha = 0.12f))
+        Modifier.shadow(elevation = 10.dp, shape = ShapePill, clip = false, ambientColor = Color.Black.copy(alpha = 0.08f), spotColor = Color.Black.copy(alpha = 0.12f))
     } else {
         Modifier
+    }
+
+    val dockBorder = if (appColors.isDark) {
+        BorderStroke(1.dp, appColors.border.copy(alpha = 0.4f))
+    } else {
+        null
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp)
+                .height(PulseDockHeight)
                 .then(dockShadowModifier),
             shape = ShapePill,
             color = appColors.surface,
+            border = dockBorder,
             tonalElevation = if (appColors.isDark) 4.dp else 0.dp
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(68.dp)
+                    .height(PulseDockHeight)
                     .padding(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
@@ -104,7 +116,7 @@ fun PulseDock(
                     onClick = { onTabSelected(PulseTab.MONEY) }
                 )
 
-                // Central Add Spacer placeholder (56dp + padding)
+                // Central Add Spacer placeholder (48dp + margins)
                 SpacerPlaceholderForAddButton()
 
                 // Tab 3: Bazaar
@@ -129,11 +141,11 @@ fun PulseDock(
             }
         }
 
-        // Center Raised Add Button (56dp circle, raised -8dp)
+        // Center Raised Add Button (48dp circle, raised -6dp)
         Box(
             modifier = Modifier
-                .offset(y = (-8).dp)
-                .size(56.dp)
+                .offset(y = (-6).dp)
+                .size(PulseDockAddButtonSize)
                 .shadow(elevation = 6.dp, shape = CircleShape)
                 .clip(CircleShape)
                 .background(appColors.accent)
@@ -153,7 +165,7 @@ fun PulseDock(
                 imageVector = Icons.Filled.Add,
                 contentDescription = null,
                 tint = appColors.onAccent,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -161,7 +173,7 @@ fun PulseDock(
 
 @Composable
 private fun SpacerPlaceholderForAddButton() {
-    Box(modifier = Modifier.width(60.dp))
+    Box(modifier = Modifier.width(52.dp))
 }
 
 @Composable
@@ -192,7 +204,7 @@ private fun PulseDockTabItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
             .semantics {
                 role = Role.Tab
                 selected = isSelected
@@ -206,21 +218,21 @@ private fun PulseDockTabItem(
                 modifier = Modifier
                     .clip(ShapePill)
                     .background(if (isSelected) appColors.accent.copy(alpha = 0.16f) else Color.Transparent)
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isSelected) tab.activeIcon else tab.inactiveIcon,
                     contentDescription = null,
                     tint = if (isSelected) appColors.accent else appColors.textSecondary,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
             if (hasBadge) {
                 Box(
                     modifier = Modifier
-                        .offset(x = 2.dp, y = (-2).dp)
+                        .offset(x = 2.dp, y = (-1).dp)
                         .size(8.dp)
                         .clip(CircleShape)
                         .background(badgeColor)
@@ -231,7 +243,8 @@ private fun PulseDockTabItem(
         Text(
             text = title,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 12.sp,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
             ),
             color = if (isSelected) appColors.accent else appColors.textSecondary,

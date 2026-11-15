@@ -76,7 +76,7 @@ fun HeroBalanceCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             // Label row: "Total balance" + Spending wallet toggle
             Row(
@@ -87,7 +87,7 @@ fun HeroBalanceCard(
                 Text(
                     text = strings.totalBalance,
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     ),
                     color = appColors.textSecondary
@@ -115,7 +115,7 @@ fun HeroBalanceCard(
                 color = appColors.textPrimary
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Inline metrics: ▲ Income ৳8,000   ▼ Expense ৳8,077 (single row, no boxes)
             Row(

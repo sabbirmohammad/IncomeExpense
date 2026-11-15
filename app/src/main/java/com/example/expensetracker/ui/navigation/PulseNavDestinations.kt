@@ -3,11 +3,11 @@ package com.example.expensetracker.ui.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.expensetracker.ui.components.Strings
@@ -27,7 +27,7 @@ enum class PulseTab(
     HOME("Home", Icons.Filled.Home, Icons.Outlined.Home),
     MONEY("Money", Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet),
     BAZAAR("Bazaar", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart),
-    PLAN("Plan", Icons.Filled.Payments, Icons.Outlined.Payments);
+    PLAN("Plan", Icons.Filled.PieChart, Icons.Outlined.PieChart);
 
     fun getLocalizedTitle(strings: Strings): String = when (this) {
         HOME -> strings.navHome

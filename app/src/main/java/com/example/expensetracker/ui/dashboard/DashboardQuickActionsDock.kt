@@ -128,7 +128,7 @@ fun QuickActionItemV7(
     ) {
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(42.dp)
                 .clip(CircleShape)
                 .background(appColors.accentContainer),
             contentAlignment = Alignment.Center
@@ -137,15 +137,15 @@ fun QuickActionItemV7(
                 imageVector = icon,
                 contentDescription = label,
                 tint = appColors.accent,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
+                fontSize = 11.5.sp,
+                lineHeight = 15.sp,
                 fontWeight = FontWeight.Medium
             ),
             color = appColors.textPrimary,

@@ -23,7 +23,7 @@ import com.example.expensetracker.theme.LocalAppColors
 // C2 BOTTOM BAR UTILITIES ("Refined Ledger v7" Spec Patch)
 // =========================================================================
 
-val V7BottomBarHeight: Dp = 68.dp
+val V7BottomBarHeight: Dp = 58.dp
 val V7BottomBarExtraSpacing: Dp = 16.dp
 
 /**

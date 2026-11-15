@@ -144,7 +144,7 @@ fun AdaptiveScaffold(
 
             else -> {
                 // Compact: Bottom Dock
-                val bottomPadding = if (showDock) (68.dp + 24.dp + navBarsPadding.calculateBottomPadding()) else 0.dp
+                val bottomPadding = if (showDock) (PulseDockHeight + 16.dp + navBarsPadding.calculateBottomPadding()) else 0.dp
                 Box(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
@@ -179,7 +179,7 @@ fun AdaptiveScaffold(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(
-                    bottom = if (showDock) (68.dp + 32.dp + navBarsPadding.calculateBottomPadding()) else 16.dp
+                    bottom = if (showDock) (PulseDockHeight + 24.dp + navBarsPadding.calculateBottomPadding()) else 16.dp
                 )
         ) {
             snackbarHost()

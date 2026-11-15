@@ -135,7 +135,7 @@ fun PulseSegmented(
 
             Box(
                 modifier = itemModifier
-                    .sizeIn(minHeight = 48.dp)
+                    .sizeIn(minHeight = 38.dp)
                     .clip(pillShape)
                     .then(
                         if (isSelected) {
@@ -162,14 +162,14 @@ fun PulseSegmented(
                     .semantics {
                         selected = isSelected
                     }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = label(i),
                     color = textColor,
                     style = MaterialTheme.typography.titleSmall.copy(
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                     ),
                     textAlign = TextAlign.Center,
