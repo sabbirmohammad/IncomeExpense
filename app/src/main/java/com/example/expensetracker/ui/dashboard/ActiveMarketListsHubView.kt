@@ -3,7 +3,6 @@ package com.example.expensetracker.ui.dashboard
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,17 +20,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,8 +41,6 @@ import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.DateTimeHelper
-import com.example.expensetracker.ui.components.convertToBengaliDigits
-import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 /**
@@ -76,49 +67,11 @@ fun ActiveMarketListsHubView(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (isBangla)
-                        "চলমান ফর্দসমূহ (${convertToBengaliDigits(activeLists.size.toString())}টি সক্রিয়)"
-                    else
-                        "Active Market Lists (${activeLists.size} active)",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    ),
-                    color = appColors.textPrimary
-                )
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = appColors.accent.copy(alpha = 0.12f),
-                    modifier = Modifier
-                        .defaultMinSize(minHeight = 36.dp)
-                        .clickable {
-                            haptics.lightTick()
-                            onCreateNewClick()
-                        }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = appColors.accent, modifier = Modifier.size(14.dp))
-                        Text(
-                            text = if (isBangla) "নতুন ফর্দ" else "New List",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
-                            color = appColors.accent
-                        )
-                    }
-                }
-            }
+            ActiveMarketListsHubHeader(
+                activeCount = activeLists.size,
+                isBangla = isBangla,
+                onCreateNewClick = onCreateNewClick
+            )
         }
 
         items(activeLists, key = { it.list.id }) { listWithItems ->
@@ -220,48 +173,13 @@ fun ActiveMarketListsHubView(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Stats and Open Action
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val statText = if (isBangla) {
-                            "${convertToBengaliDigits(purchasedItems.toString())}/${convertToBengaliDigits(totalItems.toString())} সম্পন্ন · খরচ: ${formatCurrency(totalSpent, currencySymbol)}"
-                        } else {
-                            "$purchasedItems/$totalItems done · Spent: ${formatCurrency(totalSpent, currencySymbol)}"
-                        }
-
-                        Text(
-                            text = statText,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.Medium,
-                                fontFeatureSettings = "tnum"
-                            ),
-                            color = appColors.textSecondary
-                        )
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Text(
-                                text = if (isBangla) "ফর্দ দেখুন" else "Open List",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.5.sp
-                                ),
-                                color = appColors.accent
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                                contentDescription = null,
-                                tint = appColors.accent,
-                                modifier = Modifier.size(13.dp)
-                            )
-                        }
-                    }
+                    ActiveMarketListStatsRow(
+                        purchasedItems = purchasedItems,
+                        totalItems = totalItems,
+                        totalSpent = totalSpent,
+                        currencySymbol = currencySymbol,
+                        isBangla = isBangla
+                    )
                 }
             }
         }

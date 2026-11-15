@@ -63,36 +63,7 @@ internal class RecurringBillTableHelper(private val dbHelper: ExpenseDatabaseHel
         val cursor = db.query(TABLE_RECURRING_BILLS, null, null, null, null, null, "$COL_BILL_NEXT_DUE ASC")
         cursor.use { c ->
             while (c.moveToNext()) {
-                val accIdCol = c.getColumnIndex(COL_BILL_ACCOUNT_ID)
-                val accNameCol = c.getColumnIndex(COL_BILL_ACCOUNT_NAME)
-                val lastPaidCol = c.getColumnIndex(COL_BILL_LAST_PAID)
-
-                val freqStr = c.getString(c.getColumnIndexOrThrow(COL_BILL_FREQUENCY))
-                val frequency = try {
-                    BillFrequency.valueOf(freqStr)
-                } catch (_: Exception) {
-                    BillFrequency.MONTHLY
-                }
-
-                list.add(
-                    RecurringBill(
-                        id = c.getLong(c.getColumnIndexOrThrow(COL_BILL_ID)),
-                        title = c.getString(c.getColumnIndexOrThrow(COL_BILL_TITLE)),
-                        amount = c.getDouble(c.getColumnIndexOrThrow(COL_BILL_AMOUNT)),
-                        categoryId = c.getLong(c.getColumnIndexOrThrow(COL_BILL_CAT_ID)),
-                        categoryName = c.getString(c.getColumnIndexOrThrow(COL_BILL_CAT_NAME)),
-                        categoryIcon = c.getString(c.getColumnIndexOrThrow(COL_BILL_CAT_ICON)),
-                        categoryColor = c.getString(c.getColumnIndexOrThrow(COL_BILL_CAT_COLOR)),
-                        accountId = if (accIdCol != -1 && !c.isNull(accIdCol)) c.getLong(accIdCol) else null,
-                        accountName = if (accNameCol != -1 && !c.isNull(accNameCol)) c.getString(accNameCol) else null,
-                        frequency = frequency,
-                        dueDay = c.getInt(c.getColumnIndexOrThrow(COL_BILL_DUE_DAY)),
-                        nextDueDateMillis = c.getLong(c.getColumnIndexOrThrow(COL_BILL_NEXT_DUE)),
-                        lastPaidDateMillis = if (lastPaidCol != -1 && !c.isNull(lastPaidCol)) c.getLong(lastPaidCol) else null,
-                        isActive = c.getInt(c.getColumnIndexOrThrow(COL_BILL_IS_ACTIVE)) == 1,
-                        notes = c.getString(c.getColumnIndexOrThrow(COL_BILL_NOTES))
-                    )
-                )
+                list.add(c.toRecurringBill())
             }
         }
         return list
@@ -106,28 +77,7 @@ internal class RecurringBillTableHelper(private val dbHelper: ExpenseDatabaseHel
             val cursor = db.query(TABLE_RECURRING_BILLS, null, "$COL_BILL_ID = ?", arrayOf(billId.toString()), null, null, null)
             cursor.use { c ->
                 if (c.moveToFirst()) {
-                    val accIdCol = c.getColumnIndex(COL_BILL_ACCOUNT_ID)
-                    val accNameCol = c.getColumnIndex(COL_BILL_ACCOUNT_NAME)
-                    val lastPaidCol = c.getColumnIndex(COL_BILL_LAST_PAID)
-                    val freqStr = c.getString(c.getColumnIndexOrThrow(COL_BILL_FREQUENCY))
-                    val frequency = try { BillFrequency.valueOf(freqStr) } catch (_: Exception) { BillFrequency.MONTHLY }
-                    bill = RecurringBill(
-                        id = c.getLong(c.getColumnIndexOrThrow(COL_BILL_ID)),
-                        title = c.getString(c.getColumnIndexOrThrow(COL_BILL_TITLE)),
-                        amount = c.getDouble(c.getColumnIndexOrThrow(COL_BILL_AMOUNT)),
-                        categoryId = c.getLong(c.getColumnIndexOrThrow(COL_BILL_CAT_ID)),
-                        categoryName = c.getString(c.getColumnIndexOrThrow(COL_BILL_CAT_NAME)),
-                        categoryIcon = c.getString(c.getColumnIndexOrThrow(COL_BILL_CAT_ICON)),
-                        categoryColor = c.getString(c.getColumnIndexOrThrow(COL_BILL_CAT_COLOR)),
-                        accountId = if (accIdCol != -1 && !c.isNull(accIdCol)) c.getLong(accIdCol) else null,
-                        accountName = if (accNameCol != -1 && !c.isNull(accNameCol)) c.getString(accNameCol) else null,
-                        frequency = frequency,
-                        dueDay = c.getInt(c.getColumnIndexOrThrow(COL_BILL_DUE_DAY)),
-                        nextDueDateMillis = c.getLong(c.getColumnIndexOrThrow(COL_BILL_NEXT_DUE)),
-                        lastPaidDateMillis = if (lastPaidCol != -1 && !c.isNull(lastPaidCol)) c.getLong(lastPaidCol) else null,
-                        isActive = c.getInt(c.getColumnIndexOrThrow(COL_BILL_IS_ACTIVE)) == 1,
-                        notes = c.getString(c.getColumnIndexOrThrow(COL_BILL_NOTES))
-                    )
+                    bill = c.toRecurringBill()
                 }
             }
 

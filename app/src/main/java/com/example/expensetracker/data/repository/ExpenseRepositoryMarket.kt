@@ -131,15 +131,106 @@ suspend fun ExpenseRepository.deleteActiveMarketList(listId: Long): Boolean = wi
 }
 
 suspend fun ExpenseRepository.deleteMarketList(listId: Long): Boolean = withContext(Dispatchers.IO) {
-    val items = dbHelper.getMarketItemsForList(listId)
-    val txIds = items.mapNotNull { it.transactionId }.filter { it > 0 }.distinct()
-    for (txId in txIds) {
-        dbHelper.deleteTransaction(txId)
-    }
+    // Invariant: Delete list, items, and budget cap only.
+    // NEVER delete the financial transaction or alter wallet balances.
     val success = dbHelper.deleteMarketList(listId)
-    refreshTransactions()
-    refreshAccounts()
+    if (success) {
+        dbHelper.deleteMarketListBudget(listId)
+    }
     refreshBudgets()
     refreshMarketList()
     success
 }
+
+fun ExpenseRepository.getMarketListBudget(listId: Long): Double? =
+    dbHelper.getMarketListBudget(listId)
+
+fun ExpenseRepository.setMarketListBudget(listId: Long, budget: Double?) =
+    dbHelper.setMarketListBudget(listId, budget)
+
+fun ExpenseRepository.deleteMarketListBudget(listId: Long) =
+    dbHelper.deleteMarketListBudget(listId)
+
+fun ExpenseRepository.getProductPriceHistory(productName: String, limit: Int = 50): List<com.example.expensetracker.data.model.ProductPriceRecord> =
+    dbHelper.getProductPriceHistory(productName, limit)
+
+suspend fun ExpenseRepository.updateCommodityStall(name: String, newCategory: String): Boolean = withContext(Dispatchers.IO) {
+    val success = dbHelper.updateMasterProductCategory(name, newCategory)
+    refreshMasterProducts()
+    refreshMarketList()
+    success
+}
+
+suspend fun ExpenseRepository.duplicateMarketList(sourceListId: Long, customTitle: String? = null): Long = withContext(Dispatchers.IO) {
+    val allLists = dbHelper.getAllMarketLists()
+    val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
+    val title = customTitle ?: "${source.list.title} (কপি)"
+    val itemsToClone = if (source.list.isCompleted) {
+        source.items.filter { it.isPurchased }
+    } else {
+        source.items
+    }
+    val clonedItems = itemsToClone.map {
+        MarketItem(
+            name = it.name,
+            quantity = it.quantity,
+            unit = it.unit,
+            amount = null,
+            isPurchased = false,
+            transactionId = null
+        )
+    }
+    val newListId = createMarketListWithItems(title, clonedItems)
+    if (newListId > 0) {
+        val existingCap = dbHelper.getMarketListBudget(sourceListId)
+        if (existingCap != null) {
+            dbHelper.setMarketListBudget(newListId, existingCap)
+        }
+    }
+    newListId
+}
+
+suspend fun ExpenseRepository.cloneMarketTrip(sourceListId: Long, isBangla: Boolean = true): Long = withContext(Dispatchers.IO) {
+    val allLists = dbHelper.getAllMarketLists()
+    val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
+    val prefix = if (isBangla) "পুনরাবৃত্তি: " else "Repeat: "
+    val title = "$prefix${source.list.title}"
+    val clonedItems = source.items.filter { it.isPurchased }.map {
+        MarketItem(
+            name = it.name,
+            quantity = it.quantity,
+            unit = it.unit,
+            amount = null,
+            isPurchased = false,
+            transactionId = null
+        )
+    }
+    val newListId = createMarketListWithItems(title, clonedItems)
+    if (newListId > 0) {
+        val existingCap = dbHelper.getMarketListBudget(sourceListId)
+        if (existingCap != null) {
+            dbHelper.setMarketListBudget(newListId, existingCap)
+        }
+    }
+    newListId
+}
+
+suspend fun ExpenseRepository.carryOverUnboughtItems(sourceListId: Long, isBangla: Boolean = true): Long = withContext(Dispatchers.IO) {
+    val allLists = dbHelper.getAllMarketLists()
+    val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
+    val prefix = if (isBangla) "বাকি পণ্য: " else "Carry-over: "
+    val title = "$prefix${source.list.title}"
+    val unboughtItems = source.items.filter { !it.isPurchased }.map {
+        MarketItem(
+            name = it.name,
+            quantity = it.quantity,
+            unit = it.unit,
+            amount = null,
+            isPurchased = false,
+            transactionId = null
+        )
+    }
+    if (unboughtItems.isEmpty()) return@withContext 0L
+    createMarketListWithItems(title, unboughtItems)
+}
+

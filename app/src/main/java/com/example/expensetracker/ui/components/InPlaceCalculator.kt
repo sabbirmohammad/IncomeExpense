@@ -1,19 +1,15 @@
 package com.example.expensetracker.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -49,10 +45,7 @@ fun CalculatorToggleButton(
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = if (isOpen) accentColor.copy(alpha = 0.15f) else LocalAppColors.current.surfaceVariant,
-        border = BorderStroke(
-            1.dp,
-            if (isOpen) accentColor.copy(alpha = 0.4f) else LocalAppColors.current.border
-        ),
+        border = BorderStroke(1.dp, if (isOpen) accentColor.copy(alpha = 0.4f) else LocalAppColors.current.border),
         modifier = modifier
             .minimumInteractiveComponentSize()
             .clip(RoundedCornerShape(8.dp))
@@ -74,44 +67,8 @@ fun CalculatorToggleButton(
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    fontWeight = if (isOpen) FontWeight.Bold else FontWeight.Medium
-                ),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = if (isOpen) FontWeight.Bold else FontWeight.Medium),
                 color = if (isOpen) accentColor else LocalAppColors.current.textSecondary
-            )
-        }
-    }
-}
-
-@Composable
-fun ExpandableCalculatorKeypadBar(
-    expanded: Boolean,
-    currentExpression: String,
-    onExpressionChanged: (String) -> Unit,
-    onApplyResult: (Double) -> Unit,
-    modifier: Modifier = Modifier,
-    accentColor: Color = LocalAppColors.current.accent,
-    haptics: AppHaptics = rememberAppHaptics()
-) {
-    val hasOperators = remember(currentExpression) {
-        currentExpression.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }
-    }
-
-    AnimatedVisibility(
-        visible = expanded || hasOperators,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut(),
-        modifier = modifier
-    ) {
-        Column {
-            Spacer(modifier = Modifier.height(8.dp))
-            CalculatorKeypadBar(
-                currentExpression = currentExpression,
-                onExpressionChanged = onExpressionChanged,
-                onApplyResult = onApplyResult,
-                accentColor = accentColor,
-                haptics = haptics
             )
         }
     }
@@ -128,7 +85,7 @@ fun CalculatorKeypadBar(
 ) {
     val appColors = LocalAppColors.current
     val evaluated = remember(currentExpression) {
-        if (currentExpression.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }) {
+        if (CalculatorExpressionHelper.hasOperators(currentExpression)) {
             CalculatorEvaluator.evaluate(currentExpression)
         } else null
     }
@@ -143,46 +100,16 @@ fun CalculatorKeypadBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val ops = listOf("+", "−", "×", "÷")
-
-        ops.forEach { op ->
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = LocalAppColors.current.surface,
-                border = BorderStroke(1.dp, LocalAppColors.current.border),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-                    .padding(horizontal = 2.dp)
-                    .clickable {
-                        haptics.lightTick()
-                        val trimmed = currentExpression.trimEnd()
-                        if (trimmed.isEmpty()) {
-                            if (op == "−") onExpressionChanged("- ")
-                            return@clickable
-                        }
-                        val opChars = listOf('+', '-', '*', '/', '×', '÷', '−', '—')
-                        if (trimmed.last() in opChars) {
-                            // Replace previous operator
-                            val base = trimmed.dropLast(1).trimEnd()
-                            onExpressionChanged(if (base.isEmpty() && op == "−") "- " else "$base $op ")
-                        } else if (trimmed.last() == '.') {
-                            val base = trimmed.dropLast(1)
-                            onExpressionChanged("$base $op ")
-                        } else {
-                            onExpressionChanged("$trimmed $op ")
-                        }
-                    }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = op,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = accentColor
-                    )
+        listOf("+", "−", "×", "÷").forEach { op ->
+            CalculatorOperatorButton(
+                op = op,
+                accentColor = accentColor,
+                onClick = {
+                    haptics.lightTick()
+                    val newExpr = CalculatorExpressionHelper.appendOperator(currentExpression, op)
+                    if (newExpr.isNotEmpty()) onExpressionChanged(newExpr)
                 }
-            }
+            )
         }
 
         // Equals (=) Button
@@ -200,38 +127,17 @@ fun CalculatorKeypadBar(
                 }
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "=",
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = equalsContentColor
-                )
+                Text(text = "=", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = equalsContentColor)
             }
         }
 
         // Clear (C) Button
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = appColors.expense.copy(alpha = 0.12f),
-            border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.25f)),
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
-                .padding(horizontal = 2.dp)
-                .clickable {
-                    haptics.lightTick()
-                    onExpressionChanged("")
-                }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "C",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = appColors.expense
-                )
+        CalculatorClearButton(
+            onClick = {
+                haptics.lightTick()
+                onExpressionChanged("")
             }
-        }
+        )
     }
 }
 
@@ -245,7 +151,7 @@ fun CalculatorPreviewBadge(
 ) {
     val haptics = rememberAppHaptics()
     val evaluated = remember(expression) {
-        if (expression.any { it in listOf('+', '-', '*', '/', '×', '÷', '−', '—') }) {
+        if (CalculatorExpressionHelper.hasOperators(expression)) {
             CalculatorEvaluator.evaluate(expression)
         } else null
     }
@@ -272,19 +178,10 @@ fun CalculatorPreviewBadge(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Calculate,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(imageVector = Icons.Filled.Calculate, contentDescription = null, tint = accentColor, modifier = Modifier.size(16.dp))
                     Text(
                         text = " = $currencySymbol ${CalculatorEvaluator.formatResult(evaluated)} (Tap to apply)",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = accentColor,
-                            fontSize = 12.sp
-                        ),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, color = accentColor, fontSize = 12.sp),
                         modifier = Modifier.padding(start = 6.dp)
                     )
                 }

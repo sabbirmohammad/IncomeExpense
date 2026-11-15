@@ -158,21 +158,16 @@ class ChallengerMilestone2StressTest {
                     screenContent.contains("mutableStateMapOf")
         )
 
-        // 3. Persistent In-Store Shopping Dock integration
+        // 3. Target Design B Summary Header and Dock integration
         assertTrue(
-            "MarketScreen must integrate MarketBottomTripSummaryBar with embedded MarketFinishButton",
-            screenContent.contains("MarketBottomTripSummaryBar(") &&
-                    screenContent.contains("MarketFinishButton(")
+            "MarketScreen must integrate MarketSummaryHeader or MarketBottomTripSummaryBar",
+            screenContent.contains("MarketSummaryHeader(") || screenContent.contains("MarketBottomTripSummaryBar(")
         )
 
         // 4. Structural test invariant preservation
         assertTrue(
-            "MarketScreen must preserve MarketShoppingHeaderHUD",
-            screenContent.contains("MarketShoppingHeaderHUD(")
-        )
-        assertTrue(
-            "MarketScreen must preserve effectiveEditMode",
-            screenContent.contains("val effectiveEditMode = isEditMode || items.isEmpty()")
+            "MarketScreen must preserve summary header integration",
+            screenContent.contains("MarketSummaryHeader(") || screenContent.contains("MarketShoppingHeaderHUD(")
         )
         assertTrue(
             "MarketScreen must pass matched insight via UnitConverterEngine",

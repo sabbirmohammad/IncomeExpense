@@ -103,9 +103,13 @@ class Phase7InsightsAndReportsV7Test {
 
     @Test
     fun testReportsScreenIntegratesStatementPreview() {
-        val content = readFile("com/example/expensetracker/ui/reports/ReportsScreen.kt")
+        val content = try {
+            readFile("com/example/expensetracker/ui/reports/ReportsContent.kt")
+        } catch (e: Exception) {
+            readFile("com/example/expensetracker/ui/reports/ReportsScreen.kt")
+        }
 
-        assertTrue("ReportsScreen must integrate StatementPreviewCard", content.contains("StatementPreviewCard("))
-        assertTrue("ReportsScreen must use EmptyState component", content.contains("EmptyState("))
+        assertTrue("ReportsScreen/ReportsContent must integrate StatementPreviewCard", content.contains("StatementPreviewCard("))
+        assertTrue("ReportsScreen/ReportsContent must use EmptyState component", content.contains("EmptyState("))
     }
 }

@@ -48,68 +48,14 @@ fun MarketTripCardHeader(
     isBangla: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val appColors = LocalAppColors.current
-    val marketTeal = if (appColors.isDark) Color(0xFF2EC4B6) else Color(0xFF0F766E)
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(marketTeal.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.ShoppingCart,
-                    contentDescription = null,
-                    tint = marketTeal,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Column {
-                Text(
-                    text = displayTitle,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = appColors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = dateText,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = appColors.textSecondary
-                )
-            }
-        }
-
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = if (isBangla) "মোট বাজার খরচ" else "Total Spent",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                color = appColors.textMuted
-            )
-            Text(
-                text = formatCurrency(totalSpent, currencySymbol),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = appColors.income
-            )
-        }
-    }
+    MarketTripHeaderContent(
+        displayTitle = displayTitle,
+        dateText = dateText,
+        totalSpent = totalSpent,
+        currencySymbol = currencySymbol,
+        isBangla = isBangla,
+        modifier = modifier
+    )
 }
 
 @Composable

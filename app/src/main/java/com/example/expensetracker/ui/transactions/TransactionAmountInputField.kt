@@ -66,7 +66,7 @@ fun TransactionAmountInputField(
         OutlinedTextField(
             value = amountText,
             onValueChange = { input ->
-                val sanitized = input.filter { it.isDigit() || it == '.' || it in "+-×÷/*−— " }
+                val sanitized = com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(input)
                 onAmountChange(sanitized)
             },
             placeholder = {

@@ -1,6 +1,7 @@
 package com.example.expensetracker.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -9,25 +10,17 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.R
 
 // =========================================================================
-// TABULAR BILINGUAL TYPOGRAPHY SCALE ("Refined Ledger v7")
+// TABULAR BILINGUAL TYPOGRAPHY SCALE (Pulse Design System)
 // =========================================================================
 
 const val TabularNumFeature = "tnum"
 
-// Explicit font weight tokens (400, 500, 600, 700)
 val WeightRegular   = FontWeight.Normal   // 400
 val WeightMedium    = FontWeight.Medium   // 500
 val WeightSemiBold  = FontWeight.SemiBold // 600
 val WeightBold      = FontWeight.Bold     // 700
 
-// Bundled Offline Font Families (Inter for Latin/Digits, Hind Siliguri for Bengali)
-val InterFontFamily = FontFamily(
-    Font(R.font.inter_regular, FontWeight.Normal),
-    Font(R.font.inter_medium, FontWeight.Medium),
-    Font(R.font.inter_semibold, FontWeight.SemiBold),
-    Font(R.font.inter_bold, FontWeight.Bold)
-)
-
+// Bundled Offline Font Family: Hind Siliguri (Bengali + Latin glyphs)
 val HindSiliguriFontFamily = FontFamily(
     Font(R.font.hind_siliguri_regular, FontWeight.Normal),
     Font(R.font.hind_siliguri_medium, FontWeight.Medium),
@@ -35,111 +28,167 @@ val HindSiliguriFontFamily = FontFamily(
     Font(R.font.hind_siliguri_bold, FontWeight.Bold)
 )
 
-val AppFontFamily = FontFamily(
-    Font(R.font.inter_regular, FontWeight.Normal),
-    Font(R.font.inter_medium, FontWeight.Medium),
-    Font(R.font.inter_semibold, FontWeight.SemiBold),
-    Font(R.font.inter_bold, FontWeight.Bold),
-    Font(R.font.hind_siliguri_regular, FontWeight.Normal),
-    Font(R.font.hind_siliguri_medium, FontWeight.Medium),
-    Font(R.font.hind_siliguri_semibold, FontWeight.SemiBold),
-    Font(R.font.hind_siliguri_bold, FontWeight.Bold)
+val AppFontFamily = FontFamily.SansSerif
+
+// Extra Pulse Specific Typography Styles
+val TextStyleDisplayHero = TextStyle(
+    fontFamily = AppFontFamily,
+    fontWeight = WeightBold,
+    fontSize = 44.sp,
+    lineHeight = 52.sp,
+    letterSpacing = (-0.5).sp,
+    fontFeatureSettings = TabularNumFeature,
+    color = Color.Unspecified
 )
+
+val TextStyleDisplayAmount = TextStyle(
+    fontFamily = AppFontFamily,
+    fontWeight = WeightBold,
+    fontSize = 40.sp,
+    lineHeight = 48.sp,
+    letterSpacing = (-0.5).sp,
+    fontFeatureSettings = TabularNumFeature,
+    color = Color.Unspecified
+)
+
+val TextStyleNumberKeypad = TextStyle(
+    fontFamily = AppFontFamily,
+    fontWeight = WeightMedium,
+    fontSize = 24.sp,
+    lineHeight = 30.sp,
+    fontFeatureSettings = TabularNumFeature,
+    color = Color.Unspecified
+)
+
+// Legacy Aliases
+val StyleDisplayHero = TextStyleDisplayHero
+val StyleDisplayAmount = TextStyleDisplayAmount
+val StyleNumberKeypad = TextStyleNumberKeypad
 
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightBold, // 700
-        fontSize = 40.sp,
-        lineHeight = 46.sp,
+        fontWeight = WeightBold,
+        fontSize = 44.sp,
+        lineHeight = 52.sp,
         letterSpacing = (-0.5).sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     displayMedium = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightBold, // 700
-        fontSize = 32.sp,
-        lineHeight = 38.sp,
+        fontWeight = WeightBold,
+        fontSize = 40.sp,
+        lineHeight = 48.sp,
         letterSpacing = (-0.5).sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
+    ),
+    displaySmall = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = WeightBold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.5).sp,
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     headlineLarge = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightBold, // 700
-        fontSize = 32.sp,
+        fontWeight = WeightBold,
+        fontSize = 30.sp,
         lineHeight = 38.sp,
         letterSpacing = (-0.5).sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     headlineMedium = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightSemiBold, // 600
+        fontWeight = WeightSemiBold,
         fontSize = 24.sp,
-        lineHeight = 30.sp,
-        fontFeatureSettings = TabularNumFeature
+        lineHeight = 32.sp,
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = WeightSemiBold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     titleLarge = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightSemiBold, // 600
-        fontSize = 20.sp, // Sheet titles, section hero
-        lineHeight = 26.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontWeight = WeightSemiBold,
+        fontSize = 20.sp,
+        lineHeight = 28.sp,
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     titleMedium = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightSemiBold, // 600
-        fontSize = 16.sp, // Card titles, list primary text
-        lineHeight = 22.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontWeight = WeightSemiBold,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     titleSmall = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightMedium, // 500
-        fontSize = 14.sp, // Row titles
+        fontWeight = WeightMedium,
+        fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     bodyLarge = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightRegular, // 400
-        fontSize = 16.sp, // Inputs, notes
+        fontWeight = WeightRegular,
+        fontSize = 16.sp,
         lineHeight = 24.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     bodyMedium = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightRegular, // 400
-        fontSize = 14.sp, // Secondary text
+        fontWeight = WeightRegular,
+        fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     bodySmall = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightRegular, // 400
-        fontSize = 12.sp, // Meta, timestamps (min safe size for Bengali >= 12sp)
-        lineHeight = 17.sp, // Line-height >= 16sp
-        fontFeatureSettings = TabularNumFeature
+        fontWeight = WeightRegular,
+        fontSize = 12.sp,
+        lineHeight = 18.sp,
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     labelLarge = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightSemiBold, // 600
-        fontSize = 14.sp, // Buttons
+        fontWeight = WeightSemiBold,
+        fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     labelMedium = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightSemiBold, // 600
-        fontSize = 12.sp, // Chips, badges (min safe size for Bengali >= 12sp)
+        fontWeight = WeightSemiBold,
+        fontSize = 12.sp,
         lineHeight = 16.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     ),
     labelSmall = TextStyle(
         fontFamily = AppFontFamily,
-        fontWeight = WeightMedium, // 500
-        fontSize = 12.sp, // Constrained to >= 12sp and line height >= 16sp for Bengali metadata
+        fontWeight = WeightMedium,
+        fontSize = 12.sp, // Pulse minimum 12sp anywhere
         lineHeight = 16.sp,
-        fontFeatureSettings = TabularNumFeature
+        fontFeatureSettings = TabularNumFeature,
+        color = Color.Unspecified
     )
 )
 

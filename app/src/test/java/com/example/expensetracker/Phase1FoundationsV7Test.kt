@@ -2,6 +2,7 @@ package com.example.expensetracker
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.AmoledAppColors
 import com.example.expensetracker.theme.CategoryPaletteV7
 import com.example.expensetracker.theme.ColorAccentContainerDark
@@ -68,10 +69,15 @@ class Phase1FoundationsV7Test {
 
         // AMOLED tokens
         assertEquals(Color(0xFF0F131B), AmoledAppColors.surfaceRaised)
-        assertEquals(Color(0xFF0E2A24), AmoledAppColors.accentContainer)
-        assertEquals(Color(0xFF301219), AmoledAppColors.expenseContainer)
-        assertEquals(Color(0xFF302410), AmoledAppColors.warningContainer)
-        assertEquals(Color(0xFF181A3A), AmoledAppColors.infoContainer)
+        assertEquals(Color(0xFF0B1F19), AmoledAppColors.accentContainer)
+        assertEquals(Color(0xFF240E13), AmoledAppColors.expenseContainer)
+        assertEquals(Color(0xFF241A0C), AmoledAppColors.warningContainer)
+        assertEquals(Color(0xFF14162E), AmoledAppColors.infoContainer)
+
+        // Focus ring token
+        assertEquals(DarkAppColors.accent, DarkAppColors.focusRing)
+        assertEquals(LightAppColors.accent, LightAppColors.focusRing)
+        assertEquals(AmoledAppColors.accent, AmoledAppColors.focusRing)
     }
 
     @Test
@@ -101,7 +107,7 @@ class Phase1FoundationsV7Test {
         assertEquals(12.dp, RadiusS)
         assertEquals(16.dp, RadiusM)
         assertEquals(24.dp, RadiusL)
-        assertEquals(24.dp, RadiusSheet)
+        assertEquals(28.dp, RadiusSheet)
     }
 
     @Test
@@ -140,5 +146,39 @@ class Phase1FoundationsV7Test {
         assertEquals("১২৩", convertToBengaliDigits("123"))
         assertEquals("৳ ১,২৫০", formatCurrency(1250.0, symbol = "৳", useBengaliNumerals = true))
         assertEquals("৳ 1,250", formatCurrency(1250.0, symbol = "৳", useBengaliNumerals = false))
+    }
+
+    @Test
+    fun testV7TypographyDisplayAmountAndNumberKeypad() {
+        assertEquals(40.sp, com.example.expensetracker.theme.StyleDisplayAmount.fontSize)
+        assertEquals(48.sp, com.example.expensetracker.theme.StyleDisplayAmount.lineHeight)
+        assertEquals(TabularNumFeature, com.example.expensetracker.theme.StyleDisplayAmount.fontFeatureSettings)
+
+        assertEquals(24.sp, com.example.expensetracker.theme.StyleNumberKeypad.fontSize)
+        assertEquals(30.sp, com.example.expensetracker.theme.StyleNumberKeypad.lineHeight)
+        assertEquals(TabularNumFeature, com.example.expensetracker.theme.StyleNumberKeypad.fontFeatureSettings)
+    }
+
+    @Test
+    fun testV7RadiusPillAndRowPadding() {
+        assertEquals(999.dp, com.example.expensetracker.theme.RadiusPill)
+        assertEquals(12.dp, com.example.expensetracker.theme.ListRowPaddingVertical)
+    }
+
+    @Test
+    fun testV7Phase1ComponentsFilesPresence() {
+        val componentsDir = java.io.File("app/src/main/java/com/example/expensetracker/ui/components")
+        val altDir = java.io.File("src/main/java/com/example/expensetracker/ui/components")
+        val targetDir = if (componentsDir.exists()) componentsDir else altDir
+
+        assertTrue(java.io.File(targetDir, "AppNumericKeypad.kt").exists())
+        assertTrue(java.io.File(targetDir, "AmountDisplay.kt").exists())
+        assertTrue(java.io.File(targetDir, "StatTile.kt").exists())
+        assertTrue(java.io.File(targetDir, "AppTopBar.kt").exists())
+        assertTrue(java.io.File(targetDir, "StarterEmptyState.kt").exists())
+        assertTrue(java.io.File(targetDir, "SegmentedControl.kt").exists())
+        assertTrue(java.io.File(targetDir, "AppChip.kt").exists())
+        assertTrue(java.io.File(targetDir, "SectionHeader.kt").exists())
+        assertTrue(java.io.File(targetDir, "AppSnackbarHost.kt").exists())
     }
 }

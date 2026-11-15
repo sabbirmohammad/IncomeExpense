@@ -114,31 +114,7 @@ fun StatementPreviewCard(
                 }
 
                 // Status pill
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = appColors.accentContainer
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            tint = appColors.accent,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = if (strings.isBangla) "প্রস্তুত" else "Ready",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.5.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = appColors.accent
-                        )
-                    }
-                }
+                StatementReadyStatusPill(isBangla = strings.isBangla)
             }
 
             HairlineDivider()
@@ -176,59 +152,32 @@ fun StatementPreviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Income
                 Column {
-                    Text(
-                        text = strings.income,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = appColors.textMuted
-                    )
+                    Text(text = strings.income, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = appColors.textMuted)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isPrivacyMode) "••••••" else "+${formatCurrency(summary.totalIncome, currencySymbol)}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFeatureSettings = "tnum"
-                        ),
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
                         color = appColors.income
                     )
                 }
 
-                // Expense
                 Column {
-                    Text(
-                        text = strings.expense,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = appColors.textMuted
-                    )
+                    Text(text = strings.expense, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = appColors.textMuted)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isPrivacyMode) "••••••" else "-${formatCurrency(summary.totalExpense, currencySymbol)}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFeatureSettings = "tnum"
-                        ),
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
                         color = appColors.expense
                     )
                 }
 
-                // Scope
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = if (strings.isBangla) "লেনদেন সংখ্যা" else "Transactions",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                        color = appColors.textMuted
-                    )
+                    Text(text = if (strings.isBangla) "লেনদেন সংখ্যা" else "Transactions", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp), color = appColors.textMuted)
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "$transactionCount ${if (strings.isBangla) "টি" else "items"}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFeatureSettings = "tnum"
-                        ),
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
                         color = appColors.textPrimary
                     )
                 }

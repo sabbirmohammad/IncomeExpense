@@ -1,15 +1,9 @@
 package com.example.expensetracker.ui.navigation
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -20,32 +14,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.data.model.AppLanguage
 import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.data.repository.ExpenseRepository
-import com.example.expensetracker.data.repository.checkShouldShowUpcomingBudgetPrompt
-import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.LocalFeedbackController
-import com.example.expensetracker.ui.components.MiddleScreenConfirmationOverlay
 import com.example.expensetracker.ui.components.TransactionFeedbackController
 import com.example.expensetracker.ui.components.rememberAppStrings
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
 import com.example.expensetracker.ui.onboarding.OnboardingScreen
 
 /**
- * Main App Navigation (v7 Refined Ledger Architecture):
- * - Replaces 3D drawer with clean 5-slot AppBottomBar (Home, Transactions, +, Market, Money).
- * - Bottom bar is visible ONLY on top-level screens (Home, Transactions, Market, Money).
- * - Drill-down screens hide bottom bar and return to parent (Money hub).
- * - 1-tap on + opens Add transaction sheet directly.
+ * Main App Navigation (Pulse Design Language Architecture):
+ * - 4 Top-level destinations: Home, Money, Bazaar, Plan
+ * - Adaptive Navigation Shell: PulseDock (Compact), PulseNavigationRail (Medium / landscape), PulseSidePanel (Expanded)
+ * - Center raised Mango Add button (1-tap expense creation)
+ * - State holder with persistence across rotation, resize, and process death.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,8 +42,7 @@ fun MainAppNavigation(
     triggerBudgetPromptFromNotification: Boolean = false,
     onBudgetPromptHandled: () -> Unit = {}
 ) {
-    var selectedItem by remember { mutableStateOf(NavigationItem.HOME) }
-
+    val navState = rememberAdaptiveNavigationState()
     val dashboardViewModel: DashboardViewModel = viewModel()
 
     val categories by dashboardViewModel.categories.collectAsStateWithLifecycle()
@@ -62,24 +50,14 @@ fun MainAppNavigation(
     val summary by dashboardViewModel.summary.collectAsStateWithLifecycle()
     val accounts by dashboardViewModel.accounts.collectAsStateWithLifecycle()
     val activeMarketList by dashboardViewModel.activeMarketList.collectAsStateWithLifecycle()
+    val activeMarketLists by dashboardViewModel.activeMarketLists.collectAsStateWithLifecycle()
+    val recurringBills by dashboardViewModel.recurringBills.collectAsStateWithLifecycle()
+    val receivables by dashboardViewModel.receivables.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val repository = remember { ExpenseRepository.getInstance(context) }
-    var showUpcomingBudgetPrompt by remember { mutableStateOf(false) }
+    var showUpcomingBudgetPrompt by rememberUpcomingBudgetPromptState(repository, triggerBudgetPromptFromNotification, onBudgetPromptHandled)
 
-    LaunchedEffect(triggerBudgetPromptFromNotification) {
-        if (triggerBudgetPromptFromNotification) {
-            showUpcomingBudgetPrompt = true
-            onBudgetPromptHandled()
-        } else {
-            val shouldShow = repository.checkShouldShowUpcomingBudgetPrompt()
-            if (shouldShow) {
-                showUpcomingBudgetPrompt = true
-            }
-        }
-    }
-
-    var showQuickActionChooserSheet by remember { mutableStateOf(false) }
     var showGlobalAddSheet by remember { mutableStateOf(false) }
     var showTransferSheet by remember { mutableStateOf(false) }
     var showBillSplitterSheet by remember { mutableStateOf(false) }
@@ -91,154 +69,98 @@ fun MainAppNavigation(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
-    // Hierarchical Back Navigation
-    val isMoneyDrillDown = selectedItem == NavigationItem.ACCOUNTS ||
-            selectedItem == NavigationItem.BUDGETS ||
-            selectedItem == NavigationItem.BILLS ||
-            selectedItem == NavigationItem.RECEIVABLES ||
-            selectedItem == NavigationItem.ANALYTICS ||
-            selectedItem == NavigationItem.REPORTS
+    // Status badges dynamically derived from live repository StateFlows (never saved in Saver)
+    val hasOverdueBills = remember(recurringBills) {
+        recurringBills.any { it.isActive && it.getPaymentStatus() == com.example.expensetracker.data.model.BillPaymentStatus.OVERDUE }
+    }
+    val hasOverdueDebts = remember(receivables) {
+        val now = System.currentTimeMillis()
+        receivables.any { !it.isSettled && it.dueDateMillis != null && it.dueDateMillis <= now }
+    }
+    val hasBudgetOverspent = summary.budgetOverspent > 0
 
-    BackHandler(enabled = isMoneyDrillDown) {
-        selectedItem = NavigationItem.MONEY
+    navState.hasPlanAttention = hasOverdueBills || hasOverdueDebts || hasBudgetOverspent
+    navState.isBazaarTripActive = activeMarketLists.isNotEmpty() || (activeMarketList?.items?.any { !it.isPurchased } == true)
+
+    // Notification trigger handling
+    LaunchedEffect(triggerBudgetPromptFromNotification) {
+        if (triggerBudgetPromptFromNotification) {
+            navState.handleNotificationExtra("destination", "budget")
+        }
     }
 
-    BackHandler(enabled = selectedItem == NavigationItem.SETTINGS) {
-        selectedItem = NavigationItem.HOME
+    // Back Navigation: Pushed screen -> pop; non-Home destination -> HOME; on HOME -> exit
+    BackHandler(enabled = navState.pushedScreen != null || navState.selectedTab != PulseTab.HOME) {
+        navState.handleBackPress()
     }
-
-    BackHandler(enabled = (selectedItem == NavigationItem.TRANSACTIONS || selectedItem == NavigationItem.MARKET || selectedItem == NavigationItem.MONEY)) {
-        selectedItem = NavigationItem.HOME
-    }
-
-    val isTopLevelScreen = selectedItem == NavigationItem.HOME ||
-            selectedItem == NavigationItem.TRANSACTIONS ||
-            selectedItem == NavigationItem.MARKET ||
-            selectedItem == NavigationItem.MONEY
 
     val isOnboardingCompleted by repository.isOnboardingCompleted.collectAsStateWithLifecycle()
-
     val strings = rememberAppStrings(AppLanguage.fromCode(userProfile.appLanguage))
     val feedbackController = remember { TransactionFeedbackController() }
-    val colors = LocalAppColors.current
 
     CompositionLocalProvider(
         LocalAppStrings provides strings,
         LocalFeedbackController provides feedbackController
     ) {
+        val bazaarViewModel: com.example.expensetracker.ui.bazaar.BazaarViewModel = viewModel()
+
         if (!isOnboardingCompleted) {
-            OnboardingScreen(
-                onFinish = { repository.setOnboardingCompleted(true) }
-            )
+            OnboardingScreen(onFinish = { repository.setOnboardingCompleted(true) })
         } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(colors.background)
-            ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .widthIn(max = 840.dp)
-                    .align(Alignment.TopCenter)
-            ) {
-                // Main screen host
-                NavigationScreenHost(
-                    selectedItem = selectedItem,
-                    onNavigate = { selectedItem = it },
-                    onOpenAddTransaction = { type, dateMillis ->
-                        transactionToEdit = null
-                        initialDateForAdd = dateMillis
-                        initialTypeForAdd = type
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onEditTransaction = { tx ->
-                        transactionToEdit = tx
-                        initialDateForAdd = null
-                        initialTypeForAdd = tx.type
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onSplitBillClick = { showBillSplitterSheet = true },
-                    onTransferClick = { showTransferSheet = true },
-                    onOpenMarketList = {
+            AdaptiveScaffold(
+                state = navState,
+                onOpenAdd = {
+                    if (navState.selectedTab == PulseTab.BAZAAR) {
+                        bazaarViewModel.startNewList { newListId ->
+                            navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                        }
+                    } else {
                         transactionToEdit = null
                         initialDateForAdd = null
                         initialTypeForAdd = TransactionType.EXPENSE
-                        initialOpenMarketForAdd = true
+                        initialOpenMarketForAdd = false
                         showGlobalAddSheet = true
-                    },
-                    dashboardViewModel = dashboardViewModel
-                )
-
-                // Bottom bar visible ONLY on top-level screens
-                AnimatedVisibility(
-                    visible = isTopLevelScreen,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    }
+                },
+                onOpenSettings = {
+                    navState.pushScreen(PushedScreen.SETTINGS)
+                },
+                userName = userProfile.name
+            ) { _ ->
+                Box(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    ModernBottomNavBar(
-                        selectedItem = selectedItem,
-                        onItemSelected = { item -> selectedItem = item },
-                        onAddClick = {
+                    NavigationScreenHost(
+                        navState = navState,
+                        onOpenAddTransaction = { type, dateMillis ->
                             transactionToEdit = null
-                            initialDateForAdd = null
-                            initialTypeForAdd = TransactionType.EXPENSE
+                            initialDateForAdd = dateMillis
+                            initialTypeForAdd = type
                             initialOpenMarketForAdd = false
                             showGlobalAddSheet = true
                         },
-                        onAddLongClick = {
-                            showQuickActionChooserSheet = true
+                        onEditTransaction = { tx ->
+                            transactionToEdit = tx
+                            initialDateForAdd = null
+                            initialTypeForAdd = tx.type
+                            initialOpenMarketForAdd = false
+                            showGlobalAddSheet = true
                         },
-                        onMoreClick = {
-                            selectedItem = NavigationItem.MONEY
+                        onSplitBillClick = { showBillSplitterSheet = true },
+                        onTransferClick = { showTransferSheet = true },
+                        onOpenMarketList = {
+                            transactionToEdit = null
+                            initialDateForAdd = null
+                            initialTypeForAdd = TransactionType.EXPENSE
+                            initialOpenMarketForAdd = true
+                            showGlobalAddSheet = true
                         },
-                        strings = strings
+                        dashboardViewModel = dashboardViewModel
                     )
                 }
             }
 
-            if (showQuickActionChooserSheet) {
-                GlobalActionChooserSheet(
-                    isBangla = strings.isBangla,
-                    activeMarketList = activeMarketList,
-                    onDismiss = {
-                        showQuickActionChooserSheet = false
-                    },
-                    onAddExpense = {
-                        showQuickActionChooserSheet = false
-                        transactionToEdit = null
-                        initialDateForAdd = null
-                        initialTypeForAdd = TransactionType.EXPENSE
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onAddIncome = {
-                        showQuickActionChooserSheet = false
-                        transactionToEdit = null
-                        initialDateForAdd = null
-                        initialTypeForAdd = TransactionType.INCOME
-                        initialOpenMarketForAdd = false
-                        showGlobalAddSheet = true
-                    },
-                    onTransfer = {
-                        showQuickActionChooserSheet = false
-                        showTransferSheet = true
-                    },
-                    onOpenMarket = {
-                        showQuickActionChooserSheet = false
-                        transactionToEdit = null
-                        initialDateForAdd = null
-                        initialTypeForAdd = TransactionType.EXPENSE
-                        initialOpenMarketForAdd = true
-                        showGlobalAddSheet = true
-                    }
-                )
-            }
-
-            NavigationTransactionSheets(
+            AppNavigationSheets(
                 showGlobalAddSheet = showGlobalAddSheet,
                 showBillSplitterSheet = showBillSplitterSheet,
                 showTransferSheet = showTransferSheet,
@@ -254,6 +176,11 @@ fun MainAppNavigation(
                 strings = strings,
                 feedbackController = feedbackController,
                 dashboardViewModel = dashboardViewModel,
+                showMarketListSheet = showMarketListSheet,
+                activeMarketList = activeMarketList,
+                showUpcomingBudgetPrompt = showUpcomingBudgetPrompt,
+                summary = summary,
+                repository = repository,
                 onCloseAddSheet = {
                     showGlobalAddSheet = false
                     transactionToEdit = null
@@ -263,30 +190,11 @@ fun MainAppNavigation(
                 },
                 onCloseBillSplitterSheet = { showBillSplitterSheet = false },
                 onCloseTransferSheet = { showTransferSheet = false },
-                onOpenMarketList = {
-                    initialOpenMarketForAdd = true
-                    showGlobalAddSheet = true
-                }
-            )
-
-            NavigationUtilitySheets(
-                showMarketListSheet = showMarketListSheet,
-                activeMarketList = activeMarketList,
-                showUpcomingBudgetPrompt = showUpcomingBudgetPrompt,
-                summary = summary,
-                userProfile = userProfile,
-                strings = strings,
-                feedbackController = feedbackController,
-                dashboardViewModel = dashboardViewModel,
-                repository = repository,
-                scope = scope,
+                onOpenMarketListForAdd = { initialOpenMarketForAdd = true; showGlobalAddSheet = true },
                 onCloseMarketList = { showMarketListSheet = false },
                 onCloseBudgetPrompt = { showUpcomingBudgetPrompt = false },
-                onNavigateToBudgets = { selectedItem = NavigationItem.BUDGETS }
+                onNavigateToBudgets = { navState.navigate(NavigationItem.BUDGETS) }
             )
-
-            MiddleScreenConfirmationOverlay(controller = feedbackController)
         }
     }
-}
 }

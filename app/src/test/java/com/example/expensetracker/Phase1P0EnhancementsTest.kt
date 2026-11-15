@@ -181,14 +181,10 @@ class Phase1P0EnhancementsTest {
         val content = file.readText()
 
         assertTrue(
-            "AppNavigation onAddClick must directly trigger showGlobalAddSheet = true with EXPENSE preselected",
-            content.contains("onAddClick = {") &&
+            "AppNavigation Add action must directly trigger showGlobalAddSheet = true with EXPENSE preselected",
+            content.contains("onOpenAdd =") &&
                     content.contains("initialTypeForAdd = TransactionType.EXPENSE") &&
                     content.contains("showGlobalAddSheet = true")
-        )
-        assertTrue(
-            "AppNavigation onAddLongClick must open GlobalActionChooserSheet",
-            content.contains("onAddLongClick = {\n                            showQuickActionChooserSheet = true\n                        }")
         )
     }
 

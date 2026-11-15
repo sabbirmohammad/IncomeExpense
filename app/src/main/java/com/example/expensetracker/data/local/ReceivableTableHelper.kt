@@ -1,7 +1,6 @@
 package com.example.expensetracker.data.local
 
 import android.content.ContentValues
-import android.database.Cursor
 import com.example.expensetracker.data.model.AccountType
 import com.example.expensetracker.data.model.PaymentMethod
 import com.example.expensetracker.data.model.Receivable
@@ -18,7 +17,7 @@ internal class ReceivableTableHelper(private val dbHelper: ExpenseDatabaseHelper
         val cursor = db.query(TABLE_RECEIVABLES, null, null, null, null, null, "$COL_REC_STATUS ASC, $COL_REC_CREATED_DATE DESC")
         cursor.use { c ->
             while (c.moveToNext()) {
-                list.add(cursorToReceivable(c))
+                list.add(c.toReceivable())
             }
         }
         return list
@@ -29,7 +28,7 @@ internal class ReceivableTableHelper(private val dbHelper: ExpenseDatabaseHelper
         val cursor = db.query(TABLE_RECEIVABLES, null, "$COL_REC_ID = ?", arrayOf(id.toString()), null, null, null)
         cursor.use { c ->
             if (c.moveToFirst()) {
-                return cursorToReceivable(c)
+                return c.toReceivable()
             }
         }
         return null
@@ -185,29 +184,6 @@ internal class ReceivableTableHelper(private val dbHelper: ExpenseDatabaseHelper
             totalCollected = totalCollected,
             remainingDue = remainingDue,
             pendingCount = pendingCount
-        )
-    }
-
-    private fun cursorToReceivable(c: Cursor): Receivable {
-        val dueIndex = c.getColumnIndexOrThrow(COL_REC_DUE_DATE)
-        val dueDate = if (c.isNull(dueIndex)) null else c.getLong(dueIndex)
-        val statusStr = c.getString(c.getColumnIndexOrThrow(COL_REC_STATUS))
-        val status = try {
-            ReceivableStatus.valueOf(statusStr)
-        } catch (_: Exception) {
-            ReceivableStatus.PENDING
-        }
-
-        return Receivable(
-            id = c.getLong(c.getColumnIndexOrThrow(COL_REC_ID)),
-            personName = c.getString(c.getColumnIndexOrThrow(COL_REC_PERSON_NAME)),
-            phoneNumber = c.getString(c.getColumnIndexOrThrow(COL_REC_PHONE)),
-            amount = c.getDouble(c.getColumnIndexOrThrow(COL_REC_AMOUNT)),
-            amountReceived = c.getDouble(c.getColumnIndexOrThrow(COL_REC_AMOUNT_RECEIVED)),
-            dueDateMillis = dueDate,
-            createdDateMillis = c.getLong(c.getColumnIndexOrThrow(COL_REC_CREATED_DATE)),
-            notes = c.getString(c.getColumnIndexOrThrow(COL_REC_NOTES)),
-            status = status
         )
     }
 }

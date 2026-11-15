@@ -79,45 +79,12 @@ fun TransactionDetailSheet(
             .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
         // Top Header: Icon + Title + Type Badge
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(CategoryIconHelper.parseColor(transaction.categoryColor).copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = CategoryIconHelper.getIcon(transaction.categoryIcon),
-                    contentDescription = null,
-                    tint = CategoryIconHelper.parseColor(transaction.categoryColor),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = transaction.title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = appColors.textPrimary
-                )
-                Text(
-                    text = if (isIncome) strings.income else strings.expense,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = amountColor
-                )
-            }
-        }
+        TransactionDetailHeader(
+            transaction = transaction,
+            isIncome = isIncome,
+            amountColor = amountColor,
+            strings = strings
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -179,26 +146,10 @@ fun TransactionDetailSheet(
 
             // Receipt preview chip if receipt attached
             if (transaction.receiptImagePath != null && onViewReceipt != null) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(RadiusM))
-                        .clickable { onViewReceipt() }
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (isBangla) "📎 সংযুক্ত রশিদ" else "📎 Attached receipt",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp),
-                        color = appColors.accent
-                    )
-                    Text(
-                        text = if (isBangla) "দেখুন ➔" else "View ➔",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
-                        color = appColors.accent
-                    )
-                }
+                TransactionDetailReceiptRow(
+                    isBangla = isBangla,
+                    onViewReceipt = onViewReceipt
+                )
             }
         }
 

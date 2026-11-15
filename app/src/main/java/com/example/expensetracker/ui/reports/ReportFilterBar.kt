@@ -107,110 +107,21 @@ fun ReportFilterBar(
         }
 
         // Account Filter Dropdown
-        Box {
-            val activeAccName = accounts.find { it.id == selectedAccountId }?.name ?: strings.allAccounts
-            DropdownFilterChip(
-                text = activeAccName,
-                isActive = selectedAccountId != null,
-                icon = Icons.Outlined.AccountBalance,
-                activeColor = Color(0xFF3B8FF0),
-                onClick = {
-                    haptics.lightTick()
-                    showAccountMenu = true
-                }
-            )
-            DropdownMenu(
-                expanded = showAccountMenu,
-                onDismissRequest = { showAccountMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(strings.allAccounts) },
-                    onClick = {
-                        haptics.lightTick()
-                        onSelectAccount(null)
-                        showAccountMenu = false
-                    },
-                    leadingIcon = {
-                        if (selectedAccountId == null) Icon(Icons.Default.Check, null, tint = appColors.accent)
-                    }
-                )
-                accounts.forEach { acc ->
-                    DropdownMenuItem(
-                        text = { Text(acc.name) },
-                        onClick = {
-                            haptics.lightTick()
-                            onSelectAccount(acc.id)
-                            showAccountMenu = false
-                        },
-                        leadingIcon = {
-                            if (selectedAccountId == acc.id) Icon(Icons.Default.Check, null, tint = appColors.accent)
-                        }
-                    )
-                }
-            }
-        }
+        ReportAccountFilterChip(
+            selectedAccountId = selectedAccountId,
+            accounts = accounts,
+            strings = strings,
+            onSelectAccount = onSelectAccount,
+            haptics = haptics
+        )
 
         // Type Filter Dropdown
-        Box {
-            val activeTypeName = when (selectedType) {
-                TransactionType.EXPENSE -> strings.onlyExpenses
-                TransactionType.INCOME -> strings.onlyIncomes
-                null -> strings.allTypes
-            }
-            val typeColor = when (selectedType) {
-                TransactionType.EXPENSE -> appColors.expense
-                TransactionType.INCOME -> appColors.income
-                else -> appColors.accent
-            }
-            DropdownFilterChip(
-                text = activeTypeName,
-                isActive = selectedType != null,
-                icon = Icons.Outlined.FilterList,
-                activeColor = typeColor,
-                onClick = {
-                    haptics.lightTick()
-                    showTypeMenu = true
-                }
-            )
-            DropdownMenu(
-                expanded = showTypeMenu,
-                onDismissRequest = { showTypeMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(strings.allTypes) },
-                    onClick = {
-                        haptics.lightTick()
-                        onSelectType(null)
-                        showTypeMenu = false
-                    },
-                    leadingIcon = {
-                        if (selectedType == null) Icon(Icons.Default.Check, null, tint = appColors.accent)
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(strings.onlyExpenses) },
-                    onClick = {
-                        haptics.lightTick()
-                        onSelectType(TransactionType.EXPENSE)
-                        showTypeMenu = false
-                    },
-                    leadingIcon = {
-                        if (selectedType == TransactionType.EXPENSE) Icon(Icons.Default.Check, null, tint = appColors.expense)
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(strings.onlyIncomes) },
-                    onClick = {
-                        haptics.lightTick()
-                        onSelectType(TransactionType.INCOME)
-                        showTypeMenu = false
-                    },
-                    leadingIcon = {
-                        if (selectedType == TransactionType.INCOME) Icon(Icons.Default.Check, null, tint = appColors.income)
-                    }
-                )
-            }
-        }
+        ReportTypeFilterChip(
+            selectedType = selectedType,
+            strings = strings,
+            onSelectType = onSelectType,
+            haptics = haptics
+        )
     }
 
     ReportCustomDateRangeDialogs(

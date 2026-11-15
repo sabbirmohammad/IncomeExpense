@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
 import java.util.UUID
 
 object ReceiptImageHelper {
@@ -87,7 +86,6 @@ object ReceiptImageHelper {
                 0f
             }
 
-            // Downscale to exact MAX_DIMENSION (1024px) if post-subsample size still exceeds bound
             val width = sampledBitmap.width
             val height = sampledBitmap.height
             val largestDim = maxOf(width, height)
@@ -176,37 +174,14 @@ object ReceiptImageHelper {
      * for direct camera capture via ActivityResultContracts.TakePicture().
      */
     fun createCameraTempUri(context: Context): Uri? {
-        return createCameraTempFileAndUri(context)?.second
+        return ReceiptCameraTempHelper.createCameraTempFileAndUri(context)?.second
     }
 
-    /**
-     * Creates a temporary file in cacheDir/shared_images and its corresponding FileProvider content Uri,
-     * returning both the File and Uri for easy cleanup.
-     */
     fun createCameraTempFileAndUri(context: Context): Pair<File, Uri>? {
-        return try {
-            val cacheImagesDir = File(context.cacheDir, "shared_images").apply {
-                if (!exists()) mkdirs()
-            }
-            val tempFile = File(cacheImagesDir, "camera_receipt_${System.currentTimeMillis()}.jpg")
-            val uri = androidx.core.content.FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                tempFile
-            )
-            Pair(tempFile, uri)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        return ReceiptCameraTempHelper.createCameraTempFileAndUri(context)
     }
 
-    /**
-     * Safely deletes a file if it exists, ignoring errors.
-     */
     fun deleteFileQuietly(file: File?) {
-        try {
-            file?.takeIf { it.exists() }?.delete()
-        } catch (_: Exception) {}
+        ReceiptCameraTempHelper.deleteFileQuietly(file)
     }
 }

@@ -71,99 +71,13 @@ fun ReceivableItemCard(
         padding = 16.dp
     ) {
         Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(appColors.accentContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = receivable.personName.take(2).uppercase(Locale.getDefault()),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = appColors.accent
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = receivable.personName,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = appColors.textPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        if (receivable.phoneNumber.isNotBlank()) {
-                            Text(
-                                text = receivable.phoneNumber,
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                color = appColors.textSecondary
-                            )
-                        }
-                    }
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                when (receivable.status) {
-                                    ReceivableStatus.SETTLED -> appColors.income.copy(alpha = 0.15f)
-                                    ReceivableStatus.PARTIAL -> appColors.warning.copy(alpha = 0.15f)
-                                    ReceivableStatus.PENDING -> appColors.expense.copy(alpha = 0.15f)
-                                }
-                            )
-                            .padding(horizontal = 6.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = statusText,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = when (receivable.status) {
-                                ReceivableStatus.SETTLED -> appColors.income
-                                ReceivableStatus.PARTIAL -> appColors.warning
-                                ReceivableStatus.PENDING -> appColors.expense
-                            }
-                        )
-                    }
-
-                    Box {
-                        IconButton(
-                            onClick = { showMenu = true },
-                            modifier = Modifier.minimumInteractiveComponentSize()
-                        ) {
-                            Icon(Icons.Default.MoreVert, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp))
-                        }
-                        ReceivableItemMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            isSettled = receivable.isSettled,
-                            onRecordPayment = onRecordPayment,
-                            onEdit = onEdit,
-                            onDelete = onDelete
-                        )
-                    }
-                }
-            }
+            ReceivableItemHeader(
+                receivable = receivable,
+                statusText = statusText,
+                onRecordPayment = onRecordPayment,
+                onEdit = onEdit,
+                onDelete = onDelete
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 

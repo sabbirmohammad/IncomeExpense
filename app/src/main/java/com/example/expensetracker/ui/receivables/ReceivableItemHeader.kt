@@ -1,0 +1,144 @@
+package com.example.expensetracker.ui.receivables
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.expensetracker.data.model.Receivable
+import com.example.expensetracker.data.model.ReceivableStatus
+import com.example.expensetracker.theme.LocalAppColors
+import java.util.Locale
+
+@Composable
+fun ReceivableItemHeader(
+    receivable: Receivable,
+    statusText: String,
+    onRecordPayment: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    var showMenu by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(appColors.accentContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = receivable.personName.take(2).uppercase(Locale.getDefault()),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = appColors.accent
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = receivable.personName,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = appColors.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (receivable.phoneNumber.isNotBlank()) {
+                    Text(
+                        text = receivable.phoneNumber,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = appColors.textSecondary
+                    )
+                }
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(
+                        when (receivable.status) {
+                            ReceivableStatus.SETTLED -> appColors.income.copy(alpha = 0.15f)
+                            ReceivableStatus.PARTIAL -> appColors.warning.copy(alpha = 0.15f)
+                            ReceivableStatus.PENDING -> appColors.expense.copy(alpha = 0.15f)
+                        }
+                    )
+                    .padding(horizontal = 6.dp, vertical = 3.dp)
+            ) {
+                Text(
+                    text = statusText,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = when (receivable.status) {
+                        ReceivableStatus.SETTLED -> appColors.income
+                        ReceivableStatus.PARTIAL -> appColors.warning
+                        ReceivableStatus.PENDING -> appColors.expense
+                    }
+                )
+            }
+
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.minimumInteractiveComponentSize()
+                ) {
+                    Icon(Icons.Default.MoreVert, null, tint = appColors.textSecondary, modifier = Modifier.size(18.dp))
+                }
+                ReceivableItemMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    isSettled = receivable.isSettled,
+                    onRecordPayment = onRecordPayment,
+                    onEdit = onEdit,
+                    onDelete = onDelete
+                )
+            }
+        }
+    }
+}

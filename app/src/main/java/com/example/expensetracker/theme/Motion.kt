@@ -12,7 +12,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 
 // =========================================================================
-// MOTION SYSTEM ("Refined Ledger v7")
+// MOTION SYSTEM (Pulse Design System)
 // =========================================================================
 
 val FastEasing: Easing = FastOutSlowInEasing
@@ -46,6 +46,7 @@ data class MotionConfig(
 }
 
 val LocalMotion = staticCompositionLocalOf { MotionConfig() }
+val LocalReduceMotion = staticCompositionLocalOf { false }
 
 /**
  * Checks system "remove animations" setting (ANIMATOR_DURATION_SCALE == 0) safely.

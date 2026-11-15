@@ -44,65 +44,10 @@ fun SlipHeaderSummarySection(
 ) {
     val appColors = LocalAppColors.current
     Column(modifier = modifier.fillMaxWidth()) {
-        // 1. Top Header: App Branding & User Profile
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(appColors.accent.copy(alpha = 0.15f))
-                        .border(1.dp, appColors.accent.copy(alpha = 0.4f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ReceiptLong,
-                        contentDescription = null,
-                        tint = appColors.accent,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Column {
-                    Text(
-                        text = if (strings.isBangla) strings.appName else "Expense Tracker",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = appColors.textPrimary
-                    )
-                    Text(
-                        text = if (userName.isNotBlank()) (if (strings.isBangla) "$userName-এর খাতা" else "$userName's Ledger") else (if (strings.isBangla) "আর্থিক স্লিপ" else "Financial Slip"),
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = appColors.textSecondary
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (appColors.isDark) Color(0xFF1F283E) else appColors.accent.copy(alpha = 0.12f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = if (strings.isBangla) "বিবরণী" else "STATEMENT",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = appColors.accent
-                )
-            }
-        }
+        SlipBrandingHeader(
+            userName = userName,
+            strings = strings
+        )
 
         Spacer(modifier = Modifier.height(18.dp))
 

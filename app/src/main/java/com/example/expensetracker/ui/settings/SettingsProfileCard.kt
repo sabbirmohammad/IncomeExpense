@@ -2,7 +2,6 @@ package com.example.expensetracker.ui.settings
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,13 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.CloudDone
-import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.Card
@@ -37,8 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,10 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.UserProfile
 import com.example.expensetracker.theme.LocalAppColors
-import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.HairlineDivider
 import com.example.expensetracker.ui.components.LocalAppStrings
-import com.example.expensetracker.ui.components.getAvatarIcon
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 @Composable
@@ -67,43 +58,17 @@ fun SettingsProfileCard(
     val isCloud = userProfile.googleAccountEmail != null
     var showFullEmail by remember { mutableStateOf(false) }
 
-    // Background gradient for sleek fintech executive feel
-    val cardBackgroundGradient = if (appColors.isDark) {
-        Brush.linearGradient(
-            colors = listOf(
-                Color(0xFF141A2D),
-                Color(0xFF161C30),
-                Color(0xFF0F1424)
-            )
-        )
-    } else {
-        Brush.linearGradient(
-            colors = listOf(
-                Color(0xFFFFFFFF),
-                Color(0xFFF7F9FC)
-            )
-        )
-    }
-
-    val cardBorderBrush = Brush.linearGradient(
-        colors = listOf(
-            appColors.accent.copy(alpha = 0.45f),
-            appColors.border.copy(alpha = 0.7f),
-            appColors.accent.copy(alpha = 0.2f)
-        )
-    )
-
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, cardBorderBrush),
+        border = BorderStroke(1.dp, SettingsProfileGradients.border(appColors)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(cardBackgroundGradient)
+                .background(SettingsProfileGradients.background(appColors))
                 .padding(18.dp)
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -117,63 +82,10 @@ fun SettingsProfileCard(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.weight(1f)
                     ) {
-                        // Multi-ring glowing Avatar with status dot
-                        Box(contentAlignment = Alignment.BottomEnd) {
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.sweepGradient(
-                                            listOf(
-                                                appColors.accent,
-                                                Color(0xFF6366F1),
-                                                Color(0xFF38BDF8),
-                                                appColors.accent
-                                            )
-                                        )
-                                    )
-                                    .padding(2.5.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(51.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (appColors.isDark) Color(0xFF131726) else Color(0xFFEEF2F6)
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (userProfile.avatarIndex == 0 && userProfile.initials.isNotBlank()) {
-                                        Text(
-                                            text = userProfile.initials.take(2),
-                                            style = MaterialTheme.typography.titleMedium.copy(
-                                                fontSize = 18.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                letterSpacing = 0.5.sp
-                                            ),
-                                            color = appColors.accent
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = getAvatarIcon(userProfile.avatarIndex),
-                                            contentDescription = null,
-                                            tint = appColors.accent,
-                                            modifier = Modifier.size(30.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Active Connectivity Status Dot
-                            Box(
-                                modifier = Modifier
-                                    .size(13.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isCloud) appColors.income else appColors.accent)
-                                    .border(2.dp, if (appColors.isDark) Color(0xFF141A2D) else Color.White, CircleShape)
-                            )
-                        }
+                        SettingsProfileAvatar(
+                            userProfile = userProfile,
+                            isCloud = isCloud
+                        )
 
                         Spacer(modifier = Modifier.width(14.dp))
 
@@ -185,10 +97,7 @@ fun SettingsProfileCard(
                             ) {
                                 Text(
                                     text = userProfile.displayName,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontSize = 17.sp,
-                                        fontWeight = FontWeight.Bold
-                                    ),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
                                     color = appColors.textPrimary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -201,11 +110,7 @@ fun SettingsProfileCard(
                                 ) {
                                     Text(
                                         text = if (isBangla) "ব্যক্তিগত" else "PRO",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 9.5.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 0.5.sp
-                                        ),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
                                         color = appColors.accent,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.5.dp)
                                     )
@@ -227,22 +132,17 @@ fun SettingsProfileCard(
                                 )
                                 val email = userProfile.googleAccountEmail
                                 val displayEmail = if (email != null) {
-                                    if (showFullEmail) email else {
-                                        if (email.length > 22) {
-                                            val half = (22 - 3) / 2
-                                            email.take(half) + "..." + email.takeLast(half)
-                                        } else email
-                                    }
+                                    if (showFullEmail) email else if (email.length > 22) {
+                                        val half = (22 - 3) / 2
+                                        email.take(half) + "..." + email.takeLast(half)
+                                    } else email
                                 } else {
                                     if (isBangla) "লোকাল অ্যাকাউন্ট • সুরক্ষিত" else "Local Account • Secure"
                                 }
 
                                 Text(
                                     text = displayEmail,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Medium
-                                    ),
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Medium),
                                     color = appColors.textSecondary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -270,18 +170,10 @@ fun SettingsProfileCard(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Edit,
-                                contentDescription = null,
-                                tint = appColors.accent,
-                                modifier = Modifier.size(13.dp)
-                            )
+                            Icon(imageVector = Icons.Outlined.Edit, contentDescription = null, tint = appColors.accent, modifier = Modifier.size(13.dp))
                             Text(
                                 text = if (isBangla) "এডিট" else "Edit",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
                                 color = appColors.accent
                             )
                         }
@@ -292,96 +184,13 @@ fun SettingsProfileCard(
                 HairlineDivider(color = appColors.border.copy(alpha = 0.5f))
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Bottom Command Shelf (Micro-metrics)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Metric 1: Active Categories
-                    ProfileMiniMetricPill(
-                        icon = Icons.Outlined.Category,
-                        iconTint = appColors.accent,
-                        title = if (isBangla) "ক্যাটাগরি" else "Categories",
-                        value = "${DateTimeHelper.formatCounter(categoriesCount, isBangla, userProfile.useBengaliNumerals || isBangla)} ${if (isBangla) "টি" else ""}".trim(),
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    // Metric 2: Currency
-                    ProfileMiniMetricPill(
-                        icon = Icons.Outlined.AccountBalanceWallet,
-                        iconTint = appColors.income,
-                        title = if (isBangla) "মুদ্রা" else "Currency",
-                        value = "${userProfile.currencyCode} (${userProfile.currencySymbol})",
-                        modifier = Modifier.weight(1.1f)
-                    )
-
-                    // Metric 3: Backup Sync Mode
-                    ProfileMiniMetricPill(
-                        icon = if (isCloud) Icons.Outlined.CloudDone else Icons.Outlined.CloudOff,
-                        iconTint = if (isCloud) appColors.income else appColors.textMuted,
-                        title = if (isBangla) "ক্লাউড সিঙ্ক" else "Cloud Sync",
-                        value = if (isCloud) (if (isBangla) "সক্রিয়" else "Active") else (if (isBangla) "লোকাল" else "Offline"),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileMiniMetricPill(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconTint: Color,
-    title: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    val appColors = LocalAppColors.current
-
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
-        color = appColors.surface.copy(alpha = 0.55f),
-        border = BorderStroke(0.5.dp, appColors.border.copy(alpha = 0.45f))
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(12.dp)
-                )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = appColors.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                SettingsProfileMetricsRow(
+                    userProfile = userProfile,
+                    categoriesCount = categoriesCount,
+                    isCloud = isCloud,
+                    isBangla = isBangla
                 )
             }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = appColors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

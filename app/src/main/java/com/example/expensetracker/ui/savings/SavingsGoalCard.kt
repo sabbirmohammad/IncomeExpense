@@ -11,11 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,16 +30,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.data.model.SavingsGoal
+import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AppCard
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.convertToBengaliDigits
 import com.example.expensetracker.ui.components.formatCurrency
-import com.example.expensetracker.ui.components.globalBengaliNumeralsEnabled
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-import com.example.expensetracker.theme.LocalAppColors
 
 /**
  * Individual Savings Goal Item Card
@@ -154,33 +150,12 @@ fun SavingsGoalCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (goal.targetDateMillis != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Outlined.CalendarToday,
-                            contentDescription = null,
-                            tint = appColors.textMuted,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        val formattedDate = dateFormat.format(Date(goal.targetDateMillis))
-                        Text(
-                            text = if (strings.isBangla) convertToBengaliDigits(formattedDate) else formattedDate,
-                            fontSize = 11.sp,
-                            color = appColors.textSecondary
-                        )
-                    }
-                } else {
-                    Text(
-                        text = if (goal.remainingAmount > 0) {
-                            "${if (strings.isBangla) "বাকি" else "Left"}: ${if (isPrivacyMode) "••••" else formatCurrency(goal.remainingAmount, currencySymbol, globalBengaliNumeralsEnabled || strings.isBangla)}"
-                        } else {
-                            strings.goalReachedCelebration
-                        },
-                        fontSize = 11.sp,
-                        color = if (goal.remainingAmount <= 0) appColors.income else appColors.textMuted
-                    )
-                }
+                SavingsGoalTargetDateOrRemaining(
+                    goal = goal,
+                    isPrivacyMode = isPrivacyMode,
+                    currencySymbol = currencySymbol,
+                    dateFormat = dateFormat
+                )
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),

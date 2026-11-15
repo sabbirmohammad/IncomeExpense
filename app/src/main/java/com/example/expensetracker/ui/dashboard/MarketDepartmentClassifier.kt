@@ -1,5 +1,8 @@
 package com.example.expensetracker.ui.dashboard
 
+import com.example.expensetracker.common.UnitConverterEngine
+import com.example.expensetracker.data.model.MasterProduct
+
 /**
  * Heuristic classifier to categorize market items into standard grocery departments:
  * - veggies (শাকসবজি, কাঁচাবাজার) - e.g. আলু, পটল, পেঁয়াজ, শাক
@@ -14,7 +17,140 @@ private fun isSpicePowder(lower: String): Boolean {
            !lower.contains("দুধ") && !lower.contains("milk") && !lower.contains("দই")
 }
 
+var masterProductsSupplier: (() -> Map<String, MasterProduct>?)? = null
+
+fun resetMasterProductsSupplier() {
+    masterProductsSupplier = null
+}
+
+val COMMODITY_TRANSLITERATION_ALIASES: Map<String, String> = mapOf(
+    "piyaj" to "পেঁয়াজ",
+    "peyaj" to "পেঁয়াজ",
+    "peaj" to "পেঁয়াজ",
+    "pyaj" to "পেঁয়াজ",
+    "onion" to "পেঁয়াজ",
+    "alu" to "আলু",
+    "aloo" to "আলু",
+    "potato" to "আলু",
+    "dim" to "ডিম",
+    "deem" to "ডিম",
+    "egg" to "ডিম",
+    "murgi" to "মুরগি",
+    "morgi" to "মুরগি",
+    "morog" to "মুরগি",
+    "chicken" to "মুরগি",
+    "goru" to "গরু",
+    "beef" to "গরু",
+    "khasi" to "খাসি",
+    "mutton" to "খাসি",
+    "mach" to "মাছ",
+    "maach" to "মাছ",
+    "fish" to "মাছ",
+    "ilish" to "ইলিশ",
+    "ruhi" to "রুই",
+    "rui" to "রুই",
+    "katla" to "কাতলা",
+    "chingri" to "চিংড়ি",
+    "rosun" to "রসুন",
+    "roshun" to "রসুন",
+    "garlic" to "রসুন",
+    "ada" to "আদা",
+    "ginger" to "আদা",
+    "morich" to "মরিচ",
+    "moris" to "মরিচ",
+    "chilli" to "মরিচ",
+    "chili" to "মরিচ",
+    "tel" to "তেল",
+    "oil" to "তেল",
+    "chal" to "চাল",
+    "chaal" to "চাল",
+    "rice" to "চাল",
+    "dal" to "ডাল",
+    "daal" to "ডাল",
+    "lentil" to "ডাল",
+    "lobon" to "লবণ",
+    "noon" to "লবণ",
+    "salt" to "লবণ",
+    "chini" to "চিনি",
+    "sugar" to "চিনি",
+    "dudh" to "দুধ",
+    "doodh" to "দুধ",
+    "milk" to "দুধ",
+    "shobji" to "সবজি",
+    "sobji" to "সবজি",
+    "vegetable" to "সবজি",
+    "lebu" to "লেবু",
+    "lemon" to "লেবু",
+    "shosha" to "শসা",
+    "sosa" to "শসা",
+    "cucumber" to "শসা",
+    "gajor" to "গাজর",
+    "gajur" to "গাজর",
+    "carrot" to "গাজর",
+    "tomato" to "টমেটো",
+    "begun" to "বেগুন",
+    "brinjal" to "বেগুন",
+    "potol" to "পটল",
+    "lau" to "লাউ",
+    "gourd" to "লাউ",
+    "kumra" to "কুমড়া",
+    "kumro" to "কুমড়া",
+    "shak" to "শাক",
+    "saak" to "শাক",
+    "palong" to "পালং শাক",
+    "dhoi" to "দই",
+    "doi" to "দই",
+    "curd" to "দই",
+    "yogurt" to "দই",
+    "ruti" to "রুটি",
+    "pauruti" to "পাউরুটি",
+    "bread" to "পাউরুটি"
+)
+
+/**
+ * Resolves transliterated or common phonetic commodity names to their canonical Bengali representation.
+ * Used exclusively by the stall classifier and master product lookup.
+ */
+fun resolveCommodityAlias(rawName: String): String {
+    val norm = rawName.lowercase().trim()
+    return COMMODITY_TRANSLITERATION_ALIASES[norm] ?: norm
+}
+
+fun classifyStallWithOverride(
+    name: String,
+    masterProductsMap: Map<String, MasterProduct>? = null
+): String {
+    val map = masterProductsMap ?: masterProductsSupplier?.invoke()
+    val aliasName = resolveCommodityAlias(name)
+    val isAlias = !aliasName.equals(name.trim(), ignoreCase = true)
+
+    if (map != null && name.isNotBlank()) {
+        val clean = UnitConverterEngine.normalizeProductName(name)
+        val cleanAlias = UnitConverterEngine.normalizeProductName(aliasName)
+
+        // For transliterated aliases (e.g. "piyaj" -> "পেঁয়াজ"), prioritize the canonical commodity override.
+        val overrideCategory = if (isAlias) {
+            map[cleanAlias]?.category ?: map.values.find {
+                it.name.equals(aliasName.trim(), ignoreCase = true) || it.normalizedName == cleanAlias
+            }?.category
+        } else {
+            map[clean]?.category ?: map.values.find {
+                it.name.equals(name.trim(), ignoreCase = true) || it.normalizedName == clean
+            }?.category
+        }
+
+        if (!overrideCategory.isNullOrBlank() && ALL_DEPARTMENTS.any { it.key == overrideCategory }) {
+            return overrideCategory
+        }
+    }
+    return getMarketItemCategoryInternal(aliasName)
+}
+
 fun getMarketItemCategory(name: String): String {
+    return classifyStallWithOverride(name, null)
+}
+
+private fun getMarketItemCategoryInternal(name: String): String {
     val lower = name.lowercase().trim()
     return when {
         // Priority 1: Oils, Spices, Dry Grocery, Grains (Must precede veggie keywords to prevent 'মরিচ গুঁড়া' going to veggies)

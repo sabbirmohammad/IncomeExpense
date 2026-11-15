@@ -4,11 +4,6 @@ import com.example.expensetracker.data.model.MarketItem
 
 object MarketListParser {
 
-    private val BENGALI_DIGITS = mapOf(
-        '০' to '0', '১' to '1', '২' to '2', '৩' to '3', '৪' to '4',
-        '৫' to '5', '৬' to '6', '৭' to '7', '৮' to '8', '৯' to '9'
-    )
-
     private val FRACTION_MAP = mapOf(
         "হাফ" to 0.5,
         "আধা" to 0.5,
@@ -46,13 +41,7 @@ object MarketListParser {
     /**
      * Converts any Bengali digits in the string to standard ASCII digits (0-9).
      */
-    fun convertBengaliDigitsToEnglish(text: String): String {
-        val sb = StringBuilder()
-        for (ch in text) {
-            sb.append(BENGALI_DIGITS[ch] ?: ch)
-        }
-        return sb.toString()
-    }
+    fun convertBengaliDigitsToEnglish(text: String): String = DigitConverter.toEnglishDigits(text)
 
     /**
      * Parses a bulk text string (typically pasted from WhatsApp or Notes) into a list of [MarketItem].

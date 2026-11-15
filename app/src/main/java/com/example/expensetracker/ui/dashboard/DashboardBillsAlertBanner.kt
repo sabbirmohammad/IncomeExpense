@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.ScreenPaddingHorizontal
@@ -58,10 +57,7 @@ fun UpcomingBillsAlertBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.NotificationsActive,
                     contentDescription = null,
@@ -69,33 +65,27 @@ fun UpcomingBillsAlertBanner(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f, fill = false)) {
+                Column {
                     Text(
                         text = titleText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = appColors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = appColors.textPrimary
                     )
                     val isBangla = LocalAppStrings.current.isBangla
                     val countDisplay = if (isBangla) convertToBengaliDigits(dueCount.toString()) else dueCount.toString()
                     Text(
                         text = "$countDisplay $subtitleText",
                         fontSize = 10.sp,
-                        color = appColors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = appColors.textSecondary
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = payNowText,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = appColors.warning,
-                softWrap = false
+                color = appColors.warning
             )
         }
     }

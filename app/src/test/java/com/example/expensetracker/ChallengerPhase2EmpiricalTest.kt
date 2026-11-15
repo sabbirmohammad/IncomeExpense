@@ -118,19 +118,24 @@ class ChallengerPhase2EmpiricalTest {
 
     @Test
     fun testBillsDeletionSafeguardImplementation() {
-        val billsScreenFile = File("src/main/java/com/example/expensetracker/ui/bills/BillsScreen.kt")
-        val billsScreenContent = if (billsScreenFile.exists()) billsScreenFile.readText() else File("app/src/main/java/com/example/expensetracker/ui/bills/BillsScreen.kt").readText()
+        val billsFile = listOf(
+            File("src/main/java/com/example/expensetracker/ui/bills/BillsContent.kt"),
+            File("app/src/main/java/com/example/expensetracker/ui/bills/BillsContent.kt"),
+            File("src/main/java/com/example/expensetracker/ui/bills/BillsScreen.kt"),
+            File("app/src/main/java/com/example/expensetracker/ui/bills/BillsScreen.kt")
+        ).firstOrNull { it.exists() } ?: File("app/src/main/java/com/example/expensetracker/ui/bills/BillsContent.kt")
+        val billsScreenContent = billsFile.readText()
 
         assertTrue(
-            "BillsScreen must declare billToDelete state",
+            "BillsScreen/BillsContent must declare billToDelete state",
             billsScreenContent.contains("var billToDelete by remember { mutableStateOf<RecurringBill?>(null) }")
         )
         assertTrue(
-            "BillsScreen onDelete must set billToDelete instead of direct deletion",
+            "BillsScreen/BillsContent onDelete must set billToDelete instead of direct deletion",
             billsScreenContent.contains("billToDelete = bill")
         )
         assertTrue(
-            "BillsScreen must invoke BillDeleteConfirmDialog",
+            "BillsScreen/BillsContent must invoke BillDeleteConfirmDialog",
             billsScreenContent.contains("BillDeleteConfirmDialog(")
         )
 

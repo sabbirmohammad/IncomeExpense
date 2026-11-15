@@ -22,9 +22,11 @@ Version 7.0 ("Refined Ledger") is a comprehensive, ground-up redesign of **হ�
 - **Accessible Motion**: Spring and ease curves respecting system `reduce-motion` preferences.
 
 #### 2. Navigation Overhaul
-- **Modern 4-Tab Bottom Dock**: Clean 64dp opaque bottom bar with **Home**, **Transactions**, **Market**, and **Money Hub**.
-- **Prominent 56dp FAB**: Center action button with fluid haptic action sheet for adding expenses, income, transfers, and market lists.
-- **Removed Legacy 3D Drawer**: Removed 3D perspective rotation scaffold and right-edge side menu in favor of the dedicated **Money Hub**.
+- **Modern 5-Tab Bottom Dock**: Clean 64dp opaque bottom bar with **Home**, **Ledger (খাতা)**, **Bazaar (বাজার)**, **Wallets (ওয়ালেট)**, and **Plan (পরিকল্পনা)**.
+- **Context-Aware Extended FAB (`AppAddFab`)**: Bottom-end 56dp pill FAB with fluid 1-tap addition without nested modal sheets or long-press gestures.
+- **Removed Legacy 3D Drawer**: Removed 3D perspective rotation scaffold and right-edge side menu in favor of direct 1-tap access to all core modules.
+- **Unified Ledger (`খাতা`)**: 3-segment view: Transactions · Insights (Analytics) · Reports via top segmented control.
+- **Unified Plan (`পরিকল্পনা`)**: 4-segment budgeting and commitments hub: Budgets · Goals · Bills · Debts (ধার ও দেনা).
 - **No Occluded Content**: Uniform 80–100dp bottom padding across all scrolling surfaces ensures bottom items are always reachable.
 
 #### 3. Streamlined Transaction Entry
@@ -72,4 +74,4 @@ Version 7.0 ("Refined Ledger") is a comprehensive, ground-up redesign of **হ�
 - **100% WCAG 2.2 Touch Targets**: Zero touch targets below $48\times 48\text{dp}$ across all interactive elements (`MarketSegmentedPills`, `AccountCardMenu`, `FilterChips`, `SettingsProfileCard`).
 - **TalkBack Semantics**: Descriptive content descriptions and accessibility summaries for all charts, empty states, and switches.
 - **Added `android.permission.VIBRATE`**: System vibrator permission declared for haptic feedback.
-- **Automated Test Coverage**: 540 unit tests passing with zero failures.
+- **Automated Test Coverage**: 562 unit tests passing with zero failures.

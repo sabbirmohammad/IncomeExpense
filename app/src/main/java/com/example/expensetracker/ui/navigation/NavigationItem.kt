@@ -29,7 +29,14 @@ enum class NavigationItem(
     val activeIcon: ImageVector,
     val inactiveIcon: ImageVector
 ) {
+    // 5 Living Ledger 2.0 Top-Level Destinations
     HOME("Home", Icons.Filled.Home, Icons.Outlined.Home),
+    LEDGER("Ledger", Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong),
+    BAZAAR("Bazaar", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart),
+    WALLETS("Wallets", Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet),
+    PLAN("Plan", Icons.Filled.Payments, Icons.Outlined.Payments),
+
+    // Backward-compatible aliases for tests, deep links, notifications
     TRANSACTIONS("Transactions", Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong),
     MARKET("Market", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart),
     MONEY("Money", Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet),
@@ -42,10 +49,18 @@ enum class NavigationItem(
     SETTINGS("Settings", Icons.Filled.Settings, Icons.Outlined.Settings);
 
     val icon: ImageVector get() = inactiveIcon
+
+    val isTopLevel: Boolean
+        get() = this == HOME || this == LEDGER || this == BAZAAR || this == WALLETS || this == PLAN ||
+                this == TRANSACTIONS || this == MARKET || this == MONEY
 }
 
 fun NavigationItem.getLocalizedTitle(strings: Strings): String = when (this) {
     NavigationItem.HOME -> strings.navHome
+    NavigationItem.LEDGER -> strings.navLedger
+    NavigationItem.BAZAAR -> strings.navBazaar
+    NavigationItem.WALLETS -> strings.navWallets
+    NavigationItem.PLAN -> strings.navPlan
     NavigationItem.TRANSACTIONS -> strings.navTransactions
     NavigationItem.MARKET -> strings.navMarket
     NavigationItem.MONEY -> strings.navMoney

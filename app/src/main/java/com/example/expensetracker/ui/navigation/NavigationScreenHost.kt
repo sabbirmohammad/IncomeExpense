@@ -1,14 +1,16 @@
 package com.example.expensetracker.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.data.model.Transaction
@@ -17,31 +19,191 @@ import com.example.expensetracker.ui.accounts.AccountsScreen
 import com.example.expensetracker.ui.accounts.AccountsViewModel
 import com.example.expensetracker.ui.analytics.AnalyticsScreen
 import com.example.expensetracker.ui.analytics.AnalyticsViewModel
+import com.example.expensetracker.ui.bazaar.BazaarDoneScreen
+import com.example.expensetracker.ui.bazaar.BazaarHistoryScreen
+import com.example.expensetracker.ui.bazaar.BazaarHubScreen
+import com.example.expensetracker.ui.bazaar.BazaarPlanScreen
+import com.example.expensetracker.ui.bazaar.BazaarShopScreen
+import com.example.expensetracker.ui.bazaar.BazaarShopViewModel
+import com.example.expensetracker.ui.bazaar.BazaarTripDetailScreen
+import com.example.expensetracker.ui.bazaar.BazaarViewModel
 import com.example.expensetracker.ui.bills.BillsScreen
 import com.example.expensetracker.ui.bills.BillsViewModel
 import com.example.expensetracker.ui.budget.BudgetScreen
 import com.example.expensetracker.ui.budget.BudgetViewModel
 import com.example.expensetracker.ui.dashboard.DashboardScreen
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
+import com.example.expensetracker.ui.ledger.LedgerScreen
 import com.example.expensetracker.ui.market.MarketScreen
-import com.example.expensetracker.ui.money.MoneyHubScreen
+import com.example.expensetracker.ui.money.MoneyScreen
+import com.example.expensetracker.ui.plan.PlanScreen
 import com.example.expensetracker.ui.receivables.ReceivablesScreen
 import com.example.expensetracker.ui.receivables.ReceivablesViewModel
 import com.example.expensetracker.ui.reports.ReportsScreen
 import com.example.expensetracker.ui.reports.ReportsViewModel
 import com.example.expensetracker.ui.settings.SettingsScreen
 import com.example.expensetracker.ui.settings.SettingsViewModel
-import com.example.expensetracker.ui.transactions.TransactionsScreen
 import com.example.expensetracker.ui.transactions.TransactionsViewModel
 
 /**
- * NavigationScreenHost (v7 Refined Ledger Architecture):
- *
- * - 4 Top-level Tabs: HOME, TRANSACTIONS, MARKET, MONEY
- * - Drill-down screens (ACCOUNTS, BUDGETS, BILLS, RECEIVABLES, ANALYTICS, REPORTS)
- *   navigate back to their parent: MONEY hub.
- * - Settings navigates back to HOME (or previous screen).
- * - Smooth shared-axis horizontal transitions between top tabs, and depth fade for drilldowns.
+ * NavigationScreenHost (Pulse Design Language Architecture):
+ * - Primary entrypoint taking [AdaptiveNavigationState]:
+ *     PushedScreen (e.g. Settings, Bazaar Plan) or PulseTab (HOME, MONEY, BAZAAR, PLAN)
+ * - Retains backward-compatible overload for legacy tests & callers.
+ */
+@Composable
+fun NavigationScreenHost(
+    navState: AdaptiveNavigationState,
+    onOpenAddTransaction: (TransactionType, Long?) -> Unit,
+    onEditTransaction: (Transaction) -> Unit,
+    onSplitBillClick: () -> Unit,
+    onTransferClick: () -> Unit,
+    onOpenMarketList: () -> Unit,
+    dashboardViewModel: DashboardViewModel,
+    modifier: Modifier = Modifier,
+    onOpenMenu: () -> Unit = {}
+) {
+    val transactionsViewModel: TransactionsViewModel = viewModel()
+    val bazaarViewModel: BazaarViewModel = viewModel()
+
+    val pushed = navState.pushedScreen
+    if (pushed != null) {
+        when (pushed) {
+            PushedScreen.SETTINGS -> {
+                val settingsViewModel: SettingsViewModel = viewModel()
+                SettingsScreen(
+                    viewModel = settingsViewModel,
+                    onNavigateBack = { navState.popScreen() }
+                )
+            }
+            is PushedScreen.BAZAAR_PLAN -> {
+                BazaarPlanScreen(
+                    listId = pushed.listId,
+                    bazaarViewModel = bazaarViewModel,
+                    onNavigateBack = { navState.popScreen() },
+                    onStartShopping = { shoppingListId ->
+                        navState.popScreen()
+                        navState.pushScreen(PushedScreen.BAZAAR_SHOP(shoppingListId))
+                    }
+                )
+            }
+            is PushedScreen.BAZAAR_SHOP -> {
+                val bazaarShopViewModel: BazaarShopViewModel = viewModel()
+                BazaarShopScreen(
+                    listId = pushed.listId,
+                    bazaarShopViewModel = bazaarShopViewModel,
+                    onNavigateBack = {
+                        val isBn = bazaarViewModel.userProfile.value.appLanguage != "en"
+                        bazaarViewModel.showHubSnackbar(if (isBn) "বাজারের অগ্রগতি সংরক্ষিত হয়েছে" else "Trip progress saved")
+                        navState.popScreen()
+                    },
+                    onTripCompleted = {
+                        navState.popScreen()
+                        navState.pushScreen(PushedScreen.BAZAAR_DONE(pushed.listId))
+                    }
+                )
+            }
+            is PushedScreen.BAZAAR_DONE -> {
+                BazaarDoneScreen(
+                    listId = pushed.listId,
+                    onNavigateBackToHub = {
+                        navState.popScreen()
+                        navState.selectedTab = PulseTab.BAZAAR
+                    },
+                    onStartNewList = { newListId ->
+                        navState.popScreen()
+                        navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                    },
+                    onViewInLedger = { txId ->
+                        navState.popScreen()
+                        navState.selectedTab = PulseTab.MONEY
+                        navState.moneySegment = MoneySegment.ACTIVITY
+                    }
+                )
+            }
+            PushedScreen.BAZAAR_HISTORY -> {
+                BazaarHistoryScreen(
+                    bazaarViewModel = bazaarViewModel,
+                    onNavigateBack = { navState.popScreen() },
+                    onOpenTripDetail = { tripId ->
+                        navState.pushScreen(PushedScreen.BAZAAR_TRIP_DETAIL(tripId))
+                    },
+                    onOpenPlan = { newListId ->
+                        navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                    }
+                )
+            }
+            is PushedScreen.BAZAAR_TRIP_DETAIL -> {
+                BazaarTripDetailScreen(
+                    listId = pushed.listId,
+                    bazaarViewModel = bazaarViewModel,
+                    onNavigateBack = { navState.popScreen() },
+                    onOpenPlan = { newListId ->
+                        navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                    }
+                )
+            }
+        }
+        return
+    }
+
+    AnimatedContent(
+        targetState = navState.selectedTab,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "PulseScreenTransition",
+        modifier = modifier.fillMaxSize()
+    ) { targetTab ->
+        when (targetTab) {
+            PulseTab.HOME -> DashboardScreen(
+                viewModel = dashboardViewModel,
+                onNavigateToTransactions = {
+                    transactionsViewModel.setCategoryFilter(null)
+                    navState.navigate(NavigationItem.TRANSACTIONS)
+                },
+                onNavigateToSettings = { navState.pushScreen(PushedScreen.SETTINGS) },
+                onOpenAddTransaction = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onEditTransaction = onEditTransaction,
+                onNavigateToAnalytics = { navState.navigate(NavigationItem.ANALYTICS) },
+                onNavigateToAccounts = { navState.navigate(NavigationItem.WALLETS) },
+                onNavigateToReceivables = { navState.navigate(NavigationItem.RECEIVABLES) },
+                onNavigateToBills = { navState.navigate(NavigationItem.BILLS) },
+                onNavigateToBudgets = { navState.navigate(NavigationItem.BUDGETS) },
+                onSplitBillClick = onSplitBillClick,
+                onOpenAddExpense = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onOpenAddIncome = { onOpenAddTransaction(TransactionType.INCOME, null) },
+                onTransferClick = onTransferClick,
+                onOpenMarketList = onOpenMarketList
+            )
+            PulseTab.MONEY -> {
+                MoneyScreen(
+                    onEditTransaction = onEditTransaction,
+                    selectedSegment = navState.moneySegment,
+                    onSegmentSelected = { navState.selectMoneySegment(it) },
+                    onAddTransactionForDate = { dateMillis -> onOpenAddTransaction(TransactionType.EXPENSE, dateMillis) },
+                    transactionsViewModel = transactionsViewModel
+                )
+            }
+            PulseTab.BAZAAR -> {
+                BazaarHubScreen(
+                    bazaarViewModel = bazaarViewModel,
+                    onOpenPlanMode = { listId -> navState.pushScreen(PushedScreen.BAZAAR_PLAN(listId)) },
+                    onResumeShopping = { listId -> navState.pushScreen(PushedScreen.BAZAAR_SHOP(listId)) },
+                    onOpenHistory = { navState.pushScreen(PushedScreen.BAZAAR_HISTORY) },
+                    onOpenTripDetail = { tripId -> navState.pushScreen(PushedScreen.BAZAAR_TRIP_DETAIL(tripId)) }
+                )
+            }
+            PulseTab.PLAN -> {
+                PlanScreen(
+                    selectedSegment = navState.planSegment,
+                    onSegmentSelected = { navState.selectPlanSegment(it) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Backward-compatible NavigationScreenHost taking [NavigationItem].
  */
 @Composable
 fun NavigationScreenHost(
@@ -60,88 +222,53 @@ fun NavigationScreenHost(
 
     AnimatedContent(
         targetState = selectedItem,
-        transitionSpec = {
-            val forward = targetState.ordinal > initialState.ordinal
-            if (targetState.isTopLevel && initialState.isTopLevel) {
-                // Shared-axis X transition between top tabs
-                (slideInHorizontally(
-                    initialOffsetX = { fullWidth -> if (forward) fullWidth / 4 else -fullWidth / 4 },
-                    animationSpec = tween(220)
-                ) + fadeIn(animationSpec = tween(220)))
-                    .togetherWith(
-                        slideOutHorizontally(
-                            targetOffsetX = { fullWidth -> if (forward) -fullWidth / 4 else fullWidth / 4 },
-                            animationSpec = tween(180)
-                        ) + fadeOut(animationSpec = tween(180))
-                    )
-            } else {
-                // Drill-down transition
-                (fadeIn(animationSpec = tween(220, delayMillis = 30)))
-                    .togetherWith(fadeOut(animationSpec = tween(150)))
-            }
-        },
+        transitionSpec = { navigationScreenTransitionSpec() },
         label = "ScreenTransition",
         modifier = modifier.fillMaxSize()
     ) { targetScreen ->
         when (targetScreen) {
-            NavigationItem.HOME -> {
-                DashboardScreen(
-                    viewModel = dashboardViewModel,
-                    onNavigateToTransactions = {
-                        transactionsViewModel.setCategoryFilter(null)
-                        onNavigate(NavigationItem.TRANSACTIONS)
-                    },
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onOpenAddTransaction = {
-                        onOpenAddTransaction(TransactionType.EXPENSE, null)
-                    },
+            NavigationItem.HOME -> DashboardScreen(
+                viewModel = dashboardViewModel,
+                onNavigateToTransactions = {
+                    transactionsViewModel.setCategoryFilter(null)
+                    onNavigate(NavigationItem.LEDGER)
+                },
+                onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
+                onOpenAddTransaction = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onEditTransaction = onEditTransaction,
+                onNavigateToAnalytics = { onNavigate(NavigationItem.ANALYTICS) },
+                onNavigateToAccounts = { onNavigate(NavigationItem.WALLETS) },
+                onNavigateToReceivables = { onNavigate(NavigationItem.RECEIVABLES) },
+                onNavigateToBills = { onNavigate(NavigationItem.BILLS) },
+                onNavigateToBudgets = { onNavigate(NavigationItem.BUDGETS) },
+                onSplitBillClick = onSplitBillClick,
+                onOpenAddExpense = { onOpenAddTransaction(TransactionType.EXPENSE, null) },
+                onOpenAddIncome = { onOpenAddTransaction(TransactionType.INCOME, null) },
+                onTransferClick = onTransferClick,
+                onOpenMarketList = onOpenMarketList
+            )
+            NavigationItem.LEDGER -> {
+                val analyticsViewModel: AnalyticsViewModel = viewModel()
+                val reportsViewModel: ReportsViewModel = viewModel()
+                LedgerScreen(
+                    transactionsViewModel = transactionsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    reportsViewModel = reportsViewModel,
                     onEditTransaction = onEditTransaction,
-                    onNavigateToAnalytics = {
-                        onNavigate(NavigationItem.ANALYTICS)
-                    },
-                    onNavigateToAccounts = {
-                        onNavigate(NavigationItem.ACCOUNTS)
-                    },
-                    onNavigateToReceivables = {
-                        onNavigate(NavigationItem.RECEIVABLES)
-                    },
-                    onNavigateToBills = {
-                        onNavigate(NavigationItem.BILLS)
-                    },
-                    onNavigateToBudgets = {
-                        onNavigate(NavigationItem.BUDGETS)
-                    },
-                    onSplitBillClick = onSplitBillClick,
-                    onOpenAddExpense = {
-                        onOpenAddTransaction(TransactionType.EXPENSE, null)
-                    },
-                    onOpenAddIncome = {
-                        onOpenAddTransaction(TransactionType.INCOME, null)
-                    },
-                    onTransferClick = onTransferClick,
-                    onOpenMarketList = onOpenMarketList
+                    onAddTransactionForDate = { dateMillis -> onOpenAddTransaction(TransactionType.EXPENSE, dateMillis) },
+                    initialSegment = 0
                 )
             }
             NavigationItem.TRANSACTIONS -> {
-                TransactionsScreen(
-                    viewModel = transactionsViewModel,
+                val analyticsViewModel: AnalyticsViewModel = viewModel()
+                val reportsViewModel: ReportsViewModel = viewModel()
+                LedgerScreen(
+                    transactionsViewModel = transactionsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    reportsViewModel = reportsViewModel,
                     onEditTransaction = onEditTransaction,
-                    onAddTransactionForDate = { dateMillis ->
-                        onOpenAddTransaction(TransactionType.EXPENSE, dateMillis)
-                    },
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
-                )
-            }
-            NavigationItem.MARKET -> {
-                MarketScreen(
-                    dashboardViewModel = dashboardViewModel
-                )
-            }
-            NavigationItem.MONEY -> {
-                MoneyHubScreen(
-                    dashboardViewModel = dashboardViewModel,
-                    onNavigate = onNavigate,
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) }
+                    onAddTransactionForDate = { dateMillis -> onOpenAddTransaction(TransactionType.EXPENSE, dateMillis) },
+                    initialSegment = 0
                 )
             }
             NavigationItem.ANALYTICS -> {
@@ -150,16 +277,64 @@ fun NavigationScreenHost(
                     viewModel = analyticsViewModel,
                     onNavigateToCategoryTransactions = { categoryId ->
                         transactionsViewModel.setCategoryFilter(categoryId)
-                        onNavigate(NavigationItem.TRANSACTIONS)
+                        onNavigate(NavigationItem.LEDGER)
                     },
                     onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
                     onNavigateBack = { onNavigate(NavigationItem.MONEY) }
+                )
+            }
+            NavigationItem.REPORTS -> {
+                val reportsViewModel: ReportsViewModel = viewModel()
+                ReportsScreen(
+                    viewModel = reportsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
+                )
+            }
+            NavigationItem.BAZAAR -> {
+                MarketScreen(dashboardViewModel = dashboardViewModel)
+            }
+            NavigationItem.MARKET -> {
+                MarketScreen(dashboardViewModel = dashboardViewModel)
+            }
+            NavigationItem.WALLETS -> {
+                val accountsViewModel: AccountsViewModel = viewModel()
+                AccountsScreen(
+                    viewModel = accountsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
                 )
             }
             NavigationItem.ACCOUNTS -> {
                 val accountsViewModel: AccountsViewModel = viewModel()
                 AccountsScreen(
                     viewModel = accountsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
+                )
+            }
+            NavigationItem.MONEY -> {
+                val accountsViewModel: AccountsViewModel = viewModel()
+                AccountsScreen(
+                    viewModel = accountsViewModel,
+                    onNavigateBack = { onNavigate(NavigationItem.HOME) }
+                )
+            }
+            NavigationItem.PLAN -> {
+                val budgetViewModel: BudgetViewModel = viewModel()
+                val billsViewModel: BillsViewModel = viewModel()
+                val receivablesViewModel: ReceivablesViewModel = viewModel()
+                PlanScreen(
+                    budgetViewModel = budgetViewModel,
+                    billsViewModel = billsViewModel,
+                    receivablesViewModel = receivablesViewModel,
+                    modifier = Modifier,
+                    selectedSegment = PlanSegment.BUDGETS,
+                    onSegmentSelected = {}
+                )
+            }
+            NavigationItem.BUDGETS -> {
+                val budgetViewModel: BudgetViewModel = viewModel()
+                BudgetScreen(
+                    viewModel = budgetViewModel,
+                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
                     onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
@@ -177,21 +352,6 @@ fun NavigationScreenHost(
                     onNavigateBack = { onNavigate(NavigationItem.MONEY) }
                 )
             }
-            NavigationItem.BUDGETS -> {
-                val budgetViewModel: BudgetViewModel = viewModel()
-                BudgetScreen(
-                    viewModel = budgetViewModel,
-                    onNavigateToSettings = { onNavigate(NavigationItem.SETTINGS) },
-                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
-                )
-            }
-            NavigationItem.REPORTS -> {
-                val reportsViewModel: ReportsViewModel = viewModel()
-                ReportsScreen(
-                    viewModel = reportsViewModel,
-                    onNavigateBack = { onNavigate(NavigationItem.MONEY) }
-                )
-            }
             NavigationItem.SETTINGS -> {
                 val settingsViewModel: SettingsViewModel = viewModel()
                 SettingsScreen(
@@ -202,9 +362,3 @@ fun NavigationScreenHost(
         }
     }
 }
-
-private val NavigationItem.isTopLevel: Boolean
-    get() = this == NavigationItem.HOME ||
-            this == NavigationItem.TRANSACTIONS ||
-            this == NavigationItem.MARKET ||
-            this == NavigationItem.MONEY

@@ -44,7 +44,7 @@ fun BillSplitterAmountInput(
     Column(modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = amountText,
-            onValueChange = { onAmountChange(it.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/* " }) },
+            onValueChange = { onAmountChange(com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(it)) },
             label = { Text("$label ($currencySymbol)") },
             trailingIcon = {
                 IconButton(

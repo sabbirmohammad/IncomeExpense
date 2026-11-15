@@ -104,188 +104,28 @@ fun SettingsCategoriesCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Interactive Header (Tapping toggles expand/collapse)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable {
-                        haptics.lightTick()
-                        isExpanded = !isExpanded
-                    }
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    // Category Section Icon Badge
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(appColors.accent.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Category,
-                            contentDescription = null,
-                            tint = appColors.accent,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = if (isBangla) "ক্যাটাগরি সমূহ" else "Categories",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = appColors.textPrimary
-                        )
-
-                        // Counter badge capsule
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = appColors.accent.copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                text = "${DateTimeHelper.formatCounter(categories.size, isBangla, useBengaliNumerals || isBangla)} ${if (isBangla) "টি" else "active"}",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                ),
-                                color = appColors.accent,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Action Buttons on Right: Quick "+ New" and Chevron Toggle
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    // Quick Add Button
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            onAddCategoryClick()
-                        },
-                        shape = RoundedCornerShape(20.dp),
-                        color = appColors.accent.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f))
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = null,
-                                tint = appColors.accent,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text(
-                                text = if (isBangla) "নতুন" else "New",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 11.5.sp
-                                ),
-                                color = appColors.accent
-                            )
-                        }
-                    }
-
-                    // Rotating Chevron Toggle Button
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            isExpanded = !isExpanded
-                        },
-                        shape = CircleShape,
-                        color = appColors.surface.copy(alpha = 0.7f),
-                        border = BorderStroke(0.5.dp, appColors.border)
-                    ) {
-                        Box(
-                            modifier = Modifier.size(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ExpandMore,
-                                contentDescription = if (isExpanded) "Collapse" else "Expand",
-                                tint = if (isExpanded) appColors.accent else appColors.textSecondary,
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .rotate(chevronRotation)
-                            )
-                        }
-                    }
-                }
-            }
+            SettingsCategoriesCardHeader(
+                isExpanded = isExpanded,
+                onToggleExpand = { isExpanded = !isExpanded },
+                chevronRotation = chevronRotation,
+                categoriesCount = categories.size,
+                isBangla = isBangla,
+                useBengaliNumerals = useBengaliNumerals,
+                onAddCategoryClick = onAddCategoryClick,
+                haptics = haptics
+            )
 
             // Compact Preview Ribbon when COLLAPSED
             if (!isExpanded && categories.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(appColors.background.copy(alpha = 0.45f))
-                        .clickable {
-                            haptics.lightTick()
-                            isExpanded = true
-                        }
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.horizontalScroll(rememberScrollState())
-                    ) {
-                        categories.take(6).forEach { cat ->
-                            CategoryIconBadge(
-                                iconName = cat.icon,
-                                colorHex = cat.colorHex,
-                                size = 24.dp
-                            )
-                        }
-                        if (categories.size > 6) {
-                            Surface(
-                                shape = CircleShape,
-                                color = appColors.surface,
-                                border = BorderStroke(0.5.dp, appColors.border)
-                            ) {
-                                Text(
-                                    text = "+${categories.size - 6}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                    color = appColors.textSecondary,
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
+                SettingsCategoriesCollapsedRibbon(
+                    categories = categories,
+                    isBangla = isBangla,
+                    onExpandClick = {
+                        haptics.lightTick()
+                        isExpanded = true
                     }
-
-                    Text(
-                        text = if (isBangla) "খুলুন →" else "Expand →",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = appColors.accent
-                    )
-                }
+                )
             }
 
             // Expanded Accordion Content
@@ -294,210 +134,22 @@ fun SettingsCategoriesCard(
                 enter = expandVertically(animationSpec = tween(280)) + fadeIn(animationSpec = tween(280)),
                 exit = shrinkVertically(animationSpec = tween(240)) + fadeOut(animationSpec = tween(200))
             ) {
-                Column(modifier = Modifier.padding(top = 14.dp)) {
-                    HairlineDivider(color = appColors.border.copy(alpha = 0.6f))
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Type Filter Segment Bar (All / Expense / Income)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(appColors.surface)
-                            .padding(3.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        CategoryFilterSegment(
-                            title = if (isBangla) "সব (${categories.size})" else "All (${categories.size})",
-                            isSelected = selectedTypeFilter == null,
-                            activeColor = appColors.accent,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedTypeFilter = null
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        CategoryFilterSegment(
-                            title = if (isBangla) "ব্যয় (${expenseCategories.size})" else "Expense (${expenseCategories.size})",
-                            isSelected = selectedTypeFilter == TransactionType.EXPENSE,
-                            activeColor = appColors.expense,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedTypeFilter = TransactionType.EXPENSE
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        CategoryFilterSegment(
-                            title = if (isBangla) "আয় (${incomeCategories.size})" else "Income (${incomeCategories.size})",
-                            isSelected = selectedTypeFilter == TransactionType.INCOME,
-                            activeColor = appColors.income,
-                            onClick = {
-                                haptics.lightTick()
-                                selectedTypeFilter = TransactionType.INCOME
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // List of categories (showing up to 5 items of the filtered view)
-                    val displayList = filteredCategories.take(5)
-                    if (displayList.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 18.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (isBangla) "কোনো ক্যাটাগরি পাওয়া যায়নি" else "No categories found",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = appColors.textMuted
-                            )
-                        }
-                    } else {
-                        displayList.forEach { cat ->
-                            SettingsCategoryRowItem(
-                                category = cat,
-                                onEditClick = { onEditCategoryClick(cat) },
-                                onDeleteClick = { onDeleteCategoryClick(cat) }
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // "View All" Button (if more than 5 items or user wants full modal)
-                    if (categories.size > 5) {
-                        Surface(
-                            onClick = {
-                                haptics.lightTick()
-                                onViewAllCategoriesClick()
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            color = appColors.background.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, appColors.border.copy(alpha = 0.7f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 10.dp, horizontal = 14.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (isBangla) "সব ক্যাটাগরি ব্রাউজ করুন (${categories.size})" else "Browse all categories (${categories.size})",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = appColors.accent
-                                )
-                                Icon(
-                                    imageVector = Icons.Outlined.ChevronRight,
-                                    contentDescription = null,
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-                    }
-
-                    // Bottom Row: Add New + Collapse Button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = {
-                                haptics.lightTick()
-                                onAddCategoryClick()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = null,
-                                tint = appColors.accent,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (isBangla) "নতুন ক্যাটাগরি যোগ করুন" else "Add New Category",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = appColors.accent
-                            )
-                        }
-
-                        TextButton(
-                            onClick = {
-                                haptics.lightTick()
-                                isExpanded = false
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ExpandLess,
-                                contentDescription = null,
-                                tint = appColors.textSecondary,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text(
-                                text = if (isBangla) "সংকুচিত করুন" else "Collapse",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = appColors.textSecondary
-                            )
-                        }
-                    }
-                }
+                SettingsCategoriesExpandedContent(
+                    categories = categories,
+                    expenseCategories = expenseCategories,
+                    incomeCategories = incomeCategories,
+                    filteredCategories = filteredCategories,
+                    selectedTypeFilter = selectedTypeFilter,
+                    onSelectTypeFilter = { selectedTypeFilter = it },
+                    onEditCategoryClick = onEditCategoryClick,
+                    onDeleteCategoryClick = onDeleteCategoryClick,
+                    onViewAllCategoriesClick = onViewAllCategoriesClick,
+                    onAddCategoryClick = onAddCategoryClick,
+                    onCollapseClick = { isExpanded = false },
+                    isBangla = isBangla,
+                    haptics = haptics
+                )
             }
-        }
-    }
-}
-
-@Composable
-private fun CategoryFilterSegment(
-    title: String,
-    isSelected: Boolean,
-    activeColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val appColors = LocalAppColors.current
-
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = if (isSelected) activeColor.copy(alpha = 0.15f) else Color.Transparent,
-        border = if (isSelected) BorderStroke(1.dp, activeColor.copy(alpha = 0.4f)) else null
-    ) {
-        Box(
-            modifier = Modifier.padding(vertical = 6.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                ),
-                color = if (isSelected) activeColor else appColors.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

@@ -24,14 +24,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-private data class TxFilterParams(
-    val query: String,
-    val type: TransactionType?,
-    val categoryId: Long?,
-    val accountId: Long?,
-    val timeFilter: TimeFilter
-)
-
 @OptIn(FlowPreview::class)
 class TransactionsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -77,6 +69,30 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    private suspend fun queryTransactions(
+        filters: TxFilterParams,
+        customRange: Pair<Long, Long>?
+    ): List<Transaction> {
+        return if (filters.timeFilter == TimeFilter.CUSTOM && customRange != null) {
+            repository.getTransactionsBetween(
+                startMillis = customRange.first,
+                endMillis = customRange.second,
+                type = filters.type,
+                categoryId = filters.categoryId,
+                query = filters.query,
+                accountId = filters.accountId
+            )
+        } else {
+            repository.getFilteredTransactions(
+                timeFilter = filters.timeFilter,
+                type = filters.type,
+                categoryId = filters.categoryId,
+                query = filters.query,
+                accountId = filters.accountId
+            )
+        }
+    }
+
     init {
         val debouncedQuery = _searchQuery
             .debounce(300L)
@@ -93,25 +109,7 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
         }
 
         combine(filterFlow, repository.transactions) { filters, _ ->
-            val customRange = _customDateRange.value
-            if (filters.timeFilter == TimeFilter.CUSTOM && customRange != null) {
-                repository.getTransactionsBetween(
-                    startMillis = customRange.first,
-                    endMillis = customRange.second,
-                    type = filters.type,
-                    categoryId = filters.categoryId,
-                    query = filters.query,
-                    accountId = filters.accountId
-                )
-            } else {
-                repository.getFilteredTransactions(
-                    timeFilter = filters.timeFilter,
-                    type = filters.type,
-                    categoryId = filters.categoryId,
-                    query = filters.query,
-                    accountId = filters.accountId
-                )
-            }
+            queryTransactions(filters, _customDateRange.value)
         }.flowOn(Dispatchers.IO).onEach { result ->
             _filteredTransactions.value = result
         }.launchIn(viewModelScope)
@@ -181,26 +179,14 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
 
     fun applyFilters() {
         viewModelScope.launch {
-            val customRange = _customDateRange.value
-            val filter = _selectedTimeFilter.value
-            _filteredTransactions.value = if (filter == TimeFilter.CUSTOM && customRange != null) {
-                repository.getTransactionsBetween(
-                    startMillis = customRange.first,
-                    endMillis = customRange.second,
-                    type = _selectedType.value,
-                    categoryId = _selectedCategoryId.value,
-                    query = _searchQuery.value,
-                    accountId = _selectedAccountId.value
-                )
-            } else {
-                repository.getFilteredTransactions(
-                    timeFilter = filter,
-                    type = _selectedType.value,
-                    categoryId = _selectedCategoryId.value,
-                    query = _searchQuery.value,
-                    accountId = _selectedAccountId.value
-                )
-            }
+            val params = TxFilterParams(
+                query = _searchQuery.value,
+                type = _selectedType.value,
+                categoryId = _selectedCategoryId.value,
+                accountId = _selectedAccountId.value,
+                timeFilter = _selectedTimeFilter.value
+            )
+            _filteredTransactions.value = queryTransactions(params, _customDateRange.value)
         }
     }
 }

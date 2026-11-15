@@ -115,7 +115,7 @@ fun AddEditAccountFormFields(
         Spacer(modifier = Modifier.height(4.dp))
         OutlinedTextField(
             value = initialBalanceText,
-            onValueChange = { onInitialBalanceChange(it.filter { c -> c.isDigit() || c == '.' || c in "+-×÷/* " }) },
+            onValueChange = { onInitialBalanceChange(com.example.expensetracker.common.InputSanitizer.sanitizeMathInput(it)) },
             placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = appColors.textMuted) },
             trailingIcon = {
                 IconButton(onClick = { showCalculator = !showCalculator }) {

@@ -22,16 +22,7 @@ internal class CategoryTableHelper(private val dbHelper: ExpenseDatabaseHelper) 
                 } else {
                     seenColors.add(norm)
                 }
-                list.add(
-                    Category(
-                        id = c.getLong(c.getColumnIndexOrThrow(COL_CAT_ID)),
-                        name = c.getString(c.getColumnIndexOrThrow(COL_CAT_NAME)),
-                        type = TransactionType.valueOf(c.getString(c.getColumnIndexOrThrow(COL_CAT_TYPE))),
-                        icon = c.getString(c.getColumnIndexOrThrow(COL_CAT_ICON)),
-                        colorHex = colorHex,
-                        isDefault = c.getInt(c.getColumnIndexOrThrow(COL_CAT_IS_DEFAULT)) == 1
-                    )
-                )
+                list.add(c.toCategory())
             }
         }
         if (hasDuplicates) {
@@ -115,16 +106,7 @@ internal class CategoryTableHelper(private val dbHelper: ExpenseDatabaseHelper) 
             val finalFallback = if (fallback.id == id) {
                 val altCur = db.query(TABLE_CATEGORIES, null, "$COL_CAT_ID != ? AND $COL_CAT_TYPE = ?", arrayOf(id.toString(), catType.name), null, null, null, "1")
                 altCur.use {
-                    if (it.moveToFirst()) {
-                        Category(
-                            id = it.getLong(it.getColumnIndexOrThrow(COL_CAT_ID)),
-                            name = it.getString(it.getColumnIndexOrThrow(COL_CAT_NAME)),
-                            type = TransactionType.valueOf(it.getString(it.getColumnIndexOrThrow(COL_CAT_TYPE))),
-                            icon = it.getString(it.getColumnIndexOrThrow(COL_CAT_ICON)),
-                            colorHex = it.getString(it.getColumnIndexOrThrow(COL_CAT_COLOR)),
-                            isDefault = it.getInt(it.getColumnIndexOrThrow(COL_CAT_IS_DEFAULT)) == 1
-                        )
-                    } else fallback
+                    if (it.moveToFirst()) it.toCategory() else fallback
                 }
             } else fallback
 
@@ -165,28 +147,14 @@ internal class CategoryTableHelper(private val dbHelper: ExpenseDatabaseHelper) 
         val cursor = db.query(TABLE_CATEGORIES, null, "$COL_CAT_NAME = ? AND $COL_CAT_TYPE = ?", arrayOf(name, type.name), null, null, null, "1")
         cursor.use { c ->
             if (c.moveToFirst()) {
-                return Category(
-                    id = c.getLong(c.getColumnIndexOrThrow(COL_CAT_ID)),
-                    name = c.getString(c.getColumnIndexOrThrow(COL_CAT_NAME)),
-                    type = TransactionType.valueOf(c.getString(c.getColumnIndexOrThrow(COL_CAT_TYPE))),
-                    icon = c.getString(c.getColumnIndexOrThrow(COL_CAT_ICON)),
-                    colorHex = c.getString(c.getColumnIndexOrThrow(COL_CAT_COLOR)),
-                    isDefault = c.getInt(c.getColumnIndexOrThrow(COL_CAT_IS_DEFAULT)) == 1
-                )
+                return c.toCategory()
             }
         }
 
         val curFallback = db.query(TABLE_CATEGORIES, null, "$COL_CAT_NAME = ?", arrayOf(name), null, null, null, "1")
         curFallback.use { c ->
             if (c.moveToFirst()) {
-                return Category(
-                    id = c.getLong(c.getColumnIndexOrThrow(COL_CAT_ID)),
-                    name = c.getString(c.getColumnIndexOrThrow(COL_CAT_NAME)),
-                    type = TransactionType.valueOf(c.getString(c.getColumnIndexOrThrow(COL_CAT_TYPE))),
-                    icon = c.getString(c.getColumnIndexOrThrow(COL_CAT_ICON)),
-                    colorHex = c.getString(c.getColumnIndexOrThrow(COL_CAT_COLOR)),
-                    isDefault = c.getInt(c.getColumnIndexOrThrow(COL_CAT_IS_DEFAULT)) == 1
-                )
+                return c.toCategory()
             }
         }
 

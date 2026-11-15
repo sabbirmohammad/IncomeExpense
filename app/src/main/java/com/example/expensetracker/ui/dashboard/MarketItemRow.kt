@@ -1,63 +1,23 @@
 package com.example.expensetracker.ui.dashboard
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.*
+import androidx.compose.ui.unit.*
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.theme.HairlineInkStroke
@@ -67,29 +27,17 @@ import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
 
 /**
- * Handcrafted Tactile Bazaar Pocket Notepad Item Row:
- * - 2-line clean hierarchy on Living Ledger surface with hairline divider.
- * - Circular checkbox with tactile feedback (AppHaptics.mediumClick()).
- * - Spring-animated pencil strikethrough upon check-off.
- * - Minimum 48dp touch targets on interactive controls.
- * - Zero artificial generic elements.
+ * Handcrafted 64dp Bazaar Item Row with 1-Swipe Check-off & living ledger styling.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MarketItemRow(
-    item: MarketItem,
-    currencySymbol: String,
-    isBangla: Boolean,
-    onUnitClick: () -> Unit,
-    onTickClick: () -> Unit,
-    onRowClick: () -> Unit = onTickClick,
-    onAmountChanged: (Double) -> Unit = {},
-    onDeleteClick: () -> Unit = {},
-    onRequestDelete: () -> Unit = onDeleteClick,
-    onSubstituteClick: (() -> Unit)? = null,
-    isEditMode: Boolean = false,
-    modifier: Modifier = Modifier,
-    lastRateText: String? = null,
+    item: MarketItem, currencySymbol: String, isBangla: Boolean,
+    onUnitClick: () -> Unit, onTickClick: () -> Unit,
+    onRowClick: () -> Unit = onTickClick, onAmountChanged: (Double) -> Unit = {},
+    onDeleteClick: () -> Unit = {}, onRequestDelete: () -> Unit = onDeleteClick,
+    onSubstituteClick: (() -> Unit)? = null, isEditMode: Boolean = false,
+    modifier: Modifier = Modifier, lastRateText: String? = null,
     priceInsight: ProductPriceInsight? = null
 ) {
     val appColors = LocalAppColors.current
@@ -98,549 +46,154 @@ fun MarketItemRow(
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    haptics.successFeedback()
-                    onTickClick()
-                    // Return false so row smoothly snaps back into place; state updates in place
-                    false
-                }
-                SwipeToDismissBoxValue.EndToStart -> {
-                    if (isEditMode) {
-                        haptics.mediumClick()
-                        onRequestDelete()
-                        // Return false so item doesn't disappear until confirmed in dialog
-                        false
-                    } else {
-                        false
-                    }
-                }
+                SwipeToDismissBoxValue.StartToEnd -> { haptics.successFeedback(); onTickClick(); false }
+                SwipeToDismissBoxValue.EndToStart -> { if (isEditMode) { haptics.mediumClick(); onRequestDelete() }; false }
                 SwipeToDismissBoxValue.Settled -> false
             }
         }
     )
 
-    // Progressive drag threshold tactile feedback (lightTick upon crossing threshold)
     val isThresholdPassed = dismissState.targetValue != SwipeToDismissBoxValue.Settled
     var wasThresholdPassed by remember { mutableStateOf(false) }
     LaunchedEffect(isThresholdPassed) {
-        if (isThresholdPassed != wasThresholdPassed) {
-            haptics.lightTick()
-            wasThresholdPassed = isThresholdPassed
-        }
+        if (isThresholdPassed != wasThresholdPassed) { haptics.lightTick(); wasThresholdPassed = isThresholdPassed }
     }
 
-    val checkScale by animateFloatAsState(
-        targetValue = if (item.isPurchased) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "checkScale"
-    )
-    val checkAlpha by animateFloatAsState(
-        targetValue = if (item.isPurchased) 1f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
-        label = "checkAlpha"
-    )
+    val checkScale by animateFloatAsState(targetValue = if (item.isPurchased) 1f else 0f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), label = "checkScale")
+    val checkAlpha by animateFloatAsState(targetValue = if (item.isPurchased) 1f else 0f, animationSpec = spring(stiffness = Spring.StiffnessMedium), label = "checkAlpha")
+    val strikeProgress by animateFloatAsState(targetValue = if (item.isPurchased) 1f else 0f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), label = "strikeProgress")
 
-    // Spring-animated strikethrough upon check-off
-    val strikeProgress by animateFloatAsState(
-        targetValue = if (item.isPurchased) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "strikeProgress"
-    )
-
-    // Helper for amount input and price clear
     val handleAmountChange: (String) -> Unit = {
-        if (it.isBlank()) {
-            onAmountChanged(0.0)
-        } else {
+        if (it.isBlank()) { onAmountChanged(0.0) } else {
             val cleanNum = com.example.expensetracker.common.MarketListParser.convertBengaliDigitsToEnglish(it)
             cleanNum.toDoubleOrNull()?.let { amt -> onAmountChanged(amt) }
         }
     }
 
-    val cardBg by animateColorAsState(
-        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.06f) else appColors.cardBackground,
-        animationSpec = tween(180),
-        label = "marketItemCardBg"
-    )
-    val cardBorder by animateColorAsState(
-        targetValue = if (item.isPurchased) appColors.income.copy(alpha = 0.22f) else appColors.divider,
-        animationSpec = tween(180),
-        label = "marketItemCardBorder"
-    )
+    val lastRateResolved: String? = remember(priceInsight, lastRateText, isBangla, currencySymbol) {
+        priceInsight?.takeIf { it.currentUnitPrice > 0.0 }?.let {
+            val rate = if (it.currentUnitPrice % 1.0 == 0.0) it.currentUnitPrice.toLong().toString() else "%.1f".format(it.currentUnitPrice)
+            val rateNum = if (isBangla) convertToBengaliDigits(rate) else rate
+            if (isBangla) "গত দর: $currencySymbol$rateNum/${it.baseUnit}" else "Last: $currencySymbol$rateNum/${it.baseUnit}"
+        } ?: lastRateText
+    }
+
+    val estBadgeText: String? = remember(item, priceInsight, isBangla, currencySymbol) {
+        if (!item.isPurchased && priceInsight != null && priceInsight.currentUnitPrice > 0.0 && item.quantity > 0.0) {
+            val estCost = com.example.expensetracker.common.UnitConverterEngine.estimateCost(priceInsight.currentUnitPrice, item.quantity, item.unit)
+            val estStr = if (estCost % 1.0 == 0.0) estCost.toLong().toString() else "%.0f".format(estCost)
+            val estNum = if (isBangla) convertToBengaliDigits(estStr) else estStr
+            if (isBangla) "সম্ভাব্য $currencySymbol$estNum" else "Est. $currencySymbol$estNum"
+        } else null
+    }
+
+    val accessibilityLabel = "${item.name}, ${item.formatQuantity()}, ${if (item.isPurchased) (if (isBangla) "কেনা হয়েছে" else "Bought") + (item.amount?.takeIf { it > 0 }?.let { ", ${formatCurrency(it, currencySymbol)}" } ?: "") else (if (isBangla) "কেনা হয়নি" else "Not bought")}${if (!lastRateResolved.isNullOrBlank()) ", $lastRateResolved" else ""}"
+    val dept = getDepartmentMeta(getMarketItemCategory(item.name))
 
     Column(modifier = modifier.fillMaxWidth()) {
         SwipeToDismissBox(
-            state = dismissState,
-            modifier = Modifier.fillMaxWidth(),
-            enableDismissFromStartToEnd = true,
-            enableDismissFromEndToStart = isEditMode,
+            state = dismissState, modifier = Modifier.fillMaxWidth(),
+            enableDismissFromStartToEnd = true, enableDismissFromEndToStart = isEditMode,
             backgroundContent = {
-                val direction = dismissState.dismissDirection
-                when (direction) {
+                when (dismissState.dismissDirection) {
                     SwipeToDismissBoxValue.StartToEnd -> {
-                        // Progressive emerald reveal with checkmark icon when swiping from start to end
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(appColors.income)
-                                .padding(horizontal = 20.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = if (isBangla) "কেনা হয়েছে" else "Purchased",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Text(
-                                    text = if (item.isPurchased) {
-                                        if (isBangla) "অসম্পূর্ণ রাখুন" else "Revert"
-                                    } else {
-                                        if (isBangla) "কেনা হয়েছে" else "Done"
-                                    },
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        fontSize = 13.sp,
-                                        fontFeatureSettings = "tnum"
-                                    )
-                                )
+                        Box(modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(appColors.income).padding(horizontal = 20.dp), contentAlignment = Alignment.CenterStart) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(imageVector = Icons.Filled.Check, contentDescription = if (isBangla) "কেনা হয়েছে" else "Purchased", tint = Color.White, modifier = Modifier.size(22.dp))
+                                Text(text = if (item.isPurchased) (if (isBangla) "অসম্পূর্ণ রাখুন" else "Revert") else (if (isBangla) "কেনা হয়েছে" else "Done"), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp, fontFeatureSettings = "tnum"))
                             }
                         }
                     }
-                    SwipeToDismissBoxValue.EndToStart -> {
-                        if (isEditMode) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(appColors.expense)
-                                    .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = if (isBangla) "মুছে ফেলুন" else "Delete",
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            fontSize = 13.sp,
-                                            fontFeatureSettings = "tnum"
-                                        )
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Outlined.Delete,
-                                        contentDescription = "Delete",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    SwipeToDismissBoxValue.EndToStart -> if (isEditMode) MarketItemDeleteSwipeReveal(isBangla = isBangla, appColors = appColors)
                     SwipeToDismissBoxValue.Settled -> Unit
                 }
             }
         ) {
             Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = cardBg,
-                    border = BorderStroke(HairlineInkStroke, cardBorder),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        // Ruled pocket notepad item click & long-press handler (clickable { ... })
-                        .combinedClickable(
-                            onClick = {
-                                haptics.lightTick()
-                                if (isEditMode) {
-                                    onUnitClick()
-                                } else {
-                                    onRowClick()
-                                }
-                            },
-                            onLongClick = {
-                                haptics.longPressFeedback()
-                                if (!item.isPurchased && onSubstituteClick != null) {
-                                    onSubstituteClick()
-                                } else if (isEditMode) {
-                                    onUnitClick()
-                                }
-                            }
+                color = if (item.isPurchased) appColors.cardBackground.copy(alpha = 0.65f) else appColors.cardBackground,
+                modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp)
+                    .semantics {
+                        contentDescription = accessibilityLabel
+                        customActions = listOf(
+                            CustomAccessibilityAction(if (item.isPurchased) "Mark as unbought" else "Mark as bought") { onTickClick(); true },
+                            CustomAccessibilityAction("Delete item") { onRequestDelete(); true }
                         )
-                ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    }
+                    .clickable { haptics.lightTick(); if (isEditMode) onUnitClick() else onRowClick() }
+                    .combinedClickable(
+                        onClick = { haptics.lightTick(); if (isEditMode) onUnitClick() else onRowClick() },
+                        onLongClick = { haptics.longPressFeedback(); if (!item.isPurchased && onSubstituteClick != null) onSubstituteClick() else onUnitClick() }
+                    )
             ) {
-                // 1. Circular Checkbox with Tactile Feedback and 48dp Touch Target
-                Box(
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                        .clickable(enabled = !isEditMode) {
-                            haptics.mediumClick()
-                            onTickClick()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (item.isPurchased) appColors.income.copy(alpha = if (isEditMode) 0.6f else 1f) else Color.Transparent
-                            )
-                            .border(
-                                width = 1.5.dp,
-                                color = if (item.isPurchased) appColors.income.copy(alpha = if (isEditMode) 0.6f else 1f) else appColors.border,
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (item.isPurchased || checkScale > 0.05f) {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = "Purchased",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .size(15.dp)
-                                    .graphicsLayer {
-                                        scaleX = checkScale
-                                        scaleY = checkScale
-                                        alpha = checkAlpha
-                                    }
-                            )
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(modifier = Modifier.minimumInteractiveComponentSize().sizeIn(minWidth = 48.dp, minHeight = 48.dp).clickable(enabled = !isEditMode) { haptics.mediumClick(); onTickClick() }, contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(if (item.isPurchased) appColors.income else Color.Transparent).border(1.5.dp, if (item.isPurchased) appColors.income else appColors.divider, CircleShape), contentAlignment = Alignment.Center) {
+                            if (item.isPurchased || checkScale > 0.05f) {
+                                Icon(Icons.Filled.Check, "Purchased", tint = Color.White, modifier = Modifier.size(17.dp).graphicsLayer { scaleX = checkScale; scaleY = checkScale; alpha = checkAlpha })
+                            }
                         }
                     }
-                }
-
-                // 2. Product Name, Quantity & Badges (2-Line Balanced Layout)
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // Line 1: Product Name (Left) + Estimated Cost / Purchased Price Badge (Right)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val strikethroughColor = appColors.textSecondary.copy(alpha = 0.7f)
-                        Text(
-                            text = item.name,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 15.sp,
-                                fontWeight = if (item.isPurchased) FontWeight.Normal else FontWeight.SemiBold,
-                                textDecoration = if (item.isPurchased) TextDecoration.LineThrough else TextDecoration.None
-                            ),
-                            color = if (item.isPurchased) appColors.textSecondary else appColors.textPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .weight(1f, fill = false)
-                                .drawWithContent {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f, fill = false)) {
+                            val strikethroughColor = appColors.textMuted
+                            Text(
+                                text = item.name,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp, lineHeight = 20.sp, fontWeight = if (item.isPurchased) FontWeight.Normal else FontWeight.SemiBold, textDecoration = if (item.isPurchased) TextDecoration.LineThrough else TextDecoration.None),
+                                color = if (item.isPurchased) appColors.textMuted else appColors.textPrimary, maxLines = 2, overflow = TextOverflow.Clip,
+                                modifier = Modifier.weight(1f, fill = false).drawWithContent {
                                     drawContent()
                                     if (strikeProgress > 0.01f) {
                                         val y = size.height / 2f
-                                        drawLine(
-                                            color = strikethroughColor,
-                                            start = Offset(0f, y),
-                                            end = Offset(size.width * strikeProgress, y),
-                                            strokeWidth = 2.dp.toPx(),
-                                            cap = StrokeCap.Round
-                                        )
+                                        drawLine(color = strikethroughColor, start = Offset(0f, y), end = Offset(size.width * strikeProgress, y), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
                                     }
                                 }
-                        )
-
-                        // Line 1 End: Last Rate + Estimated Cost (Unpurchased) OR Trend + Price Badge (Purchased)
-                        if (!isEditMode) {
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp), color = if (item.isPurchased) appColors.surfaceVariant.copy(alpha = 0.5f) else appColors.accentContainer.copy(alpha = 0.4f),
+                                border = BorderStroke(HairlineInkStroke, if (item.isPurchased) appColors.divider else appColors.accent.copy(alpha = 0.25f)),
+                                modifier = Modifier.minimumInteractiveComponentSize().defaultMinSize(minHeight = 32.dp).clickable(enabled = !item.isPurchased) { haptics.lightTick(); onUnitClick() }
+                            ) {
+                                Row(modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text(text = item.formatQuantity(), style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"), color = if (item.isPurchased) appColors.textMuted else appColors.textPrimary)
+                                    if (!item.isPurchased) Icon(Icons.Outlined.Edit, "Edit quantity", tint = appColors.textSecondary, modifier = Modifier.size(10.dp))
+                                }
+                            }
+                        }
+                        if (!lastRateResolved.isNullOrBlank()) {
+                            Text(text = lastRateResolved, style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal, fontFeatureSettings = "tnum"), color = appColors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        if (isEditMode) {
+                            Text(text = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp), color = appColors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    if (isEditMode) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (onSubstituteClick != null && !item.isPurchased) {
+                                IconButton(onClick = { haptics.lightTick(); onSubstituteClick() }, modifier = Modifier.size(48.dp).minimumInteractiveComponentSize()) {
+                                    Icon(Icons.Outlined.SwapHoriz, "Substitute item", tint = appColors.accent, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                            IconButton(onClick = { haptics.mediumClick(); onRequestDelete() }, modifier = Modifier.size(48.dp).minimumInteractiveComponentSize()) {
+                                Icon(Icons.Outlined.Delete, "Delete item", tint = appColors.expense, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    } else {
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             if (item.isPurchased) {
                                 val amt = item.amount ?: 0.0
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.padding(start = 6.dp)
-                                ) {
-                                    // Smart Price Trend pill if previous comparison is known
-                                    if (priceInsight?.previousUnitPrice != null && amt > 0) {
-                                        val diffText = priceInsight.formatDiff()
-                                        val isUp = priceInsight.isPriceUp
-                                        val isDown = priceInsight.isPriceDown
-                                        val trendColor = if (isUp) appColors.expense else if (isDown) appColors.income else appColors.textSecondary
-                                        val trendIcon = if (isUp) "🔺 " else if (isDown) "🔻 " else "➖ "
-                                        Text(
-                                            text = "$trendIcon$diffText",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                fontFeatureSettings = "tnum"
-                                            ),
-                                            color = trendColor,
-                                            maxLines = 1
-                                        )
-                                    }
-
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = appColors.income.copy(alpha = 0.12f),
-                                        border = BorderStroke(HairlineInkStroke, appColors.income.copy(alpha = 0.3f))
-                                    ) {
-                                        Text(
-                                            text = if (amt > 0) formatCurrency(amt, currencySymbol) else (if (isBangla) "কেনা হয়েছে" else "Done"),
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontSize = 12.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                fontFeatureSettings = "tnum"
-                                            ),
-                                            color = appColors.income,
-                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-                                        )
-                                    }
+                                Surface(shape = RoundedCornerShape(8.dp), color = appColors.income.copy(alpha = 0.12f), border = BorderStroke(HairlineInkStroke, appColors.income.copy(alpha = 0.3f))) {
+                                    Text(text = if (amt > 0) formatCurrency(amt, currencySymbol) else (if (isBangla) "কেনা হয়েছে" else "Bought"), style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"), color = appColors.income, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                                 }
-                            } else {
-                                // Right: Last purchased rate & Estimated cost pill placed in First Row
-                                if (priceInsight != null && priceInsight.currentUnitPrice > 0.0) {
-                                    val rateStr = if (priceInsight.currentUnitPrice % 1.0 == 0.0) {
-                                        priceInsight.currentUnitPrice.toLong().toString()
-                                    } else {
-                                        "%.1f".format(priceInsight.currentUnitPrice)
-                                    }
-                                    val rateNum = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
-                                    val lastRateResolved = if (isBangla) "গত দর: $currencySymbol$rateNum/${priceInsight.baseUnit}" else "Last: $currencySymbol$rateNum/${priceInsight.baseUnit}"
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        modifier = Modifier.padding(start = 6.dp)
-                                    ) {
-                                        // Last purchased unit rate
-                                        Text(
-                                            text = lastRateResolved,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                fontFeatureSettings = "tnum"
-                                            ),
-                                            color = appColors.textSecondary.copy(alpha = 0.85f),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-
-                                        if (item.quantity > 0.0) {
-                                            val estCost = com.example.expensetracker.common.UnitConverterEngine.estimateCost(
-                                                priceInsight.currentUnitPrice,
-                                                item.quantity,
-                                                item.unit
-                                            )
-                                            val estStr = if (estCost % 1.0 == 0.0) estCost.toLong().toString() else "%.0f".format(estCost)
-                                            val estNum = if (isBangla) convertToBengaliDigits(estStr) else estStr
-                                            val estBadgeText = if (isBangla) "সম্ভাব্য $currencySymbol$estNum" else "Est. $currencySymbol$estNum"
-
-                                            // Stylish pill badge showing the expected estimated cost
-                                            Surface(
-                                                shape = RoundedCornerShape(8.dp),
-                                                color = appColors.accent.copy(alpha = 0.10f),
-                                                border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.25f))
-                                            ) {
-                                                Text(
-                                                    text = estBadgeText,
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontFeatureSettings = "tnum"
-                                                    ),
-                                                    color = appColors.accent,
-                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                        }
-                                    }
-                                } else if (lastRateText != null) {
-                                    Text(
-                                        text = lastRateText,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            fontFeatureSettings = "tnum"
-                                        ),
-                                        color = appColors.textSecondary.copy(alpha = 0.85f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(start = 6.dp)
-                                    )
+                            } else if (estBadgeText != null) {
+                                Surface(shape = RoundedCornerShape(8.dp), color = appColors.surfaceVariant, border = BorderStroke(HairlineInkStroke, appColors.divider)) {
+                                    Text(text = estBadgeText, style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"), color = appColors.textSecondary, modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp))
                                 }
                             }
-                        }
-                    }
-
-                    // Line 2: Quantity Badge + Department Tag Chip (Left) + Substitute Trigger (Right)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Left side of Line 2: Quantity & Department pills
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.weight(1f, fill = false)
-                        ) {
-                            // Quantity pill with 48dp touch target accessibility
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                                modifier = Modifier
-                                    .minimumInteractiveComponentSize()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(
-                                        if (item.isPurchased) appColors.background
-                                        else appColors.accent.copy(alpha = 0.10f)
-                                    )
-                                    .defaultMinSize(minHeight = 32.dp)
-                                    .clickable(enabled = !item.isPurchased) {
-                                        haptics.lightTick()
-                                        onUnitClick()
-                                    }
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = item.formatQuantity(),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        fontFeatureSettings = "tnum"
-                                    ),
-                                    color = if (item.isPurchased) appColors.textSecondary else appColors.accent
-                                )
-                                if (!item.isPurchased) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Edit,
-                                        contentDescription = "Edit quantity",
-                                        tint = appColors.accent.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(10.dp)
-                                    )
-                                }
-                            }
-
-                            // Department indicator pill (e.g. 🥬 কাঁচাবাজার / 🧂 মুদি সদাই / 🥛 দুধ ও বেকারি)
-                            val dept = getDepartmentMeta(getMarketItemCategory(item.name))
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = appColors.surfaceVariant.copy(alpha = 0.5f),
-                                border = BorderStroke(HairlineInkStroke, appColors.divider.copy(alpha = 0.5f))
-                            ) {
-                                Text(
-                                    text = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    color = if (item.isPurchased) appColors.textSecondary.copy(alpha = 0.7f) else appColors.textSecondary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-
-                        // Right side of Line 2: Substitute item quick button
-                        if (!isEditMode && !item.isPurchased && onSubstituteClick != null) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = appColors.accent.copy(alpha = 0.08f),
-                                border = BorderStroke(HairlineInkStroke, appColors.accent.copy(alpha = 0.2f)),
-                                modifier = Modifier
-                                    .padding(start = 6.dp)
-                                    .minimumInteractiveComponentSize()
-                                    .defaultMinSize(minHeight = 32.dp)
-                                    .clickable {
-                                        haptics.lightTick()
-                                        onSubstituteClick()
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.SwapHoriz,
-                                        contentDescription = "Substitute item",
-                                        tint = appColors.accent,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = if (isBangla) "বিকল্প" else "Alt",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        color = appColors.accent
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 3. Right: In Edit Mode, show Delete item button with minimum 48dp touch target
-                if (isEditMode) {
-                    IconButton(
-                        onClick = {
-                            haptics.mediumClick()
-                            onRequestDelete()
-                        },
-                        modifier = Modifier
-                            .minimumInteractiveComponentSize()
-                            .size(48.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(appColors.expense.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Delete,
-                                contentDescription = if (isBangla) "পণ্য মুছুন" else "Delete",
-                                tint = appColors.expense,
-                                modifier = Modifier.size(18.dp)
-                            )
                         }
                     }
                 }
             }
         }
-    }
-
-        // Ruled pocket notebook baseline divider (LocalAppColors.current.divider)
-        HorizontalDivider(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-            thickness = HairlineInkStroke,
-            color = appColors.divider.copy(alpha = 0.5f)
-        )
+        HorizontalDivider(color = appColors.divider, thickness = HairlineInkStroke)
     }
 }

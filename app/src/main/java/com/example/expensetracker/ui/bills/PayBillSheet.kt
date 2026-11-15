@@ -106,106 +106,22 @@ fun PayBillSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            AppCard(
-                modifier = Modifier.fillMaxWidth(),
-                padding = 14.dp
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = bill.title,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = appColors.textPrimary
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = getLocalizedCategoryName(bill.categoryName, strings.isBangla),
-                            fontSize = 12.sp,
-                            color = appColors.textMuted
-                        )
-                    }
-                    Text(
-                        text = formatCurrency(bill.amount, currencySymbol),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = appColors.expense
-                    )
-                }
-            }
+            PayBillSummaryCard(
+                bill = bill,
+                currencySymbol = currencySymbol,
+                isBangla = strings.isBangla
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (accounts.isNotEmpty()) {
-                Text(
-                    text = if (strings.isBangla) "পরিশোধের অ্যাকাউন্ট:" else "Pay From Account:",
-                    fontSize = 12.sp,
-                    color = appColors.textSecondary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    accounts.forEach { acc ->
-                        val isSelected = selectedAccount?.id == acc.id
-                        val brandStyle = BrandIdentityHelper.getBrandStyle(acc)
-
-                        Surface(
-                            shape = RoundedCornerShape(SmallElementRadius),
-                            color = if (isSelected) brandStyle.primaryColor.copy(alpha = 0.15f) else appColors.surfaceVariant,
-                            border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) brandStyle.primaryColor else appColors.border),
-                            modifier = Modifier.clickable {
-                                haptics.lightTick()
-                                selectedAccount = acc
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(20.dp)
-                                        .clip(CircleShape)
-                                        .background(brandStyle.gradient),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = brandStyle.icon,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(11.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = acc.name,
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 11.5.sp,
-                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                        ),
-                                        color = appColors.textPrimary
-                                    )
-                                    Text(
-                                        text = formatCurrency(acc.currentBalance, currencySymbol),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                        color = if (isSelected) brandStyle.primaryColor else appColors.textMuted
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            PayBillAccountSelector(
+                accounts = accounts,
+                selectedAccount = selectedAccount,
+                onSelectAccount = { selectedAccount = it },
+                currencySymbol = currencySymbol,
+                isBangla = strings.isBangla,
+                haptics = haptics
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 

@@ -60,27 +60,15 @@ class Phase2P1EnhancementsTest {
     }
 
     @Test
-    fun testGlobalActionChooserSheetArrowSemantics() {
+    fun testGlobalActionChooserSheetRemovedAndReplacedByFab() {
         val file = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/GlobalActionChooserSheet.kt")
-        assertTrue("GlobalActionChooserSheet.kt must exist", file.exists())
-        val content = file.readText()
+        org.junit.Assert.assertFalse("GlobalActionChooserSheet.kt must be deleted in v7 redesign", file.exists())
 
-        // Add Expense Card must use ArrowDownward
-        val expenseIndex = content.indexOf("// 1. Add Expense Card")
-        val incomeIndex = content.indexOf("// 2. Add Income Card")
-        assertTrue("Must contain Add Expense and Add Income", expenseIndex != -1 && incomeIndex != -1)
+        val fabFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/components/AppAddFab.kt")
+        org.junit.Assert.assertFalse("AppAddFab.kt must be deleted in v7 Phase 2 and replaced by Pulse Dock Add CTA", fabFile.exists())
 
-        val expenseSnippet = content.substring(expenseIndex, expenseIndex + 250)
-        assertTrue(
-            "Add Expense card must use ArrowDownward",
-            expenseSnippet.contains("Icons.Outlined.ArrowDownward")
-        )
-
-        val incomeSnippet = content.substring(incomeIndex, incomeIndex + 250)
-        assertTrue(
-            "Add Income card must use ArrowUpward",
-            incomeSnippet.contains("Icons.Outlined.ArrowUpward")
-        )
+        val pulseDockFile = findSourceFile("app/src/main/java/com/example/expensetracker/ui/navigation/PulseDock.kt")
+        assertTrue("PulseDock.kt must exist with raised Mango Add button", pulseDockFile.exists())
     }
 
     @Test

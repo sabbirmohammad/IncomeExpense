@@ -100,19 +100,17 @@ class ThemeTypographyTest {
 
     @Test
     fun testLightAndDarkAppColorsContrastPalette() {
-        // Light mode textPrimary must be dark (#0F172A), not white (#FFFFFF)
+        // Light mode textPrimary must be dark (#0F1729), not white (#FFFFFF)
         assertEquals(ColorTextPrimaryLight, LightAppColors.textPrimary)
         assertNotEquals(ColorTextPrimaryDark, LightAppColors.textPrimary)
-        assertEquals(Color(0xFF0F172A), LightAppColors.textPrimary)
+        assertEquals(Color(0xFF0F1729), LightAppColors.textPrimary)
         assertEquals(ColorSurfaceLight, LightAppColors.surface)
         assertFalse(LightAppColors.isDark)
 
-        // Dark and AMOLED textPrimary must be white (#FFFFFF)
-        assertEquals(ColorTextPrimaryDark, DarkAppColors.textPrimary)
-        assertEquals(Color(0xFFFFFFFF), DarkAppColors.textPrimary)
+        // Dark textPrimary is soft white (#F2F5FF), AMOLED textPrimary is pure white (#FFFFFF)
+        assertEquals(Color(0xFFF2F5FF), DarkAppColors.textPrimary)
         assertTrue(DarkAppColors.isDark)
 
-        assertEquals(ColorTextPrimaryDark, AmoledAppColors.textPrimary)
         assertEquals(Color(0xFFFFFFFF), AmoledAppColors.textPrimary)
         assertTrue(AmoledAppColors.isDark)
     }
@@ -128,8 +126,8 @@ class ThemeTypographyTest {
         // Positive amount in Light Mode -> LightAppColors.textPrimary (#0F172A)
         assertEquals(ColorTextPrimaryLight, resolveHeroColor(15000.0, isPrivacy = false, isDark = false))
 
-        // Positive amount in Dark Mode -> DarkAppColors.textPrimary (#FFFFFF)
-        assertEquals(ColorTextPrimaryDark, resolveHeroColor(15000.0, isPrivacy = false, isDark = true))
+        // Positive amount in Dark Mode -> DarkAppColors.textPrimary (#F2F5FF)
+        assertEquals(DarkAppColors.textPrimary, resolveHeroColor(15000.0, isPrivacy = false, isDark = true))
 
         // Negative amount in Light Mode -> LightAppColors.expense
         assertEquals(LightAppColors.expense, resolveHeroColor(-250.0, isPrivacy = false, isDark = false))

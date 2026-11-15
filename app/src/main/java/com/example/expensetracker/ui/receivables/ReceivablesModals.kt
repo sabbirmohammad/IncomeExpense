@@ -137,78 +137,19 @@ fun ReceivablesModals(
         )
     }
 
-    if (showAddEditPayableSheet) {
-        AddEditPayableSheet(
-            payable = payableToEdit,
-            accounts = accounts,
-            currencySymbol = userProfile.currencySymbol,
-            onDismiss = onDismissAddEditPayable,
-            onSave = { name, phone, amount, dueMillis, note, depositAccId ->
-                if (payableToEdit != null) {
-                    val updated = payableToEdit.copy(
-                        personName = name, phoneNumber = phone,
-                        amount = amount, dueDateMillis = dueMillis, notes = note
-                    )
-                    viewModel.updatePayable(updated)
-                } else {
-                    viewModel.addPayable(name, phone, amount, dueMillis, note, depositAccId)
-                }
-                feedbackController.show(
-                    TransactionFeedbackData(
-                        type = FeedbackVisualType.GENERIC_SUCCESS,
-                        title = if (strings.isBangla) "দেনা হিসাব সফল হয়েছে" else "Payable saved",
-                        amount = amount,
-                        currencySymbol = userProfile.currencySymbol,
-                        subtitle = name
-                    )
-                )
-                onDismissAddEditPayable()
-            }
-        )
-    }
-
-    if (payableForPayment != null) {
-        RecordPayablePaymentSheet(
-            payable = payableForPayment,
-            accounts = accounts,
-            currencySymbol = userProfile.currencySymbol,
-            onDismiss = onDismissPayablePayment,
-            onConfirm = { amount, accountId, note ->
-                val target = payableForPayment
-                val willSettle = (target.remainingAmount - amount) <= 0.001
-                viewModel.recordPayablePayment(target.id, amount, accountId, note)
-                if (willSettle) onTriggerConfetti()
-                feedbackController.show(
-                    TransactionFeedbackData(
-                        type = FeedbackVisualType.DEBT_PAYMENT,
-                        title = if (strings.isBangla) "দেনা পরিশোধ সফল হয়েছে" else "Debt payment recorded",
-                        amount = amount,
-                        currencySymbol = userProfile.currencySymbol,
-                        subtitle = "${target.personName} · ${if (willSettle) strings.settledBadge else strings.partialBadge}"
-                    )
-                )
-                onDismissPayablePayment()
-            }
-        )
-    }
-
-    if (payableToDelete != null) {
-        PayableDeleteDialog(
-            payable = payableToDelete,
-            onDismiss = onDismissDeletePayable,
-            onConfirmDelete = { target ->
-                viewModel.deletePayable(target.id)
-                onDismissDeletePayable()
-                feedbackController.show(
-                    TransactionFeedbackData(
-                        type = FeedbackVisualType.ITEM_DELETED,
-                        title = FeedbackStrings.itemDeleted(strings.isBangla),
-                        subtitle = target.personName
-                    )
-                )
-            }
-        )
-    }
+    PayablesModals(
+        viewModel = viewModel,
+        userProfile = userProfile,
+        accounts = accounts,
+        showAddEditPayableSheet = showAddEditPayableSheet,
+        payableToEdit = payableToEdit,
+        onDismissAddEditPayable = onDismissAddEditPayable,
+        payableForPayment = payableForPayment,
+        onDismissPayablePayment = onDismissPayablePayment,
+        payableToDelete = payableToDelete,
+        onDismissDeletePayable = onDismissDeletePayable,
+        onTriggerConfetti = onTriggerConfetti
+    )
 
     ConfettiCelebration(
         trigger = showConfetti,

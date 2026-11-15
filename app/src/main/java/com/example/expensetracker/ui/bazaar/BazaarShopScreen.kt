@@ -1,0 +1,1515 @@
+package com.example.expensetracker.ui.bazaar
+
+import android.app.Activity
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.expensetracker.common.DigitConverter
+import com.example.expensetracker.data.model.Account
+import com.example.expensetracker.data.model.MarketCompletionResult
+import com.example.expensetracker.data.model.MarketItem
+import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.ui.adaptive.LocalWindowClass
+import com.example.expensetracker.ui.components.ProgressBarThreshold
+import com.example.expensetracker.ui.components.PulseTabularText
+import com.example.expensetracker.ui.components.PulseText
+import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
+import com.example.expensetracker.ui.dashboard.classifyStallWithOverride
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@Composable
+fun BazaarShopScreen(
+    listId: Long,
+    bazaarShopViewModel: BazaarShopViewModel,
+    onNavigateBack: () -> Unit,
+    onTripCompleted: (MarketCompletionResult) -> Unit,
+    modifier: Modifier = Modifier,
+    wakeLockManager: ScreenWakeLockManager = AndroidScreenWakeLockManager
+) {
+    val windowClass = LocalWindowClass.current
+    val appColors = LocalAppColors.current
+    val typography = MaterialTheme.typography
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 1. Keep Screen Awake via ScreenWakeLockManager (Amendment 8)
+    val activity = remember(context) { AndroidScreenWakeLockManager.findActivity(context) }
+    DisposableEffect(activity, wakeLockManager) {
+        if (activity != null) {
+            wakeLockManager.acquire(activity)
+        }
+        onDispose {
+            if (activity != null) {
+                wakeLockManager.release(activity)
+            }
+        }
+    }
+
+    // 2. Data Subscriptions
+    val allLists by bazaarShopViewModel.allMarketLists.collectAsStateWithLifecycle()
+    val isMarketListsLoaded by bazaarShopViewModel.isMarketListsLoaded.collectAsStateWithLifecycle()
+    val lastPurchasedRates by bazaarShopViewModel.lastPurchasedRates.collectAsStateWithLifecycle()
+    val productPriceInsights by bazaarShopViewModel.productPriceInsights.collectAsStateWithLifecycle()
+    val masterProductsMap by bazaarShopViewModel.masterProductsMap.collectAsStateWithLifecycle()
+    val stapleProducts by bazaarShopViewModel.stapleProducts.collectAsStateWithLifecycle()
+    val isPrivacyMode by bazaarShopViewModel.isPrivacyMode.collectAsStateWithLifecycle()
+    val userProfile by bazaarShopViewModel.userProfile.collectAsStateWithLifecycle()
+    val accounts by bazaarShopViewModel.accounts.collectAsStateWithLifecycle(emptyList())
+
+    val skippedItemIds by bazaarShopViewModel.skippedItemIds.collectAsStateWithLifecycle()
+    val isAutoAdvanceEnabled by bazaarShopViewModel.isAutoAdvanceEnabled.collectAsStateWithLifecycle()
+    val itemPricingMode by bazaarShopViewModel.itemPricingMode.collectAsStateWithLifecycle()
+    val pendingHighlightItemId by bazaarShopViewModel.pendingHighlightItemId.collectAsStateWithLifecycle()
+    val activePricePadItem by bazaarShopViewModel.activePricePadItem.collectAsStateWithLifecycle()
+    val isReceiptExpanded by bazaarShopViewModel.isReceiptExpanded.collectAsStateWithLifecycle()
+
+    val isBangla = userProfile.appLanguage != "en"
+    val useBengaliNumerals = isBangla
+
+    // Current Trip Lookup
+    val currentTrip = allLists.find { it.list.id == listId }
+
+    // Fallback: If list does not exist after loading finishes, safely pop back
+    LaunchedEffect(isMarketListsLoaded, currentTrip) {
+        if (isMarketListsLoaded && currentTrip == null) {
+            onNavigateBack()
+        }
+    }
+
+    val items = currentTrip?.items ?: emptyList()
+    val budgetCap = remember(listId, currentTrip) {
+        bazaarShopViewModel.getBudgetCap(listId)
+    }
+
+    // Intercept back key to save trip progress and pop back
+    BackHandler {
+        onNavigateBack()
+    }
+
+    // 3. Stall Definitions & Grouping
+    val standardStallKeys = listOf(
+        "🥬 শাকসবজি",
+        "🐟 মাছ ও মাংস",
+        "🥛 দুধ ও ডেয়ারি",
+        "🧂 মুদি সদাই"
+    )
+
+    // Filter items into active (unskipped) and skipped
+    val activeItems = items.filter { it.id !in skippedItemIds }
+    val skippedItems = items.filter { it.id in skippedItemIds }
+
+    val itemsByStall = remember(activeItems, masterProductsMap) {
+        activeItems.groupBy { item ->
+            classifyStallWithOverride(item.name, masterProductsMap)
+        }
+    }
+
+    // Progress Calculations
+    val totalSpent = remember(items) {
+        items.filter { it.isPurchased && it.amount != null }.sumOf { it.amount ?: 0.0 }
+    }
+    val purchasedCount = remember(items) {
+        items.count { it.isPurchased }
+    }
+    val totalItemCount = items.size
+
+    val budgetProgress = remember(totalSpent, budgetCap) {
+        if (budgetCap != null && budgetCap > 0.0) {
+            (totalSpent / budgetCap).toFloat()
+        } else 0f
+    }
+
+    // 4. LazyList State & Scroll Auto-advance
+    val listState = rememberLazyListState()
+
+    // Map stall index to first visible item position
+    val stallIndices = remember(itemsByStall) {
+        val map = mutableMapOf<String, Int>()
+        var runningIndex = 1 // 0 is top strip / forgot staples
+        ALL_DEPARTMENTS.forEach { dept ->
+            val stallList = itemsByStall[dept.key]
+            if (!stallList.isNullOrEmpty()) {
+                map[dept.key] = runningIndex
+                runningIndex += 1 + stallList.size // 1 for header + items
+            }
+        }
+        map
+    }
+
+    // Auto-advance scroll effect
+    LaunchedEffect(pendingHighlightItemId) {
+        val targetId = pendingHighlightItemId ?: return@LaunchedEffect
+        val stall = activeItems.find { it.id == targetId }?.let { classifyStallWithOverride(it.name, masterProductsMap) }
+        val stallStartIndex = stallIndices[stall]
+        if (stallStartIndex != null) {
+            val stallItems = itemsByStall[stall] ?: emptyList()
+            val itemOffset = stallItems.indexOfFirst { it.id == targetId }
+            if (itemOffset >= 0) {
+                listState.animateScrollToItem((stallStartIndex + 1 + itemOffset).coerceAtLeast(0))
+            }
+        }
+        delay(1200L)
+        bazaarShopViewModel.clearHighlight()
+    }
+
+    // 5. Pre-checkout Dialog State (Amendment 11)
+    var showCheckoutDialog by rememberSaveable { mutableStateOf(false) }
+    var carryOverUnpurchased by rememberSaveable { mutableStateOf(true) }
+    var selectedAccountId by rememberSaveable {
+        mutableLongStateOf(accounts.firstOrNull()?.id ?: 0L)
+    }
+
+    // Top overflow menu state & Medium layout collapsible receipt state
+    var showShopOverflowMenu by remember { mutableStateOf(false) }
+    var isMediumReceiptCollapsed by rememberSaveable { mutableStateOf(false) }
+
+    // 6. Forgot Staples Strip State (Amendment 5)
+    var isForgotStaplesDismissed by rememberSaveable { mutableStateOf(false) }
+
+    val missingStaples = remember(purchasedCount, isForgotStaplesDismissed, stapleProducts, items, productPriceInsights) {
+        if (purchasedCount < 3 || isForgotStaplesDismissed) {
+            emptyList()
+        } else {
+            val currentNames = items.map { it.name.trim().lowercase() }.toSet()
+            val sevenDaysAgo = System.currentTimeMillis() - (7 * 24 * 3600 * 1000L)
+            stapleProducts.filter { staple ->
+                val norm = staple.normalizedName.lowercase().trim()
+                val notInList = norm !in currentNames && staple.name.lowercase().trim() !in currentNames
+                val insight = productPriceInsights[norm]
+                val notRecentlyPurchased = insight == null || insight.lastPurchasedTimestamp < sevenDaysAgo
+                notInList && notRecentlyPurchased
+            }.take(6)
+        }
+    }
+
+    // 7. Impromptu Add Item Dialog State
+    var showAddImpromptuDialog by rememberSaveable { mutableStateOf(false) }
+    var impromptuName by rememberSaveable { mutableStateOf("") }
+    var impromptuQty by rememberSaveable { mutableStateOf("1") }
+    var impromptuUnit by rememberSaveable { mutableStateOf("কেজি") }
+
+    // Undo Snackbar Helper
+    val onShowUndoSnackbar: (MarketItem, String, () -> Unit) -> Unit = { _, message, undoAction ->
+        coroutineScope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = if (isBangla) "বাতিল" else "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                undoAction()
+            }
+        }
+    }
+
+    // Layout configuration (Amendment 6)
+    val isLandscapePhone = windowClass.heightClass.isCompact && !windowClass.isCompact
+    val useTwoColumn = !windowClass.isCompact || isLandscapePhone
+    val leftColumnWeight = if (windowClass.isExpanded) 0.65f else 0.60f
+    val rightColumnWeight = if (windowClass.isExpanded) 0.35f else 0.40f
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        topBar = {
+            // Clean seamless top bar blending into screen background (no separate boxed grey card)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(appColors.background)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = if (isBangla) "বাজার থামিয়ে ফিরে যান" else "Pause trip and go back",
+                                tint = appColors.textPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Column {
+                            Text(
+                                text = currentTrip?.list?.title ?: (if (isBangla) "বাজারের ফর্দ" else "Market List"),
+                                style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = appColors.bazaarAccent,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (isBangla) "কেনাকাটা চলছে (স্ক্রিন সজাগ)" else "Shop Mode (Screen awake)",
+                                    style = typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = appColors.textSecondary
+                                )
+                            }
+                        }
+                    }
+
+                    // Header Right: Shop Mode overflow menu only (no standalone up arrow!)
+                    Box {
+                        IconButton(
+                            onClick = { showShopOverflowMenu = true },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = if (isBangla) "আরও বিকল্প" else "More options",
+                                tint = appColors.textPrimary
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showShopOverflowMenu,
+                            onDismissRequest = { showShopOverflowMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (isBangla) "অটো-অ্যাডভান্স (${if (isAutoAdvanceEnabled) "চালু" else "বন্ধ"})"
+                                        else "Auto-advance (${if (isAutoAdvanceEnabled) "On" else "Off"})"
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isAutoAdvanceEnabled) Icons.Default.Check else Icons.Default.Close,
+                                        contentDescription = null,
+                                        tint = if (isAutoAdvanceEnabled) appColors.bazaarAccent else appColors.textMuted
+                                    )
+                                },
+                                onClick = {
+                                    bazaarShopViewModel.setAutoAdvanceEnabled(!isAutoAdvanceEnabled)
+                                    showShopOverflowMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(if (isBangla) "নতুন পণ্য যোগ করুন" else "Add item", color = appColors.textPrimary) },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = appColors.bazaarAccent) },
+                                onClick = {
+                                    showAddImpromptuDialog = true
+                                    showShopOverflowMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(if (isBangla) "বাজার স্থগিত রাখুন" else "Pause trip", color = appColors.textPrimary) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) },
+                                onClick = {
+                                    showShopOverflowMenu = false
+                                    onNavigateBack()
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // If budget cap is set, show a slim progress indicator (no redundant total spent text)
+                if (budgetCap != null && budgetCap > 0.0) {
+                    val capStr = if (budgetCap % 1.0 == 0.0) "${budgetCap.toInt()}" else "%.1f".format(budgetCap)
+                    val capDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(capStr) else capStr
+                    val pctRemaining = ((1f - budgetProgress) * 100).toInt()
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isBangla) "বাজেট সীমা: ৳$capDisplay" else "Budget Cap: ৳$capDisplay",
+                            style = typography.bodySmall.copy(fontSize = 11.5.sp),
+                            color = appColors.textSecondary
+                        )
+                        val statusText = when {
+                            budgetProgress >= 1f -> if (isBangla) "বাজেট শেষ!" else "Over budget!"
+                            else -> if (isBangla) "$pctRemaining% বাকি" else "$pctRemaining% left"
+                        }
+                        Text(
+                            text = statusText,
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp),
+                            color = if (budgetProgress >= 1f) appColors.expense else appColors.bazaarAccent
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(3.dp))
+                    ProgressBarThreshold(progress = budgetProgress)
+                }
+            }
+        },
+        bottomBar = {
+            // Floating Rounded Cart Dock on Compact devices
+            if (!useTwoColumn) {
+                val dockShadowModifier = if (!appColors.isDark) {
+                    Modifier.shadow(
+                        elevation = 10.dp,
+                        shape = RoundedCornerShape(24.dp),
+                        clip = false,
+                        ambientColor = Color.Black.copy(alpha = 0.08f),
+                        spotColor = Color.Black.copy(alpha = 0.12f)
+                    )
+                } else {
+                    Modifier
+                }
+                val dockBorder = if (appColors.isDark) {
+                    androidx.compose.foundation.BorderStroke(1.dp, appColors.border.copy(alpha = 0.45f))
+                } else {
+                    null
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(dockShadowModifier),
+                        shape = RoundedCornerShape(24.dp),
+                        color = appColors.surface,
+                        border = dockBorder,
+                        tonalElevation = if (appColors.isDark) 4.dp else 0.dp
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {
+                                    detectVerticalDragGestures { _, dragAmount ->
+                                        if (dragAmount < -15f) {
+                                            bazaarShopViewModel.setReceiptExpanded(true)
+                                        } else if (dragAmount > 15f) {
+                                            bazaarShopViewModel.setReceiptExpanded(false)
+                                        }
+                                    }
+                                }
+                        ) {
+                            // Expandable Receipt Panel
+                            AnimatedVisibility(
+                                visible = isReceiptExpanded,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
+                            ) {
+                                LiveReceiptPanelContent(
+                                    items = items,
+                                    totalSpent = totalSpent,
+                                    budgetCap = budgetCap,
+                                    isBangla = isBangla,
+                                    useBengaliNumerals = useBengaliNumerals,
+                                    isPrivacyMode = isPrivacyMode,
+                                    onItemClick = { bazaarShopViewModel.openPricePad(it) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 260.dp)
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                            }
+
+                            // Collapsed Bar Row
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 60.dp)
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                // Tap to toggle expanded receipt
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable(role = Role.Button, onClick = { bazaarShopViewModel.toggleReceiptExpanded() })
+                                ) {
+                                    Icon(
+                                        imageVector = if (isReceiptExpanded) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                                        contentDescription = "Toggle receipt",
+                                        tint = appColors.bazaarAccent,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        val countDisplay = if (useBengaliNumerals || isBangla) {
+                                            "${DigitConverter.toBengaliDigits(purchasedCount.toString())}/${DigitConverter.toBengaliDigits(totalItemCount.toString())}"
+                                        } else "$purchasedCount/$totalItemCount"
+
+                                        Text(
+                                            text = if (isBangla) "পণ্য: $countDisplay" else "Items: $countDisplay",
+                                            style = typography.bodySmall.copy(fontSize = 11.5.sp),
+                                            color = appColors.textSecondary
+                                        )
+                                        val spentStr2 = if (totalSpent % 1.0 == 0.0) "${totalSpent.toInt()}" else "%.1f".format(totalSpent)
+                                        val spentDisp2 = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(spentStr2) else spentStr2
+                                        PulseTabularText(
+                                            text = if (isPrivacyMode) "••••" else "৳$spentDisp2",
+                                            style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = appColors.bazaarAccent
+                                        )
+                                    }
+                                }
+
+                                // Finish Trip / Checkout button (48dp height)
+                                Button(
+                                    onClick = { showCheckoutDialog = true },
+                                    modifier = Modifier.heightIn(min = 46.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = appColors.bazaarAccent,
+                                        contentColor = appColors.onBazaarAccent
+                                    )
+                                ) {
+                                    Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (isBangla) "চেকআউট" else "Finish Trip",
+                                        style = typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = appColors.onBazaarAccent
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        modifier = modifier.fillMaxSize()
+    ) { innerPadding ->
+        if (useTwoColumn) {
+            // Two-column responsive layout for Medium / Expanded or Landscape Phone
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                // If landscape phone, render dedicated vertical stall rail on the far left!
+                if (isLandscapePhone) {
+                    StallVerticalRail(
+                        allItems = items,
+                        masterProductsMap = masterProductsMap,
+                        skippedItemIds = skippedItemIds,
+                        isBangla = isBangla,
+                        useBengaliNumerals = useBengaliNumerals,
+                        onScrollToStall = { stallKey ->
+                            stallIndices[stallKey]?.let { idx ->
+                                coroutineScope.launch { listState.animateScrollToItem(idx) }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(72.dp)
+                            .fillMaxHeight()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .fillMaxHeight()
+                            .background(appColors.border)
+                    )
+                }
+
+                // Left Column: Stall Route & Item Checklist
+                Box(
+                    modifier = Modifier
+                        .weight(if (windowClass.isMedium && !isLandscapePhone && isMediumReceiptCollapsed) 1f else leftColumnWeight)
+                        .fillMaxHeight()
+                ) {
+                    ShopChecklistColumn(
+                        listId = listId,
+                        listState = listState,
+                        itemsByStall = itemsByStall,
+                        skippedItems = skippedItems,
+                        allItems = items,
+                        masterProductsMap = masterProductsMap,
+                        skippedItemIds = skippedItemIds,
+                        lastPurchasedRates = lastPurchasedRates,
+                        pendingHighlightItemId = pendingHighlightItemId,
+                        missingStaples = missingStaples,
+                        isBangla = isBangla,
+                        useBengaliNumerals = useBengaliNumerals,
+                        isPrivacyMode = isPrivacyMode,
+                        bazaarShopViewModel = bazaarShopViewModel,
+                        showHorizontalChips = !isLandscapePhone,
+                        onShowUndoSnackbar = onShowUndoSnackbar,
+                        onDismissForgotStaples = { isForgotStaplesDismissed = true },
+                        onOpenImpromptuDialog = { showAddImpromptuDialog = true },
+                        onScrollToStall = { stallKey ->
+                            stallIndices[stallKey]?.let { idx ->
+                                coroutineScope.launch { listState.animateScrollToItem(idx) }
+                            }
+                        }
+                    )
+                }
+
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(appColors.border)
+                )
+
+                // Right Column: Live Receipt & Budget Panel (Collapsible on Medium)
+                if (windowClass.isMedium && !isLandscapePhone && isMediumReceiptCollapsed) {
+                    Surface(
+                        color = appColors.surface,
+                        modifier = Modifier
+                            .width(56.dp)
+                            .fillMaxHeight()
+                            .clickable { isMediumReceiptCollapsed = false }
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(vertical = 16.dp)
+                        ) {
+                            IconButton(
+                                onClick = { isMediumReceiptCollapsed = false },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Receipt,
+                                    contentDescription = if (isBangla) "রশিদ খুলুন" else "Expand Live Receipt",
+                                    tint = appColors.bazaarAccent
+                                )
+                            }
+                            IconButton(
+                                onClick = { showCheckoutDialog = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ShoppingCart,
+                                    contentDescription = if (isBangla) "কেনাকাটা সম্পন্ন" else "Finish Trip",
+                                    tint = appColors.bazaarAccent
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Surface(
+                        color = appColors.surface,
+                        modifier = Modifier
+                            .weight(rightColumnWeight)
+                            .fillMaxHeight()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (isBangla) "ক্রয় বিবরণী" else "Live Receipt",
+                                    style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = appColors.textPrimary
+                                )
+                                if (windowClass.isMedium && !isLandscapePhone) {
+                                    IconButton(
+                                        onClick = { isMediumReceiptCollapsed = true },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ChevronRight,
+                                            contentDescription = if (isBangla) "রশিদ আড়াল করুন" else "Collapse Live Receipt",
+                                            tint = appColors.textMuted
+                                        )
+                                    }
+                                }
+                            }
+
+                            LiveReceiptPanelContent(
+                                items = items,
+                                totalSpent = totalSpent,
+                                budgetCap = budgetCap,
+                                isBangla = isBangla,
+                                useBengaliNumerals = useBengaliNumerals,
+                                isPrivacyMode = isPrivacyMode,
+                                onItemClick = { bazaarShopViewModel.openPricePad(it) },
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Large Finish Trip Button (48dp height)
+                            Button(
+                                onClick = { showCheckoutDialog = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = appColors.bazaarAccent,
+                                    contentColor = appColors.onBazaarAccent
+                                )
+                            ) {
+                                Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isBangla) "কেনাকাটা সম্পন্ন করুন" else "Finish Shopping Trip",
+                                    style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = appColors.onBazaarAccent
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Compact Single Column Layout: lets items scroll smoothly behind the floating cart dock
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding())
+            ) {
+                ShopChecklistColumn(
+                    listId = listId,
+                    listState = listState,
+                    itemsByStall = itemsByStall,
+                    skippedItems = skippedItems,
+                    allItems = items,
+                    masterProductsMap = masterProductsMap,
+                    skippedItemIds = skippedItemIds,
+                    lastPurchasedRates = lastPurchasedRates,
+                    pendingHighlightItemId = pendingHighlightItemId,
+                    missingStaples = missingStaples,
+                    isBangla = isBangla,
+                    useBengaliNumerals = useBengaliNumerals,
+                    isPrivacyMode = isPrivacyMode,
+                    bazaarShopViewModel = bazaarShopViewModel,
+                    onShowUndoSnackbar = onShowUndoSnackbar,
+                    onDismissForgotStaples = { isForgotStaplesDismissed = true },
+                    onOpenImpromptuDialog = { showAddImpromptuDialog = true },
+                    onScrollToStall = { stallKey ->
+                        stallIndices[stallKey]?.let { idx ->
+                            coroutineScope.launch { listState.animateScrollToItem(idx) }
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    // 8. Active Price Pad Sheet Modal (AdaptiveSheet or Centered Dialog)
+    activePricePadItem?.let { item ->
+        val itemMode = itemPricingMode[item.id] ?: PricingMode.PER_UNIT
+        val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
+        val insight = productPriceInsights[item.name.lowercase().trim()]
+
+        BazaarPricePadSheet(
+            item = item,
+            initialMode = itemMode,
+            lastRate = lastRate,
+            priceInsight = insight,
+            onConfirm = { updatedItem, amount, mode ->
+                bazaarShopViewModel.confirmPricePad(updatedItem, amount, mode)
+            },
+            onDismiss = { bazaarShopViewModel.closePricePad() },
+            onMarkNotAvailable = { bazaarShopViewModel.markNotAvailable(item) },
+            onRemoveItem = { bazaarShopViewModel.deleteItem(item) },
+            onUndoPurchase = if (item.isPurchased) {
+                {
+                    bazaarShopViewModel.undoPurchase(item)
+                    bazaarShopViewModel.closePricePad()
+                }
+            } else null,
+            isBangla = isBangla,
+            useBengaliNumerals = useBengaliNumerals,
+            isPrivacyMode = isPrivacyMode
+        )
+    }
+
+    // 9. Pre-checkout Sheet (AdaptiveSheet replaces temporary dialog)
+    if (showCheckoutDialog) {
+        val lastUsedAccId = remember { bazaarShopViewModel.getLastUsedAccountId() }
+        BazaarCheckoutSheet(
+            items = items,
+            accounts = accounts,
+            initialAccountId = lastUsedAccId,
+            budgetCap = budgetCap,
+            onConfirmCheckout = { accountId, customTotal, otherCosts, dateMillis, note, carryOver ->
+                showCheckoutDialog = false
+                bazaarShopViewModel.completeTripWithFullCheckout(
+                    listId = listId,
+                    accountId = accountId,
+                    customTotalAmount = customTotal,
+                    otherCosts = otherCosts,
+                    customDateMillis = dateMillis,
+                    customNote = note,
+                    carryOverUnpurchased = carryOver,
+                    onFinished = { result ->
+                        onTripCompleted(result)
+                    },
+                    onCarryOverFailed = { snapshot ->
+                        coroutineScope.launch {
+                            val snackResult = snackbarHostState.showSnackbar(
+                                message = if (isBangla) "বাকি পণ্য ফর্দে নিতে সমস্যা হয়েছে" else "Failed to carry over unbought items",
+                                actionLabel = if (isBangla) "পুনরায় চেষ্টা" else "Retry",
+                                duration = SnackbarDuration.Long
+                            )
+                            if (snackResult == SnackbarResult.ActionPerformed) {
+                                bazaarShopViewModel.retryPendingCarryOver(
+                                    onSuccess = {
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = if (isBangla) "বাকি পণ্য নতুন ফর্দে যোগ হয়েছে" else "Unbought items carried over"
+                                            )
+                                        }
+                                    },
+                                    onFailure = {
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = if (isBangla) "পুনরায় চেষ্টা ব্যর্থ হয়েছে" else "Retry failed"
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                )
+            },
+            onDismiss = { showCheckoutDialog = false },
+            isBangla = isBangla,
+            useBengaliNumerals = useBengaliNumerals,
+            isPrivacyMode = isPrivacyMode
+        )
+    }
+
+    // 10. Impromptu Add Item Dialog
+    if (showAddImpromptuDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddImpromptuDialog = false },
+            title = {
+                Text(
+                    text = if (isBangla) "নতুন পণ্য যোগ করুন" else "Add Item to List",
+                    style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = appColors.textPrimary
+                )
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = impromptuName,
+                        onValueChange = { impromptuName = it },
+                        label = { Text(if (isBangla) "পণ্যের নাম" else "Item name", color = appColors.textSecondary) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = impromptuQty,
+                            onValueChange = { impromptuQty = it },
+                            label = { Text(if (isBangla) "পরিমাণ" else "Qty", color = appColors.textSecondary) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = impromptuUnit,
+                            onValueChange = { impromptuUnit = it },
+                            label = { Text(if (isBangla) "একক" else "Unit", color = appColors.textSecondary) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val qty = impromptuQty.toDoubleOrNull() ?: 1.0
+                        if (impromptuName.isNotBlank() && qty > 0.0) {
+                            bazaarShopViewModel.addImpromptuItem(listId, impromptuName, qty, impromptuUnit)
+                            impromptuName = ""
+                            impromptuQty = "1"
+                            showAddImpromptuDialog = false
+                        }
+                    },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = appColors.bazaarAccent,
+                        contentColor = appColors.onBazaarAccent
+                    )
+                ) {
+                    Text(text = if (isBangla) "যোগ করুন" else "Add", color = appColors.onBazaarAccent)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showAddImpromptuDialog = false },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text(text = if (isBangla) "বাতিল" else "Cancel", color = appColors.textSecondary)
+                }
+            }
+        )
+    }
+}
+
+/**
+ * Main Shop Checklist Column containing:
+ * - Sticky Stall-route chips
+ * - Forgot-staples strip
+ * - Stall-grouped items
+ * - Impromptu add item button
+ * - Skipped items section
+ */
+@Composable
+private fun ShopChecklistColumn(
+    listId: Long,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    itemsByStall: Map<String, List<MarketItem>>,
+    skippedItems: List<MarketItem>,
+    allItems: List<MarketItem>,
+    masterProductsMap: Map<String, com.example.expensetracker.data.model.MasterProduct>,
+    skippedItemIds: Set<Long>,
+    lastPurchasedRates: Map<String, Pair<Double, String>>,
+    pendingHighlightItemId: Long?,
+    missingStaples: List<com.example.expensetracker.data.model.MasterProduct>,
+    isBangla: Boolean,
+    useBengaliNumerals: Boolean,
+    isPrivacyMode: Boolean,
+    bazaarShopViewModel: BazaarShopViewModel,
+    showHorizontalChips: Boolean = true,
+    onShowUndoSnackbar: (MarketItem, String, () -> Unit) -> Unit,
+    onDismissForgotStaples: () -> Unit,
+    onOpenImpromptuDialog: () -> Unit,
+    onScrollToStall: (String) -> Unit
+) {
+    val appColors = LocalAppColors.current
+    val typography = MaterialTheme.typography
+
+    LazyColumn(
+        state = listState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // 1. Sticky Stall-Route Chips (Amendment 2)
+        if (showHorizontalChips) {
+            item(key = "stall_route_chips") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val activeStalls = ALL_DEPARTMENTS.filter { (itemsByStall[it.key]?.size ?: 0) > 0 }
+                    activeStalls.forEach { dept ->
+                        val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
+                        val stallTitle = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}"
+                        val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
+                        val totDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.totalCount.toString()) else progress.totalCount.toString()
+
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (progress.isAllDone) appColors.bazaarAccent.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.bazaarAccent else appColors.border),
+                            modifier = Modifier
+                                .heightIn(min = 48.dp)
+                                .clickable(role = Role.Button, onClick = { onScrollToStall(dept.key) })
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = stallTitle,
+                                    style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (progress.isAllDone) appColors.bazaarAccent else appColors.textPrimary
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                if (progress.isAllDone) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Completed stall",
+                                        tint = appColors.bazaarAccent,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "($doneDisp/$totDisp)",
+                                        style = typography.bodySmall.copy(fontWeight = FontWeight.Medium, fontSize = 12.sp),
+                                        color = appColors.textSecondary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Forgot-Staples Strip (Amendment 5)
+        if (missingStaples.isNotEmpty()) {
+            item(key = "forgot_staples_strip") {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = appColors.surfaceVariant.copy(alpha = 0.6f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (isBangla) "ভুলে গেলেন কি? (সাধারণ সদাই)" else "Forgot something? (Staples)",
+                                style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.bazaarAccent
+                            )
+                            IconButton(
+                                onClick = onDismissForgotStaples,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Close, contentDescription = "Dismiss staples", tint = appColors.textMuted)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            missingStaples.forEach { staple ->
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = appColors.surface,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.bazaarAccent.copy(alpha = 0.4f)),
+                                    modifier = Modifier
+                                        .heightIn(min = 48.dp)
+                                        .clickable {
+                                            bazaarShopViewModel.addImpromptuItem(
+                                                listId = listId,
+                                                name = staple.name,
+                                                qty = 1.0,
+                                                unit = staple.defaultUnit.ifBlank { "কেজি" }
+                                            )
+                                        }
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = staple.name,
+                                            style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                            color = appColors.textPrimary
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Add",
+                                            tint = appColors.bazaarAccent,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Stall-Grouped Items (Amendment 1, 2 & 10)
+        ALL_DEPARTMENTS.forEach { dept ->
+            val stallItems = itemsByStall[dept.key]
+            if (!stallItems.isNullOrEmpty()) {
+                val stallTitle = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}"
+                // Section Header
+                item(key = "header_${dept.key}") {
+                    val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
+                    val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
+                    val totDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.totalCount.toString()) else progress.totalCount.toString()
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = stallTitle,
+                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = appColors.textPrimary
+                        )
+                        Text(
+                            text = "$doneDisp/$totDisp",
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.Medium, fontSize = 12.sp),
+                            color = appColors.textSecondary
+                        )
+                    }
+                }
+
+                // Items in this stall
+                items(stallItems, key = { it.id }) { item ->
+                    val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
+                    val isHighlighted = item.id == pendingHighlightItemId
+
+                    BazaarShopItemCard(
+                        item = item,
+                        lastRate = lastRate,
+                        isHighlighted = isHighlighted,
+                        onCardClick = { bazaarShopViewModel.openPricePad(item) },
+                        onCheckCircleClick = {
+                            bazaarShopViewModel.swipeRightDone(item, onShowUndoSnackbar)
+                        },
+                        onSwipeRightDone = {
+                            bazaarShopViewModel.swipeRightDone(item, onShowUndoSnackbar)
+                        },
+                        onSwipeLeftSkip = {
+                            bazaarShopViewModel.swipeLeftSkip(item, onShowUndoSnackbar)
+                        },
+                        onEditPrice = { bazaarShopViewModel.openPricePad(item) },
+                        onMarkNotAvailable = { bazaarShopViewModel.markNotAvailable(item) },
+                        onRemoveItem = { bazaarShopViewModel.deleteItem(item) },
+                        isBangla = isBangla,
+                        useBengaliNumerals = useBengaliNumerals,
+                        isPrivacyMode = isPrivacyMode
+                    )
+                }
+
+                // Add item button per stall (BUG D.3)
+                item(key = "add_item_${dept.key}") {
+                    OutlinedButton(
+                        onClick = onOpenImpromptuDialog,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 44.dp)
+                            .padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = appColors.bazaarAccent
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isBangla) "নতুন পণ্য যোগ করুন" else "Add item",
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                            color = appColors.textPrimary
+                        )
+                    }
+                }
+            }
+        }
+
+        // 4. Impromptu Add Item Trigger (when no stalls/items exist)
+        if (allItems.isEmpty()) {
+            item(key = "add_impromptu_button") {
+                OutlinedButton(
+                    onClick = onOpenImpromptuDialog,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border)
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = appColors.bazaarAccent)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isBangla) "নতুন পণ্য যোগ করুন" else "Add item",
+                        style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = appColors.textPrimary
+                    )
+                }
+            }
+        }
+
+        // 5. Missed / Skipped Section (Amendment 10)
+        if (skippedItems.isNotEmpty()) {
+            item(key = "skipped_items_section") {
+                var isSkippedExpanded by rememberSaveable { mutableStateOf(false) }
+                val skipCount = skippedItems.size
+                val skipCountDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(skipCount.toString()) else skipCount.toString()
+
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = appColors.surfaceVariant.copy(alpha = 0.5f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isSkippedExpanded = !isSkippedExpanded },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (isBangla) "বাদ দেওয়া আইটেম ($skipCountDisp)" else "Skipped Items ($skipCountDisp)",
+                                style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.textMuted
+                            )
+                            Icon(
+                                imageVector = if (isSkippedExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = "Toggle skipped",
+                                tint = appColors.textMuted
+                            )
+                        }
+
+                        if (isSkippedExpanded) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            skippedItems.forEach { skippedItem ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = skippedItem.name,
+                                            style = typography.bodyMedium.copy(
+                                                textDecoration = TextDecoration.LineThrough
+                                            ),
+                                            color = appColors.textMuted
+                                        )
+                                        Text(
+                                            text = "${skippedItem.quantity} ${skippedItem.unit}",
+                                            style = typography.bodySmall,
+                                            color = appColors.textMuted
+                                        )
+                                    }
+
+                                    // Re-add button (48dp height)
+                                    Button(
+                                        onClick = { bazaarShopViewModel.undoSkip(skippedItem.id) },
+                                        modifier = Modifier.heightIn(min = 48.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = appColors.surfaceVariant)
+                                    ) {
+                                        Text(
+                                            text = if (isBangla) "পুনরায় যোগ করুন" else "Re-add",
+                                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = appColors.bazaarAccent
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Bottom spacing for comfortable scrolling past floating cart bar
+        item(key = "bottom_spacer") {
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+}
+
+/**
+ * Live Receipt Panel Content used in:
+ * - Expandable bottom sheet on Compact
+ * - Permanent right column on Medium / Expanded
+ */
+@Composable
+private fun LiveReceiptPanelContent(
+    items: List<MarketItem>,
+    totalSpent: Double,
+    budgetCap: Double?,
+    isBangla: Boolean,
+    useBengaliNumerals: Boolean,
+    isPrivacyMode: Boolean,
+    modifier: Modifier = Modifier,
+    onItemClick: ((MarketItem) -> Unit)? = null
+) {
+    val appColors = LocalAppColors.current
+    val typography = MaterialTheme.typography
+
+    val purchasedItems = remember(items) { items.filter { it.isPurchased } }
+
+    Column(modifier = modifier) {
+        Text(
+            text = if (isBangla) "ক্রয় বিবরণী (লাইভ রশিদ)" else "Live Trip Receipt",
+            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+            color = appColors.textPrimary
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (purchasedItems.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isBangla) "এখনও কোনো পণ্য কেনা হয়নি" else "No items marked as bought yet",
+                    style = typography.bodySmall,
+                    color = appColors.textMuted
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                purchasedItems.forEach { pItem ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(enabled = onItemClick != null) { onItemClick?.invoke(pItem) }
+                            .padding(vertical = 4.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "${pItem.name} (${pItem.quantity} ${pItem.unit})",
+                            style = typography.bodySmall,
+                            color = appColors.textPrimary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        val amt = pItem.amount ?: 0.0
+                        val amtStr = if (amt % 1.0 == 0.0) "${amt.toInt()}" else "%.1f".format(amt)
+                        val amtDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(amtStr) else amtStr
+                        PulseTabularText(
+                            text = if (isPrivacyMode) "••••" else "৳$amtDisp",
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            color = appColors.textPrimary
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Total Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = if (isBangla) "সর্বমোট:" else "Total:",
+                style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = appColors.textPrimary
+            )
+            val spentStr = if (totalSpent % 1.0 == 0.0) "${totalSpent.toInt()}" else "%.1f".format(totalSpent)
+            val spentDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(spentStr) else spentStr
+            PulseTabularText(
+                text = if (isPrivacyMode) "••••" else "৳$spentDisp",
+                style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = appColors.bazaarAccent
+            )
+        }
+    }
+}
+
+/**
+ * Dedicated vertical stall rail for Landscape Phone orientation.
+ * Consumes only 72dp horizontal width, leaving full vertical height for items and receipt.
+ */
+@Composable
+private fun StallVerticalRail(
+    allItems: List<MarketItem>,
+    masterProductsMap: Map<String, com.example.expensetracker.data.model.MasterProduct>,
+    skippedItemIds: Set<Long>,
+    isBangla: Boolean,
+    useBengaliNumerals: Boolean,
+    onScrollToStall: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val typography = MaterialTheme.typography
+
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ALL_DEPARTMENTS.filter {
+            BazaarShopLogic.calculateStallProgress(it.key, allItems, masterProductsMap, skippedItemIds).totalCount > 0
+        }.forEach { dept ->
+            val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
+            val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
+            val totDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.totalCount.toString()) else progress.totalCount.toString()
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (progress.isAllDone) appColors.bazaarAccent.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.bazaarAccent else appColors.border),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.Button, onClick = { onScrollToStall(dept.key) })
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp)
+                ) {
+                    Text(text = dept.icon, fontSize = 20.sp)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    if (progress.isAllDone) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Completed",
+                            tint = appColors.bazaarAccent,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "$doneDisp/$totDisp",
+                            style = typography.bodySmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                            color = appColors.textSecondary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(name = "LiveReceipt - 200% Font Scale Bengali", fontScale = 2f, showBackground = true)
+@Composable
+private fun LiveReceipt200PercentPreview() {
+    val sampleItems = listOf(
+        MarketItem(id = 1L, listId = 1L, name = "রসুন দেশি (বড় দানা)", quantity = 1.0, unit = "কেজি", isPurchased = true, amount = 220.0),
+        MarketItem(id = 2L, listId = 1L, name = "রুই মাছ আস্ত (বড় সাইজ)", quantity = 2.5, unit = "কেজি", isPurchased = true, amount = 950.0)
+    )
+    MaterialTheme {
+        LiveReceiptPanelContent(
+            items = sampleItems,
+            totalSpent = 1170.0,
+            budgetCap = 1500.0,
+            isBangla = true,
+            useBengaliNumerals = true,
+            isPrivacyMode = false
+        )
+    }
+}

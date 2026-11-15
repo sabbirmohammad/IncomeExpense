@@ -47,6 +47,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val debtBookSummary: StateFlow<DebtBookSummary> = repository.debtBookSummary
     val activeMarketList: StateFlow<MarketListWithItems?> = repository.activeMarketList
     val activeMarketLists: StateFlow<List<MarketListWithItems>> = repository.activeMarketLists
+    val allMarketLists: StateFlow<List<MarketListWithItems>> = repository.allMarketLists
     val lastPurchasedRates: StateFlow<Map<String, Pair<Double, String>>> = repository.lastPurchasedRates
     val productPriceInsights: StateFlow<Map<String, com.example.expensetracker.data.model.ProductPriceInsight>> = repository.productPriceInsights
     val masterProducts: StateFlow<List<com.example.expensetracker.data.model.MasterProduct>> = repository.masterProducts
@@ -110,41 +111,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         android.util.Log.e("DashboardViewModel", "Unhandled coroutine error", throwable)
     }
 
-    fun addTransaction(tx: Transaction) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.addTransaction(tx)
-        }
-    }
-
-    fun updateTransaction(tx: Transaction) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.updateTransaction(tx)
-        }
-    }
-
-    fun deleteTransaction(id: Long) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.deleteTransaction(id)
-        }
-    }
-
-    fun executeBillSplit(splitData: com.example.expensetracker.data.model.BillSplitData) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.executeBillSplit(splitData)
-        }
-    }
-
-    fun transferFunds(fromAccountId: Long, toAccountId: Long, amount: Double, note: String) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.transferBetweenAccounts(fromAccountId, toAccountId, amount, note)
-        }
-    }
-
-    fun createMarketListWithBulk(title: String, items: List<MarketItem>) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.createMarketListWithItems(title, items)
-        }
-    }
+    fun addTransaction(tx: Transaction) = viewModelScope.launch(coroutineExceptionHandler) { repository.addTransaction(tx) }
+    fun updateTransaction(tx: Transaction) = viewModelScope.launch(coroutineExceptionHandler) { repository.updateTransaction(tx) }
+    fun deleteTransaction(id: Long) = viewModelScope.launch(coroutineExceptionHandler) { repository.deleteTransaction(id) }
+    fun executeBillSplit(splitData: com.example.expensetracker.data.model.BillSplitData) = viewModelScope.launch(coroutineExceptionHandler) { repository.executeBillSplit(splitData) }
+    fun transferFunds(fromAccountId: Long, toAccountId: Long, amount: Double, note: String) = viewModelScope.launch(coroutineExceptionHandler) { repository.transferBetweenAccounts(fromAccountId, toAccountId, amount, note) }
+    fun createMarketListWithBulk(title: String, items: List<MarketItem>) = viewModelScope.launch(coroutineExceptionHandler) { repository.createMarketListWithItems(title, items) }
 
     fun addMarketItem(item: MarketItem, targetListId: Long? = null) {
         viewModelScope.launch(coroutineExceptionHandler) {
@@ -156,35 +128,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun updateMarketListTitle(listId: Long, title: String) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.updateMarketListTitle(listId, title)
-        }
-    }
-
-    fun updateMarketItem(item: MarketItem) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.updateMarketItem(item)
-        }
-    }
-
-    fun deleteMarketItem(itemId: Long) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.deleteMarketItem(itemId)
-        }
-    }
-
-    fun markMarketItemPurchased(item: MarketItem, amount: Double) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.markMarketItemPurchased(item, amount)
-        }
-    }
-
-    fun unmarkMarketItemPurchased(item: MarketItem) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.unmarkMarketItemPurchased(item)
-        }
-    }
+    fun updateMarketListTitle(listId: Long, title: String) = viewModelScope.launch(coroutineExceptionHandler) { repository.updateMarketListTitle(listId, title) }
+    fun updateMarketItem(item: MarketItem) = viewModelScope.launch(coroutineExceptionHandler) { repository.updateMarketItem(item) }
+    fun deleteMarketItem(itemId: Long) = viewModelScope.launch(coroutineExceptionHandler) { repository.deleteMarketItem(itemId) }
+    fun markMarketItemPurchased(item: MarketItem, amount: Double) = viewModelScope.launch(coroutineExceptionHandler) { repository.markMarketItemPurchased(item, amount) }
+    fun unmarkMarketItemPurchased(item: MarketItem) = viewModelScope.launch(coroutineExceptionHandler) { repository.unmarkMarketItemPurchased(item) }
 
     fun completeActiveMarketList(
         listId: Long,
@@ -195,9 +143,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch(coroutineExceptionHandler) {
             val result = repository.completeActiveMarketList(listId, accountId = accountId)
             if (rollOverItems.isNotEmpty()) {
-                val newItems = rollOverItems.map {
-                    it.copy(id = 0, listId = 0, isPurchased = false, amount = null)
-                }
+                val newItems = rollOverItems.map { it.copy(id = 0, listId = 0, isPurchased = false, amount = null) }
                 repository.createMarketListWithItems(
                     title = com.example.expensetracker.ui.components.DateTimeHelper.formatMarketTripTitle(System.currentTimeMillis(), isBangla = true),
                     items = newItems
@@ -207,13 +153,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun deleteActiveMarketList(listId: Long) {
-        viewModelScope.launch(coroutineExceptionHandler) {
-            repository.deleteActiveMarketList(listId)
+    fun deleteActiveMarketList(listId: Long) = viewModelScope.launch(coroutineExceptionHandler) { repository.deleteActiveMarketList(listId) }
+
+    fun getProductPriceHistory(productName: String): List<com.example.expensetracker.data.model.ProductPriceRecord> =
+        repository.dbHelper.getProductPriceHistory(productName)
+
+    fun renameCommodity(oldName: String, newName: String, onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            repository.renameCommodity(oldName, newName)
+            onComplete?.invoke()
         }
     }
 
-    fun getProductPriceHistory(productName: String): List<com.example.expensetracker.data.model.ProductPriceRecord> {
-        return repository.dbHelper.getProductPriceHistory(productName)
+    fun mergeCommodities(sourceName: String, targetName: String, onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            repository.mergeCommodities(sourceName, targetName)
+            onComplete?.invoke()
+        }
     }
 }

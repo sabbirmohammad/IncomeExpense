@@ -106,24 +106,9 @@ fun AddEditSavingsGoalSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Goal Title
-            Text(strings.goalTitle, fontSize = 12.sp, color = appColors.textSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                placeholder = { Text(if (strings.isBangla) "যেমন: নতুন বাইক, জরুরি তহবিল, হজ্ব" else "e.g. New Bike, Emergency Fund, Laptop", color = appColors.textMuted) },
-                singleLine = true,
-                shape = RoundedCornerShape(SmallElementRadius),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = appColors.surfaceVariant,
-                    unfocusedContainerColor = appColors.surfaceVariant,
-                    focusedBorderColor = appColors.accent,
-                    unfocusedBorderColor = appColors.border,
-                    focusedTextColor = appColors.textPrimary,
-                    unfocusedTextColor = appColors.textPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
+            GoalTitleField(
+                title = title,
+                onTitleChange = { title = it }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -139,24 +124,9 @@ fun AddEditSavingsGoalSheet(
 
             // Initial Saved Amount (Optional)
             if (goal == null) {
-                Text("${strings.savedAmount} (${strings.optional})", fontSize = 12.sp, color = appColors.textSecondary)
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = initialSavedText,
-                    onValueChange = { initialSavedText = it.filter { c -> c.isDigit() || c == '.' } },
-                    placeholder = { Text(if (strings.isBangla) "০.০০" else "0.00", color = appColors.textMuted) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(SmallElementRadius),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = appColors.surfaceVariant,
-                        unfocusedContainerColor = appColors.surfaceVariant,
-                        focusedBorderColor = appColors.accent,
-                        unfocusedBorderColor = appColors.border,
-                        focusedTextColor = appColors.textPrimary,
-                        unfocusedTextColor = appColors.textPrimary
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                GoalInitialSavedField(
+                    initialSavedText = initialSavedText,
+                    onInitialSavedChange = { initialSavedText = it }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }

@@ -181,53 +181,11 @@ fun DigitalAccountCard(
                     )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Column {
-                        Text(
-                            text = if (strings.isBangla) "অ্যাকাউন্টের নাম" else "ACCOUNT NAME",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, letterSpacing = 1.sp),
-                            color = if (isLightContent) Color.White.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.55f)
-                        )
-                        Text(
-                            text = account.name.uppercase(),
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.8.sp
-                            ),
-                            color = if (isLightContent) Color.White else Color.Black,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = if (strings.isBangla) "অ্যাকাউন্ট নম্বর" else "ACCOUNT NO",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, letterSpacing = 1.sp),
-                            color = if (isLightContent) Color.White.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.55f)
-                        )
-                        val formattedNum = when {
-                            account.accountNumber.length >= 8 -> "•••• •••• ${account.accountNumber.takeLast(4)}"
-                            account.accountNumber.isNotBlank() -> "•••• ${account.accountNumber}"
-                            account.type == AccountType.CASH -> "CASH WALLET"
-                            else -> "•••• ${account.id.toString().padStart(4, '0')}"
-                        }
-                        Text(
-                            text = formattedNum,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.2.sp
-                            ),
-                            color = if (isLightContent) Color.White else Color.Black
-                        )
-                    }
-                }
+                DigitalCardFooterRow(
+                    account = account,
+                    isLightContent = isLightContent,
+                    strings = strings
+                )
             }
         }
     }

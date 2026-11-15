@@ -1,16 +1,7 @@
 package com.example.expensetracker.data.drive
 
 import android.content.Context
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import com.example.expensetracker.data.local.ExpenseDatabaseHelper
 import com.example.expensetracker.data.repository.*
-import com.example.expensetracker.data.worker.DailySyncWorker
 import com.google.api.client.http.ByteArrayContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,7 +10,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 /**
  * Manages Google Drive backup & restore using the Drive REST API (AppDataFolder).
@@ -39,52 +29,14 @@ class GoogleDriveSyncManager(private val context: Context) {
     /**
      * Creates a local timestamped backup copy and fallback .bak snapshot of the active SQLite
      * database file before downloading and overwriting it during Google Drive restore.
-     * Also saves a secondary JSON snapshot of current data.
-     * Returns the timestamped snapshot file if created, or null.
      */
-    suspend fun createPreRestoreSnapshot(): File? = withContext(Dispatchers.IO) {
-        try {
-            val dbFile = context.getDatabasePath(ExpenseDatabaseHelper.DATABASE_NAME)
-            if (!dbFile.exists()) return@withContext null
-
-            val parentDir = dbFile.parentFile ?: context.filesDir
-            if (!parentDir.exists()) parentDir.mkdirs()
-
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-            val timestampedBak = File(parentDir, "expense_tracker_pre_restore_$timestamp.db.bak")
-            val fallbackBak = File(parentDir, PRE_RESTORE_BAK_FILE_NAME)
-
-            // Copy active SQLite database
-            dbFile.copyTo(timestampedBak, overwrite = true)
-            dbFile.copyTo(fallbackBak, overwrite = true)
-
-            // Preserve WAL / SHM files if present
-            val walFile = File(parentDir, "${dbFile.name}-wal")
-            if (walFile.exists()) {
-                walFile.copyTo(File(parentDir, "${timestampedBak.name}-wal"), overwrite = true)
-                walFile.copyTo(File(parentDir, "${fallbackBak.name}-wal"), overwrite = true)
-            }
-            val shmFile = File(parentDir, "${dbFile.name}-shm")
-            if (shmFile.exists()) {
-                shmFile.copyTo(File(parentDir, "${timestampedBak.name}-shm"), overwrite = true)
-                shmFile.copyTo(File(parentDir, "${fallbackBak.name}-shm"), overwrite = true)
-            }
-
-            // Also create JSON snapshot for auxiliary human-readable recovery
-            try {
-                val jsonPayload = repository.exportToJson()
-                val jsonFile = File(context.filesDir, PRE_RESTORE_JSON_BACKUP_NAME)
-                jsonFile.writeText(jsonPayload)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            timestampedBak
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
+    suspend fun createPreRestoreSnapshot(): File? =
+        DrivePreRestoreSnapshotHelper.createSnapshot(
+            context,
+            repository,
+            PRE_RESTORE_BAK_FILE_NAME,
+            PRE_RESTORE_JSON_BACKUP_NAME
+        )
 
     /**
      * Exports all app data to JSON and uploads it to Google Drive's AppDataFolder.
@@ -210,62 +162,11 @@ class GoogleDriveSyncManager(private val context: Context) {
         }
     }
 
-    /**
-     * Schedules or cancels the daily background sync using WorkManager.
-     */
     fun scheduleDailySync(enabled: Boolean) {
-        val workManager = WorkManager.getInstance(context)
-        val workName = "DailyGoogleDriveSync"
-
-        if (enabled) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val syncRequest = PeriodicWorkRequestBuilder<DailySyncWorker>(
-                24, TimeUnit.HOURS,
-                1, TimeUnit.HOURS
-            )
-                .setConstraints(constraints)
-                .build()
-
-            workManager.enqueueUniquePeriodicWork(
-                workName,
-                ExistingPeriodicWorkPolicy.KEEP,
-                syncRequest
-            )
-        } else {
-            workManager.cancelUniqueWork(workName)
-        }
+        DriveSyncScheduler.scheduleDailySync(context, enabled)
     }
 
-    /**
-     * Enqueues an expedited, debounced one-time sync task with Google Drive
-     * if automatic sync is enabled and a Google account is connected.
-     */
     fun triggerAutoSync() {
-        try {
-            val profile = repository.userProfile.value
-            if (!profile.isAutoSyncEnabled || profile.googleAccountEmail.isNullOrBlank()) {
-                return
-            }
-
-            val workManager = WorkManager.getInstance(context)
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val syncRequest = OneTimeWorkRequestBuilder<DailySyncWorker>()
-                .setConstraints(constraints)
-                .build()
-
-            workManager.enqueueUniqueWork(
-                "InstantGoogleDriveSync",
-                ExistingWorkPolicy.REPLACE,
-                syncRequest
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        DriveSyncScheduler.triggerAutoSync(context, repository)
     }
 }

@@ -8,10 +8,11 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.example.expensetracker.ui.adaptive.LocalWindowClass
+import com.example.expensetracker.ui.adaptive.rememberWindowClass
 
 enum class AppThemeMode(val key: String) {
     SYSTEM("system"),
@@ -25,185 +26,61 @@ enum class AppThemeMode(val key: String) {
     }
 }
 
-data class AppColors(
-    val background: Color,
-    val surface: Color,
-    val surfaceVariant: Color,
-    val border: Color,
-    val borderDashed: Color,
-    val textPrimary: Color,
-    val textSecondary: Color,
-    val textMuted: Color,
-    val accent: Color,
-    val income: Color = ColorSuccessIncome,
-    val expense: Color = ColorDangerExpense,
-    val warning: Color = ColorWarningBills,
-    val info: Color = ColorInfoTransport,
-    val neutral: Color = ColorNeutralCategory,
-    val navBorder: Color = ColorNavBorder,
-    val navInactive: Color = ColorNavInactive,
-    val isDark: Boolean = true,
-    val cardBackground: Color = surface,
-    val divider: Color = border,
-    // V7 tokens ("Refined Ledger")
-    val surfaceRaised: Color = if (isDark) ColorSurfaceRaisedDark else ColorSurfaceRaisedLight,
-    val accentContainer: Color = if (isDark) ColorAccentContainerDark else ColorAccentContainerLight,
-    val expenseContainer: Color = if (isDark) ColorExpenseContainerDark else ColorExpenseContainerLight,
-    val warningContainer: Color = if (isDark) ColorWarningContainerDark else ColorWarningContainerLight,
-    val infoContainer: Color = if (isDark) ColorInfoContainerDark else ColorInfoContainerLight,
-    val scrim: Color = if (isDark) ColorScrimDark else ColorScrimLight,
-    val onAccent: Color = if (isDark) ColorOnAccentDark else ColorOnAccentLight
-) {
-    val successIncome: Color get() = income
-    val dangerExpense: Color get() = expense
-    val warningBills: Color get() = warning
-    val infoTransport: Color get() = info
-}
-
-val DarkAppColors = AppColors(
-    background = ColorBackground,
-    surface = ColorSurface,
-    surfaceVariant = ColorSurfaceVariant,
-    border = ColorBorder,
-    borderDashed = ColorBorderDashed,
-    textPrimary = ColorTextPrimary,
-    textSecondary = ColorLivingTextSecondaryDark,
-    textMuted = ColorLivingTextMutedDark,
-    accent = ColorAccent,
-    income = ColorSuccessIncome,
-    expense = ColorDangerExpense,
-    warning = ColorWarningBills,
-    info = ColorInfoTransport,
-    neutral = ColorNeutralCategory,
-    navBorder = ColorNavBorder,
-    navInactive = ColorNavInactive,
-    isDark = true,
-    cardBackground = ColorSurface,
-    divider = ColorBorder,
-    surfaceRaised = ColorSurfaceRaisedDark,
-    accentContainer = ColorAccentContainerDark,
-    expenseContainer = ColorExpenseContainerDark,
-    warningContainer = ColorWarningContainerDark,
-    infoContainer = ColorInfoContainerDark,
-    scrim = ColorScrimDark,
-    onAccent = ColorOnAccentDark
+private val PulseDarkColorScheme = darkColorScheme(
+    primary = ColorPulseAccentDark,
+    onPrimary = ColorPulseOnAccentDark,
+    primaryContainer = ColorPulseAccentDark.copy(alpha = 0.18f),
+    onPrimaryContainer = ColorPulseAccentDark,
+    secondary = ColorPulseIncomeDark,
+    onSecondary = Color(0xFF04130D),
+    tertiary = ColorPulseExpenseDark,
+    onTertiary = Color(0xFF2C0A0E),
+    background = ColorPulseBackgroundDark,
+    onBackground = ColorPulseTextPrimaryDark,
+    surface = ColorPulseSurfaceDark,
+    onSurface = ColorPulseTextPrimaryDark,
+    surfaceVariant = ColorPulseSurfaceVariantDark,
+    onSurfaceVariant = ColorPulseTextSecondaryDark,
+    outline = ColorPulseBorderDark,
+    outlineVariant = ColorPulseBorderDashedDark
 )
 
-val AmoledAppColors = AppColors(
-    background = ColorBackgroundAmoled,
-    surface = ColorSurfaceAmoled,
-    surfaceVariant = ColorSurfaceVariantAmoled,
-    border = ColorBorderAmoled,
-    borderDashed = ColorBorderDashedAmoled,
-    textPrimary = ColorTextPrimary,
-    textSecondary = ColorLivingTextSecondaryDark,
-    textMuted = ColorLivingTextMutedDark,
-    accent = ColorAccent,
-    income = ColorSuccessIncome,
-    expense = ColorDangerExpense,
-    warning = ColorWarningBills,
-    info = ColorInfoTransport,
-    neutral = ColorNeutralCategory,
-    navBorder = ColorBorderAmoled,
-    navInactive = ColorNavInactive,
-    isDark = true,
-    cardBackground = ColorSurfaceAmoled,
-    divider = ColorBorderAmoled,
-    surfaceRaised = ColorSurfaceRaisedAmoled,
-    accentContainer = ColorAccentContainerAmoled,
-    expenseContainer = ColorExpenseContainerAmoled,
-    warningContainer = ColorWarningContainerAmoled,
-    infoContainer = ColorInfoContainerAmoled,
-    scrim = ColorScrimAmoled,
-    onAccent = ColorOnAccentAmoled
+private val PulseAmoledColorScheme = darkColorScheme(
+    primary = ColorPulseAccentDark,
+    onPrimary = ColorPulseOnAccentDark,
+    primaryContainer = ColorPulseAccentDark.copy(alpha = 0.18f),
+    onPrimaryContainer = ColorPulseAccentDark,
+    secondary = ColorPulseIncomeDark,
+    onSecondary = Color(0xFF04130D),
+    tertiary = ColorPulseExpenseDark,
+    onTertiary = Color(0xFF2C0A0E),
+    background = ColorPulseBackgroundAmoled,
+    onBackground = Color(0xFFFFFFFF),
+    surface = ColorPulseSurfaceAmoled,
+    onSurface = Color(0xFFFFFFFF),
+    surfaceVariant = ColorPulseSurfaceVariantAmoled,
+    onSurfaceVariant = ColorPulseTextSecondaryDark,
+    outline = ColorPulseBorderAmoled,
+    outlineVariant = ColorPulseBorderDashedAmoled
 )
 
-val LightAppColors = AppColors(
-    background = ColorBackgroundLight,
-    surface = ColorSurfaceLight,
-    surfaceVariant = ColorSurfaceSubtleLight,
-    border = ColorBorderLight,
-    borderDashed = ColorBorderDashedLight,
-    textPrimary = ColorTextPrimaryLight,
-    textSecondary = ColorLivingTextSecondaryLight,
-    textMuted = ColorLivingTextMutedLight,
-    accent = ColorAccentLight,
-    income = ColorSuccessIncomeLight,
-    expense = ColorDangerExpenseLight,
-    warning = ColorWarningBillsLight,
-    info = ColorInfoTransportLight,
-    neutral = ColorNeutralCategoryLight,
-    navBorder = ColorBorderLight,
-    navInactive = ColorTextMutedLight,
-    isDark = false,
-    cardBackground = ColorSurfaceLight,
-    divider = ColorBorderLight,
-    surfaceRaised = ColorSurfaceRaisedLight,
-    accentContainer = ColorAccentContainerLight,
-    expenseContainer = ColorExpenseContainerLight,
-    warningContainer = ColorWarningContainerLight,
-    infoContainer = ColorInfoContainerLight,
-    scrim = ColorScrimLight,
-    onAccent = ColorOnAccentLight
-)
-
-val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
-
-private val AppDarkColorScheme = darkColorScheme(
-    primary = ColorAccent,
-    onPrimary = Color.White,
-    primaryContainer = ColorAccent.copy(alpha = 0.15f),
-    onPrimaryContainer = ColorAccent,
-    secondary = ColorSuccessIncome,
+private val PulseLightColorScheme = lightColorScheme(
+    primary = ColorPulseAccentLight,
+    onPrimary = ColorPulseOnAccentLight,
+    primaryContainer = ColorPulseAccentLight.copy(alpha = 0.12f),
+    onPrimaryContainer = ColorPulseAccentLight,
+    secondary = ColorPulseIncomeLight,
     onSecondary = Color.White,
-    tertiary = ColorDangerExpense,
+    tertiary = ColorPulseExpenseLight,
     onTertiary = Color.White,
-    background = ColorBackground,
-    onBackground = ColorTextPrimary,
-    surface = ColorSurface,
-    onSurface = ColorTextPrimary,
-    surfaceVariant = ColorSurfaceVariant,
-    onSurfaceVariant = ColorLivingTextSecondaryDark,
-    outline = ColorBorder,
-    outlineVariant = ColorBorderDashed
-)
-
-private val AppAmoledColorScheme = darkColorScheme(
-    primary = ColorAccent,
-    onPrimary = Color.White,
-    primaryContainer = ColorAccent.copy(alpha = 0.15f),
-    onPrimaryContainer = ColorAccent,
-    secondary = ColorSuccessIncome,
-    onSecondary = Color.White,
-    tertiary = ColorDangerExpense,
-    onTertiary = Color.White,
-    background = ColorBackgroundAmoled,
-    onBackground = ColorTextPrimary,
-    surface = ColorSurfaceAmoled,
-    onSurface = ColorTextPrimary,
-    surfaceVariant = ColorSurfaceVariantAmoled,
-    onSurfaceVariant = ColorLivingTextSecondaryDark,
-    outline = ColorBorderAmoled,
-    outlineVariant = ColorBorderDashedAmoled
-)
-
-private val AppLightColorScheme = lightColorScheme(
-    primary = ColorAccentLight,
-    onPrimary = Color.White,
-    primaryContainer = ColorAccentLight.copy(alpha = 0.12f),
-    onPrimaryContainer = ColorAccentLight,
-    secondary = ColorSuccessIncomeLight,
-    onSecondary = Color.White,
-    tertiary = ColorDangerExpenseLight,
-    onTertiary = Color.White,
-    background = ColorBackgroundLight,
-    onBackground = ColorTextPrimaryLight,
-    surface = ColorSurfaceLight,
-    onSurface = ColorTextPrimaryLight,
-    surfaceVariant = ColorSurfaceSubtleLight,
-    onSurfaceVariant = ColorLivingTextSecondaryLight,
-    outline = ColorBorderLight,
-    outlineVariant = ColorBorderDashedLight
+    background = ColorPulseBackgroundLight,
+    onBackground = ColorPulseTextPrimaryLight,
+    surface = ColorPulseSurfaceLight,
+    onSurface = ColorPulseTextPrimaryLight,
+    surfaceVariant = ColorPulseSurfaceVariantLight,
+    onSurfaceVariant = ColorPulseTextSecondaryLight,
+    outline = ColorPulseBorderLight,
+    outlineVariant = ColorPulseBorderDashedLight
 )
 
 @Composable
@@ -216,10 +93,10 @@ fun ExpenseTrackerTheme(
     val systemInDark = isSystemInDarkTheme()
     val mode = AppThemeMode.fromKey(themeMode)
     val (scheme, appColors) = when (mode) {
-        AppThemeMode.LIGHT -> AppLightColorScheme to LightAppColors
-        AppThemeMode.AMOLED -> AppAmoledColorScheme to AmoledAppColors
-        AppThemeMode.SYSTEM -> if (systemInDark) AppDarkColorScheme to DarkAppColors else AppLightColorScheme to LightAppColors
-        AppThemeMode.DARK -> AppDarkColorScheme to DarkAppColors
+        AppThemeMode.LIGHT -> PulseLightColorScheme to LightAppColors
+        AppThemeMode.AMOLED -> PulseAmoledColorScheme to AmoledAppColors
+        AppThemeMode.SYSTEM -> if (systemInDark) PulseDarkColorScheme to DarkAppColors else PulseLightColorScheme to LightAppColors
+        AppThemeMode.DARK -> PulseDarkColorScheme to DarkAppColors
     }
 
     val view = LocalView.current
@@ -235,17 +112,24 @@ fun ExpenseTrackerTheme(
     }
 
     val motionConfig = rememberSystemMotionConfig()
+    val windowClass = rememberWindowClass()
 
     CompositionLocalProvider(
         LocalAppColors provides appColors,
         LocalAppSpacing provides AppSpacing(),
-        LocalMotion provides motionConfig
+        LocalMotion provides motionConfig,
+        LocalReduceMotion provides motionConfig.reduceMotion,
+        LocalWindowClass provides windowClass
     ) {
         MaterialTheme(
             colorScheme = scheme,
             typography = Typography,
-            shapes = AppShapes,
-            content = content
-        )
+            shapes = AppShapes
+        ) {
+            CompositionLocalProvider(
+                androidx.compose.material3.LocalContentColor provides appColors.textPrimary,
+                content = content
+            )
+        }
     }
 }

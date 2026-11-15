@@ -1,12 +1,7 @@
 package com.example.expensetracker.data.local
 
 import android.content.ContentValues
-import android.database.Cursor
 import com.example.expensetracker.data.model.Account
-import com.example.expensetracker.data.model.AccountType
-import com.example.expensetracker.data.model.PaymentMethod
-import com.example.expensetracker.data.model.Transaction
-import com.example.expensetracker.data.model.TransactionType
 
 internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
 
@@ -16,7 +11,7 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val cursor = db.query(TABLE_ACCOUNTS, null, null, null, null, null, "$COL_ACC_IS_DEFAULT DESC, $COL_ACC_NAME ASC")
         cursor.use { c ->
             while (c.moveToNext()) {
-                list.add(cursorToAccount(c))
+                list.add(AccountCursorParser.cursorToAccount(c))
             }
         }
         return list
@@ -27,7 +22,7 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val cursor = db.query(TABLE_ACCOUNTS, null, "$COL_ACC_ID = ?", arrayOf(id.toString()), null, null, null)
         cursor.use { c ->
             if (c.moveToFirst()) {
-                return cursorToAccount(c)
+                return AccountCursorParser.cursorToAccount(c)
             }
         }
         return null
@@ -83,7 +78,6 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
         val db = dbHelper.writableDatabase
         db.beginTransaction()
         try {
-            // Guard: Prevent deleting the last remaining account in the system
             val countCursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_ACCOUNTS", null)
             val totalAccounts = countCursor.use { if (it.moveToFirst()) it.getInt(0) else 0 }
             if (totalAccounts <= 1) {
@@ -120,7 +114,6 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
             }
 
             if (targetAccountId > 0) {
-                // If the deleted account was default, promote target account to default
                 if (isDeletedAccountDefault) {
                     val promoteCv = ContentValues().apply {
                         put(COL_ACC_IS_DEFAULT, 1)
@@ -128,7 +121,6 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
                     db.update(TABLE_ACCOUNTS, promoteCv, "$COL_ACC_ID = ?", arrayOf(targetAccountId.toString()))
                 }
 
-                // Preserve historical net worth by adding the deleted account's initial balance to the surviving target account
                 if (deletedAccountInitialBalance != 0.0) {
                     db.execSQL(
                         "UPDATE $TABLE_ACCOUNTS SET $COL_ACC_INITIAL_BALANCE = $COL_ACC_INITIAL_BALANCE + ? WHERE $COL_ACC_ID = ?",
@@ -167,84 +159,13 @@ internal class AccountTableHelper(private val dbHelper: ExpenseDatabaseHelper) {
     }
 
     fun transferBetweenAccounts(fromAccountId: Long, toAccountId: Long, amount: Double, note: String = ""): Boolean {
-        if (amount <= 0.0 || fromAccountId == toAccountId) return false
-        val fromAcc = getAccountById(fromAccountId) ?: return false
-        val toAcc = getAccountById(toAccountId) ?: return false
-
-        val db = dbHelper.writableDatabase
-        db.beginTransaction()
-        try {
-            val now = System.currentTimeMillis()
-            val transferNote = if (note.isNotBlank()) "[Transfer] $note" else "[Transfer] Fund Transfer"
-            val outCategory = dbHelper.getOrCreateCategoryByName("Transfer", TransactionType.EXPENSE, "SwapHoriz", "#6C5CE7")
-            val inCategory = dbHelper.getOrCreateCategoryByName("Transfer", TransactionType.INCOME, "SwapHoriz", "#6C5CE7")
-
-            val expenseTx = Transaction(
-                id = 0,
-                title = "Transfer to ${toAcc.name}",
-                amount = amount,
-                type = TransactionType.EXPENSE,
-                categoryId = outCategory.id,
-                categoryName = outCategory.name,
-                categoryIcon = outCategory.icon,
-                categoryColor = outCategory.colorHex,
-                dateMillis = now,
-                paymentMethod = when (fromAcc.type) {
-                    AccountType.BANK -> PaymentMethod.BANK_TRANSFER
-                    AccountType.MFS -> if (fromAcc.institutionName.contains("bkash", true)) PaymentMethod.BKASH else PaymentMethod.NAGAD
-                    AccountType.CASH -> PaymentMethod.CASH
-                },
-                notes = transferNote,
-                accountId = fromAccountId,
-                accountName = fromAcc.name
-            )
-            dbHelper.insertTransaction(expenseTx)
-
-            val incomeTx = Transaction(
-                id = 0,
-                title = "Transfer from ${fromAcc.name}",
-                amount = amount,
-                type = TransactionType.INCOME,
-                categoryId = inCategory.id,
-                categoryName = inCategory.name,
-                categoryIcon = inCategory.icon,
-                categoryColor = inCategory.colorHex,
-                dateMillis = now,
-                paymentMethod = when (toAcc.type) {
-                    AccountType.BANK -> PaymentMethod.BANK_TRANSFER
-                    AccountType.MFS -> if (toAcc.institutionName.contains("bkash", true)) PaymentMethod.BKASH else PaymentMethod.NAGAD
-                    AccountType.CASH -> PaymentMethod.CASH
-                },
-                notes = transferNote,
-                accountId = toAccountId,
-                accountName = toAcc.name
-            )
-            dbHelper.insertTransaction(incomeTx)
-
-            dbHelper.recalculateAccountBalance(db, fromAccountId)
-            dbHelper.recalculateAccountBalance(db, toAccountId)
-
-            db.setTransactionSuccessful()
-            return true
-        } catch (_: Exception) {
-            return false
-        } finally {
-            db.endTransaction()
-        }
-    }
-
-    private fun cursorToAccount(c: Cursor): Account {
-        return Account(
-            id = c.getLong(c.getColumnIndexOrThrow(COL_ACC_ID)),
-            name = c.getString(c.getColumnIndexOrThrow(COL_ACC_NAME)),
-            type = AccountType.valueOf(c.getString(c.getColumnIndexOrThrow(COL_ACC_TYPE))),
-            accountNumber = c.getString(c.getColumnIndexOrThrow(COL_ACC_NUMBER)),
-            institutionName = c.getString(c.getColumnIndexOrThrow(COL_ACC_INSTITUTION)),
-            initialBalance = c.getDouble(c.getColumnIndexOrThrow(COL_ACC_INITIAL_BALANCE)),
-            currentBalance = c.getDouble(c.getColumnIndexOrThrow(COL_ACC_CURRENT_BALANCE)),
-            colorHex = c.getString(c.getColumnIndexOrThrow(COL_ACC_COLOR)),
-            isDefault = c.getInt(c.getColumnIndexOrThrow(COL_ACC_IS_DEFAULT)) == 1,
-            createdAt = c.getLong(c.getColumnIndexOrThrow(COL_ACC_CREATED_AT))
+        return AccountTransferHelper.transferBetweenAccounts(
+            dbHelper = dbHelper,
+            getAccountById = { getAccountById(it) },
+            fromAccountId = fromAccountId,
+            toAccountId = toAccountId,
+            amount = amount,
+            note = note
         )
     }
 }

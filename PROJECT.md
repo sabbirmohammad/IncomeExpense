@@ -1,117 +1,124 @@
-# Project: ExpenseTracker Market & UI/UX Handcrafted Modernization
+# Project: হিসাব কিতাব (Expense Tracker) — v7.0 "Refined Ledger"
 
-## Architecture
-- **Layer 1: Design System & Tokens (`theme/`)**:
-  - "The Living Ledger & Tactile Bazaar" warm palette (charcoal slate `#0E1116`, linen white `#FFFFFF`, bone parchment `#F9F8F5`, cardamom emerald `#10B981`/`#047857`, terracotta rose `#F43F5E`/`#BE123C`).
-  - Tabular typography scale with global `fontFeatureSettings = "tnum"`, minimum 12sp constraint for Bengali metadata, and explicit 400/500/600/700 weights.
-  - Sheet & Hairline Rule styling (`0.5.dp` ink stroke) replacing nested card soup.
-- **Layer 2: Core Market & In-Store Shopping (`ui/market/`, `ui/dashboard/`)**:
-  - Tactile Bazaar Pocket Notepad (`MarketItemRow.kt`): 2-line clean hierarchy, animated pencil strikethrough, ink-stamped badges.
-  - Department-Aisle Stall Organization (`MarketDepartmentSectionHeader.kt`): Collapsible aisle headers grouping by 🥬 কাঁচাবাজার, 🐟 মাছ ও মাংস, 🥛 দুধ ও বেকারি, 🧂 মুদি সদাই with live progress counters.
-  - Persistent In-Store Shopping Dock (`MarketBottomTripSummaryBar.kt`): Pinned thumb-zone bar with running total, progress indicator, and 1-tap checkout.
-- **Layer 3: Creation, Logging & Completion (`ui/dashboard/`)**:
-  - Modern List Creation Wizard (`CreateMarketListSection.kt`): Interactive tag chips (`MarketParsedTagChip.kt`), WhatsApp bulk paste import, 1-tap staple recommendations without AI tropes.
-  - Thumb-Zone Price Logging (`MarketPromptAmountDialog.kt`): Ergonomic bottom keypad, 1-tap rate variance badge, and calculator operator chips.
-  - Perforated Digital Tally Slip (`MarketTripCompletionSheet.kt`): Monospace items breakdown, estimated savings, payment account selector, and ink stamp.
-- **Layer 4: Price Intelligence & Inflation (`ui/dashboard/ProductPriceInsightsSheet.kt`)**:
-  - Commodity price trends, historical rate sparklines, and fast department filter chips.
-- **Layer 5: Business Logic & Persistence (`viewmodel/`, `data/repository/`, `data/local/`)**:
-  - `DashboardViewModel` StateFlows: `activeMarketList`, `activeMarketLists`, `lastPurchasedRates`, `productPriceInsights`, `stapleProducts`.
-  - SQLite Database Version 15 with WAL, foreign keys, and atomic transactions in `ExpenseRepositoryMarketCompletion.kt`.
+## 1. Project Overview & Vision
+**হিসাব কিতাব (Expense Tracker)** is a privacy-first, 100% offline-first personal financial management and household economy mobile application crafted specifically for Bangladesh and the broader South Asian socioeconomic context.
+
+- **Current Active Branch**: `redesign/v7`
+- **Current Milestone**: Version 7.0 ("Refined Ledger" / Living Ledger 2.0 UI/UX Modernization)
+- **Primary Source of Truth**: `docs/redesign/` (`1_REDESIGN_BRIEF.md`, `2_DESIGN_SYSTEM_V7.md`, `3_UX_FLOWS.md`, `4_COMPONENT_SPEC.md`, `5_ANTIGRAVITY_PROMPTS.md`, `6_SCREENSHOT_FINDINGS_AND_PATCH.md`, `APP_AUDIT.md`)
+- **App Governance**: `AGENTS.md` (and `GEMINI.md`)
 
 ---
 
-## Feature Inventory
-| # | Feature | Description | Milestone | Source |
-|---|---------|-------------|:---------:|:------:|
-| 1 | Living Ledger Warm Color Palette | Charcoal slate, bone parchment, cardamom emerald, terracotta rose meeting WCAG AA | M1 | Survey (explorer_survey_6_2) |
-| 2 | Tabular Bilingual Typography Scale | Global `tnum`, explicit 400/500/600/700 weights, >=12sp Bengali metadata | M1 | Survey (explorer_survey_6_2) |
-| 3 | Sheet & Hairline Rule Styling | Soft 0.5dp ink dividers and unified container surfaces replacing nested card soup | M1 | Survey (explorer_survey_6_2) |
-| 4 | Tactile Bazaar Pocket Notepad Item Row | 2-line clean item layout, pencil strikethrough animation, tactile ink badge, swipe-to-dismiss | M2 | Survey (explorer_survey_6_1) |
-| 5 | Department-Aisle Stall Organization | Collapsible stall headers (🥬 কাঁচাবাজার, 🐟 মাছ ও মাংস, 🥛 দুধ ও বেকারি, 🧂 মুদি সদাই) with live progress | M2 | Survey (explorer_survey_6_1) |
-| 6 | Persistent In-Store Shopping Dock | Elevated thumb-zone bar showing running total, items progress ("৪/৫টি সম্পন্ন"), and 1-tap checkout | M2 | Survey (explorer_survey_6_1) |
-| 7 | Handcrafted List Creation Wizard | Physical notepad list creation, WhatsApp bulk paste with interactive tags, 1-tap staple pills | M3 | Survey (explorer_survey_6_1) |
-| 8 | Thumb-Zone Price Logging Keypad | Ergonomic bottom keypad, 1-tap previous rate chip, rate variance alert, calculator operator bar | M3 | Survey (explorer_survey_6_1) |
-| 9 | Perforated Digital Tally Slip | Thermal receipt styling, monospace items ledger, savings calculation, celebratory ink stamp | M3 | Survey (explorer_survey_6_1) |
-| 10 | Commodity Price Intelligence & Trends | Stock ticker cards, historical purchase rate sparklines, department inflation KPI ribbons | M4 | Survey (explorer_survey_6_1) |
-| 11 | Structural & Ergonomic Invariant Preservation | Retain all test string matches (`SwipeToDismissBox`, `isEditMode`, `Icons.Filled.Check`), >=48dp touch targets, no AI sparkles | M2, M3, M4 | Survey (explorer_survey_6_3) |
-| 12 | StateFlow & Transaction Preservation | 100% preservation of `DashboardViewModel` StateFlows and atomic SQLite transaction boundaries | M2, M3, M4 | Survey (explorer_survey_6_3) |
-| 13 | Comprehensive Regression Suite | Unit tests verifying all redesigned components, layout invariants, and zero regressions | M5 | Survey (explorer_survey_6_3) |
-| 14 | GEMINI.md Release Compliance | Minor version bump to `v6.18`, git tag, and origin main push | M5 | GEMINI.md |
-| 15 | Natural Finger Gestures (1-Swipe Check-off) | 1-Swipe right (`StartToEnd`) check-off with emerald reveal, spring snap-back, and threshold haptics in `MarketItemRow.kt` | MG1 | Survey (explorer_gesture_1) |
-| 16 | Horizontal Pager Tab Navigation | Fluid horizontal swipe navigation between Market tabs in `MarketScreen.kt` synchronized with segmented pills | MG1 | Survey (explorer_gesture_1) |
-| 17 | Handcrafted Tactile Notebook Details | Ruled notebook baseline, tactile tally dots in `MarketBottomTripSummaryBar`, and serrated receipt tear edge in `MarketTripCompletionSheet` | MG1 | Survey (explorer_market_ux_2) |
-| 18 | Gesture Verification & Production Release | Automated unit tests for gestures, 430+ regression pass, version bump to `v6.19`, git tag and origin main push | MG2 | GEMINI.md |
+## 2. Architecture & Design System
+
+### Layer 1: Foundations, Tokens & Theming (`theme/`)
+- **4 Crafted Themes**: System Dark (`#0E1116`), AMOLED True Black (`#000000`), Crisp Light (`#F9F8F5`), and Nature Soft Green.
+- **Semantic Tokens via `LocalAppColors`**:
+  - `surfaceRaised`: Elevated card surfaces (`#1B212B` Dark, `#FFFFFF` Light, `#0F131B` AMOLED).
+  - `accentContainer`: Positive/income chip backgrounds (`#12302A` Dark, `#E3F4EC` Light).
+  - `expenseContainer`: Expense chip and warning backgrounds (`#3A1820` Dark, `#FCE8EC` Light).
+  - `warningContainer`: Due-soon and 75–99% budget warning backgrounds (`#3A2D12` Dark, `#FBF0DC` Light).
+  - `infoContainer`: Transfers and info highlight backgrounds (`#1F2147` Dark, `#E9E9FB` Light).
+  - `scrim`, `onAccent`, `focusRing`: Dedicated interactive and contrast tokens.
+- **Harmonized Geometry**: `RadiusL` (24dp), `RadiusM` (16dp), `RadiusS` (10dp), `RadiusFull` (999dp).
+- **Surface Hierarchy**: Max 2 nesting levels; tonal surface separation in Dark/AMOLED (0 borders), crisp 0.5dp/1dp hairlines in Light mode.
+- **Universal Tabular Figures (`tnum`)**: Monospace digit widths globally enforced on all amounts, balances, totals, and timestamps via `fontFeatureSettings = "tnum"`.
+- **Universal Bengali Typography**: Minimum $\ge 12\text{sp}$ font size and $\ge 16\text{sp}$ line height with zero text clipping across English and Bengali strings.
+
+### Layer 2: Core Navigation & App Shell (`ui/navigation/`, `ui/components/`)
+- **AppScaffold (`AppScaffold.kt`)**: Pinned root container with uniform `contentPadding.bottom` (80–100dp) ensuring bottom items are never occluded by navigation docks.
+- **Modern 5-Tab Bottom Dock (`ModernBottomNavBar.kt`)**: Clean 64dp opaque bottom bar with:
+  1. **Home** — Daily financial overview and action hub.
+  2. **Ledger (খাতা)** — Full transaction ledger, filters, search, and integrated reports.
+  3. **+ (Add)** — Fluid 1-tap addition via context-aware extended FAB.
+  4. **Bazaar (বাজার)** — Dedicated market checklist, shop HUD, and price intelligence.
+  5. **Plan (পরিকল্পনা)** — Unified money hub: Budgets, Goals, Bills, and Debts.
+- **AppAddFab (`AppAddFab.kt`)**: Elevated 56dp primary emerald pill FAB opening the transaction sheet in 1 tap without nested menus or long-press gestures.
+- **Removed Legacy 3D Drawer**: Completely eliminated 3D perspective rotation scaffold and right-edge side drawer in favor of direct 1-tap navigation.
+
+### Layer 3: Feature Modules & Decomposed Components
+- **Home / Dashboard (`ui/dashboard/`)**:
+  - Compact Hero Card ($\le 200\text{dp}$): Left-aligned Net Balance with secondary spending wallet balance switch.
+  - Safe to Spend Row: Daily discretionary spending allowance calculated from monthly budget commitments.
+  - 4 Quick Action Buttons: Accounts, Bills, Due/Lend, and Budgets with uniform `accentContainer` tinting and $\ge 48\text{dp}$ touch targets.
+  - Above-The-Fold Transactions: At least 3 recent transactions visible without scrolling on 6" screens.
+  - Collapsible Below-The-Fold Accordion Widgets: Active Market Lists, Debt Ledger, Savings Goals, and 7-day spending trends.
+  - New User Onboarding Checklist: Progressive onboarding checklist for first-time users.
+- **Transactions & Ledger (`ui/transactions/`, `ui/navigation/LedgerScreen.kt`)**:
+  - Unified 3-Segment Hub: Transactions · Insights (Analytics) · Reports via top segmented control.
+  - Grouped Daily Surface: Clean daily headers (`Today / Yesterday / Mon, 9 Nov` + day net total) with dividers.
+  - 72dp Touch-Optimized Rows: 2-line title wrapping, category icons, payment method badge, and right-aligned amounts in `tnum`.
+  - Filter Bar with Active Count: One filter button with active-count badge + removable filter chips.
+  - Rich Transaction Detail Sheet: Full receipt breakdown with undoable deletion snackbar.
+- **Add / Edit Transaction Sheet (`ui/transactions/AddEditTransactionSheet.kt`)**:
+  - Full-Bleed Modal Sheet: Compact amount box ($\le 140\text{dp}$), custom `AmountKeypad` with inline math solver (`=`), category smart prediction, horizontal account chips, 48dp receipt attachment row, and sticky bottom-pinned CTA.
+- **Bazaar & Market Hub (`ui/market/`)**:
+  - 3-Tab Segmented Control: **Lists (ফর্দ)** · **Prices (দরদাম)** · **New (নতুন)**.
+  - In-Store Shop HUD (`MarketShopModeView.kt`): Sticky running-total dock, live progress counter, and single-tap checkout.
+  - Normalized Commodity Prices: NFC-normalized Bengali text deduplication, price variance badges (`▼ ৳5 vs last`), and historical sparklines.
+  - WhatsApp / Bulk List Importer: Interactive tag chips (`MarketParsedTagChip.kt`) with 1-tap staple recommendations.
+- **Money & Plan Hub (`ui/money/`, `ui/navigation/PlanScreen.kt`)**:
+  - **Accounts & Wallets**: Net worth hero card, Cash/Bank/MFS breakdowns, balance reconciliation dialog, and transfer sheet.
+  - **Budgets & Savings**: Monthly budget status bar, category warning cards (75–99% warning, 100%+ overrun), savings goals with circular progress rings and starter templates.
+  - **Recurring Bills**: Monthly commitments hero, overdue/upcoming badges, and 1-tap "Pay Now" flow.
+  - **Money Owed (Debts)**: Net position hero, dual tabs for Receivables & Payables, installment tracking, and bill splitter.
+- **Insights & Reports (`ui/analytics/`, `ui/reports/`)**:
+  - Interactive 160dp donut charts with tap segment highlight and center balance updates.
+  - Dual income/expense spending bar charts with today indicator dot.
+  - Monotone cubic Bézier sparklines for 7-day and monthly trends.
+  - Live statement preview card with dual $\ge 48\text{dp}$ export buttons (**Export PDF** & **Export CSV**).
+- **Settings & Google Drive Backup (`ui/settings/`)**:
+  - 7 structured sections: Profile, Appearance, Language & Numerals, Categories, Backup & Sync, Data & Storage, About.
+  - Persistent `SyncStatusCard` with live Google Drive sync badges, `tnum` timestamps, and expandable diagnostics.
+  - Zero Toast Policy: Replaced ephemeral toasts with actionable `AppSnackbarHost` snackbars.
+- **Onboarding (`ui/onboarding/`)**:
+  - 3-screen skippable onboarding walkthrough explaining Track, Plan, and Bazaar workflows.
+
+### Layer 4: Data Layer, Database & Persistence (`data/`)
+- **SQLite Database Version 15**: WAL mode and foreign keys enabled.
+- **Modular Table Delegates**: `AccountTableHelper`, `CategoryTableHelper`, `ExpenseDatabaseHelper`, `MarketTableHelper`, `MasterProductTableHelper`, `PayableTableHelper`, `ProductPriceTableHelper`, `ReceivableTableHelper`, `RecurringBillTableHelper`, `DatabaseMigrations`, `DatabaseRestoreHelper`, `DatabaseSeedData`.
+- **Modular Repository Delegates**: `ExpenseRepository` orchestrator with `ExpenseRepositoryAccountsAndBudgets`, `ExpenseRepositoryBackup`, `ExpenseRepositoryMarketCompletion`.
+- **Asynchronous Architecture**: Kotlin Coroutines, `StateFlow`, lifecycle-aware state collection (`collectAsStateWithLifecycle`).
+- **Cloud Backup**: Direct Google Drive `AppDataFolder` backup with `GoogleAuthHelper` and `GoogleDriveSyncManager`. Scheduled background sync via `DailySyncWorker`.
 
 ---
 
-## Milestones
-| # | Name | Scope | Dependencies | Status |
-|---|------|-------|:------------:|:------:|
-| M1 | Living Ledger Design System Tokens | Implement warm living color palette, extended tabular typography, and hairline rule tokens in `Color.kt`, `Theme.kt`, `Type.kt` | none | **DONE** (Gate Passed, 338 tests pass) |
-| M2 | Handcrafted Market Checklist & In-Store Dock | Redesign `MarketItemRow.kt`, `MarketScreen.kt`, implement `MarketDepartmentSectionHeader.kt` and `MarketBottomTripSummaryBar.kt` | M1 | **DONE** (Gate Passed, 356 tests pass) |
-| M3 | List Creation, Price Logging & Tally Slip | Overhaul `CreateMarketListSection.kt`, `MarketPromptAmountDialog.kt`, `MarketTripCompletionSheet.kt`, `MarketParsedTagChip.kt` | M1, M2 | **DONE** (Gate Passed, 361 tests pass) |
-| M4 | Price Intelligence & Inflation Trends | Overhaul `ProductPriceInsightsSheet.kt` with living ledger styling and historical sparklines | M1 | **DONE** (Gate Passed, 416 tests pass) |
-| M5 | Regression Verification & Release v6.18 | Run full test suite, execute `./scripts/bump_version.sh minor`, push to GitHub | M1..M4 | **DONE** (Gate Passed, v6.18 live on main) |
-| MG1 | Market Natural Finger Gestures & Tactile Polish | 1-Swipe check-off, `HorizontalPager` tab gestures, threshold haptics, ruled baseline, tally dots, serrated tear edge | M1..M5 | **DONE** (Gate Passed, 461 tests pass) |
-| MG2 | Production Verification & Release v6.19 | Run 461 unit tests, bump version to `v6.19`, tag and push to GitHub | MG1 | **DONE** (Gate Passed, v6.19 live on main) |
+## 3. Redesign v7 Execution & Phase Status
+
+| Phase | Scope | Status | Verification |
+|:---:|---|:---:|---|
+| **Phase 1** | Baseline & Design Tokens (`theme/`, base components) | **DONE** | Tokens, `AppNumericKeypad`, `StatTile`, `AppTopBar`, `StarterEmptyState`, `SegmentedControl` |
+| **Phase 2** | Navigation Overhaul (5 Tabs, `AppAddFab`, `AppScaffold`, `LedgerScreen`, `PlanScreen`) | **DONE** | Removed 3D drawer; 5 top-level tabs; zero occluded content |
+| **Phase 3** | Add/Edit Transaction & `AmountKeypad` Flow | **DONE** | Inline math solver, category prediction, account chips, single-tap CTA |
+| **Phase 4** | Home Dashboard & Market Entry Completion | **DONE** | Compact hero ($\le 200\text{dp}$), safe-to-spend, 4 quick actions, recent transactions above fold |
+| **Phase 5** | Transactions Ledger & Market Hub Segmented View | **DONE** | Grouped day surfaces, 72dp rows, active filter count, Lists/Prices/New tabs |
+| **Phase 6** | Money Hub Consolidation (Accounts, Budgets, Bills, Debts) | **DONE** | 4-segment plan hub, net worth hero, warning cards, installment tracking |
+| **Phase 7** | Analytics & Reports Refinement | **DONE** | 160dp donut charts, spending bars, statement preview card, PDF/CSV export |
+| **Phase 8** | Settings, Cloud Sync & Onboarding Overhaul | **DONE** | 7 sections, persistent `SyncStatusCard`, zero toast policy, 3-screen onboarding |
+| **Phase 9** | Modular Decomposition & Regression Hardening | **DONE** | Monoliths decomposed into subcomponents; 562 tests passing (100% green) |
 
 ---
 
-## Interface Contracts
+## 4. Key Invariants & Quality Rules
 
-### M1 ↔ M2, M3, M4 (Design System) [ACTIVE]
-- `LocalAppColors.current`:
-  - `cardBackground`: Surface sheet color (`#161B22` Dark / `#FFFFFF` Light)
-  - `background`: Canvas background (`#0E1116` Dark / `#F9F8F5` Light)
-  - `textPrimary`: Warm high-contrast text (`#F3F4F6` Dark / `#1C1917` Light)
-  - `textSecondary`: Muted metadata text (`#9CA3AF` Dark / `#57534E` Light)
-  - `divider`: Hairline ink separator (`#262E3B` Dark / `#E5DFD5` Light)
-  - `accent`: Primary action emerald (`#10B981` Dark / `#047857` Light)
-- `LivingTypography` / `MaterialTheme.typography`:
-  - `fontFeatureSettings = "tnum"` globally enabled on tabular numbers.
-  - Minimum font size for Bengali text $\ge 12\text{sp}$.
-
-### M2 ↔ M3, M5 (Market UI Contracts)
-- `MarketItemRow`:
-  - Required parameters: `item: MarketItem`, `onTogglePurchased: (MarketItem) -> Unit`, `onPromptAmount: (MarketItem) -> Unit`, `onRequestDelete: () -> Unit`, `onSubstituteClick: (MarketItem) -> Unit`, `isEditMode: Boolean`.
-  - Invariants: Uses `SwipeToDismissBox`, circular checkbox, `getDepartmentMeta`, `formatQuantity()`.
-- `MarketDepartmentSectionHeader`:
-  - Department title (Bangla & English), icon emoji, completed count, total count, collapsible state toggle.
-- `MarketBottomTripSummaryBar`:
-  - Pinned dock displaying spent total (`formatCurrency`), item progress counter, and single-tap `onFinishShopping` trigger.
-- `MarketFinishButton`:
-  - Invariant: Uses `Icons.Filled.Check`, no duplicate checkmark in text string.
-
-### M3 ↔ M2, M5 (Creation & Completion Contracts)
-- `CreateMarketListSection`:
-  - Invariants: `CreateMarketListStep.TITLE`, `CreateMarketListStep.ITEMS`, `parseBulkText`, `addManualItem`, `quickStaples`.
-- `MarketPromptAmountDialog`:
-  - Invariants: `FocusRequester`, `CalculatorEvaluator.evaluate`, operator chips (`+`, `-`, `×`, `÷`), quick increment chips (`50, 100, 200, 500`), `lastRate`.
-- `MarketTripCompletionSheet`:
-  - Accepts `MarketCompletionResult`, lists completed items, allows account selection (`Cash`, `Bank`, `MFS`), calls `onConfirm`.
-
----
-
-## Code Layout
-- `app/src/main/java/com/example/expensetracker/theme/`:
-  - `Color.kt` — Living Ledger palette
-  - `Theme.kt` — AppTheme and LocalAppColors provider
-  - `Type.kt` — LivingTypography with tabular numbers
-- `app/src/main/java/com/example/expensetracker/ui/market/`:
-  - `MarketScreen.kt` — Main Market screen & coordinator
-  - `MarketDepartmentSectionHeader.kt` — Collapsible department stall header
-  - `MarketBottomTripSummaryBar.kt` — Thumb-zone persistent shopping dock
-  - `MarketParsedTagChip.kt` — Interactive WhatsApp/bulk tag chips
-- `app/src/main/java/com/example/expensetracker/ui/dashboard/`:
-  - `MarketItemRow.kt` — Tactile bazaar pocket notepad row
-  - `CreateMarketListSection.kt` — Handcrafted list creator wizard
-  - `MarketPromptAmountDialog.kt` — Thumb-friendly price entry bottom sheet
-  - `MarketTripCompletionSheet.kt` — Perforated digital tally slip
-  - `ProductPriceInsightsSheet.kt` — Commodity price intelligence
-  - `MarketFinishButton.kt` — In-store finish button
-- `app/src/test/java/com/example/expensetracker/`:
-  - `MultiMarketListAndItemUxTest.kt` — Structural invariant tests
-  - `MarketOverhaulE2ETest.kt` — 4-tier opaque-box E2E suite (73 tests)
-  - `ChallengerMilestone1StressTest.kt` — Theme & contrast stress tests
-  - `ChallengerM1EmpiricalStressTest.kt` — Component & shape stress tests
+1. **Test Verification**: Full test suite must always remain 100% green:
+   ```bash
+   ./gradlew testDebugUnitTest
+   ```
+   Current suite: **562 unit & integration tests** passing (0 failures, 0 errors).
+2. **Accessibility (WCAG 2.2 AA)**:
+   - Zero touch targets $< 48\times 48\text{dp}$ across all interactive components.
+   - Descriptive `contentDescription` on all actionable icons.
+3. **Bilingual & Tabular Typography**:
+   - `LocalAppStrings` for all user-facing copy in English and Bengali.
+   - Minimum font size $\ge 12\text{sp}$ and line height $\ge 16\text{sp}$ for Bengali text. Zero clipping of key labels.
+   - Tabular figures (`fontFeatureSettings = "tnum"`) on all amounts, balances, and timestamps.
+4. **Color & Styling Compliance**:
+   - Always access colors via `LocalAppColors.current` (never hardcode raw colors).
+   - Never rely on color alone to convey meaning (pair with icons/signs/labels).
+   - Flat surfaces with max 2 levels of nesting.
+5. **Branching & Git Rules**:
+   - Work strictly on branch `redesign/v7`. Never push to `main` during redesign.
+   - Automatic push to `main` paused until owner explicitly approves merge.
+   - 3-point version synchronization policy (`app/build.gradle.kts`, `AppConstants.kt`, git tags) via `./scripts/bump_version.sh`.

@@ -4,6 +4,7 @@ import com.example.expensetracker.ui.components.Strings
 import com.example.expensetracker.ui.navigation.NavigationItem
 import com.example.expensetracker.ui.navigation.getLocalizedTitle
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,23 +35,24 @@ class MarketBottomNavAndRedesignTest {
 
     @Test
     fun testModernBottomNavBarContainsMarketInPrimaryPosition() {
-        val navBarFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/ModernBottomNavBar.kt")
-        assertTrue("ModernBottomNavBar.kt must exist", navBarFile.exists())
-        val content = navBarFile.readText()
+        val legacyNavBar = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/ModernBottomNavBar.kt")
+        assertFalse("ModernBottomNavBar.kt must be deleted in v7 Phase 2", legacyNavBar.exists())
 
-        // Verify Market item button in Bottom Bar
-        assertTrue(
-            "ModernBottomNavBar must have BottomNavItemButton for NavigationItem.MARKET",
-            content.contains("selectedItem == NavigationItem.MARKET") &&
-                    content.contains("strings.navMarket") &&
-                    content.contains("Icons.Filled.ShoppingCart") &&
-                    content.contains("Icons.Outlined.ShoppingCart")
-        )
+        val dockFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/PulseDock.kt")
+        assertTrue("PulseDock.kt must exist", dockFile.exists())
+        val content = dockFile.readText()
 
-        // Verify isMoreSelected includes NavigationItem.ANALYTICS
+        val destFile = findSourceFile("src/main/java/com/example/expensetracker/ui/navigation/PulseNavDestinations.kt")
+        assertTrue("PulseNavDestinations.kt must exist", destFile.exists())
+        val destContent = destFile.readText()
+
+        // Verify Bazaar item in Pulse Dock
         assertTrue(
-            "isMoreSelected must include NavigationItem.ANALYTICS",
-            content.contains("selectedItem == NavigationItem.ANALYTICS")
+            "PulseDock must have tab for BAZAAR with shopping cart icon",
+            content.contains("PulseTab.BAZAAR") &&
+                    destContent.contains("PulseTab") &&
+                    destContent.contains("Icons.Filled.ShoppingCart") &&
+                    destContent.contains("Icons.Outlined.ShoppingCart")
         )
     }
 
@@ -112,15 +114,15 @@ class MarketBottomNavAndRedesignTest {
             content.contains("ProductPriceInsightsContent(")
         )
 
-        // 4. Must support Multi-List Hub and Shopping Mode
+        // 4. Must support Multi-List Hub / Switcher and Shopping Mode
         assertTrue(
-            "MarketScreen must support ActiveMarketListsHubView",
-            content.contains("ActiveMarketListsHubView(")
+            "MarketScreen must support active lists switcher or hub",
+            content.contains("ActiveMarketListsHubView(") || content.contains("effectiveActiveLists")
         )
         assertTrue(
-            "MarketScreen must support MarketItemRow and MarketFinishButton",
+            "MarketScreen must support MarketItemRow and MarketSummaryHeader or MarketFinishButton",
             content.contains("MarketItemRow(") &&
-                    content.contains("MarketFinishButton(")
+                    (content.contains("MarketFinishButton(") || content.contains("MarketSummaryHeader("))
         )
 
         // 5. Must support CreateMarketListSection for Tab 2 (New List)

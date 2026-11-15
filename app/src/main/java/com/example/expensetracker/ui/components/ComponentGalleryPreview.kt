@@ -3,21 +3,12 @@ package com.example.expensetracker.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.ReceiptLong
-import androidx.compose.material.icons.outlined.ShoppingBag
-import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,10 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.expensetracker.theme.ExpenseTrackerTheme
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.Space16
 import com.example.expensetracker.theme.Space20
@@ -52,8 +40,6 @@ fun ComponentGalleryScreen(
     var selectedSegment by remember { mutableIntStateOf(0) }
     var filterSelected by remember { mutableStateOf(true) }
     var choiceSelected by remember { mutableStateOf(false) }
-    var isExpanded by remember { mutableStateOf(true) }
-    var isPrivacyActive by remember { mutableStateOf(false) }
 
     CompositionLocalProvider(
         LocalAppStrings provides strings
@@ -72,280 +58,29 @@ fun ComponentGalleryScreen(
                 color = colors.textPrimary
             )
 
-            // --- 1. AMOUNT TEXT ---
-            SectionHeader(title = if (isBengali) "১. টাকার সংখ্যা (AmountText)" else "1. AmountText (tnum & a11y)")
-            AppCard(variant = AppCardVariant.Flat) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("Expense", style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
-                            AmountText(
-                                amount = 1250.0,
-                                type = AmountType.Expense,
-                                useBengaliNumerals = isBengali,
-                                style = MaterialTheme.typography.headlineMedium
-                            )
-                        }
-                        Column {
-                            Text("Income", style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
-                            AmountText(
-                                amount = 48500.0,
-                                type = AmountType.Income,
-                                useBengaliNumerals = isBengali,
-                                style = MaterialTheme.typography.headlineMedium
-                            )
-                        }
-                    }
+            GalleryAmountTextSection(isBengali = isBengali)
 
-                    Spacer(modifier = Modifier.height(4.dp))
+            GalleryButtonsSection(isBengali = isBengali)
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("Masked (Privacy)", style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
-                            AmountText(
-                                amount = 33015.0,
-                                isPrivacyMasked = true,
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                        }
-                        Column {
-                            Text("Neutral Balance", style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
-                            AmountText(
-                                amount = 33015.0,
-                                type = AmountType.Neutral,
-                                useBengaliNumerals = isBengali,
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                        }
-                    }
-                }
-            }
-
-            // --- 2. BUTTONS ---
-            SectionHeader(title = if (isBengali) "২. বাটন (AppButton)" else "2. AppButton (WCAG >= 48dp)")
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AppButton(
-                    text = if (isBengali) "সংরক্ষণ" else "Save ৳ 450",
-                    onClick = {},
-                    variant = AppButtonVariant.Primary,
-                    modifier = Modifier.weight(1f)
-                )
-                AppButton(
-                    text = if (isBengali) "বাতিল" else "Cancel",
-                    onClick = {},
-                    variant = AppButtonVariant.Secondary,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AppButton(
-                    text = if (isBengali) "মুছে ফেলুন" else "Delete",
-                    onClick = {},
-                    variant = AppButtonVariant.Destructive,
-                    modifier = Modifier.weight(1f)
-                )
-                AppButton(
-                    text = if (isBengali) "লোডিং..." else "Loading",
-                    onClick = {},
-                    loading = true,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            // --- 3. CHIPS ---
-            SectionHeader(title = if (isBengali) "৩. চিপস (AppChip)" else "3. AppChip (48dp Touch Target)")
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AppChip(
-                    label = if (isBengali) "বাজার" else "Bazaar",
-                    selected = filterSelected,
-                    onClick = { filterSelected = !filterSelected },
-                    leadingIcon = Icons.Outlined.ShoppingBag,
-                    variant = AppChipVariant.Filter
-                )
-                AppChip(
-                    label = if (isBengali) "নগদ" else "Cash",
-                    selected = choiceSelected,
-                    onClick = { choiceSelected = !choiceSelected },
-                    leadingIcon = Icons.Outlined.AccountBalanceWallet,
-                    variant = AppChipVariant.Choice
-                )
-                AppChip(
-                    label = if (isBengali) "মুছে ফেলার যোগ্য" else "Removable",
-                    selected = false,
-                    onClick = {},
-                    onRemoveClick = {},
-                    variant = AppChipVariant.Input
-                )
-            }
-
-            // --- 4. SEGMENTED CONTROL ---
-            SectionHeader(title = if (isBengali) "৪. সেগমেন্টেড কন্ট্রোল" else "4. SegmentedControl (48dp)")
-            SegmentedControl(
-                items = if (isBengali) listOf("খরচ", "আয়", "স্থানান্তর") else listOf("Expense", "Income", "Transfer"),
-                selectedIndex = selectedSegment,
-                onItemSelected = { selectedSegment = it }
+            GalleryChipsSection(
+                isBengali = isBengali,
+                filterSelected = filterSelected,
+                onFilterToggle = { filterSelected = !filterSelected },
+                choiceSelected = choiceSelected,
+                onChoiceToggle = { choiceSelected = !choiceSelected }
             )
 
-            // --- 5. CARDS (FLAT, RAISED, TINTED) ---
-            SectionHeader(title = if (isBengali) "৫. কার্ড রূপভেদ (AppCard Variants)" else "5. AppCard Variants (C1 Flat/Raised/Tinted)")
-            AppCard(variant = AppCardVariant.Flat) {
-                Text(
-                    text = if (isBengali) "ফ্ল্যাট কার্ড: ডার্ক মোডে বর্ডারহীন টোনাল পৃষ্ঠ" else "Flat Card: Tonal surface without outline in Dark/AMOLED",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.textPrimary
-                )
-            }
-            AppCard(variant = AppCardVariant.Raised) {
-                Text(
-                    text = if (isBengali) "রাইজড কার্ড: হালকা শ্যাডো সহ শিট সারফেস" else "Raised Card: Elevated surfaceRaised with soft shadow",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.textPrimary
-                )
-            }
-            AppCard(variant = AppCardVariant.Tinted) {
-                Text(
-                    text = if (isBengali) "টিন্টেড কার্ড: অ্যাকসেন্ট কন্টেইনার ব্যাকগ্রাউন্ড" else "Tinted Card: Soft accentContainer surface",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.accent
-                )
-            }
-
-            // --- 6. STATUS BANNERS ---
-            SectionHeader(title = if (isBengali) "৬. স্ট্যাটাস ব্যানার" else "6. StatusBanner")
-            StatusBanner(
-                message = if (isBengali) "বিদ্যুৎ বিল আগামী ৩ দিনের মধ্যে পরিশোধযোগ্য" else "Electricity bill due in 3 days (৳ 2,400)",
-                variant = StatusBannerVariant.Warning,
-                actionText = if (isBengali) "পরিশোধ" else "Pay now",
-                onActionClick = {}
-            )
-            StatusBanner(
-                message = if (isBengali) "ড্রাইভ ব্যাকআপ সফলভাবে সম্পন্ন হয়েছে" else "Drive sync completed 5m ago",
-                variant = StatusBannerVariant.Success
+            GalleryCardsAndBannersSection(
+                isBengali = isBengali,
+                selectedSegment = selectedSegment,
+                onSegmentSelected = { selectedSegment = it }
             )
 
-            // --- 7. SKELETON / SHIMMER ---
-            SectionHeader(title = if (isBengali) "৭. স্কেলিটন শিমার (SkeletonBox)" else "7. SkeletonBox & ShimmerList")
-            ShimmerList(itemCount = 2)
+            GalleryFeedbackAndStatesSection(isBengali = isBengali)
 
-            // --- 8. EMPTY STATE ---
-            SectionHeader(title = if (isBengali) "৮. এম্পটি স্টেট (EmptyState)" else "8. EmptyState with Templates")
-            EmptyState(
-                title = if (isBengali) "কোনো বিল তালিকাভুক্ত নেই" else "No upcoming bills",
-                body = if (isBengali) "দ্রুত যুক্ত করতে নিচের টেমপ্লেট থেকে বেছে নিন" else "Choose a starter template below to track utility bills.",
-                buttonText = if (isBengali) "নতুন বিল যোগ করুন" else "Add custom bill",
-                onButtonClick = {},
-                templates = listOf(
-                    EmptyStateTemplate(title = if (isBengali) "বিদ্যুৎ" else "Electricity", icon = Icons.Outlined.Bolt, onClick = {}),
-                    EmptyStateTemplate(title = if (isBengali) "ওয়াইফাই" else "Wi-Fi", icon = Icons.Outlined.Wifi, onClick = {})
-                )
-            )
-
-            // --- 9. AMOUNT KEYPAD ---
-            SectionHeader(title = if (isBengali) "৯. টাকার কী-প্যাড (AmountKeypad)" else "9. AmountKeypad (4x4, >=56dp)")
-            var keypadExpression by remember { mutableStateOf("120+85") }
-            AmountKeypad(
-                expression = keypadExpression,
-                onExpressionChange = { keypadExpression = it },
-                isBangla = isBengali
-            )
-
-            // --- 10. CATEGORY PICKER ---
-            SectionHeader(title = if (isBengali) "১০. ক্যাটাগরি চয়নকারী (CategoryPicker)" else "10. CategoryPicker (Inline chips)")
-            val galleryCategories = remember {
-                listOf(
-                    com.example.expensetracker.data.model.Category(1, "Groceries", com.example.expensetracker.data.model.TransactionType.EXPENSE, "ShoppingCart", "#10B981"),
-                    com.example.expensetracker.data.model.Category(2, "Dining", com.example.expensetracker.data.model.TransactionType.EXPENSE, "Restaurant", "#F97316"),
-                    com.example.expensetracker.data.model.Category(3, "Transport", com.example.expensetracker.data.model.TransactionType.EXPENSE, "DirectionsCar", "#0EA5E9"),
-                    com.example.expensetracker.data.model.Category(4, "Rent", com.example.expensetracker.data.model.TransactionType.EXPENSE, "Home", "#8B5CF6"),
-                    com.example.expensetracker.data.model.Category(5, "Bills", com.example.expensetracker.data.model.TransactionType.EXPENSE, "Receipt", "#F59E0B"),
-                    com.example.expensetracker.data.model.Category(6, "Health", com.example.expensetracker.data.model.TransactionType.EXPENSE, "LocalHospital", "#EC4899")
-                )
-            }
-            var selectedGalleryCategory by remember { mutableStateOf<com.example.expensetracker.data.model.Category?>(galleryCategories.first()) }
-            CategoryPicker(
-                categories = galleryCategories,
-                selectedCategory = selectedGalleryCategory,
-                onCategorySelected = { selectedGalleryCategory = it },
-                isBangla = isBengali
-            )
-
-            // --- 11. ACCOUNT CHIP ROW ---
-            SectionHeader(title = if (isBengali) "১১. অ্যাকাউন্ট রো (AccountChipRow)" else "11. AccountChipRow (With balances)")
-            val galleryAccounts = remember {
-                listOf(
-                    com.example.expensetracker.data.model.Account(1, "Cash in Hand", com.example.expensetracker.data.model.AccountType.CASH, currentBalance = 3450.0),
-                    com.example.expensetracker.data.model.Account(2, "Bank Account", com.example.expensetracker.data.model.AccountType.BANK, currentBalance = 45000.0),
-                    com.example.expensetracker.data.model.Account(3, "bKash Personal", com.example.expensetracker.data.model.AccountType.MFS, currentBalance = 12500.0)
-                )
-            }
-            var selectedGalleryAccount by remember { mutableStateOf<com.example.expensetracker.data.model.Account?>(galleryAccounts.first()) }
-            AccountChipRow(
-                accounts = galleryAccounts,
-                selectedAccountId = selectedGalleryAccount?.id,
-                onAccountSelected = { selectedGalleryAccount = it },
-                isBangla = isBengali
-            )
+            GalleryPickersAndInputsSection(isBengali = isBengali)
 
             Spacer(modifier = Modifier.height(32.dp))
         }
-    }
-}
-
-// =========================================================================
-// COMPOSE PREVIEWS (Light, Dark, AMOLED x English, Bengali)
-// =========================================================================
-
-@Preview(name = "Dark - English", showBackground = true)
-@Composable
-fun PreviewComponentGalleryDarkEn() {
-    ExpenseTrackerTheme(themeMode = "dark") {
-        ComponentGalleryScreen(isBengali = false)
-    }
-}
-
-@Preview(name = "Light - English", showBackground = true)
-@Composable
-fun PreviewComponentGalleryLightEn() {
-    ExpenseTrackerTheme(themeMode = "light") {
-        ComponentGalleryScreen(isBengali = false)
-    }
-}
-
-@Preview(name = "AMOLED - English", showBackground = true)
-@Composable
-fun PreviewComponentGalleryAmoledEn() {
-    ExpenseTrackerTheme(themeMode = "amoled") {
-        ComponentGalleryScreen(isBengali = false)
-    }
-}
-
-@Preview(name = "Dark - Bengali", showBackground = true)
-@Composable
-fun PreviewComponentGalleryDarkBn() {
-    ExpenseTrackerTheme(themeMode = "dark") {
-        ComponentGalleryScreen(isBengali = true)
-    }
-}
-
-@Preview(name = "Light - Bengali", showBackground = true)
-@Composable
-fun PreviewComponentGalleryLightBn() {
-    ExpenseTrackerTheme(themeMode = "light") {
-        ComponentGalleryScreen(isBengali = true)
     }
 }

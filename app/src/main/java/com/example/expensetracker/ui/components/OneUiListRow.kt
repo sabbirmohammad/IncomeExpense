@@ -138,7 +138,7 @@ fun ListRow(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        Text(
+        PulseTabularText(
             text = amountText,
             style = MaterialTheme.typography.titleMedium.copy(
                 fontSize = 15.sp,

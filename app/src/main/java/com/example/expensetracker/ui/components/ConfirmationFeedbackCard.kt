@@ -75,47 +75,13 @@ fun ConfirmationFeedbackCard(
             verticalArrangement = Arrangement.Center
         ) {
             // Pulsing animated icon badge
-            Box(
-                modifier = Modifier.size(88.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Expanding glow ring
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .scale(pulseScale)
-                        .clip(CircleShape)
-                        .background(tintColor.copy(alpha = pulseAlpha))
-                )
-
-                // Outer ring border
-                Box(
-                    modifier = Modifier
-                        .size(74.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                listOf(tintColor.copy(alpha = 0.25f), Color.Transparent)
-                            )
-                        )
-                )
-
-                // Central Badge
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(badgeBgColor),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = tintColor,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
+            FeedbackPulsingIconBadge(
+                tintColor = tintColor,
+                badgeBgColor = badgeBgColor,
+                icon = icon,
+                pulseScale = pulseScale,
+                pulseAlpha = pulseAlpha
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -198,33 +164,10 @@ fun ConfirmationFeedbackCard(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Slim Auto-dismiss Countdown Progress Bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.08f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(timerProgress)
-                        .fillMaxHeight()
-                        .clip(CircleShape)
-                        .background(tintColor.copy(alpha = 0.75f))
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Tap to dismiss hint
-            Text(
-                text = FeedbackStrings.tapToDismiss(isBangla),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Normal
-                ),
-                color = appColors.textMuted
+            FeedbackCountdownBar(
+                timerProgress = timerProgress,
+                tintColor = tintColor,
+                isBangla = isBangla
             )
         }
     }

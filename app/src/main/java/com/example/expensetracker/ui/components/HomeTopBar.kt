@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.theme.LocalAppColors
@@ -79,10 +78,7 @@ fun HomeTopBar(
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = appColors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
+                color = appColors.textPrimary
             )
 
             // Right: [👁 Privacy] [🔔 Notifications] [Avatar -> Settings]

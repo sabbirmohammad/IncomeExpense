@@ -1,0 +1,155 @@
+package com.example.expensetracker.ui.receivables
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.expensetracker.data.model.Payable
+import com.example.expensetracker.data.model.Receivable
+import com.example.expensetracker.theme.LocalAppColors
+import com.example.expensetracker.theme.ScreenPaddingHorizontal
+import com.example.expensetracker.ui.components.LocalAppStrings
+
+/**
+ * ReceivablesContent:
+ * Extracted body of ReceivablesScreen without top bar/back navigation,
+ * suitable for hosting inside PlanScreen's Debts segment or standalone.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReceivablesContent(
+    viewModel: ReceivablesViewModel,
+    modifier: Modifier = Modifier
+) {
+    val receivables by viewModel.receivables.collectAsStateWithLifecycle()
+    val summary by viewModel.receivablesSummary.collectAsStateWithLifecycle()
+    val payables by viewModel.payables.collectAsStateWithLifecycle()
+    val payablesSummary by viewModel.payablesSummary.collectAsStateWithLifecycle()
+    val debtBookSummary by viewModel.debtBookSummary.collectAsStateWithLifecycle()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val isPrivacyMode by viewModel.isPrivacyMode.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
+    val context = LocalContext.current
+
+    var showAddEditSheet by remember { mutableStateOf(false) }
+    var showAddEditPayableSheet by remember { mutableStateOf(false) }
+    var showSplitBillSheet by remember { mutableStateOf(false) }
+    var showConfetti by remember { mutableStateOf(false) }
+    var receivableToEdit by remember { mutableStateOf<Receivable?>(null) }
+    var receivableForPayment by remember { mutableStateOf<Receivable?>(null) }
+    var receivableToDelete by remember { mutableStateOf<Receivable?>(null) }
+    var payableToEdit by remember { mutableStateOf<Payable?>(null) }
+    var payableForPayment by remember { mutableStateOf<Payable?>(null) }
+    var payableToDelete by remember { mutableStateOf<Payable?>(null) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(LocalAppColors.current.background)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            ReceivablesTabsAndNetBanner(
+                selectedTab = selectedTab,
+                onTabSelected = { viewModel.setSelectedTab(it) },
+                summary = summary,
+                payablesSummary = payablesSummary,
+                debtBookSummary = debtBookSummary,
+                isPrivacyMode = isPrivacyMode,
+                currencySymbol = userProfile.currencySymbol
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = ScreenPaddingHorizontal)
+            ) {
+                if (selectedTab == DebtLedgerTab.RECEIVABLES) {
+                    receivablesTabContent(
+                        summary = summary,
+                        receivables = receivables,
+                        currencySymbol = userProfile.currencySymbol,
+                        isPrivacyMode = isPrivacyMode,
+                        strings = strings,
+                        context = context,
+                        onAddReceivable = {
+                            receivableToEdit = null
+                            showAddEditSheet = true
+                        },
+                        onRecordPayment = { receivableForPayment = it },
+                        onEdit = {
+                            receivableToEdit = it
+                            showAddEditSheet = true
+                        },
+                        onDelete = { receivableToDelete = it }
+                    )
+                } else {
+                    payablesTabContent(
+                        summary = payablesSummary,
+                        payables = payables,
+                        currencySymbol = userProfile.currencySymbol,
+                        isPrivacyMode = isPrivacyMode,
+                        strings = strings,
+                        onAddPayable = {
+                            payableToEdit = null
+                            showAddEditPayableSheet = true
+                        },
+                        onRecordPayment = { payableForPayment = it },
+                        onEdit = {
+                            payableToEdit = it
+                            showAddEditPayableSheet = true
+                        },
+                        onDelete = { payableToDelete = it }
+                    )
+                }
+
+                item(key = "bottom_spacer") { Spacer(modifier = Modifier.height(100.dp)) }
+            }
+        }
+
+        ReceivablesModals(
+            viewModel = viewModel,
+            userProfile = userProfile,
+            accounts = accounts,
+            categories = categories,
+            showAddEditSheet = showAddEditSheet,
+            receivableToEdit = receivableToEdit,
+            onDismissAddEdit = { showAddEditSheet = false },
+            receivableForPayment = receivableForPayment,
+            onDismissPayment = { receivableForPayment = null },
+            showSplitBillSheet = showSplitBillSheet,
+            onDismissSplitBill = { showSplitBillSheet = false },
+            receivableToDelete = receivableToDelete,
+            onDismissDeleteReceivable = { receivableToDelete = null },
+            showAddEditPayableSheet = showAddEditPayableSheet,
+            payableToEdit = payableToEdit,
+            onDismissAddEditPayable = {
+                showAddEditPayableSheet = false
+                payableToEdit = null
+            },
+            payableForPayment = payableForPayment,
+            onDismissPayablePayment = { payableForPayment = null },
+            payableToDelete = payableToDelete,
+            onDismissDeletePayable = { payableToDelete = null },
+            showConfetti = showConfetti,
+            onTriggerConfetti = { showConfetti = true },
+            onConfettiEnd = { showConfetti = false }
+        )
+    }
+}

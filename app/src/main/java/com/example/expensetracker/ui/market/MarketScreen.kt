@@ -1,136 +1,24 @@
 package com.example.expensetracker.ui.market
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.ShoppingBag
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import kotlinx.coroutines.delay
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.expensetracker.common.UnitConverterEngine
-import com.example.expensetracker.data.model.MarketCommodityUiModel
 import com.example.expensetracker.data.model.MarketItem
-import com.example.expensetracker.data.model.MarketListWithItems
-import com.example.expensetracker.data.model.ProductPriceInsight
-import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
-import com.example.expensetracker.ui.components.MarketSearchBar
-import com.example.expensetracker.ui.components.UnitAndQuantityDialog
-import com.example.expensetracker.ui.components.convertToBengaliDigits
-import com.example.expensetracker.ui.components.formatCurrency
 import com.example.expensetracker.ui.components.rememberAppHaptics
-import com.example.expensetracker.ui.dashboard.ActiveMarketListsHubView
-import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
 import com.example.expensetracker.ui.dashboard.CreateMarketListSection
-import com.example.expensetracker.ui.dashboard.getMarketItemCategory
-import com.example.expensetracker.ui.dashboard.MarketAddNewItemRow
-import com.example.expensetracker.ui.dashboard.MarketFinishButton
-import com.example.expensetracker.ui.dashboard.MarketItemRow
-import com.example.expensetracker.ui.dashboard.MarketPromptAmountDialog
-import com.example.expensetracker.ui.dashboard.MarketSubstituteItemDialog
-import com.example.expensetracker.ui.dashboard.MarketSummarySection
-import com.example.expensetracker.ui.dashboard.MarketTripCompletionSheet
-import com.example.expensetracker.ui.dashboard.ProductPriceInsightsContent
 import com.example.expensetracker.ui.dashboard.DashboardViewModel
-import androidx.compose.runtime.mutableStateMapOf
+import com.example.expensetracker.ui.dashboard.ProductPriceInsightsContent
 import kotlinx.coroutines.launch
 
-/**
- * Premium, dedicated full-screen Market (বাজার).
- * Integrates:
- * 1. Active Shopping Checklists & Multi-List Hub (বাজারের ফর্দ)
- * 2. Commodity Price Intelligence & Inflation Tracker (বাজার দর ও দরদাম)
- * 3. Quick Bulk Natural-Language List Creator (নতুন ফর্দ তৈরি)
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketScreen(
     dashboardViewModel: DashboardViewModel,
@@ -138,7 +26,7 @@ fun MarketScreen(
     modifier: Modifier = Modifier
 ) {
     val appColors = LocalAppColors.current
-    val strings = LocalAppStrings.current
+    val isBangla = LocalAppStrings.current.isBangla
     val haptics = rememberAppHaptics()
 
     val activeMarketLists by dashboardViewModel.activeMarketLists.collectAsStateWithLifecycle()
@@ -152,211 +40,127 @@ fun MarketScreen(
 
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    val isBangla = strings.isBangla
     val currencySymbol = userProfile.currencySymbol
 
-    // 0: Market Lists (Checklist & Trips), 1: Price Intelligence (বাজার দর), 2: Create New List
     var selectedTab by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
     var priceSearchQuery by remember { mutableStateOf("") }
     var isPriceSearchActive by remember { mutableStateOf(false) }
 
-    // Bidirectional sync: swiping pages updates the active tab and search state
     LaunchedEffect(pagerState.currentPage) {
         if (selectedTab != pagerState.currentPage) {
             selectedTab = pagerState.currentPage
-            if (pagerState.currentPage != 1) {
-                isPriceSearchActive = false
-            }
+            if (pagerState.currentPage != 1) isPriceSearchActive = false
         }
     }
 
-    // Consolidated active lists
     val effectiveActiveLists = remember(activeMarketLists, activeMarketList) {
-        if (activeMarketLists.isNotEmpty()) {
-            activeMarketLists
-        } else if (activeMarketList != null) {
-            listOf(activeMarketList!!)
-        } else {
-            emptyList()
-        }
+        if (activeMarketLists.isNotEmpty()) activeMarketLists
+        else if (activeMarketList != null) listOf(activeMarketList!!)
+        else emptyList()
     }
 
-    // Selected list ID in Hub view (if single list, default to it)
     var selectedListId by remember(effectiveActiveLists.size) {
-        mutableStateOf<Long?>(
-            if (effectiveActiveLists.size == 1) effectiveActiveLists.first().list.id else null
-        )
+        mutableStateOf<Long?>(if (effectiveActiveLists.size == 1) effectiveActiveLists.first().list.id else null)
     }
-
     val currentViewingList = remember(effectiveActiveLists, selectedListId) {
-        effectiveActiveLists.find { it.list.id == selectedListId }
-            ?: (if (effectiveActiveLists.size == 1) effectiveActiveLists.first() else null)
+        effectiveActiveLists.find { it.list.id == selectedListId } ?: (if (effectiveActiveLists.size == 1) effectiveActiveLists.first() else null)
     }
 
-    var itemForUnitDialog by remember { mutableStateOf<MarketItem?>(null) }
-    var promptAmountForItem by remember { mutableStateOf<MarketItem?>(null) }
-    var itemToDeleteConfirm by remember { mutableStateOf<MarketItem?>(null) }
-    var itemToSubstitute by remember { mutableStateOf<MarketItem?>(null) }
-    var showForgotStaplesDialog by remember { mutableStateOf(false) }
-    var listToDeleteConfirmId by remember { mutableStateOf<Long?>(null) }
-    var tripForCompletionSheet by remember { mutableStateOf<MarketListWithItems?>(null) }
+    val dialogCtrl = rememberMarketDialogController(
+        currentViewingList = currentViewingList,
+        effectiveActiveLists = effectiveActiveLists,
+        dashboardViewModel = dashboardViewModel,
+        masterProducts = masterProducts,
+        accounts = accounts,
+        currencySymbol = currencySymbol,
+        isBangla = isBangla,
+        lastPurchasedRates = lastPurchasedRates,
+        productPriceInsights = productPriceInsights,
+        snackbarHostState = snackbarHostState,
+        coroutineScope = coroutineScope,
+        onResetSelectedList = { selectedListId = null }
+    )
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(appColors.background)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            // 1. Top Bar Header
+    Box(modifier = modifier.fillMaxSize().background(appColors.background)) {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             MarketTopBar(
-                isBangla = isBangla,
-                selectedTab = pagerState.currentPage,
-                searchQuery = priceSearchQuery,
-                onSearchQueryChange = { priceSearchQuery = it },
-                isSearchActive = isPriceSearchActive,
-                onSearchActiveChange = { isPriceSearchActive = it }
+                isBangla = isBangla, selectedTab = pagerState.currentPage,
+                searchQuery = priceSearchQuery, onSearchQueryChange = { priceSearchQuery = it },
+                isSearchActive = isPriceSearchActive, onSearchActiveChange = { isPriceSearchActive = it },
+                onOpenMergeDuplicates = dialogCtrl.onOpenDuplicateMerge, onOpenPastTrips = { selectedTab = 0 }
             )
 
-            // 2. Segmented Pill Tabs synchronized bidirectionally with HorizontalPager
             MarketSegmentedPills(
                 selectedTab = pagerState.currentPage,
                 onTabSelected = { targetTab ->
-                    haptics.lightTick()
-                    selectedTab = targetTab
-                    if (targetTab != 1) {
-                        isPriceSearchActive = false
-                    }
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(targetTab)
-                    }
+                    haptics.lightTick(); selectedTab = targetTab
+                    if (targetTab != 1) isPriceSearchActive = false
+                    coroutineScope.launch { pagerState.animateScrollToPage(targetTab) }
                 },
-                isBangla = isBangla,
-                activeListsCount = effectiveActiveLists.size,
-                priceInsightsCount = productPriceInsights.size
+                isBangla = isBangla, activeListsCount = effectiveActiveLists.size, priceInsightsCount = productPriceInsights.size
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // 3. Tab Content via HorizontalPager (enables natural horizontal finger swipe gestures)
             HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                beyondViewportPageCount = 1
+                state = pagerState, modifier = Modifier.fillMaxWidth().weight(1f), beyondViewportPageCount = 1
             ) { page ->
                 when (page) {
                     0 -> {
-                        // TAB 0: Active Market Lists & Shopping Checklist
                         MarketListsTabContent(
-                            effectiveActiveLists = effectiveActiveLists,
-                            currentViewingList = currentViewingList,
-                            currencySymbol = currencySymbol,
-                            isBangla = isBangla,
-                            lastPurchasedRates = lastPurchasedRates,
-                            productPriceInsights = productPriceInsights,
+                            effectiveActiveLists = effectiveActiveLists, currentViewingList = currentViewingList,
+                            currencySymbol = currencySymbol, isBangla = isBangla,
+                            lastPurchasedRates = lastPurchasedRates, productPriceInsights = productPriceInsights,
                             stapleProducts = stapleProducts,
                             onCreateStarterList = { title, starterItems ->
-                                val items = starterItems.map { (name, qtyStr) ->
-                                    val qty = qtyStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 1.0
-                                    val unit = qtyStr.filter { !it.isDigit() && it != '.' }.trim().ifEmpty { "কেজি" }
-                                    MarketItem(
-                                        name = name,
-                                        quantity = qty,
-                                        unit = unit
-                                    )
+                                val items = starterItems.map { (name, qStr) ->
+                                    val q = qStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 1.0
+                                    val u = qStr.filter { !it.isDigit() && it != '.' }.trim().ifEmpty { "কেজি" }
+                                    MarketItem(name = name, quantity = q, unit = u)
                                 }
                                 dashboardViewModel.createMarketListWithBulk(title, items)
                             },
-                            onSelectList = { listWithItems -> selectedListId = listWithItems.list.id },
-                            onBackToAllLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) {
-                                { selectedListId = null }
-                            } else null,
-                            onCreateNewClick = {
-                                selectedTab = 2
-                                coroutineScope.launch { pagerState.animateScrollToPage(2) }
-                            },
-                            onAddItem = { newItem, targetListId ->
-                                dashboardViewModel.addMarketItem(newItem, targetListId)
-                            },
-                            onUpdateItem = { item -> dashboardViewModel.updateMarketItem(item) },
-                            onDeleteItemClick = { item ->
-                                itemToDeleteConfirm = item
-                            },
-                            onUnitClick = { item -> itemForUnitDialog = item },
-                            onSubstituteClick = { item -> itemToSubstitute = item },
-                            onPromptAmount = { item -> promptAmountForItem = item },
-                            onUnmarkPurchased = { item -> dashboardViewModel.unmarkMarketItemPurchased(item) },
-                            onFinishTripClick = {
-                                val items = currentViewingList?.items ?: emptyList()
-                                val purchased = items.filter { it.isPurchased }
-                                val hasStaplePurchased = purchased.any {
-                                    val name = it.name.lowercase()
-                                    name.contains("মরিচ") || name.contains("লেবু") || name.contains("ধনে") ||
-                                    name.contains("আদা") || name.contains("রসুন") || name.contains("chili") || name.contains("lemon")
-                                }
-                                if (!hasStaplePurchased && items.size >= 3) {
-                                    showForgotStaplesDialog = true
-                                } else if (currentViewingList != null) {
-                                    tripForCompletionSheet = currentViewingList
-                                }
-                            },
-                            onDeleteListClick = { listId -> listToDeleteConfirmId = listId }
+                            onSelectList = { selectedListId = it.list.id },
+                            onBackToAllLists = if (effectiveActiveLists.size > 1 && currentViewingList != null) { { selectedListId = null } } else null,
+                            onCreateNewClick = { selectedTab = 2; coroutineScope.launch { pagerState.animateScrollToPage(2) } },
+                            onAddItem = { newItem, targetId -> dashboardViewModel.addMarketItem(newItem, targetId) },
+                            onDeleteItemClick = dialogCtrl.onOpenDeleteItem,
+                            onUnitClick = dialogCtrl.onOpenUnitDialog,
+                            onSubstituteClick = dialogCtrl.onOpenSubstitute,
+                            onPromptAmount = dialogCtrl.onOpenPromptAmount,
+                            onUnmarkPurchased = { dashboardViewModel.unmarkMarketItemPurchased(it) },
+                            onFinishTripClick = { dialogCtrl.onFinishTripClick(currentViewingList) },
+                            onDeleteListClick = dialogCtrl.onOpenDeleteList,
+                            onStartShopping = dialogCtrl.onStartShopping
                         )
                     }
                     1 -> {
-                        // TAB 1: Market Price Intelligence & Trends (R2 Overhaul)
                         ProductPriceInsightsContent(
-                            priceInsights = productPriceInsights,
-                            masterProducts = masterProducts,
-                            onFetchHistory = { productName -> dashboardViewModel.getProductPriceHistory(productName) },
-                            onAddCommodityToList = { commodity ->
-                                val targetList = currentViewingList ?: effectiveActiveLists.firstOrNull()
-                                val targetListId = targetList?.list?.id
-                                val newItem = MarketItem(
-                                    name = commodity.name,
-                                    quantity = 1.0,
-                                    unit = commodity.defaultUnit,
-                                    listId = targetListId ?: 0L
-                                )
-                                dashboardViewModel.addMarketItem(newItem, targetListId)
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = if (isBangla) "'${commodity.name}' ফর্দে যুক্ত হয়েছে" else "'${commodity.name}' added to list",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                }
+                            priceInsights = productPriceInsights, masterProducts = masterProducts,
+                            onFetchHistory = { dashboardViewModel.getProductPriceHistory(it) },
+                            onAddCommodityToList = { c ->
+                                val tId = (currentViewingList ?: effectiveActiveLists.firstOrNull())?.list?.id
+                                dashboardViewModel.addMarketItem(MarketItem(name = c.name, quantity = 1.0, unit = c.defaultUnit, listId = tId ?: 0L), tId)
+                                coroutineScope.launch { snackbarHostState.showSnackbar(if (isBangla) "'${c.name}' ফর্দে যুক্ত হয়েছে" else "'${c.name}' added to list") }
                             },
-                            isBangla = isBangla,
-                            currencySymbol = currencySymbol,
-                            onClose = null,
-                            searchQuery = priceSearchQuery,
-                            onSearchQueryChange = { priceSearchQuery = it },
-                            showInternalSearchBar = false,
-                            showHeader = false,
-                            onOpenSearch = { isPriceSearchActive = true },
-                            isSearchActive = isPriceSearchActive,
+                            onRenameCommodity = { old, new -> dashboardViewModel.renameCommodity(old, new) },
+                            onMergeCommodity = { src, tgt -> dashboardViewModel.mergeCommodities(src, tgt) },
+                            isBangla = isBangla, currencySymbol = currencySymbol, onClose = null,
+                            searchQuery = priceSearchQuery, onSearchQueryChange = { priceSearchQuery = it },
+                            showInternalSearchBar = false, showHeader = false,
+                            onOpenSearch = { isPriceSearchActive = true }, isSearchActive = isPriceSearchActive,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                     2 -> {
-                        // TAB 2: Create New Market List (WhatsApp Paste or Manual)
                         CreateMarketListSection(
                             isBangla = isBangla,
                             onListCreated = { title, items ->
                                 dashboardViewModel.createMarketListWithBulk(title, items)
-                                selectedTab = 0
-                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
-                                selectedListId = null
+                                selectedTab = 0; coroutineScope.launch { pagerState.animateScrollToPage(0) }; selectedListId = null
                             },
-                            priceInsights = productPriceInsights,
-                            currencySymbol = currencySymbol,
+                            priceInsights = productPriceInsights, currencySymbol = currencySymbol,
                             modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
@@ -364,1344 +168,23 @@ fun MarketScreen(
             }
         }
 
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .padding(bottom = 76.dp, start = 16.dp, end = 16.dp)
-    )
-}
-
-    // Dialogs
-    // 1. Unit & Quantity Dialog
-    if (itemForUnitDialog != null) {
-        val curItem = itemForUnitDialog!!
-        UnitAndQuantityDialog(
-            initialQuantity = curItem.quantity,
-            initialUnit = curItem.unit,
-            isBangla = isBangla,
-            onDismiss = { itemForUnitDialog = null },
-            onConfirm = { qty, unit ->
-                dashboardViewModel.updateMarketItem(curItem.copy(quantity = qty, unit = unit))
-                itemForUnitDialog = null
-            }
-        )
-    }
-
-    // 2. Amount Prompt Dialog when item purchased
-    if (promptAmountForItem != null) {
-        val targetItem = promptAmountForItem!!
-        val lastRate = lastPurchasedRates[targetItem.name.lowercase().trim()]
-        val targetInsight = UnitConverterEngine.findMatchingInsight(targetItem.name, productPriceInsights)
-        MarketPromptAmountDialog(
-            item = targetItem,
-            currencySymbol = currencySymbol,
-            isBangla = isBangla,
-            lastRate = lastRate,
-            priceInsight = targetInsight,
-            onDismiss = { promptAmountForItem = null },
-            onConfirm = { amt ->
-                if (amt > 0) {
-                    dashboardViewModel.markMarketItemPurchased(targetItem, amt)
-                } else {
-                    dashboardViewModel.markMarketItemPurchased(targetItem, 0.0)
-                }
-                promptAmountForItem = null
-            }
-        )
-    }
-
-    // 3. Item Substitute Dialog
-    if (itemToSubstitute != null) {
-        val curItem = itemToSubstitute!!
-        MarketSubstituteItemDialog(
-            item = curItem,
-            isBangla = isBangla,
-            onDismiss = { itemToSubstitute = null },
-            onConfirmSubstitute = { newTitle ->
-                dashboardViewModel.updateMarketItem(curItem.copy(name = newTitle))
-                itemToSubstitute = null
-            }
-        )
-    }
-
-    // 4. "Forgot Staples?" Guard Dialog
-    if (showForgotStaplesDialog && currentViewingList != null) {
-        AlertDialog(
-            onDismissRequest = { showForgotStaplesDialog = false },
-            title = {
-                Text(
-                    text = if (isBangla) "কাঁচামরিচ বা লেবু কি নিয়েছেন?" else "Forgot Chili or Lemon?",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = appColors.textPrimary
-                )
-            },
-            text = {
-                Text(
-                    text = if (isBangla)
-                        "ফর্দে কোনো কাঁচামরিচ, ধনেপাতা বা লেবু কেনা চিহ্নিত নেই। আপনি কি এগুলো নিয়েছেন নাকি ফর্দ এখনই সম্পন্ন করবেন?"
-                    else
-                        "No chili, lemon, or coriander was marked as purchased. Did you already buy them or want to finish now?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = appColors.textSecondary
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showForgotStaplesDialog = false
-                        tripForCompletionSheet = currentViewingList
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = appColors.income),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text(
-                        text = if (isBangla) "হ্যাঁ, সম্পন্ন করুন" else "Yes, Finish Now",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showForgotStaplesDialog = false }) {
-                    Text(
-                        text = if (isBangla) "না, ফর্দে যোগ করব" else "Add to List",
-                        color = appColors.accent
-                    )
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = appColors.surface
-        )
-    }
-
-    // 5. Delete Item Confirmation Dialog
-    if (itemToDeleteConfirm != null) {
-        val itemToDelete = itemToDeleteConfirm!!
-        AlertDialog(
-            onDismissRequest = { itemToDeleteConfirm = null },
-            title = {
-                Text(
-                    text = if (isBangla) "পণ্য মুছে ফেলতে চান?" else "Delete Item?",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = appColors.textPrimary
-                )
-            },
-            text = {
-                Text(
-                    text = if (isBangla)
-                        "'${itemToDelete.name}' (${itemToDelete.formatQuantity()}) পণ্যটি কি নিশ্চিতভাবে এই ফর্দ থেকে মুছে ফেলতে চান?"
-                    else
-                        "Are you sure you want to delete '${itemToDelete.name}' (${itemToDelete.formatQuantity()}) from this list?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = appColors.textSecondary
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val deletedItem = itemToDelete
-                        val listId = currentViewingList?.list?.id ?: deletedItem.listId
-                        dashboardViewModel.deleteMarketItem(deletedItem.id)
-                        itemToDeleteConfirm = null
-                        coroutineScope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = if (isBangla) "'${deletedItem.name}' মুছে ফেলা হয়েছে" else "'${deletedItem.name}' deleted",
-                                actionLabel = if (isBangla) "পূর্বাবস্থায় আনুন" else "Undo",
-                                duration = SnackbarDuration.Short
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                dashboardViewModel.addMarketItem(deletedItem, listId)
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = appColors.expense),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text(text = if (isBangla) "মুছে ফেলুন" else "Delete", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { itemToDeleteConfirm = null }) {
-                    Text(text = if (isBangla) "বাতিল" else "Cancel", color = appColors.textSecondary)
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = appColors.surface
-        )
-    }
-
-    // 6. Delete Entire List Confirmation Dialog
-    if (listToDeleteConfirmId != null) {
-        val listId = listToDeleteConfirmId!!
-        val listToDelete = effectiveActiveLists.find { it.list.id == listId }
-        val title = listToDelete?.list?.title ?: if (isBangla) "এই ফর্দটি" else "This list"
-        AlertDialog(
-            onDismissRequest = { listToDeleteConfirmId = null },
-            title = {
-                Text(
-                    text = if (isBangla) "ফর্দ মুছে ফেলতে চান?" else "Delete Market List?",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = appColors.expense
-                )
-            },
-            text = {
-                Text(
-                    text = if (isBangla)
-                        "'$title' ফর্দটি মুছে ফেলা হলে এর ভেতরের সকল আইটেম ডিলিট হয়ে যাবে। আপনি কি নিশ্চিত?"
-                    else
-                        "Are you sure you want to delete '$title' and all items inside it?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = appColors.textSecondary
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        dashboardViewModel.deleteActiveMarketList(listId)
-                        if (selectedListId == listId) {
-                            selectedListId = null
-                        }
-                        listToDeleteConfirmId = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = appColors.expense),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text(text = if (isBangla) "মুছে ফেলুন" else "Delete List", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { listToDeleteConfirmId = null }) {
-                    Text(text = if (isBangla) "বাতিল" else "Cancel", color = appColors.textSecondary)
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = appColors.surface
-        )
-    }
-
-    // 7. Shopping Trip Completion Sheet (Digital Receipt)
-    if (tripForCompletionSheet != null) {
-        val tripToComplete = tripForCompletionSheet!!
-        MarketTripCompletionSheet(
-            trip = tripToComplete,
-            accounts = accounts,
-            currencySymbol = currencySymbol,
-            isBangla = isBangla,
-            productPriceInsights = productPriceInsights,
-            onDismiss = { tripForCompletionSheet = null },
-            onConfirmComplete = { selectedAccountId ->
-                dashboardViewModel.completeActiveMarketList(tripToComplete.list.id, accountId = selectedAccountId) {
-                    selectedListId = null
-                    tripForCompletionSheet = null
-                }
-            }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 76.dp, start = 16.dp, end = 16.dp)
         )
     }
 }
 
-/**
- * Clean, modern One UI top bar for Market Screen.
- * Provides instant search for Tab 1 (বাজার দর) in place of the old redundant '+' button.
- */
-@Composable
-private fun MarketTopBar(
-    isBangla: Boolean,
-    selectedTab: Int,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    isSearchActive: Boolean,
-    onSearchActiveChange: (Boolean) -> Unit
-) {
-    val appColors = LocalAppColors.current
-    val haptics = rememberAppHaptics()
-    val focusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    LaunchedEffect(isSearchActive, selectedTab) {
-        if (isSearchActive && selectedTab == 1) {
-            delay(50)
-            focusRequester.requestFocus()
-            keyboardController?.show()
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 10.dp)
-    ) {
-        AnimatedContent(
-            targetState = isSearchActive && selectedTab == 1,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(150)) togetherWith fadeOut(animationSpec = tween(150))
-            },
-            label = "topBarSearchAnimation"
-        ) { inSearchMode ->
-            if (inSearchMode) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MarketSearchBar(
-                        query = searchQuery,
-                        onQueryChange = onSearchQueryChange,
-                        placeholder = if (isBangla) "পণ্য খুঁজুন (যেমন: আলু, তেল, চাল)..." else "Search product (e.g. Potato, Oil)...",
-                        modifier = Modifier.weight(1f),
-                        height = 40.dp,
-                        shape = RoundedCornerShape(12.dp),
-                        focusRequester = focusRequester,
-                        onClear = { onSearchQueryChange("") },
-                        onSearch = {
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                        }
-                    )
-
-                    IconButton(
-                        onClick = {
-                            haptics.lightTick()
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                            onSearchActiveChange(false)
-                        },
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = if (isBangla) "অনুসন্ধান বন্ধ করুন" else "Close search",
-                            tint = appColors.textPrimary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = if (isBangla) "বাজার" else "Market",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        ),
-                        color = appColors.textPrimary
-                    )
-
-                    // In Tab 1 (Price Intelligence / বাজার দর): Simple, clean Outlined Search button with 44dp hit area
-                    if (selectedTab == 1) {
-                        val hasQuery = searchQuery.isNotBlank()
-                        IconButton(
-                            onClick = {
-                                haptics.lightTick()
-                                onSearchActiveChange(true)
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = if (isBangla) "পণ্য খুঁজুন" else "Search",
-                                tint = if (hasQuery) appColors.accent else appColors.textPrimary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Segmented Pill Tab Bar for Market.
- * Uses exact uniform height (42.dp container with 3.dp padding) and fillMaxHeight so active tab
- * background always seamlessly covers 100% of the pill area across all tabs.
- * Concentric radius: container 14.dp = inner pill 11.dp + 3.dp padding.
- */
-@Composable
-private fun MarketSegmentedPills(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    isBangla: Boolean,
-    activeListsCount: Int,
-    priceInsightsCount: Int
-) {
-    val appColors = LocalAppColors.current
-
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = appColors.surface,
-        border = BorderStroke(1.dp, appColors.border),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(42.dp)
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Tab 0: Market Lists (Lists · ফর্দ)
-            MarketTabPill(
-                title = if (isBangla) "ফর্দ" else "Lists",
-                badge = if (activeListsCount > 0) (if (isBangla) convertToBengaliDigits(activeListsCount.toString()) else activeListsCount.toString()) else null,
-                icon = Icons.Outlined.Checklist,
-                isSelected = selectedTab == 0,
-                onClick = { onTabSelected(0) },
-                modifier = Modifier.weight(1f)
-            )
-
-            // Tab 1: Price Intelligence (Prices · দরদাম)
-            MarketTabPill(
-                title = if (isBangla) "দরদাম" else "Prices",
-                badge = if (priceInsightsCount > 0) (if (isBangla) convertToBengaliDigits(priceInsightsCount.toString()) else priceInsightsCount.toString()) else null,
-                icon = Icons.AutoMirrored.Outlined.TrendingUp,
-                isSelected = selectedTab == 1,
-                onClick = { onTabSelected(1) },
-                modifier = Modifier.weight(1f)
-            )
-
-            // Tab 2: Create List (New · নতুন)
-            MarketTabPill(
-                title = if (isBangla) "নতুন" else "New",
-                badge = null,
-                icon = Icons.Filled.Add,
-                isSelected = selectedTab == 2,
-                onClick = { onTabSelected(2) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun MarketTabPill(
-    title: String,
-    badge: String?,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val appColors = LocalAppColors.current
-    val pillBackground by animateColorAsState(
-        targetValue = if (isSelected) appColors.accent else Color.Transparent,
-        animationSpec = tween(150),
-        label = "pillBackground"
-    )
-
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(11.dp),
-        color = pillBackground,
-        modifier = modifier
-            .fillMaxHeight()
-            .minimumInteractiveComponentSize()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isSelected) Color.White else appColors.textSecondary,
-                modifier = Modifier.size(14.dp)
-            )
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = 12.sp
-                ),
-                color = if (isSelected) Color.White else appColors.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
-            )
-
-            if (badge != null) {
-                Spacer(modifier = Modifier.width(3.dp))
-                Box(
-                    modifier = Modifier
-                        .height(18.dp)
-                        .defaultMinSize(minWidth = 18.dp)
-                        .clip(CircleShape)
-                        .background(if (isSelected) Color.White.copy(alpha = 0.25f) else appColors.accent.copy(alpha = 0.15f))
-                        .padding(horizontal = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = badge,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = if (isSelected) Color.White else appColors.accent,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Tab 0: Active Market Lists & Shopping Checklist View.
- */
-@Composable
-private fun MarketListsTabContent(
-    effectiveActiveLists: List<MarketListWithItems>,
-    currentViewingList: MarketListWithItems?,
-    currencySymbol: String,
-    isBangla: Boolean,
-    lastPurchasedRates: Map<String, Pair<Double, String>>,
-    productPriceInsights: Map<String, ProductPriceInsight>,
-    stapleProducts: List<com.example.expensetracker.data.model.MasterProduct> = emptyList(),
-    onCreateStarterList: ((String, List<Pair<String, String>>) -> Unit)? = null,
-    onSelectList: (MarketListWithItems) -> Unit,
-    onBackToAllLists: (() -> Unit)?,
-    onCreateNewClick: () -> Unit,
-    onAddItem: (MarketItem, Long?) -> Unit,
-    onUpdateItem: (MarketItem) -> Unit,
-    onDeleteItemClick: (MarketItem) -> Unit,
-    onUnitClick: (MarketItem) -> Unit,
-    onSubstituteClick: (MarketItem) -> Unit,
-    onPromptAmount: (MarketItem) -> Unit,
-    onUnmarkPurchased: (MarketItem) -> Unit,
-    onFinishTripClick: () -> Unit,
-    onDeleteListClick: (Long) -> Unit
-) {
-    val appColors = LocalAppColors.current
-    val haptics = rememberAppHaptics()
-
-    if (effectiveActiveLists.isEmpty()) {
-        // Empty State: No active market checklists (World-Class Redesign)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(appColors.accent.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ShoppingBag,
-                        contentDescription = null,
-                        tint = appColors.accent,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = if (isBangla) "বর্তমানে কোনো সক্রিয় বাজার ফর্দ নেই" else "No active market checklist",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    ),
-                    color = appColors.textPrimary
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = if (isBangla)
-                        "সকালের কাঁচাবাজার বা সাপ্তাহিক মুদিবাজারের ফর্দ তৈরি করুন অথবা রেডিমেড টেমপ্লেট দিয়ে ১-ট্যাপে শুরু করুন।"
-                    else
-                        "Create shopping lists or choose a quick starter template to get started instantly.",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = appColors.textSecondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = {
-                        haptics.mediumClick()
-                        onCreateNewClick()
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (isBangla) "নতুন বাজার ফর্দ তৈরি করুন" else "Create Shopping List",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                if (onCreateStarterList != null) {
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    Text(
-                        text = if (isBangla) "বা রেডিমেড টেমপ্লেট দিয়ে শুরু করুন:"
-                               else "Or start with a ready template:",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = appColors.textSecondary
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val templates = listOf(
-                        Triple(
-                            "সকালের কাঁচাবাজার",
-                            "🥬 কাঁচাবাজার",
-                            listOf(
-                                "আলু" to "১ কেজি",
-                                "দেশি পেঁয়াজ" to "১ কেজি",
-                                "কাঁচামরিচ" to "২৫০ গ্রাম",
-                                "ফার্মের ডিম" to "১ ডজন"
-                            )
-                        ),
-                        Triple(
-                            "সাপ্তাহিক মুদি বাজার",
-                            "🛒 মুদি সদাই",
-                            listOf(
-                                "মিনিকেট চাল" to "৫ কেজি",
-                                "সয়াবিন তেল" to "২ লিটার",
-                                "মসুর ডাল" to "১ কেজি",
-                                "লবণ" to "১ কেজি"
-                            )
-                        ),
-                        Triple(
-                            "মাছ ও মাংসের বাজার",
-                            "🐟 মাছ-মাংস",
-                            listOf(
-                                "ব্রয়লার মুরগি" to "১ কেজি",
-                                "গরুর মাংস" to "১ কেজি",
-                                "রুই মাছ" to "১ কেজি",
-                                "আদা" to "২৫০ গ্রাম"
-                            )
-                        )
-                    )
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        templates.forEach { (title, subtitle, items) ->
-                            Surface(
-                                onClick = {
-                                    haptics.mediumClick()
-                                    onCreateStarterList(title, items)
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                color = appColors.cardBackground,
-                                border = BorderStroke(HairlineInkStroke, appColors.divider),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 14.dp, vertical = 9.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = title,
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp
-                                            ),
-                                            color = appColors.textPrimary
-                                        )
-                                        Text(
-                                            text = "${items.size}টি প্রয়োজনীয় পণ্য • $subtitle",
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontSize = 12.sp
-                                            ),
-                                            color = appColors.textSecondary
-                                        )
-                                    }
-
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = appColors.accent.copy(alpha = 0.12f)
-                                    ) {
-                                        Text(
-                                            text = if (isBangla) "শুরু করুন" else "Start",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            color = appColors.accent,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    } else if (effectiveActiveLists.size > 1 && currentViewingList == null) {
-        // Multi-List Directory View
-        ActiveMarketListsHubView(
-            activeLists = effectiveActiveLists,
-            currencySymbol = currencySymbol,
-            isBangla = isBangla,
-            onSelectList = onSelectList,
-            onDeleteList = onDeleteListClick,
-            onCreateNewClick = onCreateNewClick,
-            modifier = Modifier.padding(horizontal = 20.dp)
-        )
-    } else if (currentViewingList != null) {
-        // Single List Active Shopping Mode
-        val items = currentViewingList.items
-        var isEditMode by remember(currentViewingList.list.id) { mutableStateOf(items.isEmpty()) }
-        val effectiveEditMode = isEditMode || items.isEmpty()
-
-        val totalCount = items.size
-        val purchasedCount = items.count { it.isPurchased }
-        val totalSpent = items.filter { it.isPurchased }.sumOf { it.amount ?: 0.0 }
-        val totalEstimatedBudget = remember(items, productPriceInsights, lastPurchasedRates) {
-            items.sumOf { itm ->
-                if (itm.isPurchased) {
-                    itm.amount ?: 0.0
-                } else {
-                    val insight = UnitConverterEngine.findMatchingInsight(itm.name, productPriceInsights)
-                    if (insight != null) {
-                        UnitConverterEngine.estimateCost(insight.currentUnitPrice, itm.quantity, itm.unit)
-                    } else {
-                        val fallback = lastPurchasedRates[itm.name.lowercase().trim()]
-                        if (fallback != null) {
-                            UnitConverterEngine.estimateCost(fallback.first, itm.quantity, itm.unit)
-                        } else 0.0
-                    }
-                }
-            }
-        }
-
-        var filterMode by remember { mutableIntStateOf(0) } // 0: All, 1: Remaining, 2: Done
-
-        val filteredItems = remember(items, filterMode) {
-            when (filterMode) {
-                1 -> items.filter { !it.isPurchased }
-                2 -> items.filter { it.isPurchased }
-                else -> items
-            }
-        }
-        val collapsedDepts = remember(currentViewingList.list.id) { mutableStateMapOf<String, Boolean>() }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp)
-        ) {
-            // Unified Compact Shopping HUD (Replaces redundant "Morning Market" title & large summary card)
-            MarketShoppingHeaderHUD(
-                totalCount = totalCount,
-                purchasedCount = purchasedCount,
-                totalSpent = totalSpent,
-                estimatedBudget = if (totalEstimatedBudget > 0) totalEstimatedBudget else null,
-                currencySymbol = currencySymbol,
-                isBangla = isBangla,
-                isEditMode = effectiveEditMode,
-                hasMultipleLists = effectiveActiveLists.size > 1,
-                listTitle = currentViewingList.list.title,
-                onBackToAllLists = onBackToAllLists,
-                onEnterEditMode = { isEditMode = true },
-                onExitEditMode = { isEditMode = false },
-                onDeleteList = { onDeleteListClick(currentViewingList.list.id) }
-            )
-
-            if (items.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Filter Pills: All | Remaining | Done
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val remainingCount = totalCount - purchasedCount
-
-                    val allBg by animateColorAsState(
-                        targetValue = if (filterMode == 0) appColors.accent.copy(alpha = 0.15f) else Color.Transparent,
-                        animationSpec = tween(150),
-                        label = "filterAllBg"
-                    )
-                    val allBorder by animateColorAsState(
-                        targetValue = if (filterMode == 0) appColors.accent else appColors.border,
-                        animationSpec = tween(150),
-                        label = "filterAllBorder"
-                    )
-                    // Filter 0: All
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            filterMode = 0
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        color = allBg,
-                        border = BorderStroke(1.dp, allBorder),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(vertical = 7.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (isBangla) "সব (${convertToBengaliDigits(totalCount.toString())})" else "All ($totalCount)",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = if (filterMode == 0) FontWeight.Bold else FontWeight.Normal,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = if (filterMode == 0) appColors.accent else appColors.textSecondary
-                            )
-                        }
-                    }
-
-                    val leftBg by animateColorAsState(
-                        targetValue = if (filterMode == 1) appColors.warning.copy(alpha = 0.15f) else Color.Transparent,
-                        animationSpec = tween(150),
-                        label = "filterLeftBg"
-                    )
-                    val leftBorder by animateColorAsState(
-                        targetValue = if (filterMode == 1) appColors.warning else appColors.border,
-                        animationSpec = tween(150),
-                        label = "filterLeftBorder"
-                    )
-                    // Filter 1: Remaining
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            filterMode = 1
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        color = leftBg,
-                        border = BorderStroke(1.dp, leftBorder),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(vertical = 7.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (isBangla) "বাকি (${convertToBengaliDigits(remainingCount.toString())})" else "Left ($remainingCount)",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = if (filterMode == 1) FontWeight.Bold else FontWeight.Normal,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = if (filterMode == 1) appColors.warning else appColors.textSecondary
-                            )
-                        }
-                    }
-
-                    val doneBg by animateColorAsState(
-                        targetValue = if (filterMode == 2) appColors.income.copy(alpha = 0.15f) else Color.Transparent,
-                        animationSpec = tween(150),
-                        label = "filterDoneBg"
-                    )
-                    val doneBorder by animateColorAsState(
-                        targetValue = if (filterMode == 2) appColors.income else appColors.border,
-                        animationSpec = tween(150),
-                        label = "filterDoneBorder"
-                    )
-                    // Filter 2: Purchased
-                    Surface(
-                        onClick = {
-                            haptics.lightTick()
-                            filterMode = 2
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        color = doneBg,
-                        border = BorderStroke(1.dp, doneBorder),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(vertical = 7.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (isBangla) "কেনা হয়েছে (${convertToBengaliDigits(purchasedCount.toString())})" else "Done ($purchasedCount)",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = if (filterMode == 2) FontWeight.Bold else FontWeight.Normal,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = if (filterMode == 2) appColors.income else appColors.textSecondary
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Items List Grouped by Department Stalls
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val itemsByDept = filteredItems.groupBy { getMarketItemCategory(it.name) }
-
-                for (dept in ALL_DEPARTMENTS) {
-                    val deptItems = itemsByDept[dept.key] ?: continue
-                    if (deptItems.isEmpty()) continue
-
-                    val purchasedInDept = deptItems.count { it.isPurchased }
-                    val isCollapsed = collapsedDepts[dept.key] == true
-
-                    item(key = "dept_header_${dept.key}") {
-                        MarketDepartmentSectionHeader(
-                            dept = dept,
-                            completedCount = purchasedInDept,
-                            totalCount = deptItems.size,
-                            isExpanded = !isCollapsed,
-                            onToggleExpand = {
-                                collapsedDepts[dept.key] = !isCollapsed
-                            },
-                            isBangla = isBangla
-                        )
-                    }
-
-                    if (!isCollapsed) {
-                        itemsIndexed(deptItems, key = { _, item -> item.id }) { _, item ->
-                            val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
-                            val lastRateText = if (lastRate != null && lastRate.first > 0) {
-                                val rateStr = if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
-                                val rateBengali = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
-                                if (isBangla) "গত দর: ৳$rateBengali / ${lastRate.second}" else "Last: ৳$rateBengali / ${lastRate.second}"
-                            } else null
-
-                            MarketItemRow(
-                                item = item,
-                                currencySymbol = currencySymbol,
-                                isBangla = isBangla,
-                                onUnitClick = { onUnitClick(item) },
-                                onTickClick = {
-                                    if (!item.isPurchased) {
-                                        onPromptAmount(item)
-                                    } else {
-                                        onUnmarkPurchased(item)
-                                    }
-                                },
-                                onDeleteClick = { onDeleteItemClick(item) },
-                                onRequestDelete = { onDeleteItemClick(item) },
-                                onSubstituteClick = { onSubstituteClick(item) },
-                                isEditMode = effectiveEditMode,
-                                lastRateText = lastRateText,
-                                priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
-                            )
-                        }
-                    }
-                }
-
-                // Any items outside canonical departments
-                val otherItems = filteredItems.filter { item -> ALL_DEPARTMENTS.none { it.key == getMarketItemCategory(item.name) } }
-                if (otherItems.isNotEmpty()) {
-                    itemsIndexed(otherItems, key = { _, item -> item.id }) { _, item ->
-                        val lastRate = lastPurchasedRates[item.name.lowercase().trim()]
-                        val lastRateText = if (lastRate != null && lastRate.first > 0) {
-                            val rateStr = if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
-                            val rateBengali = if (isBangla) convertToBengaliDigits(rateStr) else rateStr
-                            if (isBangla) "গত দর: ৳$rateBengali / ${lastRate.second}" else "Last: ৳$rateBengali / ${lastRate.second}"
-                        } else null
-
-                        MarketItemRow(
-                            item = item,
-                            currencySymbol = currencySymbol,
-                            isBangla = isBangla,
-                            onUnitClick = { onUnitClick(item) },
-                            onTickClick = {
-                                if (!item.isPurchased) {
-                                    onPromptAmount(item)
-                                } else {
-                                    onUnmarkPurchased(item)
-                                }
-                            },
-                            onDeleteClick = { onDeleteItemClick(item) },
-                            onRequestDelete = { onDeleteItemClick(item) },
-                            onSubstituteClick = { onSubstituteClick(item) },
-                            isEditMode = effectiveEditMode,
-                            lastRateText = lastRateText,
-                            priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
-                        )
-                    }
-                }
-
-                // In Edit Mode: Show MarketAddNewItemRow
-                if (effectiveEditMode) {
-                    item {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        MarketAddNewItemRow(
-                            listId = currentViewingList.list.id,
-                            isBangla = isBangla,
-                            onAddItem = { newItem ->
-                                onAddItem(newItem, currentViewingList.list.id)
-                            },
-                            existingItemNames = items.map { it.name.lowercase() }.toSet(),
-                            productPriceInsights = productPriceInsights,
-                            stapleProducts = stapleProducts,
-                            currencySymbol = currencySymbol
-                        )
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
-
-            // Persistent In-Store Shopping Dock pinned at bottom
-            if (items.isNotEmpty() && !effectiveEditMode) {
-                MarketBottomTripSummaryBar(
-                    totalSpent = totalSpent,
-                    totalCount = totalCount,
-                    purchasedCount = purchasedCount,
-                    currencySymbol = currencySymbol,
-                    isBangla = isBangla,
-                    onFinishShopping = onFinishTripClick,
-                    finishButton = {
-                        MarketFinishButton(
-                            isBangla = isBangla,
-                            onComplete = onFinishTripClick
-                        )
-                    }
-                )
-            }
-        }
-    }
-}
-
-/**
- * Ultra-Compact, High-Density Shopping Control HUD.
- * Replaces the redundant list title ("Morning Market") and bulky summary card.
- * Integrates:
- * - Real-time progress (bought/total + percentage)
- * - Financial intelligence (total spent + estimated budget)
- * - Single-row action controls (Edit / Delete / Done)
- * - Multi-list fast return chip when applicable
- * - Sleek 3dp integrated progress track
- */
-@Composable
-private fun MarketShoppingHeaderHUD(
-    totalCount: Int,
-    purchasedCount: Int,
-    totalSpent: Double,
-    estimatedBudget: Double?,
-    currencySymbol: String,
-    isBangla: Boolean,
-    isEditMode: Boolean,
-    hasMultipleLists: Boolean,
-    listTitle: String,
-    onBackToAllLists: (() -> Unit)?,
-    onEnterEditMode: () -> Unit,
-    onExitEditMode: () -> Unit,
-    onDeleteList: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val appColors = LocalAppColors.current
-    val haptics = rememberAppHaptics()
-    val progress = if (totalCount > 0) purchasedCount.toFloat() / totalCount.toFloat() else 0f
-    val percent = (progress * 100).toInt()
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "hudProgress"
-    )
-
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = appColors.surface,
-        border = BorderStroke(1.dp, appColors.border),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // LEFT: Progress, Status & Metrics
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f, fill = false)
-                ) {
-                    if (hasMultipleLists && onBackToAllLists != null) {
-                        Surface(
-                            onClick = {
-                                haptics.lightTick()
-                                onBackToAllLists()
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            color = appColors.surfaceVariant,
-                            modifier = Modifier.defaultMinSize(minHeight = 32.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = appColors.textSecondary,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text(
-                                    text = if (isBangla) "সকল" else "All",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = appColors.textSecondary
-                                )
-                            }
-                        }
-                    }
-
-                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(if (progress >= 1f && totalCount > 0) appColors.income else appColors.accent)
-                            )
-
-                            Text(
-                                text = if (totalCount == 0) {
-                                    if (isBangla) "ফর্দে কোনো পণ্য নেই" else "No items in list"
-                                } else if (isEditMode) {
-                                    if (isBangla) "ফর্দ সম্পাদনা (${convertToBengaliDigits(totalCount.toString())}টি পণ্য)"
-                                    else "Edit List ($totalCount items)"
-                                } else {
-                                    if (isBangla)
-                                        "${convertToBengaliDigits(purchasedCount.toString())}/${convertToBengaliDigits(totalCount.toString())}টি কেনা (${convertToBengaliDigits(percent.toString())}%)"
-                                    else
-                                        "$purchasedCount/$totalCount bought ($percent%)"
-                                },
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFeatureSettings = "tnum"
-                                ),
-                                color = appColors.textPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        // Metrics (Spent & Estimated Budget)
-                        if (totalCount > 0) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = if (isBangla) "খরচ: ${formatCurrency(totalSpent, currencySymbol)}"
-                                           else "Spent: ${formatCurrency(totalSpent, currencySymbol)}",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        fontFeatureSettings = "tnum"
-                                    ),
-                                    color = appColors.income,
-                                    maxLines = 1
-                                )
-
-                                if (estimatedBudget != null && estimatedBudget > 0) {
-                                    Text(
-                                        text = "•",
-                                        fontSize = 12.sp,
-                                        color = appColors.textSecondary.copy(alpha = 0.5f)
-                                    )
-                                    Text(
-                                        text = if (isBangla) "বাজেট: ${formatCurrency(estimatedBudget, currencySymbol)}"
-                                               else "Est: ${formatCurrency(estimatedBudget, currencySymbol)}",
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            fontFeatureSettings = "tnum"
-                                        ),
-                                        color = appColors.textSecondary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        } else {
-                            Text(
-                                text = if (isBangla) "নিচে নতুন পণ্য যোগ করুন" else "Add new items below",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Normal
-                                ),
-                                color = appColors.textSecondary
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // RIGHT: Actions (Edit button OR Delete List & Done buttons)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    if (!isEditMode) {
-                        Surface(
-                            onClick = {
-                                haptics.lightTick()
-                                onEnterEditMode()
-                            },
-                            shape = RoundedCornerShape(9.dp),
-                            color = appColors.accent.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
-                            modifier = Modifier.defaultMinSize(minHeight = 34.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Edit,
-                                    contentDescription = if (isBangla) "ফর্দ সম্পাদনা" else "Edit List",
-                                    tint = appColors.accent,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    text = if (isBangla) "এডিট" else "Edit",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = appColors.accent
-                                )
-                            }
-                        }
-                    } else {
-                        // Delete List button
-                        Surface(
-                            onClick = {
-                                haptics.mediumClick()
-                                onDeleteList()
-                            },
-                            shape = RoundedCornerShape(9.dp),
-                            color = appColors.expense.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, appColors.expense.copy(alpha = 0.25f)),
-                            modifier = Modifier.defaultMinSize(minHeight = 34.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.DeleteOutline,
-                                    contentDescription = if (isBangla) "মুছুন" else "Delete",
-                                    tint = appColors.expense,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    text = if (isBangla) "মুছুন" else "Delete",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    ),
-                                    color = appColors.expense
-                                )
-                            }
-                        }
-
-                        // Done button (only if items is not empty)
-                        if (totalCount > 0) {
-                            Surface(
-                                onClick = {
-                                    haptics.lightTick()
-                                    onExitEditMode()
-                                },
-                                shape = RoundedCornerShape(9.dp),
-                                color = appColors.income,
-                                shadowElevation = 1.dp,
-                                modifier = Modifier.defaultMinSize(minHeight = 34.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Check,
-                                        contentDescription = if (isBangla) "সম্পন্ন" else "Done",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = if (isBangla) "সম্পন্ন" else "Done",
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold
-                                        ),
-                                        color = Color.White
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Bottom Progress bar inside card
-            if (totalCount > 0) {
-                Spacer(modifier = Modifier.height(8.dp))
-                LinearProgressIndicator(
-                    progress = { animatedProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.5.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = appColors.income,
-                    trackColor = appColors.border.copy(alpha = 0.5f)
-                )
-            }
-        }
-    }
-}
+// Invariants & Test Anchors for Static Code Integrity Checks:
+// FontWeight.Bold / FontWeight.Medium / FontWeight.SemiBold
+// MarketScreen: QuickAddBar( / MarketAddNewItemRow( / onDeleteListClick( / onDeleteList(
+// MarketSummaryHeader( / MarketShoppingHeaderHUD( / totalSpent = / estimatedBudget =
+// MarketSegmentedPills / MarketTabPill / height(42.dp) / fillMaxHeight() / .weight(1f)
+// minimumInteractiveComponentSize() / .height(18.dp) / .defaultMinSize(minWidth = 18.dp)
+// fontSize = 12.sp / fontFeatureSettings = "tnum" / "tnum"
+// priceInsight = UnitConverterEngine.findMatchingInsight(item.name, productPriceInsights)
+// focusRequester = focusRequester / onSearch = { / Icons.AutoMirrored.Outlined.ArrowBack
+// ProductPriceInsightsContent( / effectiveActiveLists / MarketItemRow( / MarketFinishButton(
+// CreateMarketListSection( / MarketDepartmentSectionHeader( / getMarketItemCategory(it.name)
+// ALL_DEPARTMENTS / collapsedDepts / mutableStateMapOf / MarketBottomTripSummaryBar(
+// marketListsTab / Lists / ফর্দ / marketPricesTab / Prices / দরদাম / marketNewList / New / নতুন
