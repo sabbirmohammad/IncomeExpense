@@ -1,9 +1,11 @@
 package com.example.expensetracker.ui.bazaar
 
 import android.app.Application
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.MarketCompletionResult
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.data.model.MarketListWithItems
@@ -32,9 +34,6 @@ class BazaarShopViewModel(
     repoOverride: ExpenseRepository? = null,
     prefsOverride: android.content.SharedPreferences? = null
 ) : AndroidViewModel(application) {
-
-    constructor(application: Application) : this(application, SavedStateHandle(), null, null)
-    constructor(application: Application, repoOverride: ExpenseRepository?) : this(application, SavedStateHandle(), repoOverride, null)
 
     private val repository = repoOverride ?: ExpenseRepository.getInstance(application)
     private val prefs = prefsOverride ?: try {
@@ -73,6 +72,7 @@ class BazaarShopViewModel(
     private val AUTO_ADVANCE_KEY = "shop_auto_advance_enabled"
     private val PREF_AUTO_ADVANCE = "bazaar_auto_advance_enabled"
     private val PREF_PRICING_MODE_PREFIX = "pricing_mode_"
+    private val PREF_LAST_USED_ACCOUNT = "bazaar_last_used_account_id"
 
     private val _isAutoAdvanceEnabled = MutableStateFlow(
         savedStateHandle.get<Boolean>(AUTO_ADVANCE_KEY)
@@ -120,12 +120,12 @@ class BazaarShopViewModel(
         _isAutoAdvanceEnabled.value = enabled
         savedStateHandle[AUTO_ADVANCE_KEY] = enabled
         try {
-            prefs?.edit()?.putBoolean(PREF_AUTO_ADVANCE, enabled)?.apply()
+            prefs?.edit { putBoolean(PREF_AUTO_ADVANCE, enabled) }
         } catch (_: Exception) {}
     }
 
     fun getPricingModeForItem(productName: String): PricingMode {
-        val norm = productName.lowercase().trim()
+        val norm = UnitConverterEngine.normalizeProductName(productName)
         val saved = try {
             prefs?.getString("$PREF_PRICING_MODE_PREFIX$norm", null)
         } catch (_: Exception) {
@@ -135,9 +135,9 @@ class BazaarShopViewModel(
     }
 
     fun savePricingModeForItem(productName: String, mode: PricingMode) {
-        val norm = productName.lowercase().trim()
+        val norm = UnitConverterEngine.normalizeProductName(productName)
         try {
-            prefs?.edit()?.putString("$PREF_PRICING_MODE_PREFIX$norm", mode.name)?.apply()
+            prefs?.edit { putString("$PREF_PRICING_MODE_PREFIX$norm", mode.name) }
         } catch (_: Exception) {}
     }
 
@@ -317,17 +317,25 @@ class BazaarShopViewModel(
         }
     }
 
+    fun getLastUsedAccountId(): Long? {
+        val id = try {
+            prefs?.getLong(PREF_LAST_USED_ACCOUNT, -1L) ?: -1L
+        } catch (_: Exception) {
+            -1L
+        }
+        return if (id > 0L) id else null
+    }
+
     /**
-     * Completes market trip with carry-over bridge (Amendment 14).
-     * Order of operations ensures no item loss:
-     * 1. In-memory snapshot of unpurchased items.
-     * 2. Complete active market trip in database.
-     * 3. Create carry-over list for unpurchased items. If step 3 fails, trip completion
-     *    is preserved and onCarryOverFailed delivers the snapshot for retry.
+     * Completes market trip with full checkout parameters and carry-over bridge.
      */
-    fun completeTripWithCarryOver(
+    fun completeTripWithFullCheckout(
         listId: Long,
         accountId: Long?,
+        customTotalAmount: Double?,
+        otherCosts: Double,
+        customDateMillis: Long?,
+        customNote: String?,
         carryOverUnpurchased: Boolean = true,
         onFinished: (MarketCompletionResult) -> Unit,
         onCarryOverFailed: (unpurchasedSnapshot: List<MarketItem>) -> Unit
@@ -348,8 +356,22 @@ class BazaarShopViewModel(
                 )
             }
 
-            // 2. Complete the active market list
-            val result = repository.completeActiveMarketList(listId, accountId)
+            // 2. Complete the active market list with full custom details
+            val result = repository.completeActiveMarketList(
+                listId = listId,
+                accountId = accountId,
+                customTotalAmount = customTotalAmount,
+                otherCosts = otherCosts,
+                customDateMillis = customDateMillis,
+                customNote = customNote
+            )
+
+            // Save last-used account id
+            if (accountId != null && accountId > 0L) {
+                try {
+                    prefs?.edit { putLong(PREF_LAST_USED_ACCOUNT, accountId) }
+                } catch (_: Exception) {}
+            }
 
             // 3. Clear session skipped items
             _skippedItemIds.value = emptySet()
@@ -373,5 +395,28 @@ class BazaarShopViewModel(
 
             onFinished(result)
         }
+    }
+
+    /**
+     * Backward-compatible overload for simple callers.
+     */
+    fun completeTripWithCarryOver(
+        listId: Long,
+        accountId: Long?,
+        carryOverUnpurchased: Boolean = true,
+        onFinished: (MarketCompletionResult) -> Unit,
+        onCarryOverFailed: (unpurchasedSnapshot: List<MarketItem>) -> Unit
+    ) {
+        completeTripWithFullCheckout(
+            listId = listId,
+            accountId = accountId,
+            customTotalAmount = null,
+            otherCosts = 0.0,
+            customDateMillis = null,
+            customNote = null,
+            carryOverUnpurchased = carryOverUnpurchased,
+            onFinished = onFinished,
+            onCarryOverFailed = onCarryOverFailed
+        )
     }
 }

@@ -10,7 +10,11 @@ import kotlinx.coroutines.withContext
 
 suspend fun ExpenseRepository.completeActiveMarketList(
     listId: Long,
-    accountId: Long? = null
+    accountId: Long? = null,
+    customTotalAmount: Double? = null,
+    otherCosts: Double = 0.0,
+    customDateMillis: Long? = null,
+    customNote: String? = null
 ): MarketCompletionResult = withContext(Dispatchers.IO) {
     val db = dbHelper.writableDatabase
     db.beginTransaction()
@@ -20,32 +24,25 @@ suspend fun ExpenseRepository.completeActiveMarketList(
         val currentTrip = allLists.find { it.list.id == listId }
         val marketList = currentTrip?.list
 
-        // 1. Mark any unpurchased items as purchased when finishing the market trip
-        for (item in items) {
-            if (!item.isPurchased) {
-                dbHelper.updateMarketItemPurchased(
-                    itemId = item.id,
-                    isPurchased = true,
-                    amount = item.amount,
-                    transactionId = item.transactionId
-                )
-            }
-        }
+        // 1. Invariant: Unpurchased items remain unpurchased (isPurchased = 0, amount = null)
+        val purchasedItems = items.filter { it.isPurchased }
+        val purchasedItemsWithAmount = purchasedItems.filter { (it.amount ?: 0.0) > 0.0 }
+        val itemSum = purchasedItemsWithAmount.sumOf { it.amount ?: 0.0 }
+        val purchasedCount = purchasedItems.size
 
-        // 2. Re-fetch the updated items
-        val updatedItems = dbHelper.getMarketItemsForList(listId)
-        val purchasedItems = updatedItems.filter { it.isPurchased && (it.amount ?: 0.0) > 0 }
-        val totalSpent = purchasedItems.sumOf { it.amount ?: 0.0 }
-        val purchasedCount = updatedItems.count { it.isPurchased }
+        val editedTotal = customTotalAmount ?: itemSum
+        val safeOtherCosts = otherCosts.coerceAtLeast(0.0)
+        val finalExpenseAmount = (editedTotal + safeOtherCosts).coerceAtLeast(0.0)
+        val adjustment = editedTotal - itemSum
 
-        // 3. Remove any old individual transactions created during tick to consolidate into one clean market trip transaction
-        val existingTxIds = updatedItems.mapNotNull { it.transactionId }.filter { it > 0 }.distinct()
+        // 2. Remove any old individual transactions created during tick
+        val existingTxIds = items.mapNotNull { it.transactionId }.filter { it > 0 }.distinct()
         for (oldTxId in existingTxIds) {
             dbHelper.deleteTransaction(oldTxId)
         }
 
         var newTxId: Long? = null
-        if (totalSpent > 0) {
+        if (finalExpenseAmount > 0.0) {
             // Find Groceries category
             val categories = dbHelper.getAllCategories()
             val groceryCat = categories.find {
@@ -65,7 +62,7 @@ suspend fun ExpenseRepository.completeActiveMarketList(
                 accounts.find { it.isDefault } ?: accounts.firstOrNull()
             }
 
-            val tripDate = marketList?.createdAt ?: System.currentTimeMillis()
+            val tripDate = customDateMillis ?: marketList?.createdAt ?: System.currentTimeMillis()
             val isBn = userProfile.value.appLanguage != "en"
             val generatedTitle = DateTimeHelper.formatMarketTripTitle(tripDate, isBn, userProfile.value.useBengaliNumerals || isBn)
             val txTitle = if (marketList != null && marketList.title.isNotBlank() &&
@@ -80,7 +77,7 @@ suspend fun ExpenseRepository.completeActiveMarketList(
                 generatedTitle
             }
 
-            val breakdownLines = updatedItems.filter { it.isPurchased }.joinToString("\n") { itm ->
+            val breakdownLines = purchasedItems.joinToString("\n") { itm ->
                 val amtStr = if (itm.amount != null && itm.amount > 0) {
                     val formattedNum = if (itm.amount % 1.0 == 0.0) "${itm.amount.toInt()}" else "${itm.amount}"
                     "৳$formattedNum"
@@ -89,12 +86,36 @@ suspend fun ExpenseRepository.completeActiveMarketList(
                 }
                 "• ${itm.name} (${itm.formatQuantity()}) - $amtStr"
             }
+
+            val extraLines = buildList {
+                if (safeOtherCosts > 0.0) {
+                    val otherCostFormatted = if (safeOtherCosts % 1.0 == 0.0) "${safeOtherCosts.toInt()}" else "$safeOtherCosts"
+                    add("• " + (if (isBn) "রিকশা/ব্যাগ/অন্যান্য খরচ: ৳$otherCostFormatted" else "Other costs (rickshaw/bag): ৳$otherCostFormatted"))
+                }
+                if (adjustment != 0.0) {
+                    val absAdj = kotlin.math.abs(adjustment)
+                    val adjFormatted = if (absAdj % 1.0 == 0.0) "${absAdj.toInt()}" else "$absAdj"
+                    if (adjustment < 0.0) {
+                        add("• " + (if (isBn) "সমন্বয় / ছাড়: -৳$adjFormatted" else "Adjustment / Discount: -৳$adjFormatted"))
+                    } else {
+                        add("• " + (if (isBn) "অতিরিক্ত সমন্বয়: +৳$adjFormatted" else "Extra adjustment: +৳$adjFormatted"))
+                    }
+                }
+                if (!customNote.isNullOrBlank()) {
+                    add((if (isBn) "নোট: " else "Note: ") + customNote.trim())
+                }
+            }
+
             val noteHeader = if (isBn) "বাজারের বিবরণ (${purchasedCount}টি পণ্য):" else "Market Trip Details ($purchasedCount items):"
-            val txNotes = "$noteHeader\n$breakdownLines"
+            val txNotes = if (extraLines.isNotEmpty()) {
+                "$noteHeader\n$breakdownLines\n${extraLines.joinToString("\n")}"
+            } else {
+                "$noteHeader\n$breakdownLines"
+            }
 
             val newTx = Transaction(
                 title = txTitle,
-                amount = totalSpent,
+                amount = finalExpenseAmount,
                 type = TransactionType.EXPENSE,
                 categoryId = catId,
                 categoryName = catName,
@@ -114,19 +135,17 @@ suspend fun ExpenseRepository.completeActiveMarketList(
             newTxId = dbHelper.insertTransaction(newTx)
 
             // Update all purchased items in this list to point to newTxId
-            for (item in updatedItems) {
-                if (item.isPurchased) {
-                    dbHelper.updateMarketItemPurchased(
-                        itemId = item.id,
-                        isPurchased = true,
-                        amount = item.amount,
-                        transactionId = newTxId
-                    )
-                }
+            for (item in purchasedItems) {
+                dbHelper.updateMarketItemPurchased(
+                    itemId = item.id,
+                    isPurchased = true,
+                    amount = item.amount,
+                    transactionId = newTxId
+                )
             }
 
             // Record price intelligence into product_price_history!
-            dbHelper.recordPricesForMarketItems(updatedItems, newTxId, tripDate)
+            dbHelper.recordPricesForMarketItems(purchasedItemsWithAmount, newTxId, tripDate)
         }
 
         val success = dbHelper.completeMarketList(listId)
@@ -134,7 +153,7 @@ suspend fun ExpenseRepository.completeActiveMarketList(
 
         MarketCompletionResult(
             success = success,
-            totalSpent = totalSpent,
+            totalSpent = finalExpenseAmount,
             purchasedCount = purchasedCount,
             transactionId = newTxId
         )

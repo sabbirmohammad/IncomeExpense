@@ -247,4 +247,259 @@ object BazaarShopLogic {
             unbought.firstOrNull { it.id != currentItemId }
         }
     }
+
+    /**
+     * Evaluates swipe action decision as a pure function:
+     * - START_TO_END (swipe right):
+     *     - if item has valid last purchase rate -> MarkDone with unit-converted amount
+     *     - if no last purchase rate -> OpenPricePad
+     * - END_TO_START (swipe left): Skip
+     * - SETTLED: SnapBack
+     */
+    fun evaluateSwipeDecision(
+        direction: SwipeDismissDirection,
+        item: MarketItem,
+        lastRate: Pair<Double, String>?
+    ): SwipeDecision {
+        return when (direction) {
+            SwipeDismissDirection.START_TO_END -> {
+                if (lastRate != null && lastRate.first > 0.0) {
+                    val amount = calculateLastPriceAmount(
+                        itemQuantity = item.quantity,
+                        itemUnit = item.unit,
+                        lastRate = lastRate.first,
+                        lastRateUnit = lastRate.second
+                    )
+                    SwipeDecision.MarkDone(amount)
+                } else {
+                    SwipeDecision.OpenPricePad
+                }
+            }
+            SwipeDismissDirection.END_TO_START -> SwipeDecision.Skip
+            SwipeDismissDirection.SETTLED -> SwipeDecision.SnapBack
+        }
+    }
+
+    /**
+     * Determines whether SwipeToDismissBox should snap back to center.
+     * In Shop Mode, confirmValueChange always returns false so items do not disappear offscreen.
+     */
+    fun shouldDismissBoxSnapBack(direction: SwipeDismissDirection): Boolean {
+        return true
+    }
+
+    /**
+     * Resolves the initial keypad expression when Price Pad opens.
+     */
+    fun resolvePricePadInitialExpression(
+        item: MarketItem,
+        initialMode: PricingMode,
+        lastRate: Pair<Double, String>?
+    ): String {
+        return when {
+            item.amount != null && item.amount > 0.0 -> {
+                if (initialMode == PricingMode.TOTAL_PAID) {
+                    if (item.amount % 1.0 == 0.0) item.amount.toInt().toString() else "%.1f".format(item.amount)
+                } else {
+                    val rate = calculateUnitPriceFromTotal(item.amount, item.quantity, item.unit)
+                    if (rate % 1.0 == 0.0) rate.toInt().toString() else "%.1f".format(rate)
+                }
+            }
+            lastRate != null && lastRate.first > 0.0 -> {
+                if (initialMode == PricingMode.PER_UNIT) {
+                    if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
+                } else {
+                    val total = calculateLastPriceAmount(item.quantity, item.unit, lastRate.first, lastRate.second)
+                    if (total % 1.0 == 0.0) total.toInt().toString() else "%.1f".format(total)
+                }
+            }
+            else -> ""
+        }
+    }
+
+    /**
+     * Computes the new keypad expression when user toggles pricing mode.
+     */
+    fun computePricePadModeSwitchExpression(
+        newMode: PricingMode,
+        currentUnitPrice: Double,
+        currentTotalAmount: Double
+    ): String {
+        return if (newMode == PricingMode.PER_UNIT) {
+            if (currentUnitPrice > 0.0) {
+                if (currentUnitPrice % 1.0 == 0.0) currentUnitPrice.toInt().toString() else "%.1f".format(currentUnitPrice)
+            } else ""
+        } else {
+            if (currentTotalAmount > 0.0) {
+                if (currentTotalAmount % 1.0 == 0.0) currentTotalAmount.toInt().toString() else "%.1f".format(currentTotalAmount)
+            } else ""
+        }
+    }
+
+    /**
+     * Evaluates action when user taps an item line in the live receipt panel.
+     */
+    fun evaluateReceiptLineTap(item: MarketItem?): ReceiptLineTapDecision {
+        if (item == null) return ReceiptLineTapDecision.NoOp
+        return ReceiptLineTapDecision.OpenEditPricePad(
+            item = item,
+            canUndo = item.isPurchased
+        )
+    }
+
+    /**
+     * Calculates checkout financial breakdown, adjustments, and validation invariants.
+     */
+    fun calculateCheckoutSummary(
+        items: List<MarketItem>,
+        customTotal: Double?,
+        otherCosts: Double
+    ): CheckoutSummary {
+        val purchasedItems = items.filter { it.isPurchased }
+        val purchasedCount = purchasedItems.size
+        val unpricedCount = purchasedItems.count { it.amount == null || it.amount <= 0.0 }
+        val itemSum = purchasedItems.mapNotNull { it.amount }.filter { it > 0.0 }.sum()
+
+        val safeOtherCosts = otherCosts.coerceAtLeast(0.0)
+        val editedTotal = (customTotal ?: itemSum).coerceAtLeast(0.0)
+        val adjustment = roundToTwoDecimals(editedTotal - itemSum)
+        val finalExpenseAmount = roundToTwoDecimals(editedTotal + safeOtherCosts)
+
+        val isZeroItemsAndZeroOther = purchasedCount == 0 && safeOtherCosts <= 0.0
+        val isNegative = (customTotal != null && customTotal < 0.0) || otherCosts < 0.0
+        val requiresZeroConfirm = purchasedCount > 0 && editedTotal == 0.0 && safeOtherCosts == 0.0
+
+        val isCompleteEnabled = !isZeroItemsAndZeroOther && !isNegative
+        val validationMessage = when {
+            isZeroItemsAndZeroOther -> "কোনো পণ্য কেনা হয়নি বা অন্যান্য খরচ যোগ করা হয়নি"
+            isNegative -> "খরচের পরিমাণ ঋণাত্মক হতে পারবে না"
+            requiresZeroConfirm -> "মোট খরচ ৳০ নির্ধারণ করা হয়েছে"
+            else -> null
+        }
+
+        return CheckoutSummary(
+            purchasedCount = purchasedCount,
+            unpricedCount = unpricedCount,
+            itemSum = roundToTwoDecimals(itemSum),
+            editedTotal = roundToTwoDecimals(editedTotal),
+            otherCosts = roundToTwoDecimals(safeOtherCosts),
+            adjustment = adjustment,
+            finalExpenseAmount = finalExpenseAmount,
+            isCompleteEnabled = isCompleteEnabled,
+            requiresZeroConfirm = requiresZeroConfirm,
+            validationMessage = validationMessage
+        )
+    }
+
+    /**
+     * Computes trip price insights comparing each commodity in this trip against its latest
+     * purchase price before this trip, aggregating multi-line commodities into a single unit price.
+     */
+    fun calculateTripPriceInsights(
+        tripItems: List<MarketItem>,
+        historicalPrices: List<HistoricalPriceEntry>,
+        budgetCap: Double?,
+        totalSpent: Double,
+        tripTimestamp: Long,
+        tripTransactionId: Long?
+    ): BazaarDoneInsights {
+        val purchasedItems = tripItems.filter { it.isPurchased && (it.amount ?: 0.0) > 0.0 && it.quantity > 0.0 }
+        val grouped = purchasedItems.groupBy { UnitConverterEngine.normalizeProductName(it.name) }
+
+        var cheaper = 0
+        var pricier = 0
+        var isLatestForAll = true
+
+        for ((normName, itemsForCommodity) in grouped) {
+            val totalAmount = itemsForCommodity.sumOf { it.amount ?: 0.0 }
+            val totalBaseQty = itemsForCommodity.sumOf {
+                UnitConverterEngine.normalize(it.quantity, it.unit).baseQuantity
+            }
+            if (totalBaseQty <= 0.0) continue
+            val tripRate = roundToTwoDecimals(totalAmount / totalBaseQty)
+
+            val entriesForCommodity = historicalPrices.filter {
+                UnitConverterEngine.normalizeProductName(it.productName) == normName
+            }
+
+            // If a strictly newer entry exists in history, this trip is no longer the latest
+            val hasNewerTrip = entriesForCommodity.any { it.timestamp > tripTimestamp }
+            if (hasNewerTrip) {
+                isLatestForAll = false
+            }
+
+            // Previous entry = latest entry recorded before or at tripTimestamp (excluding this trip)
+            val prevEntry = entriesForCommodity
+                .filter { it.timestamp <= tripTimestamp && (tripTransactionId == null || it.transactionId != tripTransactionId) }
+                .maxByOrNull { it.timestamp }
+
+            if (prevEntry != null && prevEntry.unitPrice > 0.0) {
+                if (tripRate < prevEntry.unitPrice - 0.01) {
+                    cheaper++
+                } else if (tripRate > prevEntry.unitPrice + 0.01) {
+                    pricier++
+                }
+            }
+        }
+
+        val delta = if (budgetCap != null && budgetCap > 0.0) {
+            roundToTwoDecimals(budgetCap - totalSpent)
+        } else null
+
+        return BazaarDoneInsights(
+            cheaperCount = cheaper,
+            pricierCount = pricier,
+            budgetDelta = delta,
+            budgetCap = budgetCap,
+            totalSpent = totalSpent,
+            isLatestTrip = isLatestForAll
+        )
+    }
+}
+
+data class CheckoutSummary(
+    val purchasedCount: Int,
+    val unpricedCount: Int,
+    val itemSum: Double,
+    val editedTotal: Double,
+    val otherCosts: Double,
+    val adjustment: Double,
+    val finalExpenseAmount: Double,
+    val isCompleteEnabled: Boolean,
+    val requiresZeroConfirm: Boolean,
+    val validationMessage: String?
+)
+
+data class HistoricalPriceEntry(
+    val productName: String,
+    val unitPrice: Double,
+    val timestamp: Long,
+    val transactionId: Long?
+)
+
+data class BazaarDoneInsights(
+    val cheaperCount: Int,
+    val pricierCount: Int,
+    val budgetDelta: Double?,
+    val budgetCap: Double?,
+    val totalSpent: Double,
+    val isLatestTrip: Boolean
+)
+
+enum class SwipeDismissDirection {
+    START_TO_END,
+    END_TO_START,
+    SETTLED
+}
+
+sealed class SwipeDecision {
+    data class MarkDone(val calculatedAmount: Double) : SwipeDecision()
+    data object OpenPricePad : SwipeDecision()
+    data object Skip : SwipeDecision()
+    data object SnapBack : SwipeDecision()
+}
+
+sealed class ReceiptLineTapDecision {
+    data class OpenEditPricePad(val item: MarketItem, val canUndo: Boolean) : ReceiptLineTapDecision()
+    data object NoOp : ReceiptLineTapDecision()
 }

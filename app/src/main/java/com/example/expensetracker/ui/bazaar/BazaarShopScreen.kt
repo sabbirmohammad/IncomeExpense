@@ -824,149 +824,60 @@ fun BazaarShopScreen(
         )
     }
 
-    // 9. Pre-checkout Confirmation Dialog (Amendment 11 & 14)
+    // 9. Pre-checkout Sheet (AdaptiveSheet replaces temporary dialog)
     if (showCheckoutDialog) {
-        val unpurchasedItems = items.filter { !it.isPurchased || it.id in skippedItemIds }
-        AlertDialog(
-            onDismissRequest = { showCheckoutDialog = false },
-            title = {
-                Text(
-                    text = if (isBangla) "কেনাকাটা সম্পন্ন করবেন?" else "Finish shopping trip?",
-                    style = typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+        val lastUsedAccId = remember { bazaarShopViewModel.getLastUsedAccountId() }
+        BazaarCheckoutSheet(
+            items = items,
+            accounts = accounts,
+            initialAccountId = lastUsedAccId,
+            budgetCap = budgetCap,
+            onConfirmCheckout = { accountId, customTotal, otherCosts, dateMillis, note, carryOver ->
+                showCheckoutDialog = false
+                bazaarShopViewModel.completeTripWithFullCheckout(
+                    listId = listId,
+                    accountId = accountId,
+                    customTotalAmount = customTotal,
+                    otherCosts = otherCosts,
+                    customDateMillis = dateMillis,
+                    customNote = note,
+                    carryOverUnpurchased = carryOver,
+                    onFinished = { result ->
+                        onTripCompleted(result)
+                    },
+                    onCarryOverFailed = { snapshot ->
+                        coroutineScope.launch {
+                            val snackResult = snackbarHostState.showSnackbar(
+                                message = if (isBangla) "বাকি পণ্য ফর্দে নিতে সমস্যা হয়েছে" else "Failed to carry over unbought items",
+                                actionLabel = if (isBangla) "পুনরায় চেষ্টা" else "Retry",
+                                duration = SnackbarDuration.Long
+                            )
+                            if (snackResult == SnackbarResult.ActionPerformed) {
+                                bazaarShopViewModel.retryPendingCarryOver(
+                                    onSuccess = {
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = if (isBangla) "বাকি পণ্য নতুন ফর্দে যোগ হয়েছে" else "Unbought items carried over"
+                                            )
+                                        }
+                                    },
+                                    onFailure = {
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = if (isBangla) "পুনরায় চেষ্টা ব্যর্থ হয়েছে" else "Retry failed"
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
                 )
             },
-            text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    if (unpurchasedItems.isNotEmpty()) {
-                        val unCount = unpurchasedItems.size
-                        val unCountDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(unCount.toString()) else unCount.toString()
-                        Text(
-                            text = if (isBangla) "$unCountDisplay টি পণ্য কেনা হয়নি বা স্কিপ করা হয়েছে।" else "$unCountDisplay items were not bought or skipped.",
-                            style = typography.bodyMedium,
-                            color = appColors.textPrimary
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { carryOverUnpurchased = !carryOverUnpurchased }
-                        ) {
-                            Checkbox(
-                                checked = carryOverUnpurchased,
-                                onCheckedChange = { carryOverUnpurchased = it }
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (isBangla) "বাকি পণ্য দিয়ে নতুন ফর্দ তৈরি করুন" else "Carry over unbought items to a new list",
-                                style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                color = appColors.textPrimary
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = if (isBangla) "সব পণ্য কেনা সম্পন্ন হয়েছে! খরচ সমন্বয় করবেন?" else "All items purchased! Ready to record trip?",
-                            style = typography.bodyMedium,
-                            color = appColors.textPrimary
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Account Selection
-                    if (accounts.isNotEmpty()) {
-                        Text(
-                            text = if (isBangla) "যে অ্যাকাউন্ট থেকে খরচ হবে:" else "Deduct from account:",
-                            style = typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = appColors.textMuted
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            accounts.forEach { acc ->
-                                val isSelected = acc.id == selectedAccountId
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (isSelected) appColors.accent else appColors.surfaceVariant,
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) appColors.accent else appColors.border),
-                                    modifier = Modifier
-                                        .heightIn(min = 48.dp)
-                                        .clickable { selectedAccountId = acc.id }
-                                ) {
-                                    Box(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = acc.name,
-                                            style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                            color = if (isSelected) appColors.onAccent else appColors.textPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showCheckoutDialog = false
-                        bazaarShopViewModel.completeTripWithCarryOver(
-                            listId = listId,
-                            accountId = selectedAccountId.takeIf { it > 0L },
-                            carryOverUnpurchased = carryOverUnpurchased,
-                            onFinished = { result ->
-                                onTripCompleted(result)
-                            },
-                            onCarryOverFailed = { snapshot ->
-                                coroutineScope.launch {
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = if (isBangla) "বাকি পণ্য ফর্দে নিতে সমস্যা হয়েছে" else "Failed to carry over unbought items",
-                                        actionLabel = if (isBangla) "পুনরায় চেষ্টা" else "Retry",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        bazaarShopViewModel.retryPendingCarryOver(
-                                            onSuccess = {
-                                                coroutineScope.launch {
-                                                    snackbarHostState.showSnackbar(
-                                                        message = if (isBangla) "বাকি পণ্য নতুন ফর্দে যোগ হয়েছে" else "Unbought items carried over"
-                                                    )
-                                                }
-                                            },
-                                            onFailure = {
-                                                coroutineScope.launch {
-                                                    snackbarHostState.showSnackbar(
-                                                        message = if (isBangla) "পুনরায় চেষ্টা ব্যর্থ হয়েছে" else "Retry failed"
-                                                    )
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        )
-                    },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
-                ) {
-                    Text(text = if (isBangla) "সম্পন্ন করুন" else "Finish", color = appColors.onAccent)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showCheckoutDialog = false },
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text(text = if (isBangla) "বাতিল" else "Cancel", color = appColors.textSecondary)
-                }
-            }
+            onDismiss = { showCheckoutDialog = false },
+            isBangla = isBangla,
+            useBengaliNumerals = useBengaliNumerals,
+            isPrivacyMode = isPrivacyMode
         )
     }
 
@@ -1387,8 +1298,8 @@ private fun LiveReceiptPanelContent(
     isBangla: Boolean,
     useBengaliNumerals: Boolean,
     isPrivacyMode: Boolean,
-    onItemClick: ((MarketItem) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onItemClick: ((MarketItem) -> Unit)? = null
 ) {
     val appColors = LocalAppColors.current
     val typography = MaterialTheme.typography

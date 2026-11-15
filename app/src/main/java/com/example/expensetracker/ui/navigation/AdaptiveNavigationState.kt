@@ -172,6 +172,7 @@ class AdaptiveNavigationState(
                     is PushedScreen.SETTINGS -> "SETTINGS"
                     is PushedScreen.BAZAAR_PLAN -> "BAZAAR_PLAN:${p.listId}"
                     is PushedScreen.BAZAAR_SHOP -> "BAZAAR_SHOP:${p.listId}"
+                    is PushedScreen.BAZAAR_DONE -> "BAZAAR_DONE:${p.listId}"
                 }
                 listOf(
                     state.selectedTab.name,
@@ -181,10 +182,10 @@ class AdaptiveNavigationState(
                 )
             },
             restore = { list ->
-                val tab = runCatching { PulseTab.valueOf(list[0] as String) }.getOrDefault(PulseTab.HOME)
-                val moneySeg = runCatching { MoneySegment.valueOf(list[1] as String) }.getOrDefault(MoneySegment.ACTIVITY)
-                val planSeg = runCatching { PlanSegment.valueOf(list[2] as String) }.getOrDefault(PlanSegment.BUDGETS)
-                val pushedStr = list[3] as String
+                val tab = runCatching { PulseTab.valueOf(list[0]) }.getOrDefault(PulseTab.HOME)
+                val moneySeg = runCatching { MoneySegment.valueOf(list[1]) }.getOrDefault(MoneySegment.ACTIVITY)
+                val planSeg = runCatching { PlanSegment.valueOf(list[2]) }.getOrDefault(PlanSegment.BUDGETS)
+                val pushedStr = list[3]
                 val pushed = when {
                     pushedStr.isBlank() -> null
                     pushedStr == "SETTINGS" -> PushedScreen.SETTINGS
@@ -195,6 +196,10 @@ class AdaptiveNavigationState(
                     pushedStr.startsWith("BAZAAR_SHOP:") -> {
                         val id = pushedStr.removePrefix("BAZAAR_SHOP:").toLongOrNull()
                         if (id != null) PushedScreen.BAZAAR_SHOP(id) else null
+                    }
+                    pushedStr.startsWith("BAZAAR_DONE:") -> {
+                        val id = pushedStr.removePrefix("BAZAAR_DONE:").toLongOrNull()
+                        if (id != null) PushedScreen.BAZAAR_DONE(id) else null
                     }
                     else -> null
                 }

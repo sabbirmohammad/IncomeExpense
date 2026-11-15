@@ -156,6 +156,9 @@ fun ExpenseRepository.setMarketListBudget(listId: Long, budget: Double?) =
 fun ExpenseRepository.deleteMarketListBudget(listId: Long) =
     dbHelper.deleteMarketListBudget(listId)
 
+fun ExpenseRepository.getProductPriceHistory(productName: String, limit: Int = 50): List<com.example.expensetracker.data.model.ProductPriceRecord> =
+    dbHelper.getProductPriceHistory(productName, limit)
+
 suspend fun ExpenseRepository.updateCommodityStall(name: String, newCategory: String): Boolean = withContext(Dispatchers.IO) {
     val success = dbHelper.updateMasterProductCategory(name, newCategory)
     refreshMasterProducts()
@@ -167,7 +170,12 @@ suspend fun ExpenseRepository.duplicateMarketList(sourceListId: Long, customTitl
     val allLists = dbHelper.getAllMarketLists()
     val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
     val title = customTitle ?: "${source.list.title} (কপি)"
-    val clonedItems = source.items.map {
+    val itemsToClone = if (source.list.isCompleted) {
+        source.items.filter { it.isPurchased }
+    } else {
+        source.items
+    }
+    val clonedItems = itemsToClone.map {
         MarketItem(
             name = it.name,
             quantity = it.quantity,
@@ -192,7 +200,7 @@ suspend fun ExpenseRepository.cloneMarketTrip(sourceListId: Long, isBangla: Bool
     val source = allLists.find { it.list.id == sourceListId } ?: return@withContext 0L
     val prefix = if (isBangla) "পুনরাবৃত্তি: " else "Repeat: "
     val title = "$prefix${source.list.title}"
-    val clonedItems = source.items.map {
+    val clonedItems = source.items.filter { it.isPurchased }.map {
         MarketItem(
             name = it.name,
             quantity = it.quantity,

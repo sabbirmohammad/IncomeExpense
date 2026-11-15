@@ -110,25 +110,11 @@ fun BazaarPricePadSheet(
 
     // 3. Keypad Expression Initializer
     var expression by remember {
-        val initialExpr = when {
-            item.amount != null && item.amount > 0.0 -> {
-                if (initialMode == PricingMode.TOTAL_PAID) {
-                    if (item.amount % 1.0 == 0.0) item.amount.toInt().toString() else "%.1f".format(item.amount)
-                } else {
-                    val rate = BazaarShopLogic.calculateUnitPriceFromTotal(item.amount, item.quantity, item.unit)
-                    if (rate % 1.0 == 0.0) rate.toInt().toString() else "%.1f".format(rate)
-                }
-            }
-            lastRate != null && lastRate.first > 0.0 -> {
-                if (initialMode == PricingMode.PER_UNIT) {
-                    if (lastRate.first % 1.0 == 0.0) lastRate.first.toInt().toString() else "%.1f".format(lastRate.first)
-                } else {
-                    val total = BazaarShopLogic.calculateLastPriceAmount(item.quantity, item.unit, lastRate.first, lastRate.second)
-                    if (total % 1.0 == 0.0) total.toInt().toString() else "%.1f".format(total)
-                }
-            }
-            else -> ""
-        }
+        val initialExpr = BazaarShopLogic.resolvePricePadInitialExpression(
+            item = item,
+            initialMode = initialMode,
+            lastRate = lastRate
+        )
         mutableStateOf(initialExpr)
     }
 
@@ -230,16 +216,11 @@ fun BazaarPricePadSheet(
                 onItemSelected = { index ->
                     val newMode = if (index == 0) PricingMode.PER_UNIT else PricingMode.TOTAL_PAID
                     if (newMode != currentMode) {
-                        // Switch active value cleanly
-                        expression = if (newMode == PricingMode.PER_UNIT) {
-                            if (unitPrice > 0.0) {
-                                if (unitPrice % 1.0 == 0.0) unitPrice.toInt().toString() else "%.1f".format(unitPrice)
-                            } else ""
-                        } else {
-                            if (totalAmount > 0.0) {
-                                if (totalAmount % 1.0 == 0.0) totalAmount.toInt().toString() else "%.1f".format(totalAmount)
-                            } else ""
-                        }
+                        expression = BazaarShopLogic.computePricePadModeSwitchExpression(
+                            newMode = newMode,
+                            currentUnitPrice = unitPrice,
+                            currentTotalAmount = totalAmount
+                        )
                         currentMode = newMode
                     }
                 },

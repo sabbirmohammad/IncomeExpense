@@ -100,6 +100,25 @@ class AdaptiveNavigationStateTest {
     }
 
     @Test
+    fun testSaverPersistsAndRestoresBazaarDoneScreen() {
+        val original = AdaptiveNavigationState(
+            initialTab = PulseTab.BAZAAR,
+            initialPushedScreen = PushedScreen.BAZAAR_DONE(205L)
+        )
+
+        val saved = with(AdaptiveNavigationState.Saver) {
+            dummySaverScope.save(original)
+        }
+        assertNotNull(saved)
+
+        val restored = AdaptiveNavigationState.Saver.restore(saved!!)
+        assertNotNull(restored)
+        assertEquals(PulseTab.BAZAAR, restored!!.selectedTab)
+        assertEquals(PushedScreen.BAZAAR_DONE(205L), restored.pushedScreen)
+        assertFalse("Must not be top level when BAZAAR_DONE is pushed (dock hidden)", restored.isTopLevel)
+    }
+
+    @Test
     fun testTabSwitchingAndReTapResetsSegment() {
         val state = AdaptiveNavigationState()
 

@@ -19,6 +19,7 @@ import com.example.expensetracker.ui.accounts.AccountsScreen
 import com.example.expensetracker.ui.accounts.AccountsViewModel
 import com.example.expensetracker.ui.analytics.AnalyticsScreen
 import com.example.expensetracker.ui.analytics.AnalyticsViewModel
+import com.example.expensetracker.ui.bazaar.BazaarDoneScreen
 import com.example.expensetracker.ui.bazaar.BazaarHubScreen
 import com.example.expensetracker.ui.bazaar.BazaarPlanScreen
 import com.example.expensetracker.ui.bazaar.BazaarShopScreen
@@ -96,6 +97,25 @@ fun NavigationScreenHost(
                     },
                     onTripCompleted = {
                         navState.popScreen()
+                        navState.pushScreen(PushedScreen.BAZAAR_DONE(pushed.listId))
+                    }
+                )
+            }
+            is PushedScreen.BAZAAR_DONE -> {
+                BazaarDoneScreen(
+                    listId = pushed.listId,
+                    onNavigateBackToHub = {
+                        navState.popScreen()
+                        navState.selectedTab = PulseTab.BAZAAR
+                    },
+                    onStartNewList = { newListId ->
+                        navState.popScreen()
+                        navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                    },
+                    onViewInLedger = { txId ->
+                        navState.popScreen()
+                        navState.selectedTab = PulseTab.MONEY
+                        navState.moneySegment = MoneySegment.ACTIVITY
                     }
                 )
             }

@@ -72,27 +72,34 @@ internal class MasterProductTableHelper(private val dbHelper: ExpenseDatabaseHel
             val newAvg = if (newCount > 0) ((existing.avgUnitPrice * existing.purchaseCount) + unitPrice) / newCount else unitPrice
             val isNowStaple = if (newCount >= 3) true else existing.isStaple
 
+            val isLatestOrNewer = timestamp >= existing.lastPurchasedAt
+            val newLatestPrice = if (isLatestOrNewer) unitPrice else existing.latestUnitPrice
+            val newPrevPrice = if (isLatestOrNewer) existing.latestUnitPrice else existing.previousUnitPrice
+            val newLastPurchasedAt = if (isLatestOrNewer) timestamp else existing.lastPurchasedAt
+
             val cv = ContentValues().apply {
-                put(COL_MP_LATEST_UNIT_PRICE, unitPrice)
-                put(COL_MP_PREVIOUS_UNIT_PRICE, existing.latestUnitPrice)
+                if (isLatestOrNewer) {
+                    put(COL_MP_LATEST_UNIT_PRICE, newLatestPrice)
+                    put(COL_MP_PREVIOUS_UNIT_PRICE, newPrevPrice)
+                    put(COL_MP_LAST_PURCHASED_AT, newLastPurchasedAt)
+                }
                 put(COL_MP_MIN_UNIT_PRICE, newMin)
                 put(COL_MP_MAX_UNIT_PRICE, newMax)
                 put(COL_MP_AVG_UNIT_PRICE, newAvg)
                 put(COL_MP_PURCHASE_COUNT, newCount)
                 put(COL_MP_IS_STAPLE, if (isNowStaple) 1 else 0)
-                put(COL_MP_LAST_PURCHASED_AT, timestamp)
             }
             db.update(TABLE_MASTER_PRODUCTS, cv, "$COL_MP_ID = ?", arrayOf(existing.id.toString()))
 
             val updatedProduct = existing.copy(
-                latestUnitPrice = unitPrice,
-                previousUnitPrice = existing.latestUnitPrice,
+                latestUnitPrice = newLatestPrice,
+                previousUnitPrice = newPrevPrice,
                 minUnitPrice = newMin,
                 maxUnitPrice = newMax,
                 avgUnitPrice = newAvg,
                 purchaseCount = newCount,
                 isStaple = isNowStaple,
-                lastPurchasedAt = timestamp
+                lastPurchasedAt = newLastPurchasedAt
             )
             Pair(updatedProduct, false)
         }

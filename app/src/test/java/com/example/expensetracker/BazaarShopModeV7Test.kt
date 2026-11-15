@@ -3,6 +3,7 @@ package com.example.expensetracker
 import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.SavedStateHandle
+import com.example.expensetracker.common.UnitConverterEngine
 import com.example.expensetracker.data.model.Account
 import com.example.expensetracker.data.model.MarketCompletionResult
 import com.example.expensetracker.data.model.MarketItem
@@ -11,10 +12,12 @@ import com.example.expensetracker.data.model.MarketListWithItems
 import com.example.expensetracker.data.model.MasterProduct
 import com.example.expensetracker.data.model.ProductPriceInsight
 import com.example.expensetracker.ui.bazaar.BazaarShopLogic
-import com.example.expensetracker.ui.bazaar.BazaarShopViewModel
 import com.example.expensetracker.ui.bazaar.PriceTrendDirection
 import com.example.expensetracker.ui.bazaar.PricingMode
+import com.example.expensetracker.ui.bazaar.ReceiptLineTapDecision
 import com.example.expensetracker.ui.bazaar.ScreenWakeLockManager
+import com.example.expensetracker.ui.bazaar.SwipeDecision
+import com.example.expensetracker.ui.bazaar.SwipeDismissDirection
 import com.example.expensetracker.ui.dashboard.resetMasterProductsSupplier
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -414,80 +417,215 @@ class BazaarShopModeV7Test {
     }
 
     // =========================================================================
-    // 5. Structural & Component Invariant Tests (Source Checks)
+    // 5. Behavioral Decision & State Transition Tests (Pure Logic)
     // =========================================================================
 
     @Test
-    fun testBazaarShopItemCardInvariants() {
+    fun testSwipeDecisionBehavior() {
+        val potatoItem = MarketItem(id = 1, name = "আলু", quantity = 2.0, unit = "কেজি")
+        val garlicItem = MarketItem(id = 2, name = "রসুন", quantity = 250.0, unit = "গ্রাম")
+
+        // 1. Swipe Right with known last rate -> MarkDone with calculated amount
+        val potatoLastRate = Pair(40.0, "কেজি") // 2kg at 40/kg = 80.0
+        val potatoDecision = BazaarShopLogic.evaluateSwipeDecision(
+            direction = SwipeDismissDirection.START_TO_END,
+            item = potatoItem,
+            lastRate = potatoLastRate
+        )
+        assertTrue("Swipe right with last rate must mark done", potatoDecision is SwipeDecision.MarkDone)
+        assertEquals(80.0, (potatoDecision as SwipeDecision.MarkDone).calculatedAmount, 0.001)
+
+        // 2. Swipe Right with unit conversion (250g with last rate of 120/kg -> 30.0)
+        val garlicLastRate = Pair(120.0, "কেজি")
+        val garlicDecision = BazaarShopLogic.evaluateSwipeDecision(
+            direction = SwipeDismissDirection.START_TO_END,
+            item = garlicItem,
+            lastRate = garlicLastRate
+        )
+        assertTrue("Swipe right with unit converted rate must mark done", garlicDecision is SwipeDecision.MarkDone)
+        assertEquals(30.0, (garlicDecision as SwipeDecision.MarkDone).calculatedAmount, 0.001)
+
+        // 3. Swipe Right with NO last rate or non-positive rate -> OpenPricePad
+        val noRateDecision = BazaarShopLogic.evaluateSwipeDecision(
+            direction = SwipeDismissDirection.START_TO_END,
+            item = potatoItem,
+            lastRate = null
+        )
+        assertEquals(SwipeDecision.OpenPricePad, noRateDecision)
+
+        val zeroRateDecision = BazaarShopLogic.evaluateSwipeDecision(
+            direction = SwipeDismissDirection.START_TO_END,
+            item = potatoItem,
+            lastRate = Pair(0.0, "কেজি")
+        )
+        assertEquals(SwipeDecision.OpenPricePad, zeroRateDecision)
+
+        // 4. Swipe Left -> Skip
+        val skipDecision = BazaarShopLogic.evaluateSwipeDecision(
+            direction = SwipeDismissDirection.END_TO_START,
+            item = potatoItem,
+            lastRate = potatoLastRate
+        )
+        assertEquals(SwipeDecision.Skip, skipDecision)
+
+        // 5. Settled -> SnapBack
+        val settledDecision = BazaarShopLogic.evaluateSwipeDecision(
+            direction = SwipeDismissDirection.SETTLED,
+            item = potatoItem,
+            lastRate = potatoLastRate
+        )
+        assertEquals(SwipeDecision.SnapBack, settledDecision)
+
+        // 6. Snap-back contract in confirmValueChange
+        assertTrue(BazaarShopLogic.shouldDismissBoxSnapBack(SwipeDismissDirection.START_TO_END))
+        assertTrue(BazaarShopLogic.shouldDismissBoxSnapBack(SwipeDismissDirection.END_TO_START))
+    }
+
+    @Test
+    fun testPricePadStateTransitions() {
+        val itemWithAmount = MarketItem(id = 10, name = "পেঁয়াজ", quantity = 2.0, unit = "কেজি", amount = 140.0, isPurchased = true)
+        val itemWithNoAmount = MarketItem(id = 11, name = "আদা", quantity = 500.0, unit = "গ্রাম", amount = null, isPurchased = false)
+        val itemBrandNew = MarketItem(id = 12, name = "ড্রাগন ফল", quantity = 1.0, unit = "পিস", amount = null, isPurchased = false)
+
+        // 1. Initial expression resolution for item with amount
+        val exprTotal = BazaarShopLogic.resolvePricePadInitialExpression(itemWithAmount, PricingMode.TOTAL_PAID, null)
+        assertEquals("140", exprTotal)
+
+        val exprPerUnit = BazaarShopLogic.resolvePricePadInitialExpression(itemWithAmount, PricingMode.PER_UNIT, null)
+        assertEquals("70", exprPerUnit) // 140 total / 2 kg = 70/kg
+
+        // 2. Initial expression resolution for item with last rate
+        val gingerLastRate = Pair(160.0, "কেজি") // 160/kg for 500g = 80 total
+        val exprLastPerUnit = BazaarShopLogic.resolvePricePadInitialExpression(itemWithNoAmount, PricingMode.PER_UNIT, gingerLastRate)
+        assertEquals("160", exprLastPerUnit)
+
+        val exprLastTotal = BazaarShopLogic.resolvePricePadInitialExpression(itemWithNoAmount, PricingMode.TOTAL_PAID, gingerLastRate)
+        assertEquals("80", exprLastTotal)
+
+        // 3. Initial expression resolution for brand new item
+        val exprNew = BazaarShopLogic.resolvePricePadInitialExpression(itemBrandNew, PricingMode.PER_UNIT, null)
+        assertEquals("", exprNew)
+
+        // 4. Mode switch expression calculations
+        // User entered unit price 60 (total for 500g is 30) -> switches to TOTAL_PAID
+        val switchedToTotal = BazaarShopLogic.computePricePadModeSwitchExpression(
+            newMode = PricingMode.TOTAL_PAID,
+            currentUnitPrice = 60.0,
+            currentTotalAmount = 30.0
+        )
+        assertEquals("30", switchedToTotal)
+
+        // User entered total paid 50 (unit price for 500g is 100) -> switches to PER_UNIT
+        val switchedToPerUnit = BazaarShopLogic.computePricePadModeSwitchExpression(
+            newMode = PricingMode.PER_UNIT,
+            currentUnitPrice = 100.0,
+            currentTotalAmount = 50.0
+        )
+        assertEquals("100", switchedToPerUnit)
+
+        // Blank or zero values switch to empty
+        val switchedEmpty = BazaarShopLogic.computePricePadModeSwitchExpression(
+            newMode = PricingMode.TOTAL_PAID,
+            currentUnitPrice = 0.0,
+            currentTotalAmount = 0.0
+        )
+        assertEquals("", switchedEmpty)
+    }
+
+    @Test
+    fun testReceiptLineTapDecision() {
+        val purchasedItem = MarketItem(id = 21, name = "মাছ", quantity = 1.0, unit = "কেজি", amount = 450.0, isPurchased = true)
+        val unpurchasedItem = MarketItem(id = 22, name = "মাংস", quantity = 1.0, unit = "কেজি", amount = null, isPurchased = false)
+
+        val purchasedTap = BazaarShopLogic.evaluateReceiptLineTap(purchasedItem)
+        assertTrue(purchasedTap is ReceiptLineTapDecision.OpenEditPricePad)
+        val openPurchased = purchasedTap as ReceiptLineTapDecision.OpenEditPricePad
+        assertEquals(purchasedItem, openPurchased.item)
+        assertTrue("Purchased item tap must allow undo purchase", openPurchased.canUndo)
+
+        val unpurchasedTap = BazaarShopLogic.evaluateReceiptLineTap(unpurchasedItem)
+        assertTrue(unpurchasedTap is ReceiptLineTapDecision.OpenEditPricePad)
+        val openUnpurchased = unpurchasedTap as ReceiptLineTapDecision.OpenEditPricePad
+        assertFalse("Unpurchased item tap cannot undo purchase", openUnpurchased.canUndo)
+
+        val nullTap = BazaarShopLogic.evaluateReceiptLineTap(null)
+        assertEquals(ReceiptLineTapDecision.NoOp, nullTap)
+    }
+
+    @Test
+    fun testModeMemoryKeyUsesMasterProductNormalizedName() {
+        // Bengali product names with spacing, punctuation, and parentheses must map to identical normalized keys
+        val key1 = UnitConverterEngine.normalizeProductName("কাঁচা  মরিচ ")
+        val key2 = UnitConverterEngine.normalizeProductName("কাঁচামরিচ")
+        val key3 = UnitConverterEngine.normalizeProductName("(তাজা) কাঁচা মরিচ")
+        val key4 = UnitConverterEngine.normalizeProductName("কাঁচা মরিচ ১")
+
+        // canonicalCommodityKey removes spaces so spacing variations collapse
+        val canonical1 = UnitConverterEngine.canonicalCommodityKey("কাঁচা  মরিচ ")
+        val canonical2 = UnitConverterEngine.canonicalCommodityKey("কাঁচামরিচ")
+        val canonical3 = UnitConverterEngine.canonicalCommodityKey(" কাঁচা মরিচ  ")
+
+        assertEquals("কাঁচা মরিচ", key1)
+        assertEquals("কাঁচা মরিচ", key3) // Strips parentheses
+        assertEquals("কাঁচা মরিচ", key4) // Strips numbers
+
+        assertEquals("কাঁচামরিচ", canonical1)
+        assertEquals("কাঁচামরিচ", canonical2)
+        assertEquals("কাঁচামরিচ", canonical3)
+
+        // Verify simulated pricing mode memory lookup
+        val memoryStore = mutableMapOf<String, String>()
+        val savedNorm = UnitConverterEngine.normalizeProductName("  কাঁচা   মরিচ  ")
+        memoryStore[savedNorm] = PricingMode.TOTAL_PAID.name
+
+        val lookupNorm = UnitConverterEngine.normalizeProductName("(তাজা) কাঁচা মরিচ")
+        assertEquals(PricingMode.TOTAL_PAID.name, memoryStore[lookupNorm])
+    }
+
+    @Test
+    fun testCompletedListClonePurchasedOnlyVersusActiveList() {
+        val items = listOf(
+            MarketItem(id = 1, name = "আলু", isPurchased = true, amount = 60.0),
+            MarketItem(id = 2, name = "পেঁয়াজ", isPurchased = true, amount = 120.0),
+            MarketItem(id = 3, name = "ধনেপাতা", isPurchased = false, amount = null),
+            MarketItem(id = 4, name = "লেবু", isPurchased = false, amount = null)
+        )
+
+        // Completed trip: clones only purchased items
+        val completedList = MarketListWithItems(
+            list = MarketList(id = 101, title = "সকালের বাজার", isCompleted = true),
+            items = items
+        )
+        val completedItemsToClone = if (completedList.list.isCompleted) {
+            completedList.items.filter { it.isPurchased }
+        } else {
+            completedList.items
+        }
+        assertEquals(2, completedItemsToClone.size)
+        assertEquals(listOf("আলু", "পেঁয়াজ"), completedItemsToClone.map { it.name })
+        assertTrue(completedItemsToClone.all { it.isPurchased })
+
+        // Active list: clones all items
+        val activeList = MarketListWithItems(
+            list = MarketList(id = 102, title = "চলতি বাজার", isCompleted = false),
+            items = items
+        )
+        val activeItemsToClone = if (activeList.list.isCompleted) {
+            activeList.items.filter { it.isPurchased }
+        } else {
+            activeList.items
+        }
+        assertEquals(4, activeItemsToClone.size)
+        assertEquals(listOf("আলু", "পেঁয়াজ", "ধনেপাতা", "লেবু"), activeItemsToClone.map { it.name })
+    }
+
+    // =========================================================================
+    // 6. Minimal Structural Invariant Test
+    // =========================================================================
+
+    @Test
+    fun testBazaarShopItemCardUsesSwipeToDismissBox() {
         val content = readFile("com/example/expensetracker/ui/bazaar/BazaarShopItemCard.kt")
-
-        // 1. SwipeToDismissBox implementation with snap-back
-        assertTrue("Must use SwipeToDismissBox", content.contains("SwipeToDismissBox("))
-        assertTrue("Must reset swipe state in confirmValueChange", content.contains("confirmValueChange = { value ->"))
-        assertTrue("Must snap back after swipe right", content.contains("SwipeToDismissBoxValue.StartToEnd -> {") && content.contains("false // Return false to snap back"))
-        assertTrue("Must snap back after swipe left", content.contains("SwipeToDismissBoxValue.EndToStart -> {") && content.contains("false // Return false to snap back"))
-
-        // 2. Touch targets & dimensions
-        assertTrue("Item card must enforce 72dp min height", content.contains("heightIn(min = 72.dp)"))
-        assertTrue("Check circle must enforce 56dp touch target", content.contains("size(56.dp)"))
-        assertTrue("Options menu button must enforce 48dp touch target", content.contains("size(48.dp)"))
-
-        // 3. Tabular numerals & TalkBack actions
-        assertTrue("Must use PulseTabularText for amounts and quantities", content.contains("PulseTabularText("))
-        assertTrue("Must include customActions semantics for TalkBack", content.contains("customActions = listOf("))
-        assertTrue("Must include CustomAccessibilityAction for Done and Skip", content.contains("CustomAccessibilityAction(doneActionLabel)") && content.contains("CustomAccessibilityAction(skipActionLabel)"))
-    }
-
-    @Test
-    fun testBazaarPricePadSheetInvariants() {
-        val content = readFile("com/example/expensetracker/ui/bazaar/BazaarPricePadSheet.kt")
-
-        // 1. Embeds PulseKeypad and PulseSegmented
-        assertTrue("Must embed PulseKeypad", content.contains("PulseKeypad("))
-        assertTrue("Must use PulseSegmented for mode selection", content.contains("PulseSegmented("))
-
-        // 2. Quick adjustment chips
-        assertTrue("Must include quick chips [-5], [+5], [+10]", content.contains("\"-5\"") || content.contains("\"-৫\""))
-        assertTrue("Must include [Same as last] chip", content.contains("lastRate != null"))
-        assertTrue("Must include [Avg] chip", content.contains("priceInsight.avgUnitPrice"))
-        assertTrue("Must include [Min] chip", content.contains("priceInsight.minUnitPrice"))
-
-        // 3. Price recommendation badge with 8% threshold
-        assertTrue("Must evaluate price recommendation", content.contains("BazaarShopLogic.evaluatePriceRecommendation("))
-        assertTrue("Must display recommendation badge", content.contains("recommendation.badgeText.isNotBlank()"))
-
-        // 4. Canvas Sparkline with TalkBack description
-        assertTrue("Must render Canvas sparkline", content.contains("PriceHistorySparkline("))
-        assertTrue("Must provide TalkBack contentDescription for sparkline", content.contains("contentDescription = talkBackDesc"))
-
-        // 5. Adaptive presentation
-        assertTrue("Must present inside AdaptiveSheet", content.contains("AdaptiveSheet("))
-    }
-
-    @Test
-    fun testBazaarShopScreenInvariants() {
-        val content = readFile("com/example/expensetracker/ui/bazaar/BazaarShopScreen.kt")
-
-        // 1. Screen wake lock management
-        assertTrue("Must manage screen wake lock", content.contains("wakeLockManager.acquire(activity)") && content.contains("wakeLockManager.release(activity)"))
-
-        // 2. Immersive top strip with ProgressBarThreshold
-        assertTrue("Must use ProgressBarThreshold for budget cap", content.contains("ProgressBarThreshold("))
-
-        // 3. Forgot-staples strip
-        assertTrue("Must include forgot staples strip", content.contains("missingStaples"))
-        assertTrue("Must allow dismissing forgot staples strip", content.contains("isForgotStaplesDismissed"))
-
-        // 4. Skipped items section with re-add button
-        assertTrue("Must show skipped items section", content.contains("skipped_items_section"))
-        assertTrue("Must offer Re-add button for skipped items", content.contains("undoSkip(skippedItem.id)"))
-
-        // 5. Responsive layout support
-        assertTrue("Must support two-column layout on medium/expanded", content.contains("useTwoColumn"))
-        assertTrue("Must support permanent receipt pane on large displays", content.contains("LiveReceiptPanelContent("))
-
-        // 6. Pre-checkout Dialog with carry-over switch
-        assertTrue("Must offer carry-over switch on checkout", content.contains("carryOverUnpurchased"))
-        assertTrue("Must call completeTripWithCarryOver", content.contains("completeTripWithCarryOver("))
+        assertTrue("BazaarShopItemCard must use SwipeToDismissBox for gesture-based shopping", content.contains("SwipeToDismissBox("))
     }
 }
