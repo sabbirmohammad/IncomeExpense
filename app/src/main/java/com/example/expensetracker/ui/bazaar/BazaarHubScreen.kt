@@ -1,6 +1,7 @@
 package com.example.expensetracker.ui.bazaar
 
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1125,14 +1126,16 @@ fun BazaarSmartSuggestionsSection(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        Row(
+        LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            for (item in suggestions.take(4)) {
+            items(suggestions.distinct().take(12), key = { it }) { item ->
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = appColors.surfaceVariant,
+                    border = if (appColors.isDark) BorderStroke(1.dp, appColors.border.copy(alpha = 0.45f)) else null,
                     modifier = Modifier.clickable {
                         haptics.lightTick()
                         onSuggestionClick(item)
@@ -1152,7 +1155,9 @@ fun BazaarSmartSuggestionsSection(
                         Text(
                             text = item,
                             style = typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                            color = appColors.textPrimary
+                            color = appColors.textPrimary,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
