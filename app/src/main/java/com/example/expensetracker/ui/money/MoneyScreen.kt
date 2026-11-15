@@ -3,12 +3,9 @@ package com.example.expensetracker.ui.money
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -23,7 +20,6 @@ import com.example.expensetracker.ui.analytics.AnalyticsViewModel
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.PulseSegmented
 import com.example.expensetracker.ui.navigation.MoneySegment
-import com.example.expensetracker.ui.reports.ReportsContent
 import com.example.expensetracker.ui.reports.ReportsViewModel
 import com.example.expensetracker.ui.transactions.TransactionsContent
 import com.example.expensetracker.ui.transactions.TransactionsViewModel
@@ -31,11 +27,11 @@ import com.example.expensetracker.ui.transactions.TransactionsViewModel
 /**
  * MoneyScreen:
  * Pulse Tab 2 (Money / টাকা):
- * - Segments: Activity (লেনদেন) · Wallets (ওয়ালেট) · Insights (ইনসাইটস ও রিপোর্ট)
+ * - Segments: Activity (লেনদেন) · Wallets (ওয়ালেট) · Insights (ইনসাইটস)
  * - Hosted via PulseSegmented
  * - Segment 0: TransactionsContent
  * - Segment 1: AccountsContent
- * - Segment 2: AnalyticsContent + ReportsContent export section
+ * - Segment 2: AnalyticsContent
  */
 @Composable
 fun MoneyScreen(
@@ -101,30 +97,13 @@ fun MoneyScreen(
                     )
                 }
                 MoneySegment.INSIGHTS -> {
-                    // Insights segment displays Analytics with Reports/Export section
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        item(key = "analytics_section") {
-                            AnalyticsContent(
-                                viewModel = analyticsViewModel,
-                                onNavigateToCategoryTransactions = { categoryId ->
-                                    transactionsViewModel.setCategoryFilter(categoryId)
-                                    onSegmentSelected(MoneySegment.ACTIVITY)
-                                }
-                            )
+                    AnalyticsContent(
+                        viewModel = analyticsViewModel,
+                        onNavigateToCategoryTransactions = { categoryId ->
+                            transactionsViewModel.setCategoryFilter(categoryId)
+                            onSegmentSelected(MoneySegment.ACTIVITY)
                         }
-
-                        item(key = "divider_spacer") {
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-
-                        item(key = "reports_section") {
-                            ReportsContent(
-                                viewModel = reportsViewModel
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
