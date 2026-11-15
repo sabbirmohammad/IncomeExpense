@@ -28,7 +28,7 @@ val HindSiliguriFontFamily = FontFamily(
     Font(R.font.hind_siliguri_bold, FontWeight.Bold)
 )
 
-val AppFontFamily = HindSiliguriFontFamily
+val AppFontFamily = FontFamily.SansSerif
 
 // Extra Pulse Specific Typography Styles
 val TextStyleDisplayHero = TextStyle(

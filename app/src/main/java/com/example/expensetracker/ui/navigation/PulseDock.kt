@@ -124,9 +124,7 @@ fun PulseDock(
                     tab = PulseTab.BAZAAR,
                     isSelected = selectedTab == PulseTab.BAZAAR,
                     onClick = { onTabSelected(PulseTab.BAZAAR) },
-                    hasBadge = isBazaarTripActive,
-                    badgeColor = appColors.income,
-                    badgeDescription = strings.badgeBazaarActiveDescription
+                    hasBadge = false
                 )
 
                 // Tab 4: Plan
