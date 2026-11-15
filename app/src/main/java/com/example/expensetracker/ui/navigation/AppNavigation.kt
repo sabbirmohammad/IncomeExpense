@@ -102,17 +102,25 @@ fun MainAppNavigation(
         LocalAppStrings provides strings,
         LocalFeedbackController provides feedbackController
     ) {
+        val bazaarViewModel: com.example.expensetracker.ui.bazaar.BazaarViewModel = viewModel()
+
         if (!isOnboardingCompleted) {
             OnboardingScreen(onFinish = { repository.setOnboardingCompleted(true) })
         } else {
             AdaptiveScaffold(
                 state = navState,
                 onOpenAdd = {
-                    transactionToEdit = null
-                    initialDateForAdd = null
-                    initialTypeForAdd = TransactionType.EXPENSE
-                    initialOpenMarketForAdd = (navState.selectedTab == PulseTab.BAZAAR)
-                    showGlobalAddSheet = true
+                    if (navState.selectedTab == PulseTab.BAZAAR) {
+                        bazaarViewModel.startNewList(source = "dock_add") { newListId ->
+                            navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
+                        }
+                    } else {
+                        transactionToEdit = null
+                        initialDateForAdd = null
+                        initialTypeForAdd = TransactionType.EXPENSE
+                        initialOpenMarketForAdd = false
+                        showGlobalAddSheet = true
+                    }
                 },
                 onOpenSettings = {
                     navState.pushScreen(PushedScreen.SETTINGS)

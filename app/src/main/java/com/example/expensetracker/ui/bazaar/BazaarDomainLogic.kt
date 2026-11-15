@@ -375,4 +375,201 @@ object BazaarDomainLogic {
 
         return sb.toString().trimEnd()
     }
+
+    /**
+     * Builds structured, deduplicated suggestions for empty Plan Mode.
+     * Groups: Last Trip, Weekday Frequency, Staples, Templates.
+     * Empty groups are omitted. Items already on the list are deduped.
+     */
+    fun buildEmptyStateSuggestions(
+        existingItems: List<MarketItem>,
+        completedTrips: List<MarketListWithItems>,
+        stapleProducts: List<MasterProduct>,
+        currentDayOfWeek: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+    ): List<PlanSuggestionGroup> {
+        val groups = mutableListOf<PlanSuggestionGroup>()
+        val existingNormNames = existingItems.map { UnitConverterEngine.normalizeProductName(it.name) }.toSet()
+
+        // 1. "From your last trip" (most recent completed trip)
+        val lastTrip = completedTrips.firstOrNull()
+        if (lastTrip != null && lastTrip.items.isNotEmpty()) {
+            val purchasedItems = lastTrip.items.filter { it.isPurchased }
+            val lastTripChips = purchasedItems
+                .filter { UnitConverterEngine.normalizeProductName(it.name) !in existingNormNames }
+                .distinctBy { UnitConverterEngine.normalizeProductName(it.name) }
+                .map { item ->
+                    PlanSuggestionChip(
+                        id = "last_trip_${item.id}",
+                        name = item.name,
+                        defaultUnit = item.unit.ifBlank { "কেজি" },
+                        defaultQuantity = if (item.quantity > 0) item.quantity else 1.0,
+                        estimatedPrice = if (item.amount != null && item.amount > 0 && item.quantity > 0) item.amount / item.quantity else null
+                    )
+                }
+            if (lastTripChips.isNotEmpty()) {
+                groups.add(
+                    PlanSuggestionGroup(
+                        id = "last_trip",
+                        titleBn = "গত বাজারের সদাই",
+                        titleEn = "From your last trip",
+                        chips = lastTripChips
+                    )
+                )
+            }
+        }
+
+        // 2. "You often buy on <weekday>" (>= 2 occurrences)
+        val dayNameBn = when (currentDayOfWeek) {
+            Calendar.SUNDAY -> "রবিবার"
+            Calendar.MONDAY -> "সোমবার"
+            Calendar.TUESDAY -> "মঙ্গলবার"
+            Calendar.WEDNESDAY -> "বুধবার"
+            Calendar.THURSDAY -> "বৃহস্পতিবার"
+            Calendar.FRIDAY -> "শুক্রবার"
+            Calendar.SATURDAY -> "শনিবার"
+            else -> "আজ"
+        }
+        val dayNameEn = when (currentDayOfWeek) {
+            Calendar.SUNDAY -> "Sundays"
+            Calendar.MONDAY -> "Mondays"
+            Calendar.TUESDAY -> "Tuesdays"
+            Calendar.WEDNESDAY -> "Wednesdays"
+            Calendar.THURSDAY -> "Thursdays"
+            Calendar.FRIDAY -> "Fridays"
+            Calendar.SATURDAY -> "Saturdays"
+            else -> "today"
+        }
+        val freqNames = computeSmartSuggestions(completedTrips, currentDayOfWeek, minFrequency = 2)
+        val freqChips = freqNames
+            .filter { UnitConverterEngine.normalizeProductName(it) !in existingNormNames }
+            .map { name ->
+                PlanSuggestionChip(
+                    id = "freq_$name",
+                    name = name,
+                    defaultUnit = "কেজি"
+                )
+            }
+        if (freqChips.isNotEmpty()) {
+            groups.add(
+                PlanSuggestionGroup(
+                    id = "weekday_freq",
+                    titleBn = "প্রতি $dayNameBn আপনি কেনেন",
+                    titleEn = "You often buy on $dayNameEn",
+                    chips = freqChips
+                )
+            )
+        }
+
+        // 3. "Staples" (regularly purchased staple commodities)
+        if (stapleProducts.isNotEmpty()) {
+            val stapleChips = stapleProducts
+                .filter { product ->
+                    UnitConverterEngine.normalizeProductName(product.name) !in existingNormNames &&
+                    product.normalizedName !in existingNormNames
+                }
+                .take(12)
+                .map { product ->
+                    PlanSuggestionChip(
+                        id = "staple_${product.id}_${product.normalizedName}",
+                        name = product.name,
+                        defaultUnit = product.defaultUnit.ifBlank { "কেজি" },
+                        estimatedPrice = if (product.latestUnitPrice > 0) product.latestUnitPrice else null
+                    )
+                }
+            if (stapleChips.isNotEmpty()) {
+                groups.add(
+                    PlanSuggestionGroup(
+                        id = "staples",
+                        titleBn = "নিয়মিত প্রয়োজনীয় পণ্য",
+                        titleEn = "Staples",
+                        chips = stapleChips
+                    )
+                )
+            }
+        }
+
+        // 4. "Templates" (Weekly staples, Fish & meat, Eid shopping)
+        val weeklyItems = listOf(
+            MarketItem(name = "আলু", quantity = 2.0, unit = "কেজি"),
+            MarketItem(name = "পেঁয়াজ", quantity = 1.0, unit = "কেজি"),
+            MarketItem(name = "সয়াবিন তেল", quantity = 2.0, unit = "লিটার"),
+            MarketItem(name = "মসুর ডাল", quantity = 1.0, unit = "কেজি"),
+            MarketItem(name = "ডিম", quantity = 1.0, unit = "ডজন")
+        )
+        val fishMeatItems = listOf(
+            MarketItem(name = "রুই মাছ", quantity = 1.0, unit = "কেজি"),
+            MarketItem(name = "ব্রয়লার মুরগি", quantity = 2.0, unit = "কেজি"),
+            MarketItem(name = "গরুর মাংস", quantity = 1.0, unit = "কেজি")
+        )
+        val eidItems = listOf(
+            MarketItem(name = "চিনিগুঁড়া পোলাও চাল", quantity = 2.0, unit = "কেজি"),
+            MarketItem(name = "খাসির মাংস", quantity = 2.0, unit = "কেজি"),
+            MarketItem(name = "লাচ্ছা সেমাই", quantity = 2.0, unit = "প্যাকেট"),
+            MarketItem(name = "কিশমিশ", quantity = 100.0, unit = "গ্রাম"),
+            MarketItem(name = "কাজুবাদাম", quantity = 100.0, unit = "গ্রাম"),
+            MarketItem(name = "গাওয়া ঘি", quantity = 1.0, unit = "বোতল")
+        )
+
+        val templateChips = mutableListOf<PlanSuggestionChip>()
+        if (weeklyItems.any { UnitConverterEngine.normalizeProductName(it.name) !in existingNormNames }) {
+            templateChips.add(
+                PlanSuggestionChip(
+                    id = "template_weekly",
+                    name = "সাপ্তাহিক বাজার",
+                    isTemplate = true,
+                    templateItems = weeklyItems
+                )
+            )
+        }
+        if (fishMeatItems.any { UnitConverterEngine.normalizeProductName(it.name) !in existingNormNames }) {
+            templateChips.add(
+                PlanSuggestionChip(
+                    id = "template_fish_meat",
+                    name = "মাছ ও মাংস",
+                    isTemplate = true,
+                    templateItems = fishMeatItems
+                )
+            )
+        }
+        if (eidItems.any { UnitConverterEngine.normalizeProductName(it.name) !in existingNormNames }) {
+            templateChips.add(
+                PlanSuggestionChip(
+                    id = "template_eid",
+                    name = "ঈদের বাজার",
+                    isTemplate = true,
+                    templateItems = eidItems
+                )
+            )
+        }
+
+        if (templateChips.isNotEmpty()) {
+            groups.add(
+                PlanSuggestionGroup(
+                    id = "templates",
+                    titleBn = "রেডিমেড ফর্দ",
+                    titleEn = "Shopping Templates",
+                    chips = templateChips
+                )
+            )
+        }
+
+        return groups
+    }
 }
+
+data class PlanSuggestionChip(
+    val id: String,
+    val name: String,
+    val defaultUnit: String = "কেজি",
+    val defaultQuantity: Double = 1.0,
+    val estimatedPrice: Double? = null,
+    val isTemplate: Boolean = false,
+    val templateItems: List<MarketItem> = emptyList()
+)
+
+data class PlanSuggestionGroup(
+    val id: String,
+    val titleBn: String,
+    val titleEn: String,
+    val chips: List<PlanSuggestionChip>
+)

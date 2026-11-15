@@ -18,6 +18,7 @@ You are a senior Android engineer + product designer. The app is a working, 100%
 6. Keep existing ViewModel/Repository public contracts. If splitting `DashboardViewModel`, keep a delegating facade.
 7. If an existing structural/invariant test fails because this redesign intentionally changes structure/colors, update that test to assert the NEW intent. Never delete a test just to pass. NEVER weaken: `OfflineReceiptAndAiPurgeVerificationTest` (zero AI deps), min-touch-target tests (`ChallengerPhase2Iteration2TouchTargetTest`), and "`MarketItemRow` uses `SwipeToDismissBox`".
 8. When unsure: choose the simpler, faster, more one-handed, more accessible option, and record the decision in the commit message.
+9. **System Insets Invariant**: Every screen gets insets from the shell via `Modifier.pulseScreenInsets()`. Individual screens must not hardcode status bar insets or duplicate padding. Bottom docks and cart bars handle the bottom gesture/navigation insets.
 
 ### Codebase constraints that still apply
 - UI colors come from `LocalAppColors.current` (AppColors) — NOT raw `MaterialTheme.colorScheme`. Any standard M3 component you use must have colors explicitly mapped from `LocalAppColors`. (You MAY change the token VALUES and ADD tokens per Section 3.)

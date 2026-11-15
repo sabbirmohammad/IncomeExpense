@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.adaptive.LocalWindowClass
 import com.example.expensetracker.ui.adaptive.WindowHeightClass
 import com.example.expensetracker.ui.adaptive.WindowWidthClass
+import com.example.expensetracker.ui.components.pulseScreenInsets
 
 /**
  * AdaptiveScaffold:
@@ -77,7 +79,11 @@ fun AdaptiveScaffold(
     ) {
         when {
             isSidePanel -> {
-                Row(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pulseScreenInsets()
+                ) {
                     PulseSidePanel(
                         selectedTab = selectedTab,
                         onTabSelected = onTabSelected,
@@ -106,7 +112,11 @@ fun AdaptiveScaffold(
             }
 
             isRail -> {
-                Row(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pulseScreenInsets()
+                ) {
                     PulseNavigationRail(
                         selectedTab = selectedTab,
                         onTabSelected = onTabSelected,
@@ -136,11 +146,19 @@ fun AdaptiveScaffold(
                 // Compact: Bottom Dock
                 val bottomPadding = if (showDock) (68.dp + 24.dp + navBarsPadding.calculateBottomPadding()) else 0.dp
                 Box(modifier = Modifier.fillMaxSize()) {
-                    content(PaddingValues(bottom = bottomPadding))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pulseScreenInsets()
+                    ) {
+                        content(PaddingValues(bottom = bottomPadding))
+                    }
 
                     AnimatedVisibility(
                         visible = showDock,
-                        modifier = Modifier.align(Alignment.BottomCenter),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding(),
                         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                     ) {

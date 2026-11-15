@@ -194,11 +194,7 @@ fun BazaarHubScreen(
                             BazaarActionTilesRow(
                                 onPasteClick = { showPasteSheet = true },
                                 onBuildClick = {
-                                    bazaarViewModel.createMarketList(
-                                        title = if (isBangla) "বাজারের ফর্দ" else "Market List"
-                                    ) { newListId ->
-                                        onOpenPlanMode(newListId)
-                                    }
+                                    bazaarViewModel.startNewList("hub_build_tile", onOpenPlanMode)
                                 },
                                 onRepeatClick = { showRepeatTripPicker = true },
                                 isBangla = isBangla
@@ -212,9 +208,7 @@ fun BazaarHubScreen(
                                 masterProductsMap = masterProductsMap,
                                 onOpenList = onOpenPlanMode,
                                 onNewList = {
-                                    bazaarViewModel.createMarketList(
-                                        title = if (isBangla) "নতুন ফর্দ" else "New List"
-                                    ) { onOpenPlanMode(it) }
+                                    bazaarViewModel.startNewList("hub_my_lists_card", onOpenPlanMode)
                                 },
                                 onDuplicateList = { bazaarViewModel.duplicateMarketList(it) },
                                 onDeleteList = { listId, title ->
@@ -320,11 +314,7 @@ fun BazaarHubScreen(
                         BazaarActionTilesRow(
                             onPasteClick = { showPasteSheet = true },
                             onBuildClick = {
-                                bazaarViewModel.createMarketList(
-                                    title = if (isBangla) "বাজারের ফর্দ" else "Market List"
-                                ) { newListId ->
-                                    onOpenPlanMode(newListId)
-                                }
+                                bazaarViewModel.startNewList("hub_build_tile", onOpenPlanMode)
                             },
                             onRepeatClick = { showRepeatTripPicker = true },
                             isBangla = isBangla
@@ -339,9 +329,7 @@ fun BazaarHubScreen(
                             masterProductsMap = masterProductsMap,
                             onOpenList = onOpenPlanMode,
                             onNewList = {
-                                bazaarViewModel.createMarketList(
-                                    title = if (isBangla) "নতুন ফর্দ" else "New List"
-                                ) { onOpenPlanMode(it) }
+                                bazaarViewModel.startNewList("hub_my_lists_card", onOpenPlanMode)
                             },
                             onDuplicateList = { bazaarViewModel.duplicateMarketList(it) },
                             onDeleteList = { listId, title ->

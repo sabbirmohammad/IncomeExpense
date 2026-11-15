@@ -127,6 +127,30 @@ class BazaarViewModel @JvmOverloads constructor(
         repository.togglePrivacyMode()
     }
 
+    private val isStartingNewList = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /**
+     * Unified entrypoint to create a new market list and transition to Plan Mode.
+     * Prevents duplicate list creation on double-tap via atomic flag.
+     */
+    fun startNewList(source: String, onOpenPlan: (Long) -> Unit) {
+        if (!isStartingNewList.compareAndSet(false, true)) {
+            return
+        }
+        val isBn = userProfile.value.appLanguage != "en"
+        val title = if (isBn) "বাজারের ফর্দ" else "Market List"
+        viewModelScope.launch(coroutineExceptionHandler) {
+            try {
+                val listId = repository.createMarketListWithItems(title, emptyList())
+                if (listId > 0) {
+                    onOpenPlan(listId)
+                }
+            } finally {
+                isStartingNewList.set(false)
+            }
+        }
+    }
+
     /**
      * Creates a new market list with optional budget cap and items.
      */

@@ -19,8 +19,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
+import com.example.expensetracker.theme.ExpenseTrackerTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -29,7 +38,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
@@ -123,6 +132,8 @@ fun BazaarPlanScreen(
     val userProfile by bazaarViewModel.userProfile.collectAsStateWithLifecycle()
     val budgetCaps by bazaarViewModel.budgetCaps.collectAsStateWithLifecycle()
     val pendingDeletedItemIds by bazaarViewModel.pendingDeletedItemIds.collectAsStateWithLifecycle()
+    val completedTrips by bazaarViewModel.completedTrips.collectAsStateWithLifecycle()
+    val stapleProducts by bazaarViewModel.stapleProducts.collectAsStateWithLifecycle()
 
     val currentTrip = allLists.find { it.list.id == listId }
 
@@ -151,6 +162,16 @@ fun BazaarPlanScreen(
             lastPurchasedRates = lastPurchasedRates,
             masterProducts = masterProductsMap,
             budgetCap = budgetCap
+        )
+    }
+
+    // Empty state suggestions (Amendment for Bug 2)
+    val emptyStateSuggestions = remember(activeItems, completedTrips, stapleProducts) {
+        if (activeItems.isNotEmpty()) emptyList()
+        else BazaarDomainLogic.buildEmptyStateSuggestions(
+            existingItems = activeItems,
+            completedTrips = completedTrips,
+            stapleProducts = stapleProducts
         )
     }
 
@@ -194,7 +215,7 @@ fun BazaarPlanScreen(
 
     Surface(
         color = appColors.background,
-        modifier = modifier.fillMaxSize().statusBarsPadding().imePadding()
+        modifier = modifier.fillMaxSize().navigationBarsPadding().imePadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Bar
@@ -212,7 +233,7 @@ fun BazaarPlanScreen(
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = if (isBangla) "ফিরে যান" else "Back",
                         tint = appColors.textPrimary
                     )
@@ -361,6 +382,27 @@ fun BazaarPlanScreen(
                             },
                             onStallClick = { showStallPickerItem = it },
                             onUnitClick = { showUnitPickerItem = it },
+                            onOpenCatalog = { compactSegmentIndex = 1 },
+                            onAddSuggestion = { name, qty, unit ->
+                                bazaarViewModel.addMarketItem(
+                                    listId,
+                                    MarketItem(
+                                        listId = listId,
+                                        name = name,
+                                        quantity = qty,
+                                        unit = unit
+                                    )
+                                )
+                            },
+                            onAddTemplate = { templateItems ->
+                                templateItems.forEach { tItm ->
+                                    bazaarViewModel.addMarketItem(
+                                        listId,
+                                        tItm.copy(listId = listId)
+                                    )
+                                }
+                            },
+                            suggestionGroups = emptyStateSuggestions,
                             isBangla = isBangla,
                             useBengaliNumerals = userProfile.useBengaliNumerals,
                             isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
@@ -480,6 +522,27 @@ fun BazaarPlanScreen(
                                 },
                                 onStallClick = { showStallPickerItem = it },
                                 onUnitClick = { showUnitPickerItem = it },
+                                onOpenCatalog = {},
+                                onAddSuggestion = { name, qty, unit ->
+                                    bazaarViewModel.addMarketItem(
+                                        listId,
+                                        MarketItem(
+                                            listId = listId,
+                                            name = name,
+                                            quantity = qty,
+                                            unit = unit
+                                        )
+                                    )
+                                },
+                                onAddTemplate = { templateItems ->
+                                    templateItems.forEach { tItm ->
+                                        bazaarViewModel.addMarketItem(
+                                            listId,
+                                            tItm.copy(listId = listId)
+                                        )
+                                    }
+                                },
+                                suggestionGroups = emptyStateSuggestions,
                                 isBangla = isBangla,
                                 useBengaliNumerals = userProfile.useBengaliNumerals,
                                 isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
@@ -730,6 +793,10 @@ fun PlanMyListPane(
     onStallClick: (MarketItem) -> Unit,
     onUnitClick: (MarketItem) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenCatalog: () -> Unit = {},
+    onAddSuggestion: (name: String, quantity: Double, unit: String) -> Unit = { _, _, _ -> },
+    onAddTemplate: (items: List<MarketItem>) -> Unit = {},
+    suggestionGroups: List<PlanSuggestionGroup> = emptyList(),
     isBangla: Boolean = false,
     useBengaliNumerals: Boolean = false,
     isPrivacyMode: Boolean = false,
@@ -739,16 +806,17 @@ fun PlanMyListPane(
     val typography = MaterialTheme.typography
 
     if (activeItems.isEmpty()) {
-        Box(
-            modifier = modifier.fillMaxSize().padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = if (isBangla) "ফর্দে কোনো পণ্য নেই। নিচে টাইপ করুন বা ক্যাটালগ থেকে যোগ করুন।" else "No items yet. Type below or add from Catalog.",
-                style = typography.bodyMedium,
-                color = appColors.textMuted
-            )
-        }
+        PlanEmptyStateView(
+            suggestionGroups = suggestionGroups,
+            onAddSuggestion = onAddSuggestion,
+            onAddTemplate = onAddTemplate,
+            onOpenCatalog = onOpenCatalog,
+            isBangla = isBangla,
+            useBengaliNumerals = useBengaliNumerals,
+            isPrivacyMode = isPrivacyMode,
+            onRevealPrivacy = onRevealPrivacy,
+            modifier = modifier
+        )
         return
     }
 
@@ -808,6 +876,178 @@ fun PlanMyListPane(
     }
 }
 
+/**
+ * Rich, non-empty initial view for newly created market lists (Amendment for Bug 2).
+ * Shows smart suggestion chips and templates with >=48dp touch targets.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun PlanEmptyStateView(
+    suggestionGroups: List<PlanSuggestionGroup>,
+    onAddSuggestion: (name: String, quantity: Double, unit: String) -> Unit,
+    onAddTemplate: (items: List<MarketItem>) -> Unit,
+    onOpenCatalog: () -> Unit,
+    isBangla: Boolean,
+    useBengaliNumerals: Boolean,
+    isPrivacyMode: Boolean,
+    onRevealPrivacy: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val typography = MaterialTheme.typography
+
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier.fillMaxSize()
+    ) {
+        // 1. Prominent Catalog Banner
+        item(key = "empty_catalog_banner") {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = appColors.accent.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.35f)),
+                contentColor = appColors.textPrimary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = if (isBangla) "ক্যাটালগ থেকে পণ্য বেছে নিন" else "Browse catalog",
+                        onClick = onOpenCatalog
+                    )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isBangla) "ক্যাটালগ থেকে সদাই বেছে নিন" else "Browse Master Catalog",
+                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = appColors.textPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (isBangla) "চাল, ডাল, তেল, মাছ, মাংস ও শাকসবজি" else "Rice, oil, fish, meat & vegetables",
+                            style = typography.bodySmall,
+                            color = appColors.textSecondary
+                        )
+                    }
+                    Button(
+                        onClick = onOpenCatalog,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = appColors.accent,
+                            contentColor = appColors.onAccent
+                        ),
+                        modifier = Modifier.heightIn(min = 44.dp)
+                    ) {
+                        Text(
+                            text = if (isBangla) "ক্যাটালগ" else "Catalog",
+                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 2. Suggestion Groups (Omitted if group has no data)
+        for (group in suggestionGroups) {
+            if (group.chips.isEmpty()) continue
+
+            item(key = "sugg_group_${group.id}") {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = if (isBangla) group.titleBn else group.titleEn,
+                        style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = appColors.textPrimary,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        for (chip in group.chips) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = appColors.surface,
+                                contentColor = appColors.textPrimary,
+                                border = BorderStroke(1.dp, appColors.border),
+                                modifier = Modifier
+                                    .heightIn(min = 48.dp)
+                                    .clickable(
+                                        role = Role.Button,
+                                        onClickLabel = if (chip.isTemplate) "Add template ${chip.name}" else "Add ${chip.name}",
+                                        onClick = {
+                                            if (chip.isTemplate) {
+                                                onAddTemplate(chip.templateItems)
+                                            } else {
+                                                onAddSuggestion(chip.name, chip.defaultQuantity, chip.defaultUnit)
+                                            }
+                                        }
+                                    )
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = appColors.accent,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = chip.name,
+                                        style = typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = appColors.textPrimary
+                                    )
+                                    if (chip.isTemplate) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        val count = chip.templateItems.size.toString()
+                                        val countStr = if (useBengaliNumerals || isBangla) "${DigitConverter.toBengaliDigits(count)}টি" else "$count items"
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = appColors.accent.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = countStr,
+                                                style = typography.labelSmall,
+                                                color = appColors.accent,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    } else if (chip.estimatedPrice != null && chip.estimatedPrice > 0.0) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        val pNum = if (chip.estimatedPrice % 1.0 == 0.0) "${chip.estimatedPrice.toInt()}" else "%.1f".format(chip.estimatedPrice)
+                                        val pStr = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(pNum) else pNum
+                                        PulseTabularText(
+                                            text = if (isPrivacyMode) "••••" else "~৳$pStr",
+                                            style = typography.bodySmall,
+                                            color = appColors.textMuted
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Plan Mode item row designed for accessibility and responsive wrapping (Amendment for Bug 3):
+ * - Clean two-row structure prevents text truncation to 0 width on small 320dp screens or 200% font scale.
+ * - Explicit [contentColor] prevents dark-on-dark invisible text.
+ * - Minimum 44-48dp touch targets on steppers and unit picker.
+ */
 @Composable
 fun PlanItemRow(
     item: MarketItem,
@@ -830,39 +1070,49 @@ fun PlanItemRow(
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = appColors.surface,
+        contentColor = appColors.textPrimary,
+        border = BorderStroke(1.dp, appColors.border),
         tonalElevation = 1.dp,
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
-            // Stall Chip (Tappable to change stall)
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(appColors.surfaceVariant)
-                    .clickable(
-                        role = Role.Button,
-                        onClickLabel = if (isBangla) "স্টল পরিবর্তন করুন" else "Change department stall",
-                        onClick = onStallClick
-                    )
-                    .padding(6.dp)
+            // Row 1: Stall Chip + Name (weight 1f, maxLines 2) + Line Estimate + Delete
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = deptMeta.icon, fontSize = 16.sp)
-            }
+                // Stall Chip (Tappable to change stall)
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(appColors.surfaceVariant)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = if (isBangla) "স্টল পরিবর্তন করুন" else "Change department stall",
+                            onClick = onStallClick
+                        )
+                        .padding(6.dp)
+                ) {
+                    Text(text = deptMeta.icon, fontSize = 16.sp)
+                }
 
-            Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-            // Item Name
-            Column(modifier = Modifier.weight(1f)) {
+                // Item Name (gets ample width, wraps up to 2 lines, never collapses to 0)
                 Text(
                     text = item.name,
-                    style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
                     color = appColors.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Line Estimated Price or "৳—"
                 val lineTotal = lineEstimate?.lineTotal
@@ -891,78 +1141,209 @@ fun PlanItemRow(
                         color = appColors.textMuted
                     )
                 }
-            }
 
-            // Quantity Stepper (− qty +)
-            Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // Delete item button (triggers 5s Undo)
                 IconButton(
                     onClick = {
                         haptics.lightTick()
-                        val step = if (item.unit in listOf("গ্রাম", "মিলি")) 50.0 else 0.5
-                        if (item.quantity > step) {
-                            onUpdateQuantity(item.quantity - step)
-                        }
+                        onDelete()
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Remove, contentDescription = if (isBangla) "কমান" else "Decrease", tint = appColors.textSecondary)
-                }
-
-                val qtyNum = if (item.quantity % 1.0 == 0.0) "${item.quantity.toInt()}" else "${item.quantity}"
-                val qtyDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(qtyNum) else qtyNum
-
-                PulseTabularText(
-                    text = qtyDisplay,
-                    style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = appColors.textPrimary,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-
-                IconButton(
-                    onClick = {
-                        haptics.lightTick()
-                        val step = if (item.unit in listOf("গ্রাম", "মিলি")) 50.0 else 0.5
-                        onUpdateQuantity(item.quantity + step)
-                    },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = if (isBangla) "বাড়ান" else "Increase", tint = appColors.textSecondary)
-                }
-            }
-
-            // Unit Chip (Tappable to pick unit)
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(appColors.surfaceVariant)
-                    .clickable(
-                        role = Role.Button,
-                        onClickLabel = if (isBangla) "পরিমাপের একক পরিবর্তন করুন" else "Change unit",
-                        onClick = onUnitClick
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = if (isBangla) "মুছুন" else "Delete",
+                        tint = appColors.textMuted
                     )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = item.unit,
-                    style = typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = appColors.textPrimary
-                )
+                }
             }
 
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Delete item button (triggers 5s Undo)
-            IconButton(
-                onClick = {
-                    haptics.lightTick()
-                    onDelete()
-                },
-                modifier = Modifier.size(48.dp)
+            // Row 2: Unit Chip on left + Quantity Stepper on right
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = if (isBangla) "মুছুন" else "Delete",
-                    tint = appColors.textMuted
+                // Unit Chip (Tappable to pick unit)
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = appColors.surfaceVariant,
+                    modifier = Modifier
+                        .heightIn(min = 36.dp)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = if (isBangla) "পরিমাপের একক পরিবর্তন করুন" else "Change unit",
+                            onClick = onUnitClick
+                        )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = item.unit,
+                            style = typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = appColors.textPrimary
+                        )
+                    }
+                }
+
+                // Quantity Stepper (− qty +)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            haptics.lightTick()
+                            val step = if (item.unit in listOf("গ্রাম", "মিলি")) 50.0 else 0.5
+                            if (item.quantity > step) {
+                                onUpdateQuantity(item.quantity - step)
+                            }
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Remove,
+                            contentDescription = if (isBangla) "কমান" else "Decrease",
+                            tint = appColors.textSecondary
+                        )
+                    }
+
+                    val qtyNum = if (item.quantity % 1.0 == 0.0) "${item.quantity.toInt()}" else "${item.quantity}"
+                    val qtyDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(qtyNum) else qtyNum
+
+                    PulseTabularText(
+                        text = qtyDisplay,
+                        style = typography.titleSmall.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                        color = appColors.textPrimary,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                    IconButton(
+                        onClick = {
+                            haptics.lightTick()
+                            val step = if (item.unit in listOf("গ্রাম", "মিলি")) 50.0 else 0.5
+                            onUpdateQuantity(item.quantity + step)
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = if (isBangla) "বাড়ান" else "Increase",
+                            tint = appColors.textSecondary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ========================================================================
+// PREVIEWS FOR BUG 3: 320dp width, 200% font scale, long Bengali name
+// ========================================================================
+
+@Preview(name = "PlanItemRow - Light - 320dp - 200% Font", widthDp = 320)
+@Composable
+private fun PlanItemRowLightPreview() {
+    val currentDensity = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(currentDensity.density, fontScale = 2.0f)
+    ) {
+        ExpenseTrackerTheme(themeMode = "light") {
+            Surface(color = LocalAppColors.current.background) {
+                PlanItemRow(
+                    item = MarketItem(
+                        name = "দেশি গোল আলু (নতুন আলু - বিশেষ বাছাইকৃত)",
+                        quantity = 2.5,
+                        unit = "কেজি"
+                    ),
+                    lineEstimate = MarketItemPriceEstimate(
+                        item = MarketItem(name = "আলু"),
+                        unitPrice = 50.0,
+                        lineTotal = 125.0,
+                        isEstimated = false
+                    ),
+                    deptMeta = ALL_DEPARTMENTS[0],
+                    onUpdateQuantity = {},
+                    onDelete = {},
+                    onStallClick = {},
+                    onUnitClick = {},
+                    isBangla = true,
+                    useBengaliNumerals = true,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "PlanItemRow - Dark - 320dp - 200% Font", widthDp = 320)
+@Composable
+private fun PlanItemRowDarkPreview() {
+    val currentDensity = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(currentDensity.density, fontScale = 2.0f)
+    ) {
+        ExpenseTrackerTheme(themeMode = "dark") {
+            Surface(color = LocalAppColors.current.background) {
+                PlanItemRow(
+                    item = MarketItem(
+                        name = "দেশি গোল আলু (নতুন আলু - বিশেষ বাছাইকৃত)",
+                        quantity = 2.5,
+                        unit = "কেজি"
+                    ),
+                    lineEstimate = MarketItemPriceEstimate(
+                        item = MarketItem(name = "আলু"),
+                        unitPrice = 50.0,
+                        lineTotal = 125.0,
+                        isEstimated = false
+                    ),
+                    deptMeta = ALL_DEPARTMENTS[0],
+                    onUpdateQuantity = {},
+                    onDelete = {},
+                    onStallClick = {},
+                    onUnitClick = {},
+                    isBangla = true,
+                    useBengaliNumerals = true,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "PlanItemRow - AMOLED - 320dp - 200% Font", widthDp = 320)
+@Composable
+private fun PlanItemRowAmoledPreview() {
+    val currentDensity = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(currentDensity.density, fontScale = 2.0f)
+    ) {
+        ExpenseTrackerTheme(themeMode = "amoled") {
+            Surface(color = LocalAppColors.current.background) {
+                PlanItemRow(
+                    item = MarketItem(
+                        name = "দেশি গোল আলু (নতুন আলু - বিশেষ বাছাইকৃত)",
+                        quantity = 2.5,
+                        unit = "কেজি"
+                    ),
+                    lineEstimate = MarketItemPriceEstimate(
+                        item = MarketItem(name = "আলু"),
+                        unitPrice = 50.0,
+                        lineTotal = 125.0,
+                        isEstimated = false
+                    ),
+                    deptMeta = ALL_DEPARTMENTS[0],
+                    onUpdateQuantity = {},
+                    onDelete = {},
+                    onStallClick = {},
+                    onUnitClick = {},
+                    isBangla = true,
+                    useBengaliNumerals = true,
+                    modifier = Modifier.padding(8.dp)
                 )
             }
         }
