@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class BazaarShopViewModel(
+class BazaarShopViewModel @JvmOverloads constructor(
     application: Application,
     private val savedStateHandle: SavedStateHandle,
     repoOverride: ExpenseRepository? = null,

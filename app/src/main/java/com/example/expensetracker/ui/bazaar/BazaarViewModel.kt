@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class BazaarViewModel(
+class BazaarViewModel @JvmOverloads constructor(
     application: Application,
     repoOverride: ExpenseRepository? = null
 ) : AndroidViewModel(application) {
