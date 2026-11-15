@@ -144,7 +144,14 @@ fun AdaptiveScaffold(
 
             else -> {
                 // Compact: Bottom Dock
-                val bottomPadding = if (showDock) (PulseDockHeight + 16.dp + navBarsPadding.calculateBottomPadding()) else 0.dp
+                val navBarBottom = navBarsPadding.calculateBottomPadding()
+                // On 3-button nav (>32dp), keep clear of buttons. On gesture nav (~16-24dp), seat dock snug above gesture handle.
+                val dockBottomPadding = if (navBarBottom > 32.dp) {
+                    navBarBottom + 4.dp
+                } else {
+                    (navBarBottom - 6.dp).coerceAtLeast(12.dp)
+                }
+                val bottomPadding = if (showDock) (PulseDockHeight + dockBottomPadding + 10.dp) else 0.dp
                 Box(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
@@ -158,7 +165,7 @@ fun AdaptiveScaffold(
                         visible = showDock,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .navigationBarsPadding(),
+                            .padding(bottom = dockBottomPadding),
                         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                     ) {
@@ -175,11 +182,13 @@ fun AdaptiveScaffold(
         }
 
         // Snackbar host overlay
+        val navBarBottom = navBarsPadding.calculateBottomPadding()
+        val dockBottomPadding = if (navBarBottom > 32.dp) navBarBottom + 4.dp else (navBarBottom - 6.dp).coerceAtLeast(12.dp)
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(
-                    bottom = if (showDock) (PulseDockHeight + 24.dp + navBarsPadding.calculateBottomPadding()) else 16.dp
+                    bottom = if (showDock) (PulseDockHeight + dockBottomPadding + 16.dp) else 16.dp
                 )
         ) {
             snackbarHost()
