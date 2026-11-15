@@ -47,7 +47,8 @@ fun TransactionSheetHeader(
     onDeleteClick: (() -> Unit)?,
     onCancelEditClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isMarketActive: Boolean = false
+    isMarketActive: Boolean = false,
+    isTransfer: Boolean = false
 ) {
     val appColors = LocalAppColors.current
     val haptics = rememberAppHaptics()
@@ -78,9 +79,17 @@ fun TransactionSheetHeader(
                     existingTransaction != null && !isEditMode ->
                         if (isExpense) strings.expenseDetails else strings.incomeDetails
                     existingTransaction != null && isEditMode ->
-                        if (isExpense) strings.editExpenseTitle else strings.editIncomeTitle
+                        when {
+                            isTransfer -> if (strings.isBangla) "স্থানান্তর সম্পাদনা" else "Edit Transfer"
+                            isExpense -> strings.editExpenseTitle
+                            else -> strings.editIncomeTitle
+                        }
                     else ->
-                        if (isExpense) strings.addExpenseTitle else strings.addIncomeTitle
+                        when {
+                            isTransfer -> if (strings.isBangla) "নতুন স্থানান্তর" else "New Transfer"
+                            isExpense -> strings.addExpenseTitle
+                            else -> strings.addIncomeTitle
+                        }
                 }
 
                 Text(
@@ -98,6 +107,7 @@ fun TransactionSheetHeader(
                 ) {
                     val badgeText = when {
                         isMarketActive -> if (strings.isBangla) "বাজার" else "Market"
+                        isTransfer -> strings.transferTab
                         isExpense -> strings.expenseBadge
                         else -> strings.incomeBadge
                     }

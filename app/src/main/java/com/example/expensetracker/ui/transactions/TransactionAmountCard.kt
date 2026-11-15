@@ -1,7 +1,10 @@
 package com.example.expensetracker.ui.transactions
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -18,13 +24,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.expensetracker.common.InputSanitizer
 import com.example.expensetracker.theme.HairlineInkStroke
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.theme.RadiusM
@@ -38,7 +50,7 @@ import com.example.expensetracker.ui.components.convertToBengaliDigits
  * - Height <= 140dp total footprint.
  * - Flat tonal surface (no outline in Dark/AMOLED per C1).
  * - Big amount with tabular numbers ("tnum"), display style.
- * - Placeholder "0" (shows decimals only after "." is typed).
+ * - Native numeric keyboard integration via BasicTextField.
  * - Live math expression and evaluated result line.
  */
 @Composable
@@ -55,6 +67,7 @@ fun TransactionAmountCard(
     isTransfer: Boolean = false
 ) {
     val appColors = LocalAppColors.current
+    val focusManager = LocalFocusManager.current
 
     val hasOperators = remember(amountText) { AmountKeypadLogic.hasOperators(amountText) }
     val evaluatedValue = remember(amountText) { AmountKeypadLogic.evaluate(amountText) }
@@ -77,6 +90,12 @@ fun TransactionAmountCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 140.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    try { amountFocusRequester.requestFocus() } catch (_: Exception) {}
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -102,9 +121,6 @@ fun TransactionAmountCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
-                        .semantics {
-                            contentDescription = "Amount $currencySymbol $displayAmount"
-                        }
                 ) {
                     Text(
                         text = "$currencySymbol ",
@@ -114,16 +130,49 @@ fun TransactionAmountCard(
                         ),
                         color = typeAccentColor
                     )
-                    Text(
-                        text = displayAmount,
-                        style = MaterialTheme.typography.displayMedium.copy(
+                    BasicTextField(
+                        value = amountText,
+                        onValueChange = { newVal ->
+                            val sanitized = InputSanitizer.sanitizeMathInput(newVal)
+                            onAmountChange(sanitized)
+                        },
+                        modifier = Modifier
+                            .focusRequester(amountFocusRequester)
+                            .semantics {
+                                contentDescription = "Amount $currencySymbol $displayAmount"
+                            },
+                        textStyle = MaterialTheme.typography.displayMedium.copy(
                             fontSize = 38.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum"
+                            fontFeatureSettings = "tnum",
+                            color = appColors.textPrimary,
+                            textAlign = TextAlign.Start
                         ),
-                        color = if (amountText.isEmpty()) appColors.textSecondary.copy(alpha = 0.45f) else appColors.textPrimary,
-                        textAlign = TextAlign.Start,
-                        maxLines = 1
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        ),
+                        singleLine = true,
+                        cursorBrush = SolidColor(typeAccentColor),
+                        decorationBox = { innerTextField ->
+                            Box(contentAlignment = Alignment.CenterStart) {
+                                if (amountText.isEmpty()) {
+                                    Text(
+                                        text = if (strings.isBangla) "০" else "0",
+                                        style = MaterialTheme.typography.displayMedium.copy(
+                                            fontSize = 38.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFeatureSettings = "tnum"
+                                        ),
+                                        color = appColors.textSecondary.copy(alpha = 0.45f)
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
                     )
                 }
 

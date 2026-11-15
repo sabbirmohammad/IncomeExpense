@@ -215,4 +215,47 @@ class Phase5TransactionsAndMarketV7Test {
             dialogsContent.contains("txToDelete") && dialogsContent.contains("TransactionDeleteConfirmDialog")
         )
     }
+
+    @Test
+    fun testTransactionSheetPinnedTabsAndNativeKeypadAmount() {
+        // 1. AddEditTransactionSheet must pin tabs outside scroll container to prevent flickering
+        val sheetFile = findSourceFile("src/main/java/com/example/expensetracker/ui/transactions/AddEditTransactionSheet.kt")
+        assertTrue("AddEditTransactionSheet.kt must exist", sheetFile.exists())
+        val sheetContent = sheetFile.readText()
+        assertTrue(
+            "AddEditTransactionSheet must pin PulseSegmented tabs outside scrollable content",
+            sheetContent.contains("PulseSegmented(") &&
+            sheetContent.contains("TransactionSheetTab.TRANSFER")
+        )
+
+        // 2. TransactionAmountCard must use BasicTextField with KeyboardType.Decimal
+        val amountCardFile = findSourceFile("src/main/java/com/example/expensetracker/ui/transactions/TransactionAmountCard.kt")
+        assertTrue("TransactionAmountCard.kt must exist", amountCardFile.exists())
+        val amountContent = amountCardFile.readText()
+        assertTrue(
+            "TransactionAmountCard must use BasicTextField with KeyboardType.Decimal for phone native keypad",
+            amountContent.contains("BasicTextField(") &&
+            amountContent.contains("KeyboardType.Decimal") &&
+            amountContent.contains("amountFocusRequester")
+        )
+
+        // 3. TransactionEditFormBody must NOT contain redundant on-screen AmountKeypad
+        val formBodyFile = findSourceFile("src/main/java/com/example/expensetracker/ui/transactions/TransactionEditFormBody.kt")
+        assertTrue("TransactionEditFormBody.kt must exist", formBodyFile.exists())
+        val formContent = formBodyFile.readText()
+        assertFalse(
+            "TransactionEditFormBody must not include custom AmountKeypad",
+            formContent.contains("AmountKeypad(")
+        )
+
+        // 4. TransactionSheetHeader must support transfer mode
+        val headerFile = findSourceFile("src/main/java/com/example/expensetracker/ui/transactions/TransactionSheetHeader.kt")
+        assertTrue("TransactionSheetHeader.kt must exist", headerFile.exists())
+        val headerContent = headerFile.readText()
+        assertTrue(
+            "TransactionSheetHeader must support isTransfer mode",
+            headerContent.contains("isTransfer: Boolean = false") &&
+            headerContent.contains("নতুন স্থানান্তর")
+        )
+    }
 }

@@ -154,7 +154,7 @@ fun PulseSegmented(
                     )
                     .background(if (isSelected) appColors.surface else Color.Transparent)
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = remember(i) { MutableInteractionSource() },
                         indication = null,
                         role = Role.Tab,
                         onClick = { onIndexSelected(i) }

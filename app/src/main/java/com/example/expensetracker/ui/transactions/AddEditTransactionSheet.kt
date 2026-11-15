@@ -45,6 +45,7 @@ import com.example.expensetracker.data.model.Transaction
 import com.example.expensetracker.data.model.TransactionType
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.LocalAppStrings
+import com.example.expensetracker.ui.components.PulseSegmented
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.MarketNativeContent
 import com.example.expensetracker.utils.ReceiptImageHelper
@@ -90,7 +91,10 @@ fun AddEditTransactionSheet(
     )
 
     LaunchedEffect(Unit) {
-        if (existingTransaction == null) { delay(200); try { state.amountFocusRequester.requestFocus() } catch (_: Exception) {} }
+        if (existingTransaction == null) {
+            delay(350)
+            try { state.amountFocusRequester.requestFocus() } catch (_: Exception) {}
+        }
     }
 
     var isMarketActive by rememberSaveable(existingTransaction, initialOpenMarketTab) {
@@ -105,7 +109,10 @@ fun AddEditTransactionSheet(
     LaunchedEffect(isMarketActive) { if (!isMarketActive) hasVisitedTransactionForm = true }
 
     val typeAccentColor by animateColorAsState(
-        targetValue = if (isMarketActive) (if (appColors.isDark) Color(0xFF00A8FF) else Color(0xFF0284C7)) else if (state.isExpense) appColors.expense else appColors.income,
+        targetValue = if (isMarketActive) (if (appColors.isDark) Color(0xFF00A8FF) else Color(0xFF0284C7))
+        else if (state.isTransfer) (if (appColors.isDark) Color(0xFF38BDF8) else Color(0xFF0284C7))
+        else if (state.isExpense) appColors.expense
+        else appColors.income,
         animationSpec = tween(300), label = "typeAccentColor"
     )
 
@@ -131,6 +138,28 @@ fun AddEditTransactionSheet(
                 existingTransaction = existingTransaction, state = state, typeAccentColor = typeAccentColor,
                 strings = strings, isMarketActive = isMarketActive, onDelete = onDelete
             )
+
+            // Pinned Segmented Control: [ Expense | Income | Transfer ] (remains stable and does not scroll or flicker)
+            if (!isMarketActive && (existingTransaction == null || state.isEditMode)) {
+                PulseSegmented(
+                    items = listOf(strings.expense, strings.income, strings.transferTab),
+                    selectedIndex = when (state.sheetTab) {
+                        TransactionSheetTab.EXPENSE -> 0
+                        TransactionSheetTab.INCOME -> 1
+                        TransactionSheetTab.TRANSFER -> 2
+                    },
+                    onItemSelected = { idx ->
+                        when (idx) {
+                            0 -> state.handleTabSelected(TransactionSheetTab.EXPENSE)
+                            1 -> state.handleTabSelected(TransactionSheetTab.INCOME)
+                            2 -> state.handleTabSelected(TransactionSheetTab.TRANSFER)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+            }
 
             AnimatedContent(
                 targetState = isMarketActive,

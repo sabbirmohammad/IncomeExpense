@@ -18,6 +18,7 @@ internal fun TransactionSheetHeaderHost(
         existingTransaction = existingTransaction,
         isEditMode = state.isEditMode,
         isExpense = state.isExpense,
+        isTransfer = state.isTransfer,
         typeAccentColor = typeAccentColor,
         strings = strings,
         onCloseClick = { state.attemptDismiss() },

@@ -23,23 +23,19 @@ import com.example.expensetracker.data.model.AccountType
 import com.example.expensetracker.data.model.PaymentMethod
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.AccountChipRow
-import com.example.expensetracker.ui.components.AmountKeypad
 import com.example.expensetracker.ui.components.CategoryPicker
-import com.example.expensetracker.ui.components.SegmentedControl
 import com.example.expensetracker.ui.components.toParsedAmountOrNull
 import com.example.expensetracker.utils.ReceiptImageHelper
 import java.text.SimpleDateFormat
 
 /**
  * V7 Transaction Edit Form Body:
- * - 48dp SegmentedControl for [ Expense | Income | Transfer ] (remembers last used).
- * - Compact Amount Card (<= 140dp) with live expression preview.
+ * - Compact Amount Card (<= 140dp) with native numeric keyboard entry and live expression evaluation.
  * - Inline CategoryPicker (2-row scrollable chips + "More" expands inline).
  * - AccountChipRow with balance (supports Transfer From -> To and balance warning).
  * - Date & Time chips row: [ Today ] [ Yesterday ] [ Pick Date ] [ Time ].
  * - Merged Title + "+ Add note" expansion text button.
  * - Compact 48dp single receipt launcher.
- * - Tactile AmountKeypad with keys >= 56dp and math operators (+ − × ÷).
  */
 @Composable
 fun TransactionEditFormBody(
@@ -60,27 +56,7 @@ fun TransactionEditFormBody(
     val parsedAmount = remember(state.amountText) { state.amountText.toParsedAmountOrNull() }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        // 1. Segmented Control: [ Expense | Income | Transfer ] (48dp height)
-        SegmentedControl(
-            items = listOf(state.strings.expense, state.strings.income, state.strings.transferTab),
-            selectedIndex = when (state.sheetTab) {
-                TransactionSheetTab.EXPENSE -> 0
-                TransactionSheetTab.INCOME -> 1
-                TransactionSheetTab.TRANSFER -> 2
-            },
-            onItemSelected = { idx ->
-                when (idx) {
-                    0 -> state.handleTabSelected(TransactionSheetTab.EXPENSE)
-                    1 -> state.handleTabSelected(TransactionSheetTab.INCOME)
-                    2 -> state.handleTabSelected(TransactionSheetTab.TRANSFER)
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // 2. Amount Input Card (<= 140dp)
+        // 1. Amount Input Card (<= 140dp) with native keypad
         TransactionAmountCard(
             amountText = state.amountText,
             onAmountChange = { state.handleAmountChange(it) },
@@ -95,7 +71,7 @@ fun TransactionEditFormBody(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 3. Category Picker (only in Expense or Income mode)
+        // 2. Category Picker (only in Expense or Income mode)
         if (!state.isTransfer) {
             Text(
                 text = state.strings.category,
@@ -112,7 +88,7 @@ fun TransactionEditFormBody(
             Spacer(modifier = Modifier.height(14.dp))
         }
 
-        // 4. Account Chip Row (with Transfer mode and insufficient balance warning)
+        // 3. Account Chip Row (with Transfer mode and insufficient balance warning)
         TransactionAccountPickerSection(
             state = state,
             parsedAmount = parsedAmount,
@@ -121,7 +97,7 @@ fun TransactionEditFormBody(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 5. Date & Time Shortcuts Section
+        // 4. Date & Time Shortcuts Section
         TransactionDateTimeSection(
             dateMillis = state.dateMillis,
             onDateMillisChange = { state.dateMillis = it },
@@ -136,7 +112,7 @@ fun TransactionEditFormBody(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 6. Merged Title and Notes Section
+        // 5. Merged Title and Notes Section
         TransactionNoteAndTitleSection(
             title = state.title,
             onTitleChange = { state.title = it },
@@ -148,7 +124,7 @@ fun TransactionEditFormBody(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 7. Receipt / Voucher Section (compact 48dp launcher)
+        // 6. Receipt / Voucher Section (compact 48dp launcher)
         TransactionReceiptLauncherSection(
             state = state,
             typeAccentColor = typeAccentColor,
@@ -156,24 +132,6 @@ fun TransactionEditFormBody(
             onLaunchCamera = onLaunchCamera,
             onLaunchGallery = onLaunchGallery,
             onChangeReceipt = onChangeReceipt
-        )
-        if (!state.isTransfer) {
-            Spacer(modifier = Modifier.height(14.dp))
-        }
-
-        // 8. AmountKeypad (4x4 tactile keypad with operators and keys >= 56dp)
-        Text(
-            text = if (state.strings.isBangla) "কী-প্যাডে পরিমাণ লিখুন" else "Keypad",
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-            color = appColors.textSecondary
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AmountKeypad(
-            expression = state.amountText,
-            onExpressionChange = { state.handleAmountChange(it) },
-            currencySymbol = currencySymbol,
-            isBangla = state.strings.isBangla,
-            showPreviewLine = false // Already rendered in TransactionAmountCard above
         )
 
         Spacer(modifier = Modifier.height(16.dp))
