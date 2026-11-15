@@ -31,7 +31,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import com.example.expensetracker.theme.ExpenseTrackerTheme
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import com.example.expensetracker.data.local.BangladeshBazaarCatalog
+import com.example.expensetracker.data.local.BazaarCommodity
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -105,6 +108,16 @@ import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
 import com.example.expensetracker.ui.dashboard.getDepartmentMeta
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+data class BazaarAutocompleteMatch(
+    val name: String,
+    val category: String,
+    val defaultUnit: String,
+    val benchmarkPrice: Double,
+    val userLastPrice: Double? = null,
+    val departmentIcon: String,
+    val departmentTitle: String
+)
 
 @Composable
 fun BazaarPlanScreen(
@@ -192,16 +205,46 @@ fun BazaarPlanScreen(
     var smartAddText by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
-    // Autocomplete suggestions
-    val autocompleteSuggestions = remember(smartAddText, masterProducts) {
-        if (smartAddText.isBlank() || smartAddText.length < 2) {
-            emptyList()
+    // Parsed quantity & unit from smart add input
+    val parsedQuery = remember(smartAddText) {
+        if (smartAddText.isNotBlank()) MarketListParser.parseSingleLine(smartAddText) else null
+    }
+    val effectiveQuery = remember(smartAddText, parsedQuery) {
+        val q = parsedQuery?.name ?: smartAddText
+        q.trim()
+    }
+
+    // Comprehensive 700+ Bangladeshi Catalog smart suggestions with phonetic & transliteration matching
+    val smartSuggestions = remember(effectiveQuery, masterProducts, isBangla) {
+        if (effectiveQuery.isBlank()) {
+            emptyList<BazaarAutocompleteMatch>()
         } else {
-            val clean = UnitConverterEngine.normalizeProductName(smartAddText)
-            masterProducts.filter {
-                it.name.contains(smartAddText, ignoreCase = true) || it.normalizedName.contains(clean)
-            }.take(4)
+            val catalogMatches = BangladeshBazaarCatalog.search(effectiveQuery, limit = 6)
+            catalogMatches.map { commodity ->
+                val meta = getDepartmentMeta(commodity.category)
+                val userProd = masterProducts.find {
+                    it.name.equals(commodity.name, ignoreCase = true) ||
+                    it.normalizedName == UnitConverterEngine.normalizeProductName(commodity.name)
+                }
+                BazaarAutocompleteMatch(
+                    name = commodity.name,
+                    category = commodity.category,
+                    defaultUnit = commodity.defaultUnit,
+                    benchmarkPrice = commodity.benchmarkPrice,
+                    userLastPrice = if (userProd != null && userProd.latestUnitPrice > 0.0) userProd.latestUnitPrice else null,
+                    departmentIcon = meta.icon,
+                    departmentTitle = if (isBangla) meta.titleBn else meta.titleEn
+                )
+            }
         }
+    }
+
+    // Quick staple chips when typing box is empty
+    val quickStaples = remember(activeItems) {
+        val activeNames = activeItems.map { UnitConverterEngine.normalizeProductName(it.name) }.toSet()
+        BangladeshBazaarCatalog.QUICK_STAPLES.filter { staple ->
+            UnitConverterEngine.normalizeProductName(staple.name) !in activeNames
+        }.take(14)
     }
 
     // Dialog state for budget cap
@@ -210,8 +253,6 @@ fun BazaarPlanScreen(
     var showUnitPickerItem by remember { mutableStateOf<MarketItem?>(null) }
     var showMenu by remember { mutableStateOf(false) }
 
-    // Compact mode segment toggle: 0 = My List, 1 = Catalog
-    var compactSegmentIndex by remember { mutableIntStateOf(0) }
     val isCompact = windowClass.widthClass.isCompact
 
     Surface(
@@ -345,169 +386,55 @@ fun BazaarPlanScreen(
                 }
             }
 
-            // Compact mode segment bar: [My List | Catalog]
-            if (isCompact) {
-                PulseSegmented(
-                    items = listOf(
-                        "${strings.bazaarMyList} (${activeItems.size})",
-                        strings.bazaarCatalog
-                    ),
-                    selectedIndex = compactSegmentIndex,
-                    onItemSelected = {
-                        haptics.lightTick()
-                        compactSegmentIndex = it
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                )
-            }
-
             // Main Body Area
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (isCompact) {
-                    if (compactSegmentIndex == 0) {
-                        // My List View (Compact)
-                        PlanMyListPane(
-                            activeItems = activeItems,
-                            lineEstimates = lineEstimates,
-                            masterProductsMap = masterProductsMap,
-                            onUpdateQuantity = { item, newQty ->
-                                bazaarViewModel.updateMarketItem(item.copy(quantity = newQty))
-                            },
-                            onDeleteItem = { item ->
-                                bazaarViewModel.deleteMarketItemWithUndo(item) { msg, act ->
-                                    val res = snackbarHostState.showSnackbar(msg, act)
-                                    res == SnackbarResult.ActionPerformed
-                                }
-                            },
-                            onStallClick = { showStallPickerItem = it },
-                            onUnitClick = { showUnitPickerItem = it },
-                            onOpenCatalog = { compactSegmentIndex = 1 },
-                            onAddSuggestion = { name, qty, unit ->
+                    PlanMyListPane(
+                        activeItems = activeItems,
+                        lineEstimates = lineEstimates,
+                        masterProductsMap = masterProductsMap,
+                        onUpdateQuantity = { item, newQty ->
+                            bazaarViewModel.updateMarketItem(item.copy(quantity = newQty))
+                        },
+                        onDeleteItem = { item ->
+                            bazaarViewModel.deleteMarketItemWithUndo(item) { msg, act ->
+                                val res = snackbarHostState.showSnackbar(msg, act)
+                                res == SnackbarResult.ActionPerformed
+                            }
+                        },
+                        onStallClick = { showStallPickerItem = it },
+                        onUnitClick = { showUnitPickerItem = it },
+                        onFocusSmartAdd = { focusRequester.requestFocus() },
+                        onAddSuggestion = { name, qty, unit ->
+                            bazaarViewModel.addMarketItem(
+                                listId,
+                                MarketItem(
+                                    listId = listId,
+                                    name = name,
+                                    quantity = qty,
+                                    unit = unit
+                                )
+                            )
+                        },
+                        onAddTemplate = { templateItems ->
+                            templateItems.forEach { tItm ->
                                 bazaarViewModel.addMarketItem(
                                     listId,
-                                    MarketItem(
-                                        listId = listId,
-                                        name = name,
-                                        quantity = qty,
-                                        unit = unit
-                                    )
+                                    tItm.copy(listId = listId)
                                 )
-                            },
-                            onAddTemplate = { templateItems ->
-                                templateItems.forEach { tItm ->
-                                    bazaarViewModel.addMarketItem(
-                                        listId,
-                                        tItm.copy(listId = listId)
-                                    )
-                                }
-                            },
-                            suggestionGroups = emptyStateSuggestions,
-                            isBangla = isBangla,
-                            useBengaliNumerals = userProfile.useBengaliNumerals,
-                            isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
-                            onRevealPrivacy = { isPrivacyRevealed = true }
-                        )
-                    } else {
-                        // Catalog View (Compact)
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            BazaarCatalogPane(
-                                masterProducts = masterProducts,
-                                currentItems = activeItems,
-                                onAddOrIncrementProduct = { product ->
-                                    val updated = BazaarDomainLogic.addOrIncrementCatalogItem(
-                                        existingItems = activeItems,
-                                        product = product,
-                                        listId = listId
-                                    )
-                                    val existing = activeItems.find {
-                                        UnitConverterEngine.normalizeProductName(it.name) == product.normalizedName
-                                    }
-                                    if (existing != null) {
-                                        bazaarViewModel.updateMarketItem(existing.copy(quantity = existing.quantity + 1.0))
-                                    } else {
-                                        bazaarViewModel.addMarketItem(
-                                            listId,
-                                            MarketItem(
-                                                listId = listId,
-                                                name = product.name,
-                                                quantity = 1.0,
-                                                unit = product.defaultUnit
-                                            )
-                                        )
-                                    }
-                                },
-                                isBangla = isBangla,
-                                useBengaliNumerals = userProfile.useBengaliNumerals,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            // Sticky mini-bar on Catalog: "N items · Estimate ৳X · View list"
-                            Surface(
-                                color = appColors.surface,
-                                tonalElevation = 4.dp,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                                ) {
-                                    val countText = if (userProfile.useBengaliNumerals || isBangla) {
-                                        "${DigitConverter.toBengaliDigits(activeItems.size.toString())}টি পণ্য"
-                                    } else {
-                                        "${activeItems.size} items"
-                                    }
-                                    val estNum = if (estimateSummary.totalEstimatedPrice % 1.0 == 0.0) {
-                                        "${estimateSummary.totalEstimatedPrice.toInt()}"
-                                    } else {
-                                        "%.1f".format(estimateSummary.totalEstimatedPrice)
-                                    }
-                                    val estFormatted = if (userProfile.useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(estNum) else estNum
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.clickable { isPrivacyRevealed = true }
-                                    ) {
-                                        PulseText(
-                                            text = countText,
-                                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = appColors.textPrimary
-                                        )
-                                        Text(
-                                            text = " · ",
-                                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = appColors.textSecondary
-                                        )
-                                        PulseTabularText(
-                                            text = if (isPrivacyMode && !isPrivacyRevealed) "••••••" else "৳$estFormatted",
-                                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = appColors.textPrimary
-                                        )
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            haptics.lightTick()
-                                            compactSegmentIndex = 0
-                                        },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
-                                    ) {
-                                        Text(strings.bazaarViewList, color = appColors.onAccent)
-                                    }
-                                }
                             }
-                        }
-                    }
+                        },
+                        suggestionGroups = emptyStateSuggestions,
+                        isBangla = isBangla,
+                        useBengaliNumerals = userProfile.useBengaliNumerals,
+                        isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
+                        onRevealPrivacy = { isPrivacyRevealed = true }
+                    )
                 } else {
                     // Medium / Expanded: Two-Pane View
                     Row(modifier = Modifier.fillMaxSize()) {
                         // Left Pane: My List
-                        Box(modifier = Modifier.weight(1.1f).fillMaxHeight()) {
+                        Box(modifier = Modifier.weight(1.15f).fillMaxHeight()) {
                             PlanMyListPane(
                                 activeItems = activeItems,
                                 lineEstimates = lineEstimates,
@@ -523,7 +450,7 @@ fun BazaarPlanScreen(
                                 },
                                 onStallClick = { showStallPickerItem = it },
                                 onUnitClick = { showUnitPickerItem = it },
-                                onOpenCatalog = {},
+                                onFocusSmartAdd = { focusRequester.requestFocus() },
                                 onAddSuggestion = { name, qty, unit ->
                                     bazaarViewModel.addMarketItem(
                                         listId,
@@ -554,86 +481,186 @@ fun BazaarPlanScreen(
                         // Divider
                         Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(appColors.border.copy(alpha = 0.5f)))
 
-                        // Right Pane: Catalog
-                        Box(modifier = Modifier.weight(0.9f).fillMaxHeight()) {
-                            BazaarCatalogPane(
-                                masterProducts = masterProducts,
-                                currentItems = activeItems,
-                                onAddOrIncrementProduct = { product ->
-                                    val existing = activeItems.find {
-                                        UnitConverterEngine.normalizeProductName(it.name) == product.normalizedName
-                                    }
-                                    if (existing != null) {
-                                        bazaarViewModel.updateMarketItem(existing.copy(quantity = existing.quantity + 1.0))
-                                    } else {
-                                        bazaarViewModel.addMarketItem(
-                                            listId,
-                                            MarketItem(
-                                                listId = listId,
-                                                name = product.name,
-                                                quantity = 1.0,
-                                                unit = product.defaultUnit
-                                            )
-                                        )
-                                    }
+                        // Right Pane: Market Summary & Quick Insights
+                        Box(modifier = Modifier.weight(0.85f).fillMaxHeight().padding(16.dp)) {
+                            PlanInsightsSummaryPane(
+                                summary = estimateSummary,
+                                budgetCap = budgetCap,
+                                activeItems = activeItems,
+                                masterProductsMap = masterProductsMap,
+                                onSetBudgetClick = { showBudgetDialog = true },
+                                onAddQuickItem = { name, unit ->
+                                    bazaarViewModel.addMarketItem(
+                                        listId,
+                                        MarketItem(listId = listId, name = name, quantity = 1.0, unit = unit)
+                                    )
                                 },
                                 isBangla = isBangla,
-                                useBengaliNumerals = userProfile.useBengaliNumerals
+                                useBengaliNumerals = userProfile.useBengaliNumerals,
+                                isPrivacyMode = isPrivacyMode && !isPrivacyRevealed
                             )
                         }
                     }
                 }
             }
 
-            // Bottom Area: Smart Add Bar + Estimate & Budget Bar
-            if (!isCompact || compactSegmentIndex == 0) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(appColors.surface)
-                ) {
-                    // Autocomplete suggestions strip
-                    AnimatedVisibility(visible = autocompleteSuggestions.isNotEmpty()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 6.dp)
+            // Bottom Area: Quick Staples + Smart Suggestions + Smart Add Bar + Estimate & Budget Bar
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(appColors.surface)
+            ) {
+                // If smartAddText is blank: Quick Staples Row
+                if (smartAddText.isBlank() && quickStaples.isNotEmpty()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (isBangla) "নিত্যপ্রয়োজনীয়:" else "Staples:",
+                            style = typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = appColors.textSecondary,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            contentPadding = PaddingValues(end = 16.dp)
                         ) {
-                            for (sugg in autocompleteSuggestions) {
+                            items(quickStaples) { staple ->
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
                                     color = appColors.surfaceVariant,
+                                    border = BorderStroke(1.dp, appColors.border.copy(alpha = 0.4f)),
                                     modifier = Modifier.clickable {
                                         haptics.lightTick()
                                         bazaarViewModel.addMarketItem(
                                             listId,
                                             MarketItem(
                                                 listId = listId,
-                                                name = sugg.name,
+                                                name = staple.name,
                                                 quantity = 1.0,
-                                                unit = sugg.defaultUnit
+                                                unit = staple.defaultUnit
                                             )
                                         )
-                                        smartAddText = ""
-                                        focusRequester.requestFocus()
                                     }
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
                                         Text(
-                                            text = sugg.name,
-                                            style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                            text = "+ ${staple.name}",
+                                            style = typography.labelSmall,
                                             color = appColors.textPrimary
                                         )
-                                        if (sugg.latestUnitPrice > 0.0) {
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = "৳${sugg.latestUnitPrice.toInt()}",
-                                                style = typography.labelSmall,
-                                                color = appColors.textMuted
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // If smartAddText is not blank: Smart Suggestions Cards
+                AnimatedVisibility(visible = smartSuggestions.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = appColors.surface,
+                        tonalElevation = 6.dp,
+                        shadowElevation = 8.dp,
+                        border = BorderStroke(1.dp, appColors.border.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (isBangla) "✨ স্মার্ট সাজেশন" else "✨ Smart Suggestions",
+                                    style = typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = appColors.accent
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                Text(
+                                    text = if (isBangla) "${smartSuggestions.size}টি পণ্য" else "${smartSuggestions.size} items",
+                                    style = typography.labelSmall,
+                                    color = appColors.textMuted
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                for (sugg in smartSuggestions) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = appColors.surfaceVariant,
+                                        border = BorderStroke(1.dp, appColors.accent.copy(alpha = 0.25f)),
+                                        modifier = Modifier.clickable {
+                                            haptics.lightTick()
+                                            val targetQty = parsedQuery?.quantity ?: 1.0
+                                            val targetUnit = if (parsedQuery != null && parsedQuery.unit.isNotBlank()) parsedQuery.unit else sugg.defaultUnit
+                                            bazaarViewModel.addMarketItem(
+                                                listId,
+                                                MarketItem(
+                                                    listId = listId,
+                                                    name = sugg.name,
+                                                    quantity = targetQty,
+                                                    unit = targetUnit
+                                                )
+                                            )
+                                            smartAddText = ""
+                                            focusRequester.requestFocus()
+                                        }
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(text = sugg.departmentIcon, fontSize = 13.sp)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Column {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(
+                                                        text = sugg.name,
+                                                        style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                                        color = appColors.textPrimary
+                                                    )
+                                                    if (parsedQuery != null && parsedQuery.quantity > 0) {
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        val rawQty = if (parsedQuery.quantity % 1.0 == 0.0) parsedQuery.quantity.toInt().toString() else parsedQuery.quantity.toString()
+                                                        val qtyStr = if (userProfile.useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(rawQty) else rawQty
+                                                        val uStr = if (parsedQuery.unit.isNotBlank()) parsedQuery.unit else sugg.defaultUnit
+                                                        Text(
+                                                            text = "($qtyStr $uStr)",
+                                                            style = typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                            color = appColors.accent
+                                                        )
+                                                    }
+                                                }
+                                                val displayPrice = sugg.userLastPrice ?: sugg.benchmarkPrice
+                                                if (displayPrice > 0.0) {
+                                                    val rawPrice = displayPrice.toInt().toString()
+                                                    val priceStr = if (userProfile.useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(rawPrice) else rawPrice
+                                                    Text(
+                                                        text = "৳$priceStr/${sugg.defaultUnit}",
+                                                        style = typography.labelSmall,
+                                                        color = appColors.textMuted
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = if (isBangla) "যোগ করুন" else "Add",
+                                                tint = appColors.accent,
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
                                     }
@@ -641,58 +668,29 @@ fun BazaarPlanScreen(
                             }
                         }
                     }
+                }
 
-                    // Smart Add Bar
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = smartAddText,
-                            onValueChange = { smartAddText = it },
-                            placeholder = {
-                                Text(
-                                    text = strings.bazaarEnterItemPrompt,
-                                    style = typography.bodyMedium,
-                                    color = appColors.textMuted
-                                )
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    if (smartAddText.isNotBlank()) {
-                                        val parsed = MarketListParser.parseSingleLine(smartAddText)
-                                        if (parsed != null && parsed.name.isNotBlank()) {
-                                            bazaarViewModel.addMarketItem(
-                                                listId,
-                                                parsed.copy(listId = listId)
-                                            )
-                                            smartAddText = ""
-                                            haptics.lightTick()
-                                            focusRequester.requestFocus()
-                                        }
-                                    }
-                                }
-                            ),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = appColors.surfaceVariant,
-                                unfocusedContainerColor = appColors.surfaceVariant,
-                                focusedBorderColor = appColors.accent,
-                                unfocusedBorderColor = Color.Transparent
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(focusRequester)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        IconButton(
-                            onClick = {
+                // Smart Add Bar Text Field
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = smartAddText,
+                        onValueChange = { smartAddText = it },
+                        placeholder = {
+                            Text(
+                                text = if (isBangla) "সদাই লিখুন (যেমন: আলু ২ কেজি, রুই মাছ, ডিম…)" else strings.bazaarEnterItemPrompt,
+                                style = typography.bodyMedium,
+                                color = appColors.textMuted
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
                                 if (smartAddText.isNotBlank()) {
                                     val parsed = MarketListParser.parseSingleLine(smartAddText)
                                     if (parsed != null && parsed.name.isNotBlank()) {
@@ -705,30 +703,59 @@ fun BazaarPlanScreen(
                                         focusRequester.requestFocus()
                                     }
                                 }
-                            },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(appColors.accent)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = if (isBangla) "যোগ করুন" else "Add item",
-                                tint = appColors.onAccent
-                            )
-                        }
-                    }
-
-                    // Sticky Estimate & Budget Bar
-                    EstimateAndBudgetStickyBar(
-                        summary = estimateSummary,
-                        onSetBudgetClick = { showBudgetDialog = true },
-                        isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
-                        onRevealPrivacy = { isPrivacyRevealed = true },
-                        isBangla = isBangla,
-                        useBengaliNumerals = userProfile.useBengaliNumerals
+                            }
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = appColors.surfaceVariant,
+                            unfocusedContainerColor = appColors.surfaceVariant,
+                            focusedBorderColor = appColors.accent,
+                            unfocusedBorderColor = Color.Transparent
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
                     )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = {
+                            if (smartAddText.isNotBlank()) {
+                                val parsed = MarketListParser.parseSingleLine(smartAddText)
+                                if (parsed != null && parsed.name.isNotBlank()) {
+                                    bazaarViewModel.addMarketItem(
+                                        listId,
+                                        parsed.copy(listId = listId)
+                                    )
+                                    smartAddText = ""
+                                    haptics.lightTick()
+                                    focusRequester.requestFocus()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(appColors.accent)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = if (isBangla) "যোগ করুন" else "Add item",
+                            tint = appColors.onAccent
+                        )
+                    }
                 }
+
+                // Sticky Estimate & Budget Bar
+                EstimateAndBudgetStickyBar(
+                    summary = estimateSummary,
+                    onSetBudgetClick = { showBudgetDialog = true },
+                    isPrivacyMode = isPrivacyMode && !isPrivacyRevealed,
+                    onRevealPrivacy = { isPrivacyRevealed = true },
+                    isBangla = isBangla,
+                    useBengaliNumerals = userProfile.useBengaliNumerals
+                )
             }
         }
 
@@ -794,7 +821,7 @@ fun PlanMyListPane(
     onStallClick: (MarketItem) -> Unit,
     onUnitClick: (MarketItem) -> Unit,
     modifier: Modifier = Modifier,
-    onOpenCatalog: () -> Unit = {},
+    onFocusSmartAdd: () -> Unit = {},
     onAddSuggestion: (name: String, quantity: Double, unit: String) -> Unit = { _, _, _ -> },
     onAddTemplate: (items: List<MarketItem>) -> Unit = {},
     suggestionGroups: List<PlanSuggestionGroup> = emptyList(),
@@ -811,7 +838,7 @@ fun PlanMyListPane(
             suggestionGroups = suggestionGroups,
             onAddSuggestion = onAddSuggestion,
             onAddTemplate = onAddTemplate,
-            onOpenCatalog = onOpenCatalog,
+            onFocusSmartAdd = onFocusSmartAdd,
             isBangla = isBangla,
             useBengaliNumerals = useBengaliNumerals,
             isPrivacyMode = isPrivacyMode,
@@ -887,7 +914,7 @@ fun PlanEmptyStateView(
     suggestionGroups: List<PlanSuggestionGroup>,
     onAddSuggestion: (name: String, quantity: Double, unit: String) -> Unit,
     onAddTemplate: (items: List<MarketItem>) -> Unit,
-    onOpenCatalog: () -> Unit,
+    onFocusSmartAdd: () -> Unit = {},
     isBangla: Boolean,
     useBengaliNumerals: Boolean,
     isPrivacyMode: Boolean,
@@ -902,7 +929,7 @@ fun PlanEmptyStateView(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier.fillMaxSize()
     ) {
-        // 1. Prominent Catalog Banner
+        // 1. Smart List Guide Banner
         item(key = "empty_catalog_banner") {
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -913,8 +940,8 @@ fun PlanEmptyStateView(
                     .fillMaxWidth()
                     .clickable(
                         role = Role.Button,
-                        onClickLabel = if (isBangla) "ক্যাটালগ থেকে পণ্য বেছে নিন" else "Browse catalog",
-                        onClick = onOpenCatalog
+                        onClickLabel = if (isBangla) "সদাই লিখতে ট্যাপ করুন" else "Type to add item",
+                        onClick = onFocusSmartAdd
                     )
             ) {
                 Row(
@@ -923,30 +950,20 @@ fun PlanEmptyStateView(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "💡", fontSize = 18.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (isBangla) "সহজে বাজারের ফর্দ তৈরি করুন" else "Smart Grocery Planning",
+                                style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.textPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (isBangla) "ক্যাটালগ থেকে সদাই বেছে নিন" else "Browse Master Catalog",
-                            style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = appColors.textPrimary
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isBangla) "চাল, ডাল, তেল, মাছ, মাংস ও শাকসবজি" else "Rice, oil, fish, meat & vegetables",
+                            text = if (isBangla) "নিচের বক্সে সদাইয়ের নাম লিখলেই স্মার্ট সাজেশন পাবেন (যেমন: আলু ২ কেজি, রুই মাছ, ডিম ১ ডজন) অথবা নিচের সাজেশন ও কুইক চিপস থেকে বেছে নিন।" else "Type items below (e.g. potato 2kg, rui fish, 1 dozen eggs) for instant smart suggestions, or pick from suggestions below.",
                             style = typography.bodySmall,
                             color = appColors.textSecondary
-                        )
-                    }
-                    Button(
-                        onClick = onOpenCatalog,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = appColors.accent,
-                            contentColor = appColors.onAccent
-                        ),
-                        modifier = Modifier.heightIn(min = 44.dp)
-                    ) {
-                        Text(
-                            text = if (isBangla) "ক্যাটালগ" else "Catalog",
-                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                         )
                     }
                 }
@@ -1641,6 +1658,153 @@ fun UnitPickerDialog(
                         )
                         if (isSelected) {
                             Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = appColors.accent)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlanInsightsSummaryPane(
+    summary: MarketListEstimateSummary,
+    budgetCap: Double?,
+    activeItems: List<MarketItem>,
+    masterProductsMap: Map<String, MasterProduct>,
+    onSetBudgetClick: () -> Unit,
+    onAddQuickItem: (name: String, unit: String) -> Unit,
+    isBangla: Boolean,
+    useBengaliNumerals: Boolean,
+    isPrivacyMode: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val appColors = LocalAppColors.current
+    val typography = MaterialTheme.typography
+
+    val deptCounts = remember(activeItems, masterProductsMap) {
+        val grouped = activeItems.groupBy { BazaarDomainLogic.classifyStallWithOverride(it.name, masterProductsMap) }
+        ALL_DEPARTMENTS.map { dept ->
+            Triple(dept, (grouped[dept.key] ?: emptyList()).size, (grouped[dept.key] ?: emptyList()))
+        }
+    }
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier.fillMaxSize()
+    ) {
+        // Summary Header Card
+        item(key = "summary_header_card") {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = appColors.surfaceVariant,
+                border = BorderStroke(1.dp, appColors.border.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = if (isBangla) "ফর্দের সার্বিক বিবরণ" else "Trip Overview",
+                        style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = appColors.textPrimary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val rawCount = activeItems.size.toString()
+                    val countFormatted = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(rawCount) else rawCount
+                    val rawEst = if (summary.totalEstimatedPrice % 1.0 == 0.0) summary.totalEstimatedPrice.toInt().toString() else "%.1f".format(summary.totalEstimatedPrice)
+                    val estFormatted = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(rawEst) else rawEst
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column {
+                            Text(
+                                text = if (isBangla) "মোট পণ্য" else "Total Items",
+                                style = typography.bodySmall,
+                                color = appColors.textSecondary
+                            )
+                            Text(
+                                text = "$countFormatted টি",
+                                style = typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.textPrimary
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = if (isBangla) "আনুমানিক খরচ" else "Estimated Cost",
+                                style = typography.bodySmall,
+                                color = appColors.textSecondary
+                            )
+                            PulseTabularText(
+                                text = if (isPrivacyMode) "••••••" else "৳$estFormatted",
+                                style = typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = if (summary.isOverBudget) appColors.expense else appColors.accent
+                            )
+                        }
+                    }
+
+                    if (budgetCap != null && budgetCap > 0.0) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        val capFormatted = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(budgetCap.toInt().toString()) else budgetCap.toInt().toString()
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (isBangla) "বাজেট সীমা" else "Budget Cap",
+                                style = typography.bodySmall,
+                                color = appColors.textSecondary
+                            )
+                            Text(
+                                text = "৳$capFormatted",
+                                style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                color = appColors.textPrimary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Department breakdown
+        item(key = "dept_breakdown_card") {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = appColors.surface,
+                border = BorderStroke(1.dp, appColors.border.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = if (isBangla) "দোকান অনুযায়ী বিভাজন" else "Stall Distribution",
+                        style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = appColors.textPrimary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    for ((dept, count, _) in deptCounts) {
+                        val countStr = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(count.toString()) else count.toString()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = dept.icon, fontSize = 16.sp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isBangla) dept.titleBn else dept.titleEn,
+                                    style = typography.bodyMedium,
+                                    color = appColors.textPrimary
+                                )
+                            }
+                            Text(
+                                text = "$countStr টি",
+                                style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = if (count > 0) appColors.accent else appColors.textMuted
+                            )
                         }
                     }
                 }
