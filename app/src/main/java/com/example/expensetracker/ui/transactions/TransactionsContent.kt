@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
+import com.example.expensetracker.ui.components.PulseSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -153,15 +153,12 @@ fun TransactionsContent(
                                 isBangla = strings.isBangla,
                                 onEditTransaction = onEditTransaction,
                                 onDeleteTransaction = { deletedTx ->
-                                    viewModel.deleteTransaction(deletedTx)
-                                    scope.launch {
-                                        val result = snackbarHostState.showSnackbar(strings.transactionDeleted, strings.undo, duration = SnackbarDuration.Short)
-                                        if (result == SnackbarResult.ActionPerformed) viewModel.restoreTransaction(deletedTx)
-                                    }
+                                    dialogState.txToDelete = deletedTx
                                 },
                                 onDeleteMarketTrip = { dialogState.tripToDelete = it },
                                 onSelectTransaction = { dialogState.selectedTxForDetail = it },
-                                hasMultipleAccounts = accounts.size > 1
+                                hasMultipleAccounts = accounts.size > 1,
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -173,7 +170,12 @@ fun TransactionsContent(
             }
         }
 
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp, start = 16.dp, end = 16.dp))
+        PulseSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 96.dp)
+        )
 
         TransactionsSheetsHost(
             dialogState = dialogState,

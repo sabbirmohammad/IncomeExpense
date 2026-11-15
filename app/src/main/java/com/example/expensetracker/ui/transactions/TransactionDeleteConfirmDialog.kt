@@ -45,8 +45,8 @@ fun TransactionDeleteConfirmDialog(
         },
         text = {
             Text(
-                text = if (strings.isBangla) "\"$title\" লেনদেনটি স্থায়ীভাবে মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।"
-                else "Are you sure you want to permanently delete \"$title\"? This action cannot be undone.",
+                text = if (strings.isBangla) "\"$title\" লেনদেনটি মুছে ফেলতে চান?"
+                else "Are you sure you want to delete \"$title\"?",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp)
             )
         },

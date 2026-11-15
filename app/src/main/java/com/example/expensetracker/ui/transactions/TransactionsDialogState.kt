@@ -14,6 +14,7 @@ class TransactionsDialogState {
     var sharingTargetDateMillis by mutableStateOf<Long?>(null)
     var showCustomDateRangeDialog by mutableStateOf(false)
     var tripToDelete by mutableStateOf<MarketListWithItems?>(null)
+    var txToDelete by mutableStateOf<Transaction?>(null)
     var selectedTxForDetail by mutableStateOf<Transaction?>(null)
     var showFilterSheet by mutableStateOf(false)
 }

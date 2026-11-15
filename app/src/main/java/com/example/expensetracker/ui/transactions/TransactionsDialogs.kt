@@ -20,6 +20,9 @@ fun TransactionsDialogs(
     tripToDelete: MarketListWithItems?,
     onDismissDeleteTrip: () -> Unit,
     onConfirmDeleteTrip: (Long) -> Unit,
+    txToDelete: Transaction? = null,
+    onDismissDeleteTx: () -> Unit = {},
+    onConfirmDeleteTx: (Transaction) -> Unit = {},
     showExportDialog: Boolean,
     onDismissExportDialog: () -> Unit,
     onOpenShareSlipFromExport: () -> Unit,
@@ -38,6 +41,20 @@ fun TransactionsDialogs(
             initialPeriod = if (sharingTargetDateMillis != null) SharePeriodType.TODAY else SharePeriodType.THIS_MONTH,
             initialTargetDateMillis = sharingTargetDateMillis,
             onDismiss = onDismissShareSheet
+        )
+    }
+
+    if (txToDelete != null) {
+        val target = txToDelete
+        TransactionDeleteConfirmDialog(
+            show = true,
+            title = target.title,
+            strings = strings,
+            onConfirm = {
+                haptics.mediumClick()
+                onConfirmDeleteTx(target)
+            },
+            onDismiss = onDismissDeleteTx
         )
     }
 

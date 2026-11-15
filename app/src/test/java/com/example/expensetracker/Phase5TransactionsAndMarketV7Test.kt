@@ -177,4 +177,42 @@ class Phase5TransactionsAndMarketV7Test {
             content.contains("commodity.name.trim().take(1).uppercase()") && content.contains("accentContainer")
         )
     }
+
+    @Test
+    fun testTransactionSwipeSafeDeleteAndUndoAnimation() {
+        val swipeRowFile = findSourceFile("src/main/java/com/example/expensetracker/ui/transactions/TransactionSwipeRow.kt")
+        assertTrue("TransactionSwipeRow.kt must exist", swipeRowFile.exists())
+        val swipeContent = swipeRowFile.readText()
+
+        // 1. Must snap back to prevent stuck red/blank state on undo
+        assertTrue(
+            "TransactionSwipeRow must return false on EndToStart to snap back cleanly",
+            swipeContent.contains("SwipeToDismissBoxValue.EndToStart ->") &&
+            swipeContent.contains("false")
+        )
+
+        // 2. Must use 50% threshold to prevent accidental touches
+        assertTrue(
+            "TransactionSwipeRow must set positionalThreshold for accidental touch protection",
+            swipeContent.contains("positionalThreshold =")
+        )
+
+        // 3. TransactionGroupCard must wrap rows in AnimatedVisibility for smooth restore/delete animations
+        val groupCardFile = findSourceFile("src/main/java/com/example/expensetracker/ui/transactions/TransactionGroupCard.kt")
+        assertTrue("TransactionGroupCard.kt must exist", groupCardFile.exists())
+        val groupContent = groupCardFile.readText()
+        assertTrue(
+            "TransactionGroupCard must use AnimatedVisibility and expandVertically for smooth restore",
+            groupContent.contains("AnimatedVisibility") && groupContent.contains("expandVertically")
+        )
+
+        // 4. Confirmation dialog integration
+        val dialogsFile = findSourceFile("src/main/java/com/example/expensetracker/ui/transactions/TransactionsDialogs.kt")
+        assertTrue("TransactionsDialogs.kt must exist", dialogsFile.exists())
+        val dialogsContent = dialogsFile.readText()
+        assertTrue(
+            "TransactionsDialogs must support txToDelete and TransactionDeleteConfirmDialog",
+            dialogsContent.contains("txToDelete") && dialogsContent.contains("TransactionDeleteConfirmDialog")
+        )
+    }
 }

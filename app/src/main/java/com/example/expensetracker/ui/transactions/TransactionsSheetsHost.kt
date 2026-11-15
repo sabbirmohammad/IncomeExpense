@@ -114,6 +114,22 @@ fun TransactionsSheetsHost(
             viewModel.deleteMarketTrip(tripId)
             dialogState.tripToDelete = null
         },
+        txToDelete = dialogState.txToDelete,
+        onDismissDeleteTx = { dialogState.txToDelete = null },
+        onConfirmDeleteTx = { tx ->
+            dialogState.txToDelete = null
+            viewModel.deleteTransaction(tx)
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = strings.transactionDeleted,
+                    actionLabel = strings.undo,
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.restoreTransaction(tx)
+                }
+            }
+        },
         showExportDialog = dialogState.showExportDialog,
         onDismissExportDialog = { dialogState.showExportDialog = false },
         onOpenShareSlipFromExport = {

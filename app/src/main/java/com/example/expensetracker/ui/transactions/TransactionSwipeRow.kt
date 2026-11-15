@@ -17,6 +17,11 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +33,7 @@ import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.DateTimeHelper
 import com.example.expensetracker.ui.components.ListRow
 import com.example.expensetracker.ui.components.formatCurrency
+import com.example.expensetracker.ui.components.rememberAppHaptics
 
 /**
  * V7 TransactionSwipeRow per UX_FLOWS section 4 & Screenshot Patch C5:
@@ -51,6 +57,7 @@ fun TransactionSwipeRow(
     showAccountPill: Boolean = false
 ) {
     val appColors = LocalAppColors.current
+    val haptics = rememberAppHaptics()
     val isIncome = transaction.type == TransactionType.INCOME
     val amountFormatted = "${if (isIncome) "+" else "-"} ${formatCurrency(transaction.amount, currencySymbol, useBengaliNumerals || isBangla)}"
     val amountColor = if (isIncome) appColors.income else appColors.expense
@@ -65,20 +72,32 @@ fun TransactionSwipeRow(
     }
 
     val dismissState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { totalDistance -> totalDistance * 0.5f },
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
                 SwipeToDismissBoxValue.EndToStart -> {
+                    haptics.mediumClick()
                     onDelete(transaction)
-                    true
+                    false // Return false so card snaps back to center and never gets stuck offscreen or red!
                 }
                 SwipeToDismissBoxValue.StartToEnd -> {
+                    haptics.lightTick()
                     onEdit(transaction)
-                    false
+                    false // Return false so card snaps back to center!
                 }
                 SwipeToDismissBoxValue.Settled -> false
             }
         }
     )
+
+    val isThresholdPassed = dismissState.targetValue != SwipeToDismissBoxValue.Settled
+    var wasThresholdPassed by remember { mutableStateOf(false) }
+    LaunchedEffect(isThresholdPassed) {
+        if (isThresholdPassed != wasThresholdPassed) {
+            haptics.lightTick()
+            wasThresholdPassed = isThresholdPassed
+        }
+    }
 
     SwipeToDismissBox(
         state = dismissState,
