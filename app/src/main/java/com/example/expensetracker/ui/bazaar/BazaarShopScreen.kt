@@ -402,7 +402,7 @@ fun BazaarShopScreen(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(if (isBangla) "হাতে হাতে নতুন পণ্য যোগ" else "Add extra item") },
+                                        text = { Text(if (isBangla) "হাতে হাতে নতুন পণ্য যোগ" else "Add extra item", color = appColors.textPrimary) },
                                         leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
                                         onClick = {
                                             showAddImpromptuDialog = true
@@ -410,7 +410,7 @@ fun BazaarShopScreen(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(if (isBangla) "বাজার স্থগিত রেখে প্রস্থান" else "Pause trip") },
+                                        text = { Text(if (isBangla) "বাজার স্থগিত রেখে প্রস্থান" else "Pause trip", color = appColors.textPrimary) },
                                         leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) },
                                         onClick = {
                                             showShopOverflowMenu = false
@@ -888,7 +888,8 @@ fun BazaarShopScreen(
             title = {
                 Text(
                     text = if (isBangla) "নতুন পণ্য যোগ করুন" else "Add Item to List",
-                    style = typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = appColors.textPrimary
                 )
             },
             text = {
@@ -896,7 +897,7 @@ fun BazaarShopScreen(
                     OutlinedTextField(
                         value = impromptuName,
                         onValueChange = { impromptuName = it },
-                        label = { Text(if (isBangla) "পণ্যের নাম" else "Item name") },
+                        label = { Text(if (isBangla) "পণ্যের নাম" else "Item name", color = appColors.textSecondary) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -908,14 +909,14 @@ fun BazaarShopScreen(
                         OutlinedTextField(
                             value = impromptuQty,
                             onValueChange = { impromptuQty = it },
-                            label = { Text(if (isBangla) "পরিমাণ" else "Qty") },
+                            label = { Text(if (isBangla) "পরিমাণ" else "Qty", color = appColors.textSecondary) },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
                             value = impromptuUnit,
                             onValueChange = { impromptuUnit = it },
-                            label = { Text(if (isBangla) "একক" else "Unit") },
+                            label = { Text(if (isBangla) "একক" else "Unit", color = appColors.textSecondary) },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
@@ -1194,7 +1195,8 @@ private fun ShopChecklistColumn(
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (isBangla) "হাতে হাতে নতুন পণ্য যোগ করুন" else "Add extra item on the fly",
-                    style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                    style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = appColors.textPrimary
                 )
             }
         }

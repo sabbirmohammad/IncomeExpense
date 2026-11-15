@@ -124,8 +124,12 @@ fun ExpenseTrackerTheme(
         MaterialTheme(
             colorScheme = scheme,
             typography = Typography,
-            shapes = AppShapes,
-            content = content
-        )
+            shapes = AppShapes
+        ) {
+            CompositionLocalProvider(
+                androidx.compose.material3.LocalContentColor provides appColors.textPrimary,
+                content = content
+            )
+        }
     }
 }

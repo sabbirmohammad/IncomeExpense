@@ -111,7 +111,7 @@ fun MainAppNavigation(
                 state = navState,
                 onOpenAdd = {
                     if (navState.selectedTab == PulseTab.BAZAAR) {
-                        bazaarViewModel.startNewList(source = "dock_add") { newListId ->
+                        bazaarViewModel.startNewList { newListId ->
                             navState.pushScreen(PushedScreen.BAZAAR_PLAN(newListId))
                         }
                     } else {

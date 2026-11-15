@@ -295,7 +295,7 @@ fun BazaarPlanScreen(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text(strings.bazaarShareAsText) },
+                            text = { Text(strings.bazaarShareAsText, color = appColors.textPrimary) },
                             onClick = {
                                 showMenu = false
                                 val shareText = BazaarDomainLogic.formatListAsWhatsAppText(
@@ -316,7 +316,7 @@ fun BazaarPlanScreen(
                         )
 
                         DropdownMenuItem(
-                            text = { Text(strings.bazaarDuplicateList) },
+                            text = { Text(strings.bazaarDuplicateList, color = appColors.textPrimary) },
                             onClick = {
                                 showMenu = false
                                 bazaarViewModel.duplicateMarketList(listId) {
@@ -1503,7 +1503,7 @@ fun BudgetCapDialog(
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it },
-                    placeholder = { Text("৳২০০০ / 2000", style = typography.bodyMedium) },
+                    placeholder = { Text("৳২০০০ / 2000", color = appColors.textMuted, style = typography.bodyMedium) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
