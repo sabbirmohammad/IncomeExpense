@@ -99,6 +99,7 @@ import com.example.expensetracker.ui.adaptive.WindowWidthClass
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.PulseSegmented
 import com.example.expensetracker.ui.components.PulseTabularText
+import com.example.expensetracker.ui.components.PulseText
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
 import com.example.expensetracker.ui.dashboard.getDepartmentMeta
@@ -471,7 +472,7 @@ fun BazaarPlanScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.clickable { isPrivacyRevealed = true }
                                     ) {
-                                        PulseTabularText(
+                                        PulseText(
                                             text = countText,
                                             style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                             color = appColors.textPrimary

@@ -16,6 +16,7 @@ import com.example.expensetracker.ui.bazaar.PriceTrendDirection
 import com.example.expensetracker.ui.bazaar.PricingMode
 import com.example.expensetracker.ui.bazaar.ReceiptLineTapDecision
 import com.example.expensetracker.ui.bazaar.ScreenWakeLockManager
+import com.example.expensetracker.ui.bazaar.SwipeBackgroundKind
 import com.example.expensetracker.ui.bazaar.SwipeDecision
 import com.example.expensetracker.ui.bazaar.SwipeDismissDirection
 import com.example.expensetracker.ui.dashboard.resetMasterProductsSupplier
@@ -620,12 +621,103 @@ class BazaarShopModeV7Test {
     }
 
     // =========================================================================
-    // 6. Minimal Structural Invariant Test
+    // 6. Swipe Background Resolution Behavioral Tests (BUG A)
+    // =========================================================================
+
+    @Test
+    fun testResolveSwipeBackgroundKindAtRestReturnsNone() {
+        // At rest, regardless of initial dismiss direction, progress <= 0 and settled target must return NONE
+        val atRestSettled = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.SETTLED,
+            progress = 0f,
+            targetDirection = SwipeDismissDirection.SETTLED
+        )
+        assertEquals(SwipeBackgroundKind.NONE, atRestSettled)
+
+        val atRestWithEndToStartDirection = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.END_TO_START,
+            progress = 0f,
+            targetDirection = SwipeDismissDirection.SETTLED
+        )
+        assertEquals("At rest, EndToStart with 0 progress must compose NONE", SwipeBackgroundKind.NONE, atRestWithEndToStartDirection)
+
+        val atRestWithStartToEndDirection = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.START_TO_END,
+            progress = 0f,
+            targetDirection = SwipeDismissDirection.SETTLED
+        )
+        assertEquals("At rest, StartToEnd with 0 progress must compose NONE", SwipeBackgroundKind.NONE, atRestWithStartToEndDirection)
+    }
+
+    @Test
+    fun testResolveSwipeBackgroundKindSwipingRightReturnsDone() {
+        val partialSwipeRight = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.START_TO_END,
+            progress = 0.35f,
+            targetDirection = SwipeDismissDirection.START_TO_END
+        )
+        assertEquals(SwipeBackgroundKind.DONE, partialSwipeRight)
+
+        val fullSwipeRight = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.START_TO_END,
+            progress = 1.0f,
+            targetDirection = SwipeDismissDirection.START_TO_END
+        )
+        assertEquals(SwipeBackgroundKind.DONE, fullSwipeRight)
+    }
+
+    @Test
+    fun testResolveSwipeBackgroundKindSwipingLeftReturnsSkip() {
+        val partialSwipeLeft = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.END_TO_START,
+            progress = 0.4f,
+            targetDirection = SwipeDismissDirection.END_TO_START
+        )
+        assertEquals(SwipeBackgroundKind.SKIP, partialSwipeLeft)
+
+        val fullSwipeLeft = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.END_TO_START,
+            progress = 1.0f,
+            targetDirection = SwipeDismissDirection.END_TO_START
+        )
+        assertEquals(SwipeBackgroundKind.SKIP, fullSwipeLeft)
+    }
+
+    @Test
+    fun testResolveSwipeBackgroundKindDirectionChangeSwitchesCleanly() {
+        // User starts swiping right (DONE)
+        val step1 = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.START_TO_END,
+            progress = 0.5f,
+            targetDirection = SwipeDismissDirection.START_TO_END
+        )
+        assertEquals(SwipeBackgroundKind.DONE, step1)
+
+        // User reverses drag to swipe left (SKIP)
+        val step2 = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.END_TO_START,
+            progress = 0.4f,
+            targetDirection = SwipeDismissDirection.END_TO_START
+        )
+        assertEquals(SwipeBackgroundKind.SKIP, step2)
+
+        // User lets go and card snaps back to rest (NONE)
+        val step3 = BazaarShopLogic.resolveSwipeBackgroundKind(
+            direction = SwipeDismissDirection.SETTLED,
+            progress = 0f,
+            targetDirection = SwipeDismissDirection.SETTLED
+        )
+        assertEquals(SwipeBackgroundKind.NONE, step3)
+    }
+
+    // =========================================================================
+    // 7. Minimal Structural Invariant Test
     // =========================================================================
 
     @Test
     fun testBazaarShopItemCardUsesSwipeToDismissBox() {
         val content = readFile("com/example/expensetracker/ui/bazaar/BazaarShopItemCard.kt")
         assertTrue("BazaarShopItemCard must use SwipeToDismissBox for gesture-based shopping", content.contains("SwipeToDismissBox("))
+        assertTrue("BazaarShopItemCard Surface must be opaque appColors.surface", content.contains("color = appColors.surface"))
     }
 }

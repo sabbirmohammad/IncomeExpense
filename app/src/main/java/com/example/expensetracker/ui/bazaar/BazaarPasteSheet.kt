@@ -70,6 +70,7 @@ import com.example.expensetracker.ui.adaptive.LocalWindowClass
 import com.example.expensetracker.ui.adaptive.WindowWidthClass
 import com.example.expensetracker.ui.components.LocalAppStrings
 import com.example.expensetracker.ui.components.PulseTabularText
+import com.example.expensetracker.ui.components.PulseText
 import com.example.expensetracker.ui.components.rememberAppHaptics
 import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
 import com.example.expensetracker.ui.dashboard.getDepartmentMeta
@@ -462,7 +463,7 @@ fun PreviewItemCard(
 
                 val qtyStr = if (item.quantity % 1.0 == 0.0) "${item.quantity.toInt()}" else "${item.quantity}"
                 val displayQty = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(qtyStr) else qtyStr
-                PulseTabularText(
+                PulseText(
                     text = "$displayQty ${item.unit}",
                     style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                     color = appColors.textPrimary,

@@ -53,6 +53,8 @@ data class AppColors(
     val moduleMoney: Color get() = heroMoney.first
     val moduleBazaar: Color get() = heroBazaar.first
     val modulePlan: Color get() = heroPlan.first
+    val bazaarAccent: Color get() = if (isDark) Color(0xFF10B981) else Color(0xFF047857)
+    val onBazaarAccent: Color get() = if (isDark) Color(0xFF022C22) else Color(0xFFFFFFFF)
 }
 
 // --- Pulse Light Theme Tokens ---

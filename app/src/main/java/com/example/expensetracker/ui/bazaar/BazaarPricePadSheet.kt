@@ -76,6 +76,7 @@ import com.example.expensetracker.ui.components.AdaptiveSheet
 import com.example.expensetracker.ui.components.PulseKeypad
 import com.example.expensetracker.ui.components.PulseSegmented
 import com.example.expensetracker.ui.components.PulseTabularText
+import com.example.expensetracker.ui.components.PulseText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -287,7 +288,7 @@ fun BazaarPricePadSheet(
                         if (isBangla) "প্রতি ইউনিটের দর: ৳$rateDisplay/$currentUnit" else "Unit rate: ৳$rateDisplay/$currentUnit"
                     }
 
-                    PulseTabularText(
+                    PulseText(
                         text = subtext,
                         style = typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                         color = appColors.textSecondary

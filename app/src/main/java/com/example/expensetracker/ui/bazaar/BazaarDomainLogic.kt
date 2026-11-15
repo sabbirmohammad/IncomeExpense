@@ -300,17 +300,7 @@ object BazaarDomainLogic {
         productName: String,
         masterProductsMap: Map<String, MasterProduct>?
     ): String {
-        if (masterProductsMap != null && productName.isNotBlank()) {
-            val clean = UnitConverterEngine.normalizeProductName(productName)
-            val overrideCategory = masterProductsMap[clean]?.category
-                ?: masterProductsMap.values.find {
-                    it.name.equals(productName.trim(), ignoreCase = true) || it.normalizedName == clean
-                }?.category
-            if (!overrideCategory.isNullOrBlank() && ALL_DEPARTMENTS.any { it.key == overrideCategory }) {
-                return overrideCategory
-            }
-        }
-        return getMarketItemCategory(productName)
+        return com.example.expensetracker.ui.dashboard.classifyStallWithOverride(productName, masterProductsMap)
     }
 
     /**

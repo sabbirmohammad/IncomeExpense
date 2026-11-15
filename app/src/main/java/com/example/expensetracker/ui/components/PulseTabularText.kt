@@ -1,9 +1,14 @@
 package com.example.expensetracker.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -14,16 +19,64 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+/**
+ * TabularRun:
+ * Represents either a contiguous sequence of digits (which receive fixed-slot tabular layout)
+ * or a contiguous sequence of non-digit characters (rendered as a single unbroken string
+ * so complex script shaping, e.g. Bengali vowels/hasanta/ligatures, remains completely intact).
+ */
+sealed interface TabularRun {
+    val content: String
+    data class Digits(override val content: String) : TabularRun
+    data class NonDigits(override val content: String) : TabularRun
+}
+
+/**
+ * Segments [text] into contiguous runs of digits and non-digits.
+ *
+ * Guaranteed invariants:
+ * 1. Non-digit sequences (Bengali consonants, vowel signs like 'ে', 'ি', hasanta, conjuncts, spaces, punctuation)
+ *    are NEVER split character-by-character, keeping grapheme clusters and HarfBuzz font shaping intact.
+ * 2. Digits ('0'..'9' and '০'..'৯') are grouped into contiguous digit runs.
+ */
+fun segmentIntoTabularRuns(text: String): List<TabularRun> {
+    if (text.isEmpty()) return emptyList()
+    val runs = mutableListOf<TabularRun>()
+    var currentIsDigit = text[0].isDigit()
+    val currentBuffer = StringBuilder()
+
+    for (ch in text) {
+        val isDigit = ch.isDigit()
+        if (isDigit == currentIsDigit) {
+            currentBuffer.append(ch)
+        } else {
+            val s = currentBuffer.toString()
+            if (currentIsDigit) runs.add(TabularRun.Digits(s)) else runs.add(TabularRun.NonDigits(s))
+            currentBuffer.clear()
+            currentBuffer.append(ch)
+            currentIsDigit = isDigit
+        }
+    }
+    if (currentBuffer.isNotEmpty()) {
+        val s = currentBuffer.toString()
+        if (currentIsDigit) runs.add(TabularRun.Digits(s)) else runs.add(TabularRun.NonDigits(s))
+    }
+    return runs
+}
 
 /**
  * PulseTabularText:
  * Guarantees vertical tabular digit column alignment for fonts (such as Hind Siliguri)
  * that lack OpenType "tnum" glyph tables.
  *
- * Each numeric character ('0'..'9' or '০'..'৯') is rendered in a fixed-pitch slot
- * matching the widest digit, ensuring that "1111", "8888", "১১১১", and "৮৮৮৮"
- * have exactly identical measured layout widths in amount columns.
+ * Only numeric characters ('0'..'9' or '০'..'৯') are rendered in fixed-pitch slots
+ * matching the widest digit. Non-digit runs (currency symbols, punctuation, text)
+ * are rendered as unbroken Text spans to preserve script shaping.
  */
 @Composable
 fun PulseTabularText(
@@ -50,28 +103,57 @@ fun PulseTabularText(
         with(density) { maxWidthPx.toDp() }
     }
 
+    val runs = remember(text) { segmentIntoTabularRuns(text) }
+
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        text.forEach { ch ->
-            if (ch.isDigit()) {
-                Box(
-                    modifier = Modifier.width(digitSlotWidth),
-                    contentAlignment = Alignment.Center
-                ) {
+        runs.forEach { run ->
+            when (run) {
+                is TabularRun.Digits -> {
+                    run.content.forEach { digitChar ->
+                        Box(
+                            modifier = Modifier.width(digitSlotWidth),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = digitChar.toString(),
+                                style = style,
+                                color = color,
+                                textAlign = TextAlign.Center,
+                                maxLines = maxLines,
+                                softWrap = softWrap
+                            )
+                        }
+                    }
+                }
+                is TabularRun.NonDigits -> {
                     Text(
-                        text = ch.toString(),
+                        text = run.content,
                         style = style,
                         color = color,
-                        textAlign = TextAlign.Center
+                        textAlign = textAlign,
+                        maxLines = maxLines,
+                        softWrap = softWrap
                     )
                 }
-            } else {
-                Text(
-                    text = ch.toString(),
-                    style = style,
-                    color = color,
-                    textAlign = textAlign
-                )
             }
+        }
+    }
+}
+
+@Preview(name = "Tabular Runs Bengali Shaping Preview", showBackground = true)
+@Composable
+private fun PreviewPulseTabularTextBengaliRuns() {
+    Surface(modifier = Modifier.padding(16.dp)) {
+        Column {
+            PulseTabularText(text = "২ কেজি", style = TextStyle(fontSize = 16.sp))
+            Spacer(modifier = Modifier.height(8.dp))
+            PulseTabularText(text = "মোট খরচ: ৳১৪৫", style = TextStyle(fontSize = 16.sp))
+            Spacer(modifier = Modifier.height(8.dp))
+            PulseTabularText(text = "১/১", style = TextStyle(fontSize = 16.sp))
+            Spacer(modifier = Modifier.height(8.dp))
+            PulseTabularText(text = "(০/০)", style = TextStyle(fontSize = 16.sp))
+            Spacer(modifier = Modifier.height(8.dp))
+            PulseTabularText(text = "৳১,২৩৪.৫০", style = TextStyle(fontSize = 16.sp))
         }
     }
 }

@@ -62,6 +62,7 @@ import com.example.expensetracker.common.DigitConverter
 import com.example.expensetracker.data.model.MarketItem
 import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.components.PulseTabularText
+import com.example.expensetracker.ui.components.PulseText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,24 +122,43 @@ fun BazaarShopItemCard(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
-            val direction = dismissState.dismissDirection
-            val isRight = direction == SwipeToDismissBoxValue.StartToEnd
-            val bgColor = if (isRight) appColors.accent else appColors.warning
-            val icon = if (isRight) Icons.Default.Check else Icons.AutoMirrored.Filled.ArrowForward
-            val label = if (isRight) doneActionLabel else skipActionLabel
+            val swipeDir = when (dismissState.dismissDirection) {
+                SwipeToDismissBoxValue.StartToEnd -> SwipeDismissDirection.START_TO_END
+                SwipeToDismissBoxValue.EndToStart -> SwipeDismissDirection.END_TO_START
+                SwipeToDismissBoxValue.Settled -> SwipeDismissDirection.SETTLED
+            }
+            val targetDir = when (dismissState.targetValue) {
+                SwipeToDismissBoxValue.StartToEnd -> SwipeDismissDirection.START_TO_END
+                SwipeToDismissBoxValue.EndToStart -> SwipeDismissDirection.END_TO_START
+                SwipeToDismissBoxValue.Settled -> SwipeDismissDirection.SETTLED
+            }
+            val bgKind = BazaarShopLogic.resolveSwipeBackgroundKind(
+                direction = swipeDir,
+                progress = dismissState.progress,
+                targetDirection = targetDir
+            )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(bgColor)
-                    .padding(horizontal = 24.dp),
-                contentAlignment = if (isRight) Alignment.CenterStart else Alignment.CenterEnd
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = icon, contentDescription = null, tint = Color.White)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = label, style = typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = Color.White)
+            // Compose swipe background ONLY while actively being swiped (never at rest)
+            if (bgKind != SwipeBackgroundKind.NONE) {
+                val isRight = bgKind == SwipeBackgroundKind.DONE
+                val bgColor = if (isRight) appColors.bazaarAccent else appColors.surfaceVariant
+                val icon = if (isRight) Icons.Default.Check else Icons.AutoMirrored.Filled.ArrowForward
+                val label = if (isRight) doneActionLabel else skipActionLabel
+                val contentColor = if (isRight) appColors.onBazaarAccent else appColors.textSecondary
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(bgColor)
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = if (isRight) Alignment.CenterStart else Alignment.CenterEnd
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = icon, contentDescription = null, tint = contentColor)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = label, style = typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = contentColor)
+                    }
                 }
             }
         },
@@ -153,16 +173,18 @@ fun BazaarShopItemCard(
     ) {
         val cardBorderColor by animateColorAsState(
             targetValue = when {
-                isHighlighted -> appColors.accent.copy(alpha = pulseAlpha)
-                item.isPurchased -> appColors.accent.copy(alpha = 0.35f)
+                isHighlighted -> appColors.bazaarAccent.copy(alpha = pulseAlpha)
+                item.isPurchased -> appColors.bazaarAccent.copy(alpha = 0.35f)
                 else -> appColors.border
             },
             label = "cardBorder"
         )
 
+        // Card surface is 100% OPAQUE (appColors.surface) to prevent any background leak.
+        // The state tint is rendered on top of the solid surface.
         Surface(
             shape = RoundedCornerShape(18.dp),
-            color = if (item.isPurchased) appColors.surfaceVariant.copy(alpha = 0.5f) else appColors.surface,
+            color = appColors.surface,
             border = androidx.compose.foundation.BorderStroke(if (isHighlighted) 2.dp else 1.dp, cardBorderColor),
             tonalElevation = 1.dp,
             modifier = Modifier
@@ -174,119 +196,128 @@ fun BazaarShopItemCard(
                     onClick = onCardClick
                 )
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .then(
+                        if (item.isPurchased) {
+                            Modifier.background(appColors.bazaarAccent.copy(alpha = if (appColors.isDark) 0.18f else 0.12f))
+                        } else Modifier
+                    )
             ) {
-                // 1. Big Check Circle Button (56dp touch target per Amendment 1)
-                Box(
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(56.dp)
-                        .clickable(
-                            role = Role.Checkbox,
-                            onClickLabel = doneActionLabel,
-                            onClick = onCheckCircleClick
-                        )
-                        .semantics {
-                            role = Role.Checkbox
-                            contentDescription = "${item.name}, ${if (item.isPurchased) doneActionLabel else "Not bought"}"
-                        },
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
                 ) {
+                    // 1. Big Check Circle Button (56dp touch target per Amendment 1)
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(if (item.isPurchased) appColors.accent else Color.Transparent)
-                            .border(
-                                width = 2.dp,
-                                color = if (item.isPurchased) appColors.accent else appColors.border,
-                                shape = CircleShape
-                            ),
+                            .size(56.dp)
+                            .clickable(
+                                role = Role.Checkbox,
+                                onClickLabel = doneActionLabel,
+                                onClick = onCheckCircleClick
+                            )
+                            .semantics {
+                                role = Role.Checkbox
+                                contentDescription = "${item.name}, ${if (item.isPurchased) doneActionLabel else "Not bought"}"
+                            },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (item.isPurchased) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = appColors.onAccent,
-                                modifier = Modifier.size(20.dp)
-                            )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (item.isPurchased) appColors.bazaarAccent else Color.Transparent)
+                                .border(
+                                    width = 2.dp,
+                                    color = if (item.isPurchased) appColors.bazaarAccent else appColors.border,
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (item.isPurchased) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = appColors.onBazaarAccent,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                // 2. Center: Name, Qty/Unit, and Last Rate Badge
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.name,
-                        style = typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        ),
-                        color = if (item.isPurchased) appColors.textSecondary else appColors.textPrimary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val qtyNum = if (item.quantity % 1.0 == 0.0) "${item.quantity.toInt()}" else "${item.quantity}"
-                        val qtyDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(qtyNum) else qtyNum
-
-                        PulseTabularText(
-                            text = "$qtyDisplay ${item.unit}",
-                            style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                            color = appColors.textSecondary
-                        )
-
-                        if (!item.isPurchased && lastRate != null && lastRate.first > 0.0) {
-                            Text(text = " · ", style = typography.bodySmall, color = appColors.textMuted)
-                            val rateNum = if (lastRate.first % 1.0 == 0.0) "${lastRate.first.toInt()}" else "%.1f".format(lastRate.first)
-                            val rateDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(rateNum) else rateNum
-                            Text(
-                                text = if (isBangla) "গতবার ৳$rateDisplay/${lastRate.second}" else "Last ৳$rateDisplay/${lastRate.second}",
-                                style = typography.bodySmall.copy(fontSize = 11.5.sp),
-                                color = appColors.textMuted
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // 3. Right: Amount Badge & 48dp Options Menu
-                Column(horizontalAlignment = Alignment.End) {
-                    if (item.isPurchased && item.amount != null && item.amount > 0.0) {
-                        val amtNum = if (item.amount % 1.0 == 0.0) "${item.amount.toInt()}" else "%.1f".format(item.amount)
-                        val amtDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(amtNum) else amtNum
-                        PulseTabularText(
-                            text = if (isPrivacyMode) "••••" else "৳$amtDisplay",
+                    // 2. Center: Name, Qty/Unit, and Last Rate Badge
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = item.name,
                             style = typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             ),
-                            color = appColors.accent
+                            color = appColors.textPrimary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
-                    } else if (item.isPurchased) {
-                        Text(
-                            text = if (isBangla) "মূল্য ছাড়া" else "No price",
-                            style = typography.bodySmall,
-                            color = appColors.textMuted
-                        )
-                    } else {
-                        PulseTabularText(
-                            text = "৳—",
-                            style = typography.bodyMedium,
-                            color = appColors.textMuted
-                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val qtyNum = if (item.quantity % 1.0 == 0.0) "${item.quantity.toInt()}" else "${item.quantity}"
+                            val qtyDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(qtyNum) else qtyNum
+
+                            PulseText(
+                                text = "$qtyDisplay ${item.unit}",
+                                style = typography.bodySmall.copy(fontWeight = FontWeight.Medium, fontSize = 13.sp),
+                                color = appColors.textSecondary
+                            )
+
+                            if (!item.isPurchased && lastRate != null && lastRate.first > 0.0) {
+                                Text(text = " · ", style = typography.bodySmall, color = appColors.textSecondary)
+                                val rateNum = if (lastRate.first % 1.0 == 0.0) "${lastRate.first.toInt()}" else "%.1f".format(lastRate.first)
+                                val rateDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(rateNum) else rateNum
+                                Text(
+                                    text = if (isBangla) "গতবার ৳$rateDisplay/${lastRate.second}" else "Last ৳$rateDisplay/${lastRate.second}",
+                                    style = typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = appColors.textSecondary
+                                )
+                            }
+                        }
                     }
-                }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // 3. Right: Amount Badge & 48dp Options Menu
+                    Column(horizontalAlignment = Alignment.End) {
+                        if (item.isPurchased && item.amount != null && item.amount > 0.0) {
+                            val amtNum = if (item.amount % 1.0 == 0.0) "${item.amount.toInt()}" else "%.1f".format(item.amount)
+                            val amtDisplay = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(amtNum) else amtNum
+                            PulseTabularText(
+                                text = if (isPrivacyMode) "••••" else "৳$amtDisplay",
+                                style = typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ),
+                                color = appColors.bazaarAccent
+                            )
+                        } else if (item.isPurchased) {
+                            Text(
+                                text = if (isBangla) "মূল্য ছাড়া" else "No price",
+                                style = typography.bodySmall.copy(fontSize = 12.sp),
+                                color = appColors.textSecondary
+                            )
+                        } else {
+                            PulseTabularText(
+                                text = "৳—",
+                                style = typography.bodyMedium,
+                                color = appColors.textSecondary
+                            )
+                        }
+                    }
 
                 // 4. Overflow Menu (48dp touch target)
                 Box {
@@ -338,6 +369,7 @@ fun BazaarShopItemCard(
             }
         }
     }
+}
 }
 
 @Preview(name = "ItemCard - 200% Font Scale Bengali", fontScale = 2f, showBackground = true)

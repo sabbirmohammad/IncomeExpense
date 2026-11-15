@@ -289,6 +289,32 @@ object BazaarShopLogic {
     }
 
     /**
+     * Determines which swipe background to compose.
+     * Guaranteed invariant:
+     * When the card is at rest (progress <= 0.001f and targetDirection is SETTLED,
+     * or direction is SETTLED), returns NONE so zero background is composed or rendered.
+     * When swiping right (START_TO_END with progress > 0), returns DONE.
+     * When swiping left (END_TO_START with progress > 0), returns SKIP.
+     */
+    fun resolveSwipeBackgroundKind(
+        direction: SwipeDismissDirection,
+        progress: Float = 0f,
+        targetDirection: SwipeDismissDirection = direction
+    ): SwipeBackgroundKind {
+        if (direction == SwipeDismissDirection.SETTLED) {
+            return SwipeBackgroundKind.NONE
+        }
+        if (progress <= 0.001f && targetDirection == SwipeDismissDirection.SETTLED) {
+            return SwipeBackgroundKind.NONE
+        }
+        return when (direction) {
+            SwipeDismissDirection.START_TO_END -> SwipeBackgroundKind.DONE
+            SwipeDismissDirection.END_TO_START -> SwipeBackgroundKind.SKIP
+            SwipeDismissDirection.SETTLED -> SwipeBackgroundKind.NONE
+        }
+    }
+
+    /**
      * Resolves the initial keypad expression when Price Pad opens.
      */
     fun resolvePricePadInitialExpression(
@@ -490,6 +516,12 @@ enum class SwipeDismissDirection {
     START_TO_END,
     END_TO_START,
     SETTLED
+}
+
+enum class SwipeBackgroundKind {
+    NONE,
+    DONE,
+    SKIP
 }
 
 sealed class SwipeDecision {

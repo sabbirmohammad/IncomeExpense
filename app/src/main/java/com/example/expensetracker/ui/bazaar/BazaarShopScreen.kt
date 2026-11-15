@@ -100,6 +100,7 @@ import com.example.expensetracker.theme.LocalAppColors
 import com.example.expensetracker.ui.adaptive.LocalWindowClass
 import com.example.expensetracker.ui.components.ProgressBarThreshold
 import com.example.expensetracker.ui.components.PulseTabularText
+import com.example.expensetracker.ui.components.PulseText
 import com.example.expensetracker.ui.dashboard.ALL_DEPARTMENTS
 import com.example.expensetracker.ui.dashboard.classifyStallWithOverride
 import kotlinx.coroutines.delay
@@ -340,84 +341,71 @@ fun BazaarShopScreen(
                                     Icon(
                                         imageVector = Icons.Default.Lock,
                                         contentDescription = null,
-                                        tint = appColors.accent,
+                                        tint = appColors.bazaarAccent,
                                         modifier = Modifier.size(12.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = if (isBangla) "কেনাকাটা মোড চালু (স্ক্রিন সজাগ)" else "Shop Mode (Screen awake)",
-                                        style = typography.bodySmall.copy(fontSize = 11.sp),
-                                        color = appColors.textMuted
+                                        text = if (isBangla) "কেনাকাটা চলছে (স্ক্রিন সজাগ)" else "Shop Mode (Screen awake)",
+                                        style = typography.bodySmall.copy(fontSize = 12.sp),
+                                        color = appColors.textSecondary
                                     )
                                 }
                             }
                         }
 
-                        // Auto-advance toggle and Shop Mode overflow menu (Amendment 7 & 9)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Header Right: Shop Mode overflow menu only (no standalone up arrow!)
+                        Box {
                             IconButton(
-                                onClick = { bazaarShopViewModel.setAutoAdvanceEnabled(!isAutoAdvanceEnabled) },
+                                onClick = { showShopOverflowMenu = true },
                                 modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Navigation,
-                                    contentDescription = if (isBangla) "অটো-স্ক্রল টগল" else "Toggle auto advance",
-                                    tint = if (isAutoAdvanceEnabled) appColors.accent else appColors.textMuted
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = if (isBangla) "আরও বিকল্প" else "More options",
+                                    tint = appColors.textPrimary
                                 )
                             }
 
-                            Box {
-                                IconButton(
-                                    onClick = { showShopOverflowMenu = true },
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.MoreVert,
-                                        contentDescription = if (isBangla) "আরও বিকল্প" else "More options",
-                                        tint = appColors.textPrimary
-                                    )
-                                }
-
-                                DropdownMenu(
-                                    expanded = showShopOverflowMenu,
-                                    onDismissRequest = { showShopOverflowMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                if (isBangla) "অটো-অ্যাডভান্স (${if (isAutoAdvanceEnabled) "চালু" else "বন্ধ"})"
-                                                else "Auto-advance (${if (isAutoAdvanceEnabled) "On" else "Off"})"
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = if (isAutoAdvanceEnabled) Icons.Default.Check else Icons.Default.Navigation,
-                                                contentDescription = null,
-                                                tint = if (isAutoAdvanceEnabled) appColors.accent else appColors.textMuted
-                                            )
-                                        },
-                                        onClick = {
-                                            bazaarShopViewModel.setAutoAdvanceEnabled(!isAutoAdvanceEnabled)
-                                            showShopOverflowMenu = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(if (isBangla) "হাতে হাতে নতুন পণ্য যোগ" else "Add extra item", color = appColors.textPrimary) },
-                                        leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
-                                        onClick = {
-                                            showAddImpromptuDialog = true
-                                            showShopOverflowMenu = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(if (isBangla) "বাজার স্থগিত রেখে প্রস্থান" else "Pause trip", color = appColors.textPrimary) },
-                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) },
-                                        onClick = {
-                                            showShopOverflowMenu = false
-                                            onNavigateBack()
-                                        }
-                                    )
-                                }
+                            DropdownMenu(
+                                expanded = showShopOverflowMenu,
+                                onDismissRequest = { showShopOverflowMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (isBangla) "অটো-অ্যাডভান্স (${if (isAutoAdvanceEnabled) "চালু" else "বন্ধ"})"
+                                            else "Auto-advance (${if (isAutoAdvanceEnabled) "On" else "Off"})"
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (isAutoAdvanceEnabled) Icons.Default.Check else Icons.Default.Close,
+                                            contentDescription = null,
+                                            tint = if (isAutoAdvanceEnabled) appColors.bazaarAccent else appColors.textMuted
+                                        )
+                                    },
+                                    onClick = {
+                                        bazaarShopViewModel.setAutoAdvanceEnabled(!isAutoAdvanceEnabled)
+                                        showShopOverflowMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (isBangla) "নতুন পণ্য যোগ করুন" else "Add item", color = appColors.textPrimary) },
+                                    leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = appColors.bazaarAccent) },
+                                    onClick = {
+                                        showAddImpromptuDialog = true
+                                        showShopOverflowMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (isBangla) "বাজার স্থগিত রাখুন" else "Pause trip", color = appColors.textPrimary) },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) },
+                                    onClick = {
+                                        showShopOverflowMenu = false
+                                        onNavigateBack()
+                                    }
+                                )
                             }
                         }
                     }
@@ -437,9 +425,9 @@ fun BazaarShopScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            PulseTabularText(
+                            PulseText(
                                 text = if (isPrivacyMode) "••••" else if (isBangla) "খরচ: ৳$spentDisplay / ৳$capDisplay" else "Spent: ৳$spentDisplay / ৳$capDisplay",
-                                style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                style = typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
                                 color = appColors.textPrimary
                             )
                             val statusText = when {
@@ -448,8 +436,8 @@ fun BazaarShopScreen(
                             }
                             Text(
                                 text = statusText,
-                                style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (budgetProgress >= 1f) appColors.expense else appColors.income
+                                style = typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                                color = if (budgetProgress >= 1f) appColors.expense else appColors.bazaarAccent
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -461,9 +449,9 @@ fun BazaarShopScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            PulseTabularText(
+                            PulseText(
                                 text = if (isPrivacyMode) "••••" else if (isBangla) "মোট খরচ: ৳$spentDisplay" else "Total spent: ৳$spentDisplay",
-                                style = typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                style = typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
                                 color = appColors.textPrimary
                             )
                         }
@@ -532,7 +520,7 @@ fun BazaarShopScreen(
                                 Icon(
                                     imageVector = if (isReceiptExpanded) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
                                     contentDescription = "Toggle receipt",
-                                    tint = appColors.accent,
+                                    tint = appColors.bazaarAccent,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -543,15 +531,15 @@ fun BazaarShopScreen(
 
                                     Text(
                                         text = if (isBangla) "পণ্য: $countDisplay" else "Items: $countDisplay",
-                                        style = typography.bodySmall,
-                                        color = appColors.textMuted
+                                        style = typography.bodySmall.copy(fontSize = 12.sp),
+                                        color = appColors.textSecondary
                                     )
                                     val spentStr2 = if (totalSpent % 1.0 == 0.0) "${totalSpent.toInt()}" else "%.1f".format(totalSpent)
                                     val spentDisp2 = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(spentStr2) else spentStr2
                                     PulseTabularText(
                                         text = if (isPrivacyMode) "••••" else "৳$spentDisp2",
                                         style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = appColors.accent
+                                        color = appColors.bazaarAccent
                                     )
                                 }
                             }
@@ -561,14 +549,17 @@ fun BazaarShopScreen(
                                 onClick = { showCheckoutDialog = true },
                                 modifier = Modifier.heightIn(min = 48.dp),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = appColors.bazaarAccent,
+                                    contentColor = appColors.onBazaarAccent
+                                )
                             ) {
                                 Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = if (isBangla) "চেকআউট" else "Finish Trip",
                                     style = typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = appColors.onAccent
+                                    color = appColors.onBazaarAccent
                                 )
                             }
                         }
@@ -674,7 +665,7 @@ fun BazaarShopScreen(
                                 Icon(
                                     imageVector = Icons.Default.Receipt,
                                     contentDescription = if (isBangla) "রশিদ খুলুন" else "Expand Live Receipt",
-                                    tint = appColors.accent
+                                    tint = appColors.bazaarAccent
                                 )
                             }
                             IconButton(
@@ -684,7 +675,7 @@ fun BazaarShopScreen(
                                 Icon(
                                     imageVector = Icons.Default.ShoppingCart,
                                     contentDescription = if (isBangla) "কেনাকাটা সম্পন্ন" else "Finish Trip",
-                                    tint = appColors.accent
+                                    tint = appColors.bazaarAccent
                                 )
                             }
                         }
@@ -746,14 +737,17 @@ fun BazaarShopScreen(
                                     .fillMaxWidth()
                                     .heightIn(min = 48.dp),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = appColors.bazaarAccent,
+                                    contentColor = appColors.onBazaarAccent
+                                )
                             ) {
                                 Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = if (isBangla) "কেনাকাটা সম্পন্ন করুন" else "Finish Shopping Trip",
                                     style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = appColors.onAccent
+                                    color = appColors.onBazaarAccent
                                 )
                             }
                         }
@@ -935,9 +929,12 @@ fun BazaarShopScreen(
                         }
                     },
                     modifier = Modifier.heightIn(min = 48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accent)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = appColors.bazaarAccent,
+                        contentColor = appColors.onBazaarAccent
+                    )
                 ) {
-                    Text(text = if (isBangla) "যোগ করুন" else "Add", color = appColors.onAccent)
+                    Text(text = if (isBangla) "যোগ করুন" else "Add", color = appColors.onBazaarAccent)
                 }
             },
             dismissButton = {
@@ -1001,7 +998,8 @@ private fun ShopChecklistColumn(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ALL_DEPARTMENTS.forEach { dept ->
+                    val activeStalls = ALL_DEPARTMENTS.filter { (itemsByStall[it.key]?.size ?: 0) > 0 }
+                    activeStalls.forEach { dept ->
                         val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
                         val stallTitle = "${dept.icon} ${if (isBangla) dept.titleBn else dept.titleEn}"
                         val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
@@ -1009,8 +1007,8 @@ private fun ShopChecklistColumn(
 
                         Surface(
                             shape = RoundedCornerShape(14.dp),
-                            color = if (progress.isAllDone) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.accent else appColors.border),
+                            color = if (progress.isAllDone) appColors.bazaarAccent.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.bazaarAccent else appColors.border),
                             modifier = Modifier
                                 .heightIn(min = 48.dp)
                                 .clickable(role = Role.Button, onClick = { onScrollToStall(dept.key) })
@@ -1022,21 +1020,21 @@ private fun ShopChecklistColumn(
                                 Text(
                                     text = stallTitle,
                                     style = typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = if (progress.isAllDone) appColors.accent else appColors.textPrimary
+                                    color = if (progress.isAllDone) appColors.bazaarAccent else appColors.textPrimary
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 if (progress.isAllDone) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = "Completed stall",
-                                        tint = appColors.accent,
+                                        tint = appColors.bazaarAccent,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 } else {
                                     Text(
                                         text = "($doneDisp/$totDisp)",
-                                        style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                        color = appColors.textMuted
+                                        style = typography.bodySmall.copy(fontWeight = FontWeight.Medium, fontSize = 12.sp),
+                                        color = appColors.textSecondary
                                     )
                                 }
                             }
@@ -1064,7 +1062,7 @@ private fun ShopChecklistColumn(
                             Text(
                                 text = if (isBangla) "ভুলে গেলেন কি? (সাধারণ সদাই)" else "Forgot something? (Staples)",
                                 style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = appColors.accent
+                                color = appColors.bazaarAccent
                             )
                             IconButton(
                                 onClick = onDismissForgotStaples,
@@ -1084,7 +1082,7 @@ private fun ShopChecklistColumn(
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
                                     color = appColors.surface,
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.accent.copy(alpha = 0.4f)),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.bazaarAccent.copy(alpha = 0.4f)),
                                     modifier = Modifier
                                         .heightIn(min = 48.dp)
                                         .clickable {
@@ -1109,7 +1107,7 @@ private fun ShopChecklistColumn(
                                         Icon(
                                             imageVector = Icons.Default.Add,
                                             contentDescription = "Add",
-                                            tint = appColors.accent,
+                                            tint = appColors.bazaarAccent,
                                             modifier = Modifier.size(14.dp)
                                         )
                                     }
@@ -1146,8 +1144,8 @@ private fun ShopChecklistColumn(
                         )
                         Text(
                             text = "$doneDisp/$totDisp",
-                            style = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                            color = appColors.textMuted
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.Medium, fontSize = 12.sp),
+                            color = appColors.textSecondary
                         )
                     }
                 }
@@ -1179,25 +1177,54 @@ private fun ShopChecklistColumn(
                         isPrivacyMode = isPrivacyMode
                     )
                 }
+
+                // Add item button per stall (BUG D.3)
+                item(key = "add_item_${dept.key}") {
+                    OutlinedButton(
+                        onClick = onOpenImpromptuDialog,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 44.dp)
+                            .padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = appColors.bazaarAccent
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isBangla) "নতুন পণ্য যোগ করুন" else "Add item",
+                            style = typography.bodySmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                            color = appColors.textPrimary
+                        )
+                    }
+                }
             }
         }
 
-        // 4. Impromptu Add Item Trigger
-        item(key = "add_impromptu_button") {
-            OutlinedButton(
-                onClick = onOpenImpromptuDialog,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = if (isBangla) "হাতে হাতে নতুন পণ্য যোগ করুন" else "Add extra item on the fly",
-                    style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = appColors.textPrimary
-                )
+        // 4. Impromptu Add Item Trigger (when no stalls/items exist)
+        if (allItems.isEmpty()) {
+            item(key = "add_impromptu_button") {
+                OutlinedButton(
+                    onClick = onOpenImpromptuDialog,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, appColors.border)
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = appColors.bazaarAccent)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isBangla) "নতুন পণ্য যোগ করুন" else "Add item",
+                        style = typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = appColors.textPrimary
+                    )
+                }
             }
         }
 
@@ -1269,7 +1296,7 @@ private fun ShopChecklistColumn(
                                         Text(
                                             text = if (isBangla) "পুনরায় যোগ করুন" else "Re-add",
                                             style = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = appColors.accent
+                                            color = appColors.bazaarAccent
                                         )
                                     }
                                 }
@@ -1388,7 +1415,7 @@ private fun LiveReceiptPanelContent(
             PulseTabularText(
                 text = if (isPrivacyMode) "••••" else "৳$spentDisp",
                 style = typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = appColors.accent
+                color = appColors.bazaarAccent
             )
         }
     }
@@ -1418,15 +1445,17 @@ private fun StallVerticalRail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        ALL_DEPARTMENTS.forEach { dept ->
+        ALL_DEPARTMENTS.filter {
+            BazaarShopLogic.calculateStallProgress(it.key, allItems, masterProductsMap, skippedItemIds).totalCount > 0
+        }.forEach { dept ->
             val progress = BazaarShopLogic.calculateStallProgress(dept.key, allItems, masterProductsMap, skippedItemIds)
             val doneDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.doneCount.toString()) else progress.doneCount.toString()
             val totDisp = if (useBengaliNumerals || isBangla) DigitConverter.toBengaliDigits(progress.totalCount.toString()) else progress.totalCount.toString()
 
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = if (progress.isAllDone) appColors.accent.copy(alpha = 0.15f) else appColors.surfaceVariant,
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.accent else appColors.border),
+                color = if (progress.isAllDone) appColors.bazaarAccent.copy(alpha = 0.15f) else appColors.surfaceVariant,
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (progress.isAllDone) appColors.bazaarAccent else appColors.border),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(role = Role.Button, onClick = { onScrollToStall(dept.key) })
@@ -1441,14 +1470,14 @@ private fun StallVerticalRail(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Completed",
-                            tint = appColors.accent,
+                            tint = appColors.bazaarAccent,
                             modifier = Modifier.size(14.dp)
                         )
                     } else {
                         Text(
                             text = "$doneDisp/$totDisp",
-                            style = typography.bodySmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                            color = appColors.textMuted
+                            style = typography.bodySmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                            color = appColors.textSecondary
                         )
                     }
                 }
